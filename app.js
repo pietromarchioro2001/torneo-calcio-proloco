@@ -21,3 +21,7 @@ ${data.DATA} - ${data.ORA}
 }
 
 loadNextMatch();
+
+if ("serviceWorker" in navigator) {
+  navigator.serviceWorker.register("service-worker.js");
+}
