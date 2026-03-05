@@ -1,4 +1,4 @@
-const API = "https://script.google.com/macros/s/AKfycbzsQybRdKpvftDfdASyhKEldTa_SKuteYeE7sNv3QOHaoKBoYBc4ek5RhMR1BqNwpBJ/exec";
+const API = "https://script.google.com/macros/s/AKfycbzjY_WQLzAXOugLpyLJbdWWltAQkc4oPhRboPEvnd0xL1XBBL3bB80WjvROTyoPHhh6/exec";
 
 async function loadNextMatch(){
 
