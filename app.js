@@ -6,22 +6,22 @@ const res = await fetch(API + "?action=nextmatch");
 
 const data = await res.json();
 
-document.getElementById("match").innerHTML =
+document.getElementById("match").innerHTML = `
 
-`<div class="card">
+<div class="match">
 
 ${data.SUQADRA_CASA} vs ${data.SUQADRA_TRASFERTA}
 
-<br>
+</div>
+
+<div class="time">
 
 ${data.DATA} - ${data.ORA}
 
-</div>`;
+</div>
+
+`;
 
 }
 
 loadNextMatch();
-
-if ("serviceWorker" in navigator) {
-  navigator.serviceWorker.register("service-worker.js");
-}
