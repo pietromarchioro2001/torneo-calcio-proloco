@@ -1,61 +1,45 @@
 body{
-
 margin:0;
 font-family:system-ui;
 background:#020617;
 color:white;
-
 }
 
 header{
-
 padding:20px;
 text-align:center;
 background:#020617;
 border-bottom:1px solid #1e293b;
-
 }
 
 h1{
-
 font-size:26px;
 margin:0;
-
 }
 
 section{
-
 padding:18px;
-
 }
 
 .card{
-
 background:#1e293b;
 border-radius:14px;
 padding:16px;
 margin-bottom:12px;
 box-shadow:0 6px 20px rgba(0,0,0,0.3);
-
 }
 
 h2{
-
 font-size:18px;
 margin-bottom:10px;
-
 }
 
 .match{
-
-font-size:20px;
+font-size:22px;
 font-weight:bold;
-
 }
 
 .time{
-
 opacity:0.7;
-margin-top:5px;
-
+margin-top:6px;
 }
