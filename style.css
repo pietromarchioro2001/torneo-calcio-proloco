@@ -2681,6 +2681,189 @@ body{
   flex:0 0 42px;
 }
 
+/* ============================================
+   MVP STYLES
+============================================ */
+
+/* Coroncina MVP */
+.mvp-crown {
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  font-size: 16px;
+  z-index: 2;
+  animation: crownPulse 2s infinite;
+}
+
+@keyframes crownPulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.2); }
+}
+
+/* Row MVP evidenziata */
+.mvp-player-row {
+  background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%) !important;
+  border: 2px solid #d97706;
+  border-radius: 12px;
+  position: relative;
+  padding: 10px;
+  margin: 4px 0;
+}
+
+/* Avatar MVP con bordo oro */
+.mvp-player-avatar-wrapper {
+  position: relative;
+}
+
+.mvp-player-photo,
+.mvp-player-avatar {
+  border: 3px solid #d97706 !important;
+  box-shadow: 0 0 12px rgba(217, 119, 6, 0.5);
+  border-radius: 50%;
+}
+
+/* Card MVP Winner */
+.mvp-winner-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 30px 20px;
+  background: linear-gradient(135deg, #fef3c7 0%, #fde68a 50%, #fbbf24 100%);
+  border: 3px solid #d97706;
+  border-radius: 16px;
+  box-shadow: 0 8px 24px rgba(217, 119, 6, 0.3);
+  animation: winnerGlow 3s infinite;
+}
+
+@keyframes winnerGlow {
+  0%, 100% { box-shadow: 0 8px 24px rgba(217, 119, 6, 0.3); }
+  50% { box-shadow: 0 12px 32px rgba(217, 119, 6, 0.5); }
+}
+
+.mvp-winner-badge {
+  font-size: 14px;
+  font-weight: 700;
+  color: #92400e;
+  letter-spacing: 2px;
+  margin-bottom: 12px;
+  text-transform: uppercase;
+}
+
+.mvp-winner-photo {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 4px solid #d97706;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.2);
+  margin-bottom: 12px;
+}
+
+.mvp-winner-avatar {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  background: #fbbf24;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 40px;
+  border: 4px solid #d97706;
+  margin-bottom: 12px;
+}
+
+.mvp-winner-name {
+  font-size: 20px;
+  font-weight: 800;
+  color: #78350f;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  margin-bottom: 4px;
+}
+
+.mvp-winner-team {
+  font-size: 12px;
+  color: #92400e;
+  font-weight: 600;
+  letter-spacing: 1px;
+}
+
+/* MVP Vote Row */
+.mvp-vote-row {
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.mvp-vote-row:hover {
+  background: #fef3c7;
+  transform: translateX(4px);
+}
+
+.vote-check {
+  opacity: 0;
+  color: #d97706;
+  font-weight: 700;
+  font-size: 18px;
+  transition: opacity 0.2s;
+}
+
+.mvp-vote-row:hover .vote-check {
+  opacity: 1;
+}
+
+/* MVP Banner */
+.mvp-banner {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 20;
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-width: 280px;
+  padding: 20px 30px;
+  background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+  border: 3px solid #d97706;
+  border-radius: 16px;
+  backdrop-filter: blur(4px);
+  box-shadow: 0 8px 32px rgba(217, 119, 6, 0.4);
+  animation: mvpAppear 0.5s ease;
+}
+
+@keyframes mvpAppear {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -40%) scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+  }
+}
+
+.mvp-banner.show {
+  display: flex;
+}
+
+.mvp-title {
+  font-size: 12px;
+  letter-spacing: 3px;
+  color: #92400e;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.mvp-name {
+  margin-top: 8px;
+  font-size: 28px;
+  font-weight: 900;
+  color: #78350f;
+  letter-spacing: 2px;
+}
+
 /* =============================================================================================
                                          CLASSIFICA
 ===============================================================================================*/
