@@ -5,7 +5,7 @@
 const CONFIG = {
   // 🔥 SOSTITUISCI CON IL TUO URL APPS SCRIPT WEB APP
 
-  BACKEND_URL: 'https://script.google.com/macros/s/AKfycbyFkuO225irqSLQw9Y5v2fPJGTkEH7EX8uSt2KcmnT674UAoMq3zqp6Qgw4flTfJXJ_/exec',
+  BACKEND_URL: 'https://script.google.com/macros/s/AKfycbz_kcOsY2Cak78V50k59izri04G7yOr8s_Qgei_Mo4g8SWpgongOFDg3FEn_crWZXUX/exec',
   
   API_TIMEOUT: 30000,
   CACHE_VERSION: 'v3.0',
@@ -265,6 +265,7 @@ const ApiClient = {
   createFinalStageMatches: (matches) => ApiClient.call('createFinalStageMatches', [matches]),
   getFinalStageMatches: () => ApiClient.call('getFinalStageMatches'),
   saveMVPFinal: (matchId, playerId) => ApiClient.call('saveMVPFinal', [matchId, playerId]),
+  isFinalStageStarted: () => ApiClient.call('isFinalStageStarted'),
   finalizeMVP: (matchId) => ApiClient.call('finalizeMVP', [matchId]),
   getTeamsByGironeSimple: (girone) => ApiClient.call('getTeamsByGironeSimple', [girone])
 };
@@ -1343,8 +1344,6 @@ function openMatch(id) {
 }
 
 function renderMatchPage(match) {
-  // ... (logo e header invariati) ...
-  
   // 🔥 LOGHI SQUADRE
   const logoCasa = match.LOGO_CASA 
     ? `<img src="${getCachedImage(match.LOGO_CASA, 120)}" alt="${match.SQUADRA_CASA}" onerror="this.style.display='none'">`
@@ -1354,20 +1353,29 @@ function renderMatchPage(match) {
     ? `<img src="${getCachedImage(match.LOGO_TRASFERTA, 120)}" alt="${match.SQUADRA_TRASFERTA}" onerror="this.style.display='none'">`
     : `<div style="width:70px;height:70px;border-radius:50%;background:#f0f0f0;display:flex;align-items:center;justify-content:center;font-size:1.5rem">⚽</div>`;
   
-  // 🔥 GESTIONE TAB MVP
+  // 🔥 STATI PARTITA
   const isLive = match.STATO_PARTITA === "LIVE";
   const isFinished = match.STATO_PARTITA === "FINITA";
+  const isGroupStage = !match.FASE || match.FASE === "GIRONI";
+  const finalStageStarted = window.APP_CACHE.meta?.finalStageStarted;
   
+  // 🔥 TAB MVP - solo LIVE attivo, FINITA mostra risultato, altro disabilitato
   let mvpTabHtml = "";
   if (isLive) {
     mvpTabHtml = `<div class="mt-btn" data-tab="mvp">VOTA MVP</div>`;
   } else if (isFinished) {
-  // FINITA: disabilitato + classe disabled
     mvpTabHtml = `<div class="mt-btn disabled" data-tab="mvp">🏆 MVP</div>`;
   } else {
-    // PROGRAMMATA: disabilitato + classe disabled
     mvpTabHtml = `<div class="mt-btn disabled" data-tab="mvp">MVP</div>`;
   }
+  
+  // 🔥 PULSANTI EVENTI - attivi solo se LIVE + (gironi o finale non iniziata)
+  const canAddEvents = isLive && (match.FASE === "FINALI" || !finalStageStarted);
+  const eventBtnDisabled = !canAddEvents ? "style=\"opacity:0.5;pointer-events:none;cursor:not-allowed\"" : "";
+  
+  // 🔥 PULSANTE INIZIA/CONCLUDI - disabilitato se gironi + finale iniziata + già finita
+  const canToggleMatch = match.FASE === "FINALI" || !finalStageStarted || !isFinished;
+  const toggleBtnDisabled = !canToggleMatch ? "style=\"opacity:0.5;pointer-events:none;cursor:not-allowed\"" : "";
   
   document.getElementById("app").innerHTML = `
     <div class="match-page">
@@ -1379,7 +1387,8 @@ function renderMatchPage(match) {
         <div class="match-center">
           <div class="match-controls-top">
             <div class="phase-btn start-btn ${isLive ? "active" : ""}" 
-                 onclick="toggleMatch()">
+                 onclick="${canToggleMatch ? "toggleMatch()" : ""}"
+                 ${toggleBtnDisabled}>
               ${isLive ? "CONCLUDI" : "INIZIA"}
             </div>
           </div>
@@ -1404,22 +1413,20 @@ function renderMatchPage(match) {
           <div class="teams-events">
             <div class="events-actions">
               <div class="left">
-                <div class="phase-btn small" onclick="addEvent('casa')" 
-                     ${!isLive ? "style=\"opacity:0.5;pointer-events:none\"" : ""}>
+                <div class="phase-btn small" onclick="${canAddEvents ? "addEvent('casa')" : ""}" ${eventBtnDisabled}>
                   + EVENTO CASA
                 </div>
               </div>
               <div class="right">
-                <div class="phase-btn small" onclick="addEvent('trasferta')"
-                     ${!isLive ? "style=\"opacity:0.5;pointer-events:none\"" : ""}>
+                <div class="phase-btn small" onclick="${canAddEvents ? "addEvent('trasferta')" : ""}" ${eventBtnDisabled}>
                   + EVENTO TRASFERTA
                 </div>
               </div>
             </div>
             
             <div class="cronaca-title center"><span>CRONACA</span></div>
-
-            <!-- 🔥 BANNER MVP DENTRO events-timeline -->
+            
+            <!-- EVENTI + MVP BANNER -->
             <div id="eventsTimeline" class="events-timeline">
               <div id="eventsContent"></div>
               <div id="mvpBanner" class="mvp-banner"></div>
@@ -1553,9 +1560,126 @@ function updateMVPBanner(match) {
 }
 
 function addEvent(team) {
-  const match = getCurrentMatch();
-  if (match?.STATO_PARTITA !== "LIVE") { alert("La partita non è in corso"); return; }
-  alert("Demo: evento aggiunto! (backend non configurato)");
+  const match = window.APP_STATE.lastMatch;
+  
+  // 🔥 Controllo stato partita
+  if (!match) {
+    alert("Partita non caricata");
+    return;
+  }
+  
+  if (match.STATO_PARTITA !== "LIVE") {
+    alert("La partita non è in corso - gli eventi possono essere aggiunti solo durante il LIVE");
+    return;
+  }
+  
+  // 🔥 Controllo fase finale (blocca modifiche ai gironi)
+  if (match.FASE === "GIRONI" && window.APP_CACHE.meta?.finalStageStarted) {
+    alert("Impossibile modificare eventi: la fase finale è già iniziata");
+    return;
+  }
+  
+  // 🔥 Apri popup evento
+  openEventPopup(team);
+}
+
+// 🔥 Funzione helper per il popup evento
+function openEventPopup(team) {
+  const match = window.APP_STATE.lastMatch;
+  const teamId = team === "casa" ? match.CASA_ID : match.TRASFERTA_ID;
+  
+  const modal = document.createElement("div");
+  modal.className = "modalOverlay";
+  modal.innerHTML = `
+    <div class="modalBox" id="eventBox">
+      <div class="modalTitle">NUOVO EVENTO - ${(team === "casa" ? match.SQUADRA_CASA : match.SQUADRA_TRASFERTA)?.toUpperCase()}</div>
+      <div class="match-form">
+        <select id="eventType" class="match-select">
+          <option value="GOAL">⚽ Gol</option>
+          <option value="AMMONIZIONE">🟨 Ammonizione</option>
+          <option value="ESPULSIONE">🟥 Espulsione</option>
+        </select>
+        <input id="eventMinute" class="match-input" type="number" placeholder="Minuto" min="1" max="120">
+        <select id="eventPlayer" class="match-select"><option value="">Seleziona giocatore</option></select>
+        <select id="eventAssist" class="match-select"><option value="">Assist (opzionale)</option></select>
+        <div class="modalActions">
+          <div class="phase-btn" onclick="saveEvent('${team}')">SALVA</div>
+          <div class="phase-btn secondary" onclick="this.closest('.modalOverlay').remove()">ANNULLA</div>
+        </div>
+      </div>
+    </div>
+  `;
+  
+  document.body.appendChild(modal);
+  modal.onclick = (e) => { if (e.target === modal) modal.remove(); };
+  document.getElementById("eventBox").onclick = (e) => e.stopPropagation();
+  
+  // Carica giocatori della squadra
+  ApiClient.getPlayersByTeam(teamId)
+    .then(players => populateEventSelects(players))
+    .catch(err => console.error('Error loading players:', err));
+}
+
+function populateEventSelects(players) {
+  const playerSelect = document.getElementById("eventPlayer");
+  const assistSelect = document.getElementById("eventAssist");
+  if (!playerSelect || !assistSelect) return;
+  
+  let playerOpts = `<option value="">Seleziona giocatore</option>`;
+  let assistOpts = `<option value="">Nessun assist</option>`;
+  
+  (players || []).forEach(p => {
+    const name = (p.NOME || "").toUpperCase();
+    playerOpts += `<option value="${p.PLAYER_ID}">${name}</option>`;
+    assistOpts += `<option value="${p.PLAYER_ID}">${name}</option>`;
+  });
+  
+  playerSelect.innerHTML = playerOpts;
+  assistSelect.innerHTML = assistOpts;
+}
+
+async function saveEvent(team) {
+  const match = window.APP_STATE.lastMatch;
+  if (!match) return;
+  
+  const type = document.getElementById("eventType")?.value;
+  const minute = parseInt(document.getElementById("eventMinute")?.value);
+  const playerId = document.getElementById("eventPlayer")?.value;
+  const assistId = document.getElementById("eventAssist")?.value || "";
+  
+  // Validazioni
+  if (!type || !minute || minute < 1 || !playerId) {
+    alert("Compila tutti i campi obbligatori");
+    return;
+  }
+  
+  try {
+    // Chiama backend
+    await ApiClient.addEventAdmin(match.MATCH_ID, team === "casa" ? match.CASA_ID : match.TRASFERTA_ID, type, minute, playerId, assistId);
+    
+    // Chiudi popup
+    document.querySelector(".modalOverlay")?.remove();
+    
+    // Ricarica eventi e UI
+    const events = await ApiClient.getEventsAdmin(match.MATCH_ID);
+    window.APP_CACHE.eventsByMatch = window.APP_CACHE.eventsByMatch || {};
+    window.APP_CACHE.eventsByMatch[match.MATCH_ID] = events;
+    CacheManager.save(window.APP_CACHE);
+    
+    renderEvents(events, match);
+    renderPlayersTab(
+      window.APP_CACHE.fullTeams?.[match.CASA_ID],
+      window.APP_CACHE.fullTeams?.[match.TRASFERTA_ID],
+      match
+    );
+    
+    // Aggiorna standings in background
+    refreshStandingsDebounced(1000);
+    
+  } catch (error) {
+    console.error('Error saving event:', error);
+    alert('Errore salvataggio evento: ' + error.message);
+  }
 }
 
 async function toggleMatch() {
@@ -2048,6 +2172,19 @@ function bootAdminApp() {
   
   // 🔥 Carica dati in background (NON bloccante)
   ApiClient.getInitialData()
+  // Dopo getInitialData():
+  ApiClient.isFinalStageStarted()
+    .then(started => {
+      if (!window.APP_CACHE.meta) window.APP_CACHE.meta = {};
+      window.APP_CACHE.meta.finalStageStarted = started;
+      console.log('Final stage started:', started);
+    })
+    .catch(err => console.warn('Could not check final stage:', err));
+    .then(started => {
+      if (!window.APP_CACHE.meta) window.APP_CACHE.meta = {};
+      window.APP_CACHE.meta.finalStageStarted = started;
+    })
+    .catch(() => {});
     .then(data => {
       console.log('✅ Dati caricati:', data);
       
