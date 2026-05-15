@@ -14,10 +14,10 @@
   
   <div id="startupLoader">
   <!-- Logo (sostituisci src con il tuo logo) -->
-  <img src="https://lh3.googleusercontent.com/d/1rD0E3Bzata7xJHOoAKci0B7v6hgvSYC-"
+  <img src="https://lh3.googleusercontent.com/d/1HVh1Suod5EmXv87lTRdXwk_ezqTGFlB7-"
        alt="Logo Torneo" 
        class="startup-logo">
-  
+
   <!-- Spinner rotante -->
   <div class="startup-spinner"></div>
 
@@ -37,11 +37,12 @@
 }
 
 .startup-logo {
-  width: 150px;
-  height: 150px;
+  width: min(400px, 80vw);  /* Massimo 400px o 80% viewport */
+  height: auto;
   object-fit: contain;
-  margin-bottom: 30px;
+  margin-bottom: 40px;
   animation: logoFadeIn 0.5s ease;
+  filter: drop-shadow(0 4px 12px rgba(0,0,0,0.15));
 }
 
 @keyframes logoFadeIn {
@@ -50,13 +51,13 @@
 }
 
 .startup-spinner {
-  width: 50px;
-  height: 50px;
-  border: 4px solid #f3f3f3;
-  border-top: 4px solid #7a1e2c;
+  width: 60px;
+  height: 60px;
+  border: 5px solid #f3f3f3;
+  border-top: 5px solid #7a1e2c;
   border-radius: 50%;
   animation: spin 1s linear infinite;
-  margin-bottom: 20px;
+  margin-bottom: 25px;
 }
 
 @keyframes spin {
@@ -66,9 +67,10 @@
 
 .startup-text {
   font-family: 'Oswald', sans-serif;
-  font-size: 14px;
+  font-size: 16px;
   letter-spacing: 5px;
   color: #7a1e2c;
+  font-weight: 600;
   animation: pulse 1.5s ease-in-out infinite;
 }
 
