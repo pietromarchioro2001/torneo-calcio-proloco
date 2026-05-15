@@ -1398,12 +1398,12 @@ function renderMatchPage(match) {
             <div class="events-actions">
               <div class="left">
                 <div class="phase-btn small" onclick="${canAddEvents ? "addEvent('casa')" : ""}" ${eventBtnDisabled}>
-                  + EVENTO CASA
+                  + EVENTO
                 </div>
               </div>
               <div class="right">
                 <div class="phase-btn small" onclick="${canAddEvents ? "addEvent('trasferta')" : ""}" ${eventBtnDisabled}>
-                  + EVENTO TRASFERTA
+                  + EVENTO
                 </div>
               </div>
             </div>
