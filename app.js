@@ -2145,9 +2145,27 @@ function bootAdminApp() {
   showHome();
   renderToolbar("home");
   
-  // 🔥 NESSUN RITARDO - Carica solo i dati
+  // 🔥 TIMEOUT MASSIMO 3 secondi (anche se i dati non sono pronti)
+  let dataLoaded = false;
+  const maxTimeout = setTimeout(() => {
+    if (!dataLoaded) {
+      console.warn('⏱️ Timeout caricamento dati - mostro UI comunque');
+      hideLoader();
+    }
+  }, 3000);
+  
+  function hideLoader() {
+    clearTimeout(maxTimeout);
+    loader?.classList?.add("hide");
+    setTimeout(() => loader?.remove(), 300);
+  }
+  
+  // Carica dati
   ApiClient.getInitialData()
     .then(data => {
+      dataLoaded = true;
+      clearTimeout(maxTimeout);
+      
       console.log('✅ Dati caricati:', data);
       
       if (data) {
@@ -2171,29 +2189,21 @@ function bootAdminApp() {
         else if (currentPath.includes("standings")) renderStandings(window.APP_CACHE.standings || {});
       }
       
-      console.log("✅ App ready");
+      // Nascondi loader
+      hideLoader();
       
-      // Carica flag fase finale (non bloccante)
+      // Carica flag fase finale (background, non blocca)
       ApiClient.isFinalStageStarted()
         .then(started => {
           if (!window.APP_CACHE.meta) window.APP_CACHE.meta = {};
           window.APP_CACHE.meta.finalStageStarted = started;
         })
         .catch(() => {});
-      
-      // Nascondi loader IMMEDIATAMENTE dopo dati
-      setTimeout(() => { 
-        loader?.classList?.add("hide"); 
-        setTimeout(() => loader?.remove(), 300); 
-      }, 200); // Solo 200ms per transizione fluida
     })
     .catch(error => {
-      console.error('❌ Errore:', error);
-      // Nascondi loader anche in errore
-      setTimeout(() => { 
-        loader?.classList?.add("hide"); 
-        setTimeout(() => loader?.remove(), 300); 
-      }, 200);
+      console.error('❌ Errore caricamento:', error);
+      dataLoaded = true;
+      hideLoader(); // Nascondi loader anche in errore
     });
   
   window.addEventListener("error", e => console.error("Global error:", e.error||e.message));
