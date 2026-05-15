@@ -400,11 +400,112 @@ function renderToolbar(active) {
     </div>`;
 }
 
+/**
+ * Trova la partita LIVE o la prossima partita e genera la card
+ */
+function getNextMatchCard() {
+  const matches = window.APP_CACHE.matches || [];
+  const now = new Date();
+  const nowStr = formatLocalDate(now);
+  const nowTime = String(now.getHours()).padStart(2, '0') + ':' + String(now.getMinutes()).padStart(2, '0');
+  
+  // 🔥 1. Cerca partita LIVE
+  const liveMatch = matches.find(m => m.STATO_PARTITA === "LIVE");
+  if (liveMatch) {
+    return renderHomeMatchCard(liveMatch, true);
+  }
+  
+  // 🔥 2. Cerca prossima partita (data >= oggi)
+  const todayMatches = matches
+    .filter(m => {
+      const matchDate = String(m.DATA || "").slice(0, 10);
+      return matchDate >= nowStr && m.STATO_PARTITA !== "FINITA";
+    })
+    .sort((a, b) => {
+      // Ordina per data poi ora
+      const dateA = String(a.DATA || "").slice(0, 10) + (a.ORA || "00:00");
+      const dateB = String(b.DATA || "").slice(0, 10) + (b.ORA || "00:00");
+      return dateA.localeCompare(dateB);
+    });
+  
+  if (todayMatches.length > 0) {
+    return renderHomeMatchCard(todayMatches[0], false);
+  }
+  
+  // 🔥 3. Nessuna partita → placeholder
+  return `
+    <div class="home-next-match" style="opacity:0.5;pointer-events:none;cursor:default">
+      <div class="home-match-label">NESSUNA PARTITA IN PROGRAMMA</div>
+      <div class="home-match-content">
+        <div class="home-match-teams">
+          <span class="home-team">-</span>
+          <span class="home-vs">VS</span>
+          <span class="home-team">-</span>
+        </div>
+        <div class="home-match-info">Prossima partita non disponibile</div>
+      </div>
+    </div>
+  `;
+}
+
+/**
+ * Genera HTML per la card partita nella home
+ */
+function renderHomeMatchCard(match, isLive) {
+  const logoCasa = match.LOGO_CASA 
+    ? `<img src="${getCachedImage(match.LOGO_CASA, 40)}" alt="${match.SQUADRA_CASA}" onerror="this.style.display='none'">`
+    : `<div class="home-team-logo">⚽</div>`;
+  
+  const logoTrasf = match.LOGO_TRASFERTA 
+    ? `<img src="${getCachedImage(match.LOGO_TRASFERTA, 40)}" alt="${match.SQUADRA_TRASFERTA}" onerror="this.style.display='none'">`
+    : `<div class="home-team-logo">⚽</div>`;
+  
+  const statusLabel = isLive ? "🔴 IN CORSO" : "📅 PROSSIMA PARTITA";
+  const statusClass = isLive ? "home-status-live" : "home-status-scheduled";
+  
+  let centerContent = "";
+  if (isLive) {
+    centerContent = `
+      <div class="home-score">${match.GOL_CASA || 0} - ${match.GOL_TRASFERTA || 0}</div>
+      <div class="home-match-time">LIVE</div>
+    `;
+  } else {
+    const dateObj = parseLocalDate(match.DATA);
+    const dateStr = dateObj ? `${dateObj.getDate()} ${dateObj.toLocaleString("it-IT", {month:"short"})}` : match.DATA;
+    centerContent = `
+      <div class="home-match-time">${match.ORA || "--:--"}</div>
+      <div class="home-match-date">${dateStr}</div>
+    `;
+  }
+  
+  return `
+    <div class="home-next-match" onclick="openMatch('${match.MATCH_ID}')">
+      <div class="home-match-label ${statusClass}">${statusLabel}</div>
+      <div class="home-match-content">
+        <div class="home-match-teams">
+          ${logoCasa}
+          <span class="home-team">${(match.SQUADRA_CASA || "").toUpperCase()}</span>
+        </div>
+        <div class="home-match-center">
+          ${centerContent}
+        </div>
+        <div class="home-match-teams">
+          <span class="home-team">${(match.SQUADRA_TRASFERTA || "").toUpperCase()}</span>
+          ${logoTrasf}
+        </div>
+      </div>
+    </div>
+  `;
+}
+
 function showHome() {
   stopStandingsLiveRefresh();
   renderToolbar("home");
   const app = document.getElementById("app"); if (!app) return;
   const currentYear = new Date().getFullYear();
+  
+  // 🔥 Trova partita LIVE o prossima
+  const nextMatchCard = getNextMatchCard();
   
   app.innerHTML = `
     <div class="home-container">
@@ -414,30 +515,26 @@ function showHome() {
       </div>
       
       <div class="home-bg">
-        <!-- Campanile SINISTRA -->
         <svg class="camp camp-left" viewBox="0 0 400 600" preserveAspectRatio="xMidYMid meet">
           <g transform="translate(0,600) scale(0.1,-0.1)" fill="#8c404e">
             <path d="M1992 5205 c-2 -148 -3 -161 -22 -173 -25 -16 -26 -50 0 -77 17 -18 18 -27 10 -85 -6 -36 -16 -85 -23 -109 -10 -33 -11 -52 -3 -73 15 -40 -8 -202 -45 -312 -43 -127 -80 -188 -182 -291 -65 -67 -98 -109 -125 -164 -35 -72 -37 -79 -37 -175 0 -91 3 -107 30 -161 16 -33 51 -82 78 -109 l49 -49 -5 -56 c-12 -135 -85 -240 -212 -308 -49 -26 -55 -33 -34 -33 57 0 59 -12 59 -298 l0 -261 -27 -19 c-16 -10 -37 -22 -48 -26 -17 -7 -17 -9 -5 -15 9 -3 27 -14 40 -24 l25 -17 0 -361 c0 -399 5 -372 -70 -385 l-40 -7 32 -26 32 -27 1 -274 c0 -150 3 -276 5 -279 13 -12 15 24 15 278 l1 273 30 26 30 25 -48 16 c-41 14 -48 20 -52 46 -3 17 -5 180 -5 362 l0 279 -27 25 c-24 20 -26 26 -13 33 55 34 52 15 51 305 0 266 0 267 -23 286 -13 10 -21 20 -18 22 3 2 29 19 58 37 109 69 172 181 172 306 0 59 -1 62 -46 105 -87 85 -126 202 -104 315 19 101 62 172 156 266 93 91 140 165 178 277 33 96 57 243 55 338 -1 44 3 104 8 134 l9 55 14 -60 c7 -33 14 -112 15 -175 2 -140 29 -259 87 -379 32 -67 58 -103 137 -185 104 -108 143 -173 162 -268 21 -111 -17 -228 -103 -314 l-50 -52 4 -73 c6 -127 64 -223 173 -291 28 -18 52 -33 54 -35 9 -6 -21 -32 -32 -27 -9 3 -12 -64 -10 -273 0 -299 -1 -282 53 -313 13 -7 10 -13 -12 -37 l-28 -29 0 -276 c0 -151 3 -316 6 -366 l7 -90 44 -13 45 -12 -27 -21 -26 -21 1 -274 c0 -151 3 -277 5 -280 13 -12 15 24 15 278 l1 273 30 26 30 25 -48 16 c-41 14 -48 20 -52 46 -3 17 -5 180 -5 362 l-1 333 25 17 c13 10 31 21 39 24 10 4 1 13 -30 30 l-44 24 -3 263 c-2 251 -2 262 18 282 11 11 30 20 43 20 16 0 8 8 -32 30 -143 79 -221 194 -221 327 0 37 6 48 51 93 27 27 62 76 77 108 22 49 26 71 27 158 0 96 -2 103 -37 175 -27 55 -60 98 -130 170 -109 112 -156 191 -193 330 -28 105 -44 272 -27 283 7 4 5 21 -4 53 -8 27 -19 77 -23 113 -8 57 -6 68 10 86 25 27 24 59 -2 77 -16 12 -21 28 -24 77 -4 55 -2 63 15 67 25 7 27 25 3 21 -16 -3 -19 8 -24 82 -4 69 -6 55 -7 -75z m38 -209 c0 -20 -25 -37 -44 -30 -19 7 -21 35 -4 52 14 14 48 -2 48 -22z"/>
           </g>
         </svg>
-        
-        <!-- Campanile DESTRA -->
         <svg class="camp camp-right" viewBox="0 0 400 600" preserveAspectRatio="xMidYMid meet">
           <g transform="translate(0,600) scale(0.1,-0.1)" fill="#863443">
             <path d="M2152 5028 c3 -42 3 -43 -27 -40 -33 4 -25 -13 10 -20 17 -3 20 -12 23 -75 3 -64 1 -73 -18 -83 -24 -13 -28 -68 -5 -76 21 -9 19 -29 -20 -230 -75 -376 -179 -742 -247 -864 -17 -30 -51 -74 -76 -97 -40 -39 -43 -44 -28 -58 14 -14 16 -54 16 -310 l0 -293 -27 -10 c-69 -25 -659 -248 -751 -284 -57 -22 -101 -42 -99 -45 5 -5 340 112 605 211 190 71 233 88 481 190 62 26 115 45 117 43 2 -2 -5 -15 -17 -28 -12 -13 -108 -125 -214 -249 -432 -504 -665 -783 -660 -789 4 -3 21 11 38 31 18 20 167 193 332 385 165 191 304 353 310 359 5 6 64 74 130 152 l120 142 3 -73 c2 -39 7 -76 12 -81 7 -7 10 143 10 407 0 229 3 417 7 417 4 0 98 -35 209 -77 176 -68 201 -80 193 -95 -5 -9 -9 -228 -9 -499 l0 -482 62 -101 c64 -105 343 -522 378 -566 50 -63 11 8 -89 159 -60 91 -159 246 -220 344 l-111 178 0 474 c0 459 1 476 20 492 19 16 18 17 -14 40 -41 27 -114 134 -155 227 -73 161 -187 567 -242 855 -19 105 -20 116 -5 126 21 16 21 61 0 73 -13 7 -17 26 -18 80 l-1 71 28 -6 c16 -3 27 -1 27 5 0 6 -12 12 -27 14 -27 3 -28 5 -25 51 3 38 1 47 -12 47 -13 0 -16 -9 -14 -42z m32 -457 c10 -86 100 -442 153 -606 52 -161 120 -313 164 -368 17 -21 29 -40 28 -41 -2 -2 -65 21 -139 50 -74 30 -158 62 -186 71 l-51 16 -157 -70 c-86 -39 -156 -69 -156 -66 0 2 11 19 24 36 13 18 35 55 49 82 55 110 160 491 219 797 18 91 35 165 39 162 3 -2 9 -30 13 -63z m-36 -1227 l-3 -316 -168 -68 c-92 -37 -169 -64 -172 -60 -2 4 -4 131 -4 283 0 151 -3 286 -6 299 -6 23 4 28 162 100 92 42 174 76 181 77 10 1 12 -65 10 -315z"/>
           </g>
         </svg>
-        
-        <div class="field-lines">
-          <div class="line center"></div>
-          <div class="circle"></div>
-        </div>
+        <div class="field-lines"><div class="line center"></div><div class="circle"></div></div>
       </div>
       
       <div class="title-wrapper">
         <div class="main-title">TORNEO DEI PAESI</div>
         <div class="sub-title">SARNONICO <span id="annoCorrente">${currentYear}</span></div>
       </div>
+      
+      <!-- 🔥 CARD PROSSIMA PARTITA / LIVE -->
+      ${nextMatchCard}
     </div>
   `;
 }
