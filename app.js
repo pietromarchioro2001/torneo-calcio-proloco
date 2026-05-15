@@ -1461,7 +1461,7 @@ function renderMatchPage(match) {
   const isGroupStage = !match.FASE || match.FASE === "GIRONI";
   const finalStageStarted = window.APP_CACHE.meta?.finalStageStarted;
   
-  // 🔥 TAB MVP - solo LIVE attivo, FINITA mostra risultato, altro disabilitato
+  // 🔥 TAB MVP
   let mvpTabHtml = "";
   if (isLive) {
     mvpTabHtml = `<div class="mt-btn" data-tab="mvp">VOTA MVP</div>`;
@@ -1471,11 +1471,11 @@ function renderMatchPage(match) {
     mvpTabHtml = `<div class="mt-btn disabled" data-tab="mvp">MVP</div>`;
   }
   
-  // 🔥 PULSANTI EVENTI - attivi solo se LIVE + (gironi o finale non iniziata)
+  // 🔥 PULSANTI EVENTI
   const canAddEvents = isLive && (match.FASE === "FINALI" || !finalStageStarted);
   const eventBtnDisabled = !canAddEvents ? "style=\"opacity:0.5;pointer-events:none;cursor:not-allowed\"" : "";
   
-  // 🔥 PULSANTE INIZIA/CONCLUDI - disabilitato se gironi + finale iniziata + già finita
+  // 🔥 PULSANTE INIZIA/CONCLUDI
   const canToggleMatch = match.FASE === "FINALI" || !finalStageStarted || !isFinished;
   const toggleBtnDisabled = !canToggleMatch ? "style=\"opacity:0.5;pointer-events:none;cursor:not-allowed\"" : "";
   
@@ -1510,8 +1510,8 @@ function renderMatchPage(match) {
       </div>
       
       <div class="match-content">
-        <!-- TAB DIRETTA -->
-        <!-- TAB DIRETTA -->
+        
+        <!-- 🔹 TAB DIRETTA -->
         <div class="tab-content active" id="tab-diretta">
           <div class="teams-events">
             
@@ -1529,10 +1529,10 @@ function renderMatchPage(match) {
               </div>
             </div>
             
-            <!-- Titolo Cronaca e Linea -->
+            <!-- Titolo Cronaca -->
             <div class="cronaca-title center"><span>CRONACA</span></div>
 
-            <!-- 🔥 MVP BANNER MOSSO QUI (Sotto la cronaca) -->
+            <!-- 🔥 MVP BANNER (Sotto la cronaca, prima degli eventi) -->
             <div id="mvpBanner" class="mvp-banner">
               <div class="mvp-title">🏆 MVP DEL MATCH</div>
               <div class="mvp-name"></div>
@@ -1545,18 +1545,8 @@ function renderMatchPage(match) {
             
           </div>
         </div>
-            
-            <div class="cronaca-title center"><span>CRONACA</span></div>
-            
-            <!-- EVENTI + MVP BANNER -->
-            <div id="eventsTimeline" class="events-timeline">
-              <div id="eventsContent"></div>
-              <div id="mvpBanner" class="mvp-banner"></div>
-            </div>
-          </div>
-        </div>
         
-        <!-- TAB GIOCATORI -->
+        <!-- 🔹 TAB GIOCATORI -->
         <div class="tab-content" id="tab-giocatori">
           <div class="players-columns" id="playersColumns">
             <div style="text-align:center;padding:40px;color:#888;grid-column:1/-1">
@@ -1565,7 +1555,7 @@ function renderMatchPage(match) {
           </div>
         </div>
         
-        <!-- TAB MVP -->
+        <!-- 🔹 TAB MVP -->
         <div class="tab-content" id="tab-mvp">
           <div class="players-columns" id="mvpColumns">
             <div style="text-align:center;padding:40px;color:#888;grid-column:1/-1">
