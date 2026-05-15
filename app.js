@@ -454,17 +454,23 @@ function getNextMatchCard() {
 function renderHomeMatchCard(match, isLive) {
   // Loghi
   const logoCasa = match.LOGO_CASA 
-    ? `<img src="${getCachedImage(match.LOGO_CASA, 32)}" alt="${match.SQUADRA_CASA}" onerror="this.style.display='none'">`
+    ? `<img src="${getCachedImage(match.LOGO_CASA, 38)}" alt="${match.SQUADRA_CASA}" onerror="this.style.display='none'">`
     : `<div class="home-team-logo">⚽</div>`;
   
   const logoTrasf = match.LOGO_TRASFERTA 
-    ? `<img src="${getCachedImage(match.LOGO_TRASFERTA, 32)}" alt="${match.SQUADRA_TRASFERTA}" onerror="this.style.display='none'">`
+    ? `<img src="${getCachedImage(match.LOGO_TRASFERTA, 38)}" alt="${match.SQUADRA_TRASFERTA}" onerror="this.style.display='none'">`
     : `<div class="home-team-logo">⚽</div>`;
   
-  // Centro: Risultato (se LIVE) o Ora/Data (se programmata)
+  // Centro: LIVE o Ora/Data
   let centerContent = "";
   if (isLive) {
-    centerContent = `<div class="home-score">${match.GOL_CASA || 0} - ${match.GOL_TRASFERTA || 0}</div>`;
+    centerContent = `
+      <div class="home-live-badge">
+        <div class="home-score">${match.GOL_CASA || 0} - ${match.GOL_TRASFERTA || 0}</div>
+        <div class="home-live-text">LIVE</div>
+        <div class="home-live-dot"></div>
+      </div>
+    `;
   } else {
     const dateObj = parseLocalDate(match.DATA);
     const dateStr = dateObj ? `${dateObj.getDate()}/${dateObj.getMonth()+1}` : "";
@@ -476,21 +482,21 @@ function renderHomeMatchCard(match, isLive) {
   
   return `
     <div class="home-next-match" onclick="openMatch('${match.MATCH_ID}')">
-      <!-- Squadra Casa -->
+      <!-- Squadra Casa (sinistra) -->
       <div class="home-team-block left">
         ${logoCasa}
         <span class="home-team">${(match.SQUADRA_CASA || "").toUpperCase()}</span>
       </div>
       
-      <!-- Centro -->
+      <!-- Centro (Ora o LIVE) -->
       <div class="home-match-center">
         ${centerContent}
       </div>
       
-      <!-- Squadra Trasferta -->
+      <!-- Squadra Trasferta (destra allineata) -->
       <div class="home-team-block right">
-        <span class="home-team">${(match.SQUADRA_TRASFERTA || "").toUpperCase()}</span>
         ${logoTrasf}
+        <span class="home-team">${(match.SQUADRA_TRASFERTA || "").toUpperCase()}</span>
       </div>
     </div>
   `;
