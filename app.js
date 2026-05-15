@@ -132,6 +132,54 @@ const CacheManager = {
 };
 
 // ============================================================================
+// 🎨 UTILITY FUNCTIONS - DEVONO ESSERE PRIME!
+// ============================================================================
+
+function getCachedImage(fileId, size = 200) {
+  if (!fileId) return null;
+  const version = localStorage.getItem("img_v_" + fileId) || '1';
+  return `https://lh3.googleusercontent.com/d/${fileId}=w${size}?v=${version}`;
+}
+
+function parseLocalDate(dateStr) {
+  if (!dateStr) return null;
+  const clean = dateStr.substring(0, 10);
+  const parts = clean.split("-");
+  if (parts.length !== 3) return null;
+  const [y, m, d] = parts.map(Number);
+  return new Date(y, m - 1, d);
+}
+
+function formatLocalDate(date) {
+  if (!(date instanceof Date)) return "";
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, "0");
+  const d = String(date.getDate()).padStart(2, "0");
+  return `${y}-${m}-${d}`;
+}
+
+function formatDateFull(dateStr) {
+  if (!dateStr) return "";
+  const d = new Date(dateStr);
+  const giorni = ["DOMENICA", "LUNEDÌ", "MARTEDÌ", "MERCOLEDÌ", "GIOVEDÌ", "VENERDÌ", "SABATO"];
+  const mesi = ["GENNAIO", "FEBBRAIO", "MARZO", "APRILE", "MAGGIO", "GIUGNO", "LUGLIO", "AGOSTO", "SETTEMBRE", "OTTOBRE", "NOVEMBRE", "DICEMBRE"];
+  return `${giorni[d.getDay()]} ${d.getDate()} ${mesi[d.getMonth()]} ${d.getFullYear()}`;
+}
+
+function fileToBase64(file) {
+  return new Promise((res, rej) => {
+    const reader = new FileReader();
+    reader.onload = () => res(reader.result.split(",")[1]);
+    reader.onerror = rej;
+    reader.readAsDataURL(file);
+  });
+}
+
+function createPreviewUrl(file) {
+  return URL.createObjectURL(file);
+}
+
+// ============================================================================
 // 🌐 API CLIENT - Solo Backend Reale (NO DEMO)
 // ============================================================================
 
@@ -293,7 +341,6 @@ const Render = {
     return el;
   },
   
-  // ✅ NUOVO: metodo image per caricare loghi/foto da Google Drive
   image: (fileId, size = 200, alt = '', className = '') => {
     if (!fileId) {
       return Render.createEl('div', { 
@@ -307,7 +354,7 @@ const Render = {
       src, 
       alt: Sanitizer.attr(alt), 
       class: className, 
-      loading: 'lazy',
+      loading: 'lazy',  // 🔥 Lazy loading nativo
       onError: function() { 
         this.style.display = 'none'; 
         const fallback = this.nextElementSibling;
@@ -414,34 +461,46 @@ function showTeams() {
 }
 
 function renderTeams() {
-  const container = document.getElementById("teamsList"); if (!container) return;
+  const container = document.getElementById("teamsList");
+  if (!container) return;
+  
   const teams = window.APP_CACHE.teams || [];
   
-  if (teams.length === 0 && CONFIG.isDemo) {
-    container.innerHTML = `<div style="text-align:center;padding:40px;color:#888">
-      <div style="font-size:3rem;margin-bottom:16px">⚽</div>
-      <div>Nessuna squadra in demo mode</div>
-      <div style="font-size:.9rem;margin-top:8px;color:#666">Configura il backend per gestire squadre reali</div>
-    </div>`;
+  if (teams.length === 0) {
+    container.innerHTML = `
+      <div style="text-align:center;padding:40px;color:#888">
+        <div style="font-size:3rem;margin-bottom:16px">⚽</div>
+        <div>Nessuna squadra presente</div>
+        <div style="font-size:.9rem;margin-top:8px;color:#666">Clicca "+ NUOVA SQUADRA" per aggiungere</div>
+      </div>
+    `;
     return;
   }
   
   let html = "<table class='teams-table'><tr><th></th><th>SQUADRA</th><th>GIRONE</th><th></th></tr>";
-  teams.forEach(t => {
-    const logo = `<div class="team-logo-box"><div style="font-size:1.2rem">⚽</div></div>`;
-    html += `<tr class='team-row-click' data-id='${Sanitizer.attr(t.TEAM_ID)}'>
-      <td>${logo}</td>
-      <td><span class='teams-team-name'>${Render.teamName(t.NOME_SQUADRA)}</span></td>
-      <td><span class='girone-badge'>${Sanitizer.html(t.GIRONE || '-')}</span></td>
-      <td><div class='delete-btn' data-del='${Sanitizer.attr(t.TEAM_ID)}'></div></td>
-    </tr>`;
-  });
-  html += "</table>"; container.innerHTML = html;
   
-  document.querySelectorAll(".team-row-click").forEach(row => 
-    row.onclick = () => openTeamEditor(row.dataset.id));
-  document.querySelectorAll(".delete-btn").forEach(btn => 
-    btn.onclick = (e) => { e.stopPropagation(); deleteTeam(btn.dataset.del); });
+  teams.forEach(t => {
+    const logoHtml = t.LOGO_FILE_ID 
+      ? `<img src="${getCachedImage(t.LOGO_FILE_ID, 65)}" class="team-mini-logo" alt="${t.NOME_SQUADRA}" onerror="this.style.display='none';this.parentElement.innerHTML='⚽'">`
+      : `<div style="font-size:1.2rem">⚽</div>`;
+    
+    html += `
+      <tr class='team-row-click' data-id='${t.TEAM_ID}'>
+        <td><div class="team-logo-box">${logoHtml}</div></td>
+        <td><span class='teams-team-name'>${(t.NOME_SQUADRA || "").toUpperCase()}</span></td>
+        <td><span class='girone-badge'>${t.GIRONE || '-'}</span></td>
+        <td><div class='delete-btn' data-del='${t.TEAM_ID}' onclick="event.stopPropagation(); deleteTeam('${t.TEAM_ID}')"></div></td>
+      </tr>
+    `;
+  });
+  
+  html += "</table>";
+  container.innerHTML = html;
+  
+  // Aggiungi event listeners
+  document.querySelectorAll(".team-row-click").forEach(row => {
+    row.onclick = () => openTeamEditor(row.dataset.id);
+  });
 }
 
 function openNewTeamPage() {
@@ -511,6 +570,7 @@ function openTeamEditor(teamId) {
   window.APP_STATE._currentOpenTeam = teamId; 
   window.APP_STATE.currentTeamId = teamId;
   
+  // 🔥 Renderizza SUBITO la struttura base
   document.getElementById("app").innerHTML = `
     <div class="team-editor">
       <div class="team-header-fixed">
@@ -527,7 +587,12 @@ function openTeamEditor(teamId) {
         </div>
       </div>
       <div class="team-content-scroll">
-        <div id="teamPhotoBox"><div class="team-photo-empty"><div class="team-photo-empty-plus">📷</div><div class="team-photo-empty-text">FOTO SQUADRA</div></div></div>
+        <div id="teamPhotoBox">
+          <div class="team-photo-empty">
+            <div class="team-photo-empty-plus">📷</div>
+            <div class="team-photo-empty-text">FOTO SQUADRA</div>
+          </div>
+        </div>
         <div class="players-header">
           <div class="players-title">GIOCATORI</div>
           <div class="phase-btn" onclick="openPlayerPopup()">+ NUOVO GIOCATORE</div>
@@ -537,27 +602,36 @@ function openTeamEditor(teamId) {
       </div>
     </div>`;
   
-  // Carica dati team
+  // 🔥 Carica dati in background (NON bloccante)
   loadTeamData(teamId);
 }
 
-async function loadTeamData(teamId) {
-  // Prima prova cache
-  const cached = CacheManager.get.team(teamId);
-  if (cached?.team) renderTeamEditor(cached.team, cached.players || []);
+function loadTeamData(teamId) {
+  // Prima prova cache (istantaneo)
+  const cached = window.APP_CACHE.fullTeams?.[teamId];
+  if (cached?.team) {
+    renderTeamEditor(cached.team, cached.players || []);
+  }
   
-  // Poi fetch dal backend
-  try {
-    const data = await ApiClient.getTeamFull(teamId);
-    if (data?.team) {
-      CacheManager.set.team(teamId, data);
-      if (window.APP_STATE._currentOpenTeam === teamId) {
+  // Poi aggiorna dal backend (async)
+  ApiClient.getTeamFull(teamId)
+    .then(data => {
+      if (window.APP_STATE._currentOpenTeam !== teamId) return;
+      
+      // Aggiorna cache
+      if (!window.APP_CACHE.fullTeams) window.APP_CACHE.fullTeams = {};
+      window.APP_CACHE.fullTeams[teamId] = data;
+      CacheManager.save(window.APP_CACHE);
+      
+      // Renderizza se i dati sono cambiati
+      if (data?.team) {
         renderTeamEditor(data.team, data.players || []);
       }
-    }
-  } catch (e) {
-    console.warn('Failed to load team:', e);
-  }
+    })
+    .catch(error => {
+      console.warn('Failed to load team from backend:', error);
+      // Usa comunque la cache se disponibile
+    });
 }
 
 function renderTeamEditor(team, players = []) {
@@ -1124,37 +1198,54 @@ function bootAdminApp() {
   // Mostra loader
   const loader = document.getElementById("startupLoader");
   
-  // Carica dati iniziali PRIMA di mostrare l'app
+  // 🔥 MOSTRA SUBITO LA HOME (non aspettare i dati)
+  showHome();
+  renderToolbar("home");
+  
+  // Nascondi loader dopo 500ms max
+  setTimeout(() => { 
+    loader?.classList?.add("hide"); 
+    setTimeout(() => loader?.remove(), 300); 
+  }, 500);
+  
+  // 🔥 Carica dati in background (NON bloccante)
   ApiClient.getInitialData()
     .then(data => {
       console.log('✅ Dati caricati:', data);
       
-      // Salva in cache
       if (data) {
-        Object.assign(window.APP_CACHE, { 
-          ...CacheManager.createEmpty(), 
-          ...(data || {}) 
-        });
+        // Merge intelligente con cache esistente
+        window.APP_CACHE = {
+          ...window.APP_CACHE,
+          teams: data.teams || window.APP_CACHE.teams,
+          matches: data.matches || window.APP_CACHE.matches,
+          standings: data.standings || window.APP_CACHE.standings,
+          events: data.events || window.APP_CACHE.events,
+          fullTeams: data.fullTeams || window.APP_CACHE.fullTeams,
+          playersMap: data.playersMap || window.APP_CACHE.playersMap,
+          meta: { ...window.APP_CACHE.meta, initialized: true }
+        };
+        
         hydrateMatches(window.APP_CACHE.matches || []); 
         CacheManager.save(window.APP_CACHE);
-        window.APP_CACHE.meta.initialized = true;
+        
+        // Aggiorna UI se siamo già su una pagina
+        const currentPath = window.location.hash || "#home";
+        if (currentPath.includes("matches")) {
+          renderMatches();
+        } else if (currentPath.includes("teams")) {
+          renderTeams();
+        } else if (currentPath.includes("standings")) {
+          renderStandings(window.APP_CACHE.standings || {});
+        }
       }
       
-      // Renderizza app
-      showHome();
-      renderAppFromCache();
-      
-      // Nascondi loader
-      setTimeout(() => { 
-        loader?.classList?.add("hide"); 
-        setTimeout(() => loader?.remove(), 300); 
-      }, 300);
-      
+      console.log("✅ App ready - Dati sincronizzati");
     })
     .catch(error => {
       console.error('❌ Errore caricamento dati:', error);
-      alert('Errore connessione al backend. Verifica la configurazione.');
-      loader?.remove();
+      // Non bloccare l'app se il backend fallisce
+      console.log('⚠️ App in modalità offline - usando cache locale');
     });
   
   // Global error handling
@@ -1164,7 +1255,7 @@ function bootAdminApp() {
     CacheManager.save(window.APP_CACHE, 0); 
   });
   
-  console.log("✅ App booted - Connected to Backend");
+  console.log("✅ App booted - UI pronta");
 }
 
 function preloadAssets() {
