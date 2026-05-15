@@ -1,21 +1,26 @@
 {
-  "name": "Sarnonico Summer Cup",
-  "short_name": "SSC",
-  "start_url": "/sarnonico-summer-cup/",
+  "name": "Torneo Admin",
+  "short_name": "Torneo",
+  "description": "Panel di gestione per il Torneo dei Paesi - Sarnonico",
+  "start_url": "/",
   "display": "standalone",
-  "background_color": "#020617",
-  "theme_color": "#020617",
+  "background_color": "#ffffff",
+  "theme_color": "#7a1e2c",
   "orientation": "portrait",
   "icons": [
     {
-      "src": "icon-192.png",
+      "src": "https://picsum.photos/seed/torneo/192/192",
       "sizes": "192x192",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any maskable"
     },
     {
-      "src": "icon-512.png",
+      "src": "https://picsum.photos/seed/torneo/512/512",
       "sizes": "512x512",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any maskable"
     }
-  ]
+  ],
+  "categories": ["sports", "utilities"],
+  "lang": "it-IT"
 }
