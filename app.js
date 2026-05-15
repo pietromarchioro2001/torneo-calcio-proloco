@@ -2148,14 +2148,14 @@ function bootAdminApp() {
   showHome();
   renderToolbar("home");
   
-  // Nascondi loader dopo 500ms max
-  setTimeout(() => { 
-    loader?.classList?.add("hide"); 
-    setTimeout(() => loader?.remove(), 300); 
-  }, 500);
+  // 🔥 RITARDO MINIMO 1 secondo (opzionale)
+  const minLoadTime = new Promise(resolve => setTimeout(resolve, 1000));
   
-  // 🔥 Carica dati PRINCIPALI
-  ApiClient.getInitialData()
+  // Carica dati + ritardo minimo
+  Promise.all([
+    ApiClient.getInitialData().catch(() => null),
+    minLoadTime
+  ])
     .then(data => {
       console.log('✅ Dati caricati:', data);
       
