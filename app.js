@@ -428,8 +428,9 @@ function showHome() {
   app.innerHTML = `
     <div class="home-container">
       <div class="home-sponsors">
-        <img src="${getCachedImage('https://i.imgur.com/NugXx1k.png', 120)}" alt="Sponsor 1">
-        <img src="${getCachedImage('https://i.imgur.com/oiMHzlC.jpeg', 120)}" alt="Sponsor 2">
+        <!-- 🔥 URL DIRETTI, NON getCachedImage -->
+        <img src="https://i.imgur.com/NugXx1k.png" alt="Sponsor 1" loading="lazy">
+        <img src="https://i.imgur.com/oiMHzlC.jpeg" alt="Sponsor 2" loading="lazy">
       </div>
       <div class="home-bg">
         <svg class="camp camp-left" viewBox="0 0 400 600"><g transform="translate(0,600) scale(0.1,-0.1)" fill="#8c404e"><path d="M1992 5205 c-2 -148 -3 -161 -22 -173 -25 -16 -26 -50 0 -77 17 -18 18 -27 10 -85 -6 -36 -16 -85 -23 -109 -10 -33 -11 -52 -3 -73 15 -40 -8 -202 -45 -312 -43 -127 -80 -188 -182 -291 -65 -67 -98 -109 -125 -164 -35 -72 -37 -79 -37 -175 0 -91 3 -107 30 -161 16 -33 51 -82 78 -109 l49 -49 -5 -56 c-12 -135 -85 -240 -212 -308 -49 -26 -55 -33 -34 -33 57 0 59 -12 59 -298 l0 -261 -27 -19 c-16 -10 -37 -22 -48 -26 -17 -7 -17 -9 -5 -15 9 -3 27 -14 40 -24 l25 -17 0 -361 c0 -399 5 -372 -70 -385 l-40 -7 32 -26 32 -27 1 -274 c0 -150 3 -276 5 -279 13 -12 15 24 15 278 l1 273 30 26 30 25 -48 16 c-41 14 -48 20 -52 46 -3 17 -5 180 -5 362 l0 279 -27 25 c-24 20 -26 26 -13 33 55 34 52 15 51 305 0 266 0 267 -23 286 -13 10 -21 20 -18 22 3 2 29 19 58 37 109 69 172 181 172 306 0 59 -1 62 -46 105 -87 85 -126 202 -104 315 19 101 62 172 156 266 93 91 140 165 178 277 33 96 57 243 55 338 -1 44 3 104 8 134 l9 55 14 -60 c7 -33 14 -112 15 -175 2 -140 29 -259 87 -379 32 -67 58 -103 137 -185 104 -108 143 -173 162 -268 21 -111 -17 -228 -103 -314 l-50 -52 4 -73 c6 -127 64 -223 173 -291 28 -18 52 -33 54 -35 9 -6 -21 -32 -32 -27 -9 3 -12 -64 -10 -273 0 -299 -1 -282 53 -313 13 -7 10 -13 -12 -37 l-28 -29 0 -276 c0 -151 3 -316 6 -366 l7 -90 44 -13 45 -12 -27 -21 -26 -21 1 -274 c0 -151 3 -277 5 -280 13 -12 15 24 15 278 l1 273 30 26 30 25 -48 16 c-41 14 -48 20 -52 46 -3 17 -5 180 -5 362 l-1 333 25 17 c13 10 31 21 39 24 10 4 1 13 -30 30 l-44 24 -3 263 c-2 251 -2 262 18 282 11 11 30 20 43 20 16 0 8 8 -32 30 -143 79 -221 194 -221 327 0 37 6 48 51 93 27 27 62 76 77 108 22 49 26 71 27 158 0 96 -2 103 -37 175 -27 55 -60 98 -130 170 -109 112 -156 191 -193 330 -28 105 -44 272 -27 283 7 4 5 21 -4 53 -8 27 -19 77 -23 113 -8 57 -6 68 10 86 25 27 24 59 -2 77 -16 12 -21 28 -24 77 -4 55 -2 63 15 67 25 7 27 25 3 21 -16 -3 -19 8 -24 82 -4 69 -6 55 -7 -75z m38 -209 c0 -20 -25 -37 -44 -30 -19 7 -21 35 -4 52 14 14 48 -2 48 -22z"/></g></svg>
@@ -715,19 +716,356 @@ function renderTeamEditor(team, players = []) {
   renderPlayersList(players);
 }
 
+// ============================================
+// LOGO SQUADRA
+// ============================================
+
+function teamLogoAction() {
+  const teamId = window.APP_STATE.currentTeamId;
+  const team = window.APP_CACHE.fullTeams?.[teamId]?.team;
+  
+  if (!team?.LOGO_FILE_ID) {
+    uploadNewLogo();
+    return;
+  }
+  
+  const modal = document.createElement("div");
+  modal.className = "modalOverlay";
+  modal.innerHTML = `
+    <div class="modalBox">
+      <div class="modalTitle">LOGO SQUADRA</div>
+      <img src="${getCachedImage(team.LOGO_FILE_ID, 400)}" style="max-width:100%;border-radius:12px;margin:20px 0;">
+      <div class="modalActions">
+        <div class="phase-btn secondary" onclick="window.open('https://drive.google.com/file/d/${team.LOGO_FILE_ID}/view', '_blank'); this.closest('.modalOverlay').remove()">APRI SU DRIVE</div>
+        <div class="phase-btn" onclick="this.closest('.modalOverlay').remove(); uploadNewLogo()">CAMBIA LOGO</div>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(modal);
+  modal.onclick = (e) => { if (e.target === modal) modal.remove(); };
+}
+
+async function uploadNewLogo() {
+  const teamId = window.APP_STATE.currentTeamId;
+  const input = document.createElement("input");
+  input.type = "file";
+  input.accept = "image/*";
+  
+  input.onchange = async function() {
+    const file = input.files[0];
+    if (!file) return;
+    
+    const logoBox = document.getElementById("teamLogoBox");
+    const tempUrl = URL.createObjectURL(file);
+    
+    logoBox.innerHTML = `
+      <div class="logo-loading-wrap">
+        <img src="${tempUrl}" class="team-header-logo updating">
+        <div class="logo-updating-badge">AGGIORNO...</div>
+      </div>
+    `;
+    
+    try {
+      const base64 = await fileToBase64(file);
+      const newId = await ApiClient.uploadTeamLogoReplace(teamId, file.name, file.type, base64);
+      
+      // Aggiorna cache
+      if (window.APP_CACHE.fullTeams?.[teamId]?.team) {
+        window.APP_CACHE.fullTeams[teamId].team.LOGO_FILE_ID = newId?.fileId || newId;
+        CacheManager.save(window.APP_CACHE);
+      }
+      
+      // Aggiorna UI dopo 2 secondi
+      setTimeout(() => {
+        renderTeamEditor(window.APP_CACHE.fullTeams[teamId].team, window.APP_CACHE.fullTeams[teamId].players || []);
+      }, 2000);
+      
+    } catch (error) {
+      console.error('Upload logo failed:', error);
+      alert('Errore upload logo: ' + error.message);
+      URL.revokeObjectURL(tempUrl);
+      renderTeamEditor(window.APP_CACHE.fullTeams[teamId].team, window.APP_CACHE.fullTeams[teamId].players || []);
+    }
+  };
+  
+  input.click();
+}
+
+// ============================================
+// FOTO SQUADRA
+// ============================================
+
+async function uploadNewTeamPhoto() {
+  const teamId = window.APP_STATE.currentTeamId;
+  const input = document.createElement("input");
+  input.type = "file";
+  input.accept = "image/*";
+  
+  input.onchange = async function() {
+    const file = input.files[0];
+    if (!file) return;
+    
+    const photoBox = document.getElementById("teamPhotoBox");
+    const tempUrl = URL.createObjectURL(file);
+    
+    photoBox.innerHTML = `
+      <div class="team-photo-wrapper">
+        <img src="${tempUrl}" class="team-photo-view updating">
+        <div class="photo-updating-badge">AGGIORNAMENTO...</div>
+      </div>
+    `;
+    
+    try {
+      const base64 = await fileToBase64(file);
+      const newId = await ApiClient.uploadTeamPhotoReplace(teamId, file.name, file.type, base64);
+      
+      // Aggiorna cache
+      if (window.APP_CACHE.fullTeams?.[teamId]?.team) {
+        window.APP_CACHE.fullTeams[teamId].team.FOTO_SQUADRA_FILE_ID = newId;
+        CacheManager.save(window.APP_CACHE);
+      }
+      
+      // Aggiorna UI dopo 2 secondi
+      setTimeout(() => {
+        renderTeamEditor(window.APP_CACHE.fullTeams[teamId].team, window.APP_CACHE.fullTeams[teamId].players || []);
+      }, 2000);
+      
+    } catch (error) {
+      console.error('Upload photo failed:', error);
+      alert('Errore upload foto: ' + error.message);
+      URL.revokeObjectURL(tempUrl);
+      renderTeamEditor(window.APP_CACHE.fullTeams[teamId].team, window.APP_CACHE.fullTeams[teamId].players || []);
+    }
+  };
+  
+  input.click();
+}
+
+function teamPhotoAction() {
+  const teamId = window.APP_STATE.currentTeamId;
+  const team = window.APP_CACHE.fullTeams?.[teamId]?.team;
+  
+  if (!team?.FOTO_SQUADRA_FILE_ID) {
+    uploadNewTeamPhoto();
+    return;
+  }
+  
+  const modal = document.createElement("div");
+  modal.className = "modalOverlay";
+  modal.innerHTML = `
+    <div class="modalBox" style="max-width:800px;">
+      <div class="modalTitle">FOTO SQUADRA</div>
+      <img src="${getCachedImage(team.FOTO_SQUADRA_FILE_ID, 1200)}" style="max-width:100%;border-radius:12px;margin:20px 0;">
+      <div class="modalActions">
+        <div class="phase-btn secondary" onclick="window.open('https://drive.google.com/file/d/${team.FOTO_SQUADRA_FILE_ID}/view', '_blank'); this.closest('.modalOverlay').remove()">APRI SU DRIVE</div>
+        <div class="phase-btn" onclick="this.closest('.modalOverlay').remove(); uploadNewTeamPhoto()">CAMBIA FOTO</div>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(modal);
+  modal.onclick = (e) => { if (e.target === modal) modal.remove(); };
+}
+
+// ============================================
+// GIOCATORI - POPUP
+// ============================================
+
+let currentPlayerId = null;
+let playerPhotoTemp = null;
+
+function openPlayerPopup(playerId = null) {
+  currentPlayerId = playerId;
+  playerPhotoTemp = null;
+  
+  const teamId = window.APP_STATE.currentTeamId;
+  const title = playerId ? "MODIFICA GIOCATORE" : "NUOVO GIOCATORE";
+  
+  const modal = document.createElement("div");
+  modal.className = "modalOverlay";
+  modal.innerHTML = `
+    <div class="modalBox player-modal" id="playerBox">
+      <div class="modalTitle">${title}</div>
+      <div class="player-form">
+        <label>NOME</label>
+        <input id="playerNameInput" class="player-input" placeholder="Inserisci nome giocatore">
+        
+        <div id="playerPhotoUpload" class="player-upload">
+          FOTO GIOCATORE
+        </div>
+        
+        <div class="modalActions">
+          <div class="phase-btn" onclick="savePlayerPopup()">SALVA</div>
+          ${playerId ? '<div class="phase-btn secondary" onclick="deletePlayer(\'' + playerId + '\'); this.closest(\'.modalOverlay\').remove()">ELIMINA</div>' : ''}
+        </div>
+      </div>
+    </div>
+  `;
+  
+  document.body.appendChild(modal);
+  modal.onclick = (e) => { if (e.target === modal) modal.remove(); };
+  document.getElementById("playerBox").onclick = (e) => e.stopPropagation();
+  
+  // Inizializza upload foto
+  initPlayerUploadBox();
+  
+  // Se modifica, carica dati giocatore
+  if (playerId) {
+    const player = window.APP_CACHE.playersMap?.[playerId];
+    if (player) {
+      loadPlayerData(player);
+    } else {
+      // Carica dal backend
+      ApiClient.getPlayerDetail(playerId)
+        .then(p => {
+          if (p) {
+            loadPlayerData(p);
+            // Aggiorna cache
+            if (!window.APP_CACHE.playersMap) window.APP_CACHE.playersMap = {};
+            window.APP_CACHE.playersMap[playerId] = p;
+            CacheManager.save(window.APP_CACHE);
+          }
+        })
+        .catch(err => console.error('Error loading player:', err));
+    }
+  }
+}
+
+function initPlayerUploadBox() {
+  const box = document.getElementById("playerPhotoUpload");
+  box.onclick = () => {
+    const input = document.createElement("input");
+    input.type = "file";
+    input.accept = "image/*";
+    input.onchange = () => {
+      playerPhotoTemp = input.files[0];
+      renderPlayerTempPhoto();
+    };
+    input.click();
+  };
+}
+
+function loadPlayerData(player) {
+  document.getElementById("playerNameInput").value = player?.NOME || "";
+  
+  const box = document.getElementById("playerPhotoUpload");
+  if (player?.FOTO_ID || player?.FOTO_URL) {
+    const fotoId = player.FOTO_ID || player.FOTO_URL;
+    box.innerHTML = `<img src="${getCachedImage(fotoId, 200)}" class="playerPhotoBig" alt="${player.NOME}">`;
+    box.classList.add("has-photo");
+  } else {
+    box.innerHTML = "FOTO GIOCATORE";
+    box.classList.remove("has-photo");
+  }
+}
+
+function renderPlayerTempPhoto() {
+  const box = document.getElementById("playerPhotoUpload");
+  if (playerPhotoTemp) {
+    const url = URL.createObjectURL(playerPhotoTemp);
+    box.innerHTML = `<img src="${url}" class="playerPhotoBig" alt="Preview">`;
+    box.classList.add("has-photo");
+  }
+}
+
+async function savePlayerPopup() {
+  const name = document.getElementById("playerNameInput")?.value?.trim();
+  if (!name) {
+    alert("Inserisci nome giocatore");
+    return;
+  }
+  
+  const teamId = window.APP_STATE.currentTeamId;
+  
+  try {
+    // Salva giocatore
+    const playerId = await ApiClient.savePlayerAdmin(currentPlayerId, teamId, name.toUpperCase(), "");
+    currentPlayerId = playerId;
+    
+    // Upload foto se presente
+    if (playerPhotoTemp) {
+      const base64 = await fileToBase64(playerPhotoTemp);
+      const newPhotoId = await ApiClient.uploadPlayerPhotoReplace(
+        playerId, 
+        teamId, 
+        name.toUpperCase(), 
+        playerPhotoTemp.name, 
+        playerPhotoTemp.type, 
+        base64
+      );
+      
+      // Aggiorna cache
+      if (window.APP_CACHE.playersMap) {
+        window.APP_CACHE.playersMap[playerId] = {
+          ...window.APP_CACHE.playersMap[playerId],
+          FOTO_ID: newPhotoId,
+          NOME: name.toUpperCase()
+        };
+        CacheManager.save(window.APP_CACHE);
+      }
+    }
+    
+    // Chiudi popup
+    document.querySelector(".modalOverlay")?.remove();
+    
+    // Ricarica lista giocatori
+    await loadTeamData(teamId);
+    
+  } catch (error) {
+    console.error('Save player error:', error);
+    alert("Errore salvataggio: " + error.message);
+  }
+}
+
+async function deletePlayer(playerId) {
+  if (!confirm("Eliminare questo giocatore?")) return;
+  
+  try {
+    await ApiClient.deletePlayerAdmin(playerId);
+    
+    // Rimuovi da cache
+    if (window.APP_CACHE.playersMap) {
+      delete window.APP_CACHE.playersMap[playerId];
+    }
+    
+    // Ricarica lista
+    await loadTeamData(window.APP_STATE.currentTeamId);
+    
+  } catch (error) {
+    console.error('Delete player error:', error);
+    alert("Errore eliminazione: " + error.message);
+  }
+}
+
 function renderPlayersList(players) {
-  const container = document.getElementById("playersSection"); if (!container) return;
+  const container = document.getElementById("playersSection");
+  if (!container) return;
+  
   if (!players?.length) {
     container.innerHTML = `<div style="text-align:center;padding:20px;color:#888">Nessun giocatore</div>`;
     return;
   }
+  
   let html = "<table class='playersTable'><tr><th></th><th>NOME</th><th>GOL</th><th>ASS</th><th>AMM</th><th>ESP</th></tr>";
+  
   players.forEach(p => {
-    const photo = p.FOTO_ID ? `<img src="${getCachedImage(p.FOTO_ID, 200)}" class="playerPhoto">` : "<div class='playerPhotoEmpty'></div>";
-    html += `<tr onclick="openPlayerPopup('${Sanitizer.attr(p.PLAYER_ID || '')}')">
-      <td>${photo}</td><td>${Sanitizer.html(p.NOME || "")}</td><td>${p.GOL || 0}</td><td>${p.ASSIST || 0}</td><td>${p.AMMONIZIONI || 0}</td><td>${p.ESPULSIONI || 0}</td></tr>`;
+    const photoHtml = p.FOTO_ID || p.FOTO_URL
+      ? `<img src="${getCachedImage(p.FOTO_ID || p.FOTO_URL, 42)}" class="playerPhoto" alt="${p.NOME}" onerror="this.style.display='none';this.parentElement.innerHTML='<div class=\'playerPhotoEmpty\'></div>'">`
+      : "<div class='playerPhotoEmpty'></div>";
+    
+    html += `
+      <tr onclick="openPlayerPopup('${p.PLAYER_ID}')">
+        <td>${photoHtml}</td>
+        <td>${(p.NOME || "").toUpperCase()}</td>
+        <td>${p.GOL || 0}</td>
+        <td>${p.ASSIST || 0}</td>
+        <td>${p.AMMONIZIONI || 0}</td>
+        <td>${p.ESPULSIONI || 0}</td>
+      </tr>
+    `;
   });
-  html += "</table>"; container.innerHTML = html;
+  
+  html += "</table>";
+  container.innerHTML = html;
 }
 
 function deleteTeam(id) {
