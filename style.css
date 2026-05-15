@@ -1664,6 +1664,25 @@ body{
   width:60px;
 }
 
+/* ===== COLONNA MVP VINTI - TABELLA GIOCATORI ===== */
+.playersTable th:last-child,
+.playersTable td:last-child {
+  text-align: center;
+  width: 60px;
+}
+
+.mvp-cell {
+  font-weight: 700;
+  color: #d97706; /* Colore oro per MVP */
+  font-size: 14px;
+}
+
+/* Evidenzia se MVP > 0 */
+.mvp-cell:not(:empty):not(.mvp-cell:contains("0")) {
+  background: rgba(251, 191, 36, 0.1);
+  border-radius: 4px;
+}
+
 /* =============================================================================================
                                          PARTITE
 ===============================================================================================*/
