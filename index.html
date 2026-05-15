@@ -5,24 +5,13 @@
   <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
   <meta name="description" content="Admin Panel - Torneo dei Paesi Sarnonico">
   <meta name="theme-color" content="#7a1e2c">
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  
-  <link rel="manifest" href="/manifest.json">
-  <link rel="apple-touch-icon" href="https://picsum.photos/seed/torneo/192/192">
+  <link rel="manifest" href="manifest.json">
   <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
-  
   <title>Torneo Admin ⚽</title>
 </head>
 <body>
   
-  <!-- Demo Banner (visibile se backend non configurato) -->
-  <div id="demoBanner" class="demo-banner" style="display:none">
-    🎮 DEMO MODE - <a href="#" id="configBackendLink">Configura Backend</a> per dati reali
-  </div>
-  
-  <!-- Startup Loader -->
   <div id="startupLoader">
     <svg class="startup-logo" viewBox="0 0 200 200">
       <circle cx="100" cy="100" r="80" fill="none" stroke="#7a1e2c" stroke-width="8"/>
@@ -31,18 +20,15 @@
     <div class="startup-text">CARICAMENTO</div>
   </div>
   
-  <!-- App Container -->
   <div id="app"></div>
   <div id="toolbar"></div>
 
-  <!-- App Logic -->
   <script src="app.js"></script>
   
-  <!-- Service Worker Registration -->
   <script>
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
-        navigator.serviceWorker.register('/sw.js')
+        navigator.serviceWorker.register('sw.js')
           .then(reg => console.log('✅ SW registered:', reg.scope))
           .catch(err => console.warn('⚠️ SW registration failed:', err));
       });
