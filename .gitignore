@@ -1,0 +1,20 @@
+# System files
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Environment
+.env
+*.local
+
+# IDE
+.vscode/
+.idea/
+*.swp
+
+# Build (if needed later)
+dist/
+build/
+node_modules/
