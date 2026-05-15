@@ -459,181 +459,95 @@ body{
   z-index:-1;
 }
 
-/* ===== CARD PROSSIMA PARTITA - HOME ===== */
+/* ===== CARD PROSSIMA PARTITA - HOME (COMPATTA E IN BASSO) ===== */
 .home-next-match {
-  position: relative;
-  z-index: 20;
-  margin-top: 40px;
+  position: absolute; /* Rispetto a home-container */
+  bottom: 80px;       /* ~20px sopra la toolbar (che è alta ~60px) */
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 100;
   
-  max-width: 600px;
   width: 90%;
+  max-width: 420px;   /* Stretta e compatta */
   
   background: rgba(255, 255, 255, 0.95);
-  backdrop-filter: blur(10px);
+  backdrop-filter: blur(8px);
+  border-radius: 12px;
+  box-shadow: 0 -4px 20px rgba(0,0,0,0.1);
+  padding: 8px 12px;  /* Padding ridotto */
   
-  border-radius: 16px;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
-  
-  padding: 16px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
   
   cursor: pointer;
-  transition: all 0.3s ease;
-  
+  transition: transform 0.2s, box-shadow 0.2s;
   border: 1px solid rgba(122, 30, 44, 0.1);
 }
 
 .home-next-match:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.18);
-  border-color: rgba(122, 30, 44, 0.3);
+  transform: translateX(-50%) translateY(-2px);
+  box-shadow: 0 -8px 30px rgba(0,0,0,0.15);
 }
 
-.home-match-label {
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 2px;
-  text-align: center;
-  margin-bottom: 12px;
-  color: #7a1e2c;
-  text-transform: uppercase;
-}
-
-.home-status-live {
-  color: #dc2626;
-  animation: liveLabelPulse 2s infinite;
-}
-
-@keyframes liveLabelPulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.7; }
-}
-
-.home-match-content {
-  display: grid;
-  grid-template-columns: 1fr auto 1fr;
-  gap: 12px;
-  align-items: center;
-}
-
-.home-match-teams {
+/* Blocchi squadre */
+.home-team-block {
   display: flex;
   align-items: center;
   gap: 8px;
+  flex: 1;
+  min-width: 0; /* Permette text-overflow se nomi lunghi */
 }
 
-.home-match-teams:first-child {
-  justify-content: flex-end;
-  text-align: right;
-}
-
-.home-match-teams:last-child {
-  justify-content: flex-start;
-  text-align: left;
-}
-
-.home-team-logo {
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  background: #f3f3f3;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 14px;
-  flex-shrink: 0;
-}
-
-.home-match-teams img {
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  object-fit: cover;
-  flex-shrink: 0;
-}
+.home-team-block.left { justify-content: flex-start; }
+.home-team-block.right { justify-content: flex-end; flex-direction: row-reverse; }
 
 .home-team {
-  font-size: 13px;
+  font-size: 12px;      /* Testo più piccolo */
   font-weight: 700;
-  letter-spacing: 1px;
   color: #333;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
+/* Centro (Ora/Risultato) */
 .home-match-center {
   text-align: center;
-  min-width: 80px;
+  min-width: 60px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }
 
 .home-score {
-  font-size: 24px;
+  font-size: 18px;
   font-weight: 800;
   color: #7a1e2c;
-  letter-spacing: 2px;
   line-height: 1;
 }
 
 .home-match-time {
-  font-size: 16px;
+  font-size: 14px;
   font-weight: 700;
   color: #7a1e2c;
-  margin-top: 2px;
+  line-height: 1;
 }
 
 .home-match-date {
-  font-size: 11px;
+  font-size: 10px;
   color: #888;
   margin-top: 2px;
-  letter-spacing: 1px;
 }
 
-/* ===== RESPONSIVE ===== */
-@media (max-width: 768px) {
-  .home-next-match {
-    max-width: 90%;
-    padding: 12px 16px;
-    margin-top: 30px;
-  }
-  
-  .home-team {
-    font-size: 11px;
-  }
-  
-  .home-score {
-    font-size: 20px;
-  }
-  
-  .home-match-time {
-    font-size: 14px;
-  }
-}
-
-@media (max-width: 480px) {
-  .home-next-match {
-    width: 95%;
-    padding: 10px 12px;
-    margin-top: 20px;
-  }
-  
-  .home-match-teams {
-    gap: 4px;
-  }
-  
-  .home-team {
-    font-size: 10px;
-    max-width: 80px;
-  }
-  
-  .home-team-logo, .home-match-teams img {
-    width: 24px;
-    height: 24px;
-    font-size: 10px;
-  }
-  
-  .home-score {
-    font-size: 16px;
-  }
+/* Loghi */
+.home-team-logo, .home-team-block img {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  object-fit: cover;
+  flex-shrink: 0;
 }
 
 /* =============================================================================================
