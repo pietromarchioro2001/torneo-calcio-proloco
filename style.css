@@ -3523,3 +3523,88 @@ body{
 
   transform:translateX(-50%);
 }
+
+
+/* =============================================================================================
+                                     RESPONSIVE MOBILE
+===============================================================================================*/
+
+@media (max-width: 768px) {
+  /* Toolbar più compatta */
+  #toolbar{ padding:6px 0; }
+  .toolbar-btn{ font-size:9px; gap:2px; }
+  .tb-icon{ width:18px; height:18px; }
+  
+  /* Titoli ridimensionati */
+  .page-title{ font-size:clamp(28px, 8vw, 42px); }
+  .main-title{ font-size:clamp(32px, 10vw, 64px); }
+  
+  /* Tabelle scrollabili */
+  .teams-table, .playersTable, .standings-table{
+    display:block;
+    overflow-x:auto;
+    -webkit-overflow-scrolling:touch;
+  }
+  
+  /* Match card verticale */
+  .match-card{
+    grid-template-columns:1fr !important;
+    text-align:center;
+    gap:8px;
+  }
+  .team-block.left, .team-block.right{
+    text-align:center !important;
+    justify-content:center !important;
+  }
+  
+  /* Form adattivi */
+  .form-row{ flex-direction:column; }
+  .form-group, .form-group.small{ width:100% !important; }
+  
+  /* Fase finale: bracket verticale */
+  .tournament-wrapper{
+    height:auto !important;
+    display:flex;
+    flex-direction:column;
+    gap:20px;
+    padding:20px;
+  }
+  .bracket-match, .bracket-placeholder{
+    position:static !important;
+    transform:none !important;
+    width:100% !important;
+    left:auto !important;
+    right:auto !important;
+    top:auto !important;
+  }
+  .tournament-wrapper::before,
+  .tournament-wrapper::after,
+  .bracket-match::before,
+  .bracket-match::after{
+    display:none !important; /* nascondi linee decorative su mobile */
+  }
+  
+  /* MVP banner posizionamento */
+  .mvp-banner{
+    position:static !important;
+    transform:none !important;
+    margin:20px auto;
+    width:90%;
+  }
+  
+  /* Eventi timeline semplificata */
+  .events-timeline::before{ display:none; }
+  .event-line{ justify-content:center !important; }
+  .event-content{ width:90% !important; text-align:center !important; }
+}
+
+@media (max-width: 480px) {
+  /* Extra small: font ancora più piccoli */
+  body{ font-size:14px; }
+  .phase-btn{ padding:8px 16px; font-size:11px; }
+  .form-input, .form-select{ padding:12px; font-size:14px; }
+  
+  /* Nascondi elementi non essenziali */
+  .home-sponsors{ display:none; }
+  .sub-title::before, .sub-title::after{ display:none; }
+}
