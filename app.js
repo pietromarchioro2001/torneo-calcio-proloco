@@ -1428,12 +1428,6 @@ function renderMatchPage(match) {
               <div id="eventsContent"></div>
               <div id="mvpBanner" class="mvp-banner"></div>
             </div>
-            
-            <div id="eventsTimeline" class="events-timeline">
-              <div id="eventsContent"></div>
-            </div>
-            
-            <div id="mvpBanner" class="mvp-banner"></div>
           </div>
         </div>
         
