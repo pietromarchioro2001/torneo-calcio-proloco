@@ -125,17 +125,17 @@ body{
 
 .home-sponsors {
   position: absolute;
-  top: 20px;
+  top: 35px; /* 🔥 Più in basso (era 20px) */
   left: 50%;
   transform: translateX(-50%);
   display: flex;
-  gap: clamp(30px, 8vw, 150px); /* Gap responsive */
+  gap: clamp(60px, 12vw, 250px); /* 🔥 Più distanziati */
   z-index: 10;
   align-items: center;
 }
 
 .home-sponsors img {
-  height: clamp(60px, 10vh, 120px); /* Min 60px, max 120px */
+  height: clamp(70px, 12vh, 140px); /* 🔥 Leggermente più grandi */
   width: auto;
   object-fit: contain;
   transition: transform 0.3s ease;
@@ -178,30 +178,28 @@ body{
 .camp {
   position: absolute;
   top: 50%;
-  height: min(85vh, 700px); /* Si adatta ma max 700px */
+  height: min(90vh, 900px); /* 🔥 Più grandi (era 85vh/700px) */
   width: auto;
   opacity: 0.18;
   pointer-events: none;
-  /* Mantiene proporzioni SVG */
-  preserveAspectRatio: xMidYMid meet;
 }
 
 .camp-left {
-  left: 2%;
+  left: 12%; /* 🔥 Più vicino al centro (era 2%) */
   transform: translateY(-50%);
-  max-width: 40vw; /* Max 40% viewport */
+  max-width: 30vw; /* 🔥 Limita larghezza per stare vicino al centro */
 }
 
 .camp-right {
-  right: 2%;
-  transform: translateY(-50%) scaleX(-1); /* Specchiato */
-  max-width: 40vw;
+  right: 12%; /* 🔥 Più vicino al centro (era 2%) */
+  transform: translateY(-50%) scaleX(-1);
+  max-width: 30vw;
 }
 
+/* SVG interni */
 .camp svg {
   width: 100%;
   height: 100%;
-  /* Preserva proporzioni senza deformare */
   preserveAspectRatio: xMidYMid meet;
   vector-effect: non-scaling-stroke;
 }
@@ -3822,10 +3820,36 @@ body{
   .sub-title::before, .sub-title::after{ display:none; }
 }
 
+/* ===== TABLET ===== */
 @media (max-width: 768px) {
   .camp {
-    height: min(60vh, 400px); /* Più piccoli su mobile */
-    opacity: 0.12; /* Meno evidenti */
+    height: min(75vh, 550px); /* Più grandi su tablet */
+    opacity: 0.15;
+  }
+  
+  .camp-left {
+    left: 5%; /* Vicino al bordo su tablet */
+  }
+  
+  .camp-right {
+    right: 5%;
+  }
+  
+  .home-sponsors {
+    top: 25px;
+    gap: 40px;
+  }
+  
+  .home-sponsors img {
+    height: clamp(50px, 10vh, 100px);
+  }
+}
+
+/* ===== MOBILE ===== */
+@media (max-width: 480px) {
+  .camp {
+    height: min(50vh, 300px);
+    opacity: 0.1;
   }
   
   .camp-left {
@@ -3836,21 +3860,12 @@ body{
     right: 0;
   }
   
-  .home-sponsors img {
-    height: clamp(40px, 8vh, 80px); /* Più piccoli su mobile */
-  }
-}
-
-@media (max-width: 480px) {
-  .camp {
-    display: none; /* Nascondi su schermi molto piccoli */
-  }
-  
   .home-sponsors {
-    gap: 15px;
+    top: 15px;
+    gap: 20px;
   }
   
   .home-sponsors img {
-    height: 50px;
+    height: 40px;
   }
 }
