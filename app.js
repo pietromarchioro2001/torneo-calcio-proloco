@@ -1364,14 +1364,13 @@ function renderMatchPage(match) {
   
   let mvpTabHtml = "";
   if (isLive) {
-    // 🔥 IN LIVE: tab attivo per votare
     mvpTabHtml = `<div class="mt-btn" data-tab="mvp">VOTA MVP</div>`;
   } else if (isFinished) {
-    // 🔥 FINITA: tab attivo per vedere risultato
-    mvpTabHtml = `<div class="mt-btn" data-tab="mvp">🏆 MVP</div>`;
+  // FINITA: disabilitato + classe disabled
+    mvpTabHtml = `<div class="mt-btn disabled" data-tab="mvp">🏆 MVP</div>`;
   } else {
-    // 🔥 PROGRAMMATA: tab disabilitato
-    mvpTabHtml = `<div class="mt-btn disabled" data-tab="mvp" style="opacity:0.3;pointer-events:none">MVP</div>`;
+    // PROGRAMMATA: disabilitato + classe disabled
+    mvpTabHtml = `<div class="mt-btn disabled" data-tab="mvp">MVP</div>`;
   }
   
   document.getElementById("app").innerHTML = `
@@ -1423,6 +1422,12 @@ function renderMatchPage(match) {
             </div>
             
             <div class="cronaca-title center"><span>CRONACA</span></div>
+
+            <!-- 🔥 BANNER MVP DENTRO events-timeline -->
+            <div id="eventsTimeline" class="events-timeline">
+              <div id="eventsContent"></div>
+              <div id="mvpBanner" class="mvp-banner"></div>
+            </div>
             
             <div id="eventsTimeline" class="events-timeline">
               <div id="eventsContent"></div>
@@ -1537,12 +1542,23 @@ function updateMatchUI(match) {
 }
 
 function updateMVPBanner(match) {
-  const mvpBox = document.getElementById("mvpBanner"); if (!mvpBox) return;
-  if (match.STATO_PARTITA === "FINITA" && match.MVP) { 
-    mvpBox.innerHTML = `<div class="mvp-title">🏆 MVP DEL MATCH</div><div class="mvp-name">${Sanitizer.html(match.MVP)}</div>`; 
-    mvpBox.classList.add("show"); 
-  } else { 
-    mvpBox.innerHTML = ""; mvpBox.classList.remove("show"); 
+  const mvpBox = document.getElementById("mvpBanner");
+  if (!mvpBox) return;
+  
+  const isFinished = match.STATO_PARTITA === "FINITA";
+  const mvpName = match.MVP;
+  
+  if (isFinished && mvpName) {
+    mvpBox.innerHTML = `
+      <div class="mvp-title">🏆 MVP DEL MATCH</div>
+      <div class="mvp-name">${mvpName.toUpperCase()}</div>
+    `;
+    mvpBox.classList.add("show");
+    mvpBox.style.display = "flex";  // ← FORZA visualizzazione
+  } else {
+    mvpBox.innerHTML = "";
+    mvpBox.classList.remove("show");
+    mvpBox.style.display = "none";
   }
 }
 
