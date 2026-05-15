@@ -1,29 +1,27 @@
 /**
- * 🏆 TORNEO ADMIN - Frontend v2.2
- * Architettura: GitHub Pages (frontend) + Google Apps Script (backend via fetch)
- * 
- * ✅ PWA Ready | ✅ Offline Cache | ✅ XSS-Safe | ✅ Responsive
+ * 🏆 TORNEO ADMIN - Frontend Production
+ * Connesso direttamente a Google Apps Script Backend
  */
 
 // ============================================================================
-// 🔧 CONFIGURAZIONE
+// 🔧 CONFIGURAZIONE - INSERISCI IL TUO BACKEND URL
 // ============================================================================
 
 const CONFIG = {
-  // 🔥 IMPORTANTE: Sostituisci con l'URL del tuo Web App Apps Script deployato
-  // Esempio: 'https://script.google.com/macros/s/AKfycbx.../exec'
-  BACKEND_URL: localStorage.getItem('https://script.google.com/macros/s/AKfycbzYcTPGZwaM7R3LLVZB1sJEbQPF-XxhOVGaZZRW2HbC-IyiEnfbG3HdFol5KWLj1kC8/exec') || '',
+  // 🔥 SOSTITUISCI CON IL TUO URL APPS SCRIPT WEB APP
+
+  BACKEND_URL: 'https://script.google.com/macros/s/AKfycbzYcTPGZwaM7R3LLVZB1sJEbQPF-XxhOVGaZZRW2HbC-IyiEnfbG3HdFol5KWLj1kC8/exec',
   
-  // Timeout per le chiamate API
   API_TIMEOUT: 15000,
-  
-  // Cache settings
-  CACHE_VERSION: 'v2.2',
-  CACHE_MAX_AGE: 5 * 60 * 1000, // 5 minuti
-  
-  // Demo mode: se BACKEND_URL non è impostato, usa dati mock
-  get isDemo() { return !this.BACKEND_URL || this.BACKEND_URL.trim() === ''; }
+  CACHE_VERSION: 'v3.0',
+  CACHE_MAX_AGE: 5 * 60 * 1000
 };
+
+// Verifica che l'URL sia configurato
+if (!CONFIG.BACKEND_URL || CONFIG.BACKEND_URL.includes('DEPLOYMENT_ID')) {
+  console.error('❌ CONFIGURA IL BACKEND_URL in app.js!');
+  alert('Errore: Backend non configurato. Contatta l\'amministratore.');
+}
 
 // ============================================================================
 // 🔐 SECURITY UTILITIES
@@ -134,21 +132,11 @@ const CacheManager = {
 };
 
 // ============================================================================
-// 🌐 API CLIENT - Corretto per il tuo backend Apps Script
+// 🌐 API CLIENT - Solo Backend Reale (NO DEMO)
 // ============================================================================
 
 const ApiClient = {
-  // ... (CONFIG e _mockData restano uguali) ...
-
   async call(action, payload = null) {
-    // Demo mode fallback
-    if (CONFIG.isDemo) {
-      console.log(`[DEMO] Api.call("${action}", ...)`);
-      await new Promise(r => setTimeout(r, 300));
-      return this._mockResponse(action, payload);
-    }
-
-    // Production: fetch al Web App Apps Script
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), CONFIG.API_TIMEOUT);
 
@@ -157,25 +145,21 @@ const ApiClient = {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',
-          // Apps Script richiede questo header per CORS
           'Accept': 'application/json'
         },
         body: JSON.stringify({ action, payload }),
         signal: controller.signal,
-        // Importante per CORS con Apps Script
         mode: 'cors'
       });
 
       clearTimeout(timeout);
 
       if (!response.ok) {
-        const errorText = await response.text().catch(() => '');
-        throw new Error(`HTTP ${response.status}: ${errorText || response.statusText}`);
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
       }
 
       const result = await response.json();
       
-      // Il tuo backend REST wrapper restituisce { success: true, data: ... }
       if (result?.error || result?.success === false) {
         throw new Error(result.error || 'Backend error');
       }
@@ -185,20 +169,11 @@ const ApiClient = {
     } catch (error) {
       clearTimeout(timeout);
       console.error(`API Error [${action}]:`, error);
-      
-      // Fallback a cache se offline
-      if (error.name === 'AbortError' || error.message.includes('Failed to fetch')) {
-        console.warn('⚠️ Offline mode: usando cache');
-        return this._fromCache(action, payload);
-      }
-      
       throw error;
     }
   },
 
-  // ... (_mockResponse e _fromCache restano uguali) ...
-  
-  // Convenience wrappers - NOTA: payload deve essere array per funzioni multi-arg
+  // Convenience wrappers - tutte le funzioni del tuo backend
   getInitialData: () => ApiClient.call('getInitialAdminData'),
   getMatches: () => ApiClient.call('getMatchesAdmin'),
   getStandings: () => ApiClient.call('getStandingsGironiCached'),
@@ -207,7 +182,6 @@ const ApiClient = {
   getPlayersByTeam: (teamId) => ApiClient.call('getPlayersByTeam', teamId),
   getPlayerDetail: (id) => ApiClient.call('getPlayerDetail', id),
   
-  // Funzioni con multipli argomenti → passa come array
   saveTeamAdmin: (id, name, photo, girone) => 
     ApiClient.call('saveTeamAdmin', [id, name, photo, girone]),
   updateTeamName: (id, name) => 
@@ -302,6 +276,7 @@ function hydrateMatches(matches = []) {
 
 const Render = {
   text: (el, content) => { if (el) el.textContent = content ?? ''; },
+  
   createEl: (tag, attrs = {}, children = []) => {
     const el = document.createElement(tag);
     Object.entries(attrs).forEach(([k, v]) => {
@@ -316,48 +291,45 @@ const Render = {
     });
     return el;
   },
+  
+  // ✅ NUOVO: metodo image per caricare loghi/foto da Google Drive
+  image: (fileId, size = 200, alt = '', className = '') => {
+    if (!fileId) {
+      return Render.createEl('div', { 
+        class: `image-placeholder ${className}`,
+        html: '🖼️'
+      });
+    }
+    
+    const src = getCachedImage(fileId, size);
+    const img = Render.createEl('img', { 
+      src, 
+      alt: Sanitizer.attr(alt), 
+      class: className, 
+      loading: 'lazy',
+      onError: function() { 
+        this.style.display = 'none'; 
+        const fallback = this.nextElementSibling;
+        if (fallback) fallback.style.display = 'flex';
+      }
+    });
+    
+    const fallback = Render.createEl('div', { 
+      class: 'image-fallback', 
+      html: '⚠️'
+    }); 
+    fallback.style.display = 'none';
+    
+    const wrapper = Render.createEl('div', { class: 'image-wrapper' }, [img, fallback]);
+    return wrapper;
+  },
+  
   teamName: (name) => Sanitizer.html(name?.toUpperCase?.() || ''),
   badges: (events = []) => { 
     const icons = { 'GOAL': '⚽', 'AMMONIZIONE': '🟨', 'ESPULSIONE': '🟥' }; 
     return events.map(e => icons[e.TIPO] || '').join(' '); 
   }
 };
-
-function getCachedImage(id, size = 200) {
-  if (!id) return "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='" + size + "' height='" + size + "' viewBox='0 0 " + size + " " + size + "'%3E%3Crect fill='%23f0f0f0' width='" + size + "' height='" + size + "'/%3E%3Ctext x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' fill='%23aaa' font-size='24'%3E🖼️%3C/text%3E%3C/svg%3E";
-  // In produzione: Google Drive viewer
-  // In demo: placeholder dinamico
-  return CONFIG.isDemo 
-    ? "https://picsum.photos/seed/" + id + "/" + size + "/" + size + "?random=" + (localStorage.getItem("img_v_" + id) || '1')
-    : "https://lh3.googleusercontent.com/d/" + id + "=w" + size + "?v=" + (localStorage.getItem("img_v_" + id) || '1');
-}
-
-function parseLocalDate(dateStr) {
-  if (!dateStr) return null;
-  const clean = dateStr.substring(0, 10), parts = clean.split("-");
-  if (parts.length !== 3) return null;
-  const [y, m, d] = parts.map(Number);
-  return new Date(y, m - 1, d);
-}
-
-function formatDateFull(dateStr) {
-  if (!dateStr) return "";
-  const d = new Date(dateStr);
-  const giorni = ["DOMENICA", "LUNEDÌ", "MARTEDÌ", "MERCOLEDÌ", "GIOVEDÌ", "VENERDÌ", "SABATO"];
-  const mesi = ["GENNAIO", "FEBBRAIO", "MARZO", "APRILE", "MAGGIO", "GIUGNO", "LUGLIO", "AGOSTO", "SETTEMBRE", "OTTOBRE", "NOVEMBRE", "DICEMBRE"];
-  return `${giorni[d.getDay()]} ${d.getDate()} ${mesi[d.getMonth()]} ${d.getFullYear()}`;
-}
-
-function fileToBase64(file) {
-  return new Promise((res, rej) => {
-    const reader = new FileReader();
-    reader.onload = () => res(reader.result.split(",")[1]);
-    reader.onerror = rej;
-    reader.readAsDataURL(file);
-  });
-}
-
-function createPreviewUrl(file) { return Cleanup.trackUrl(URL.createObjectURL(file)); }
 
 // ============================================================================
 // 🏠 CORE UI FUNCTIONS
@@ -1055,44 +1027,55 @@ function createFinalStage() {
 // ============================================================================
 
 function bootAdminApp() {
-  console.log("🚀 Booting Torneo Admin v2.2" + (CONFIG.isDemo ? " [DEMO MODE]" : ""));
+  console.log("🚀 Booting Torneo Admin - PRODUCTION MODE");
   
-  // Mostra banner demo se necessario
-  if (CONFIG.isDemo) {
-    document.getElementById('demoBanner').style.display = 'block';
-    document.getElementById('configBackendLink').onclick = (e) => {
-      e.preventDefault();
-      const url = prompt('Incolla l\'URL del tuo Apps Script Web App:', '');
-      if (url && url.includes('script.google.com')) {
-        localStorage.setItem('torneo_backend_url', url);
-        CONFIG.BACKEND_URL = url;
-        location.reload();
-      }
-    };
-  }
-  
-  // Init cache e state
+  // Init cache
   window.APP_CACHE = CacheManager.load();
-  hydrateMatches(window.APP_CACHE.matches);
   
-  // Render UI
-  showHome();
-  renderAppFromCache();
+  // Mostra loader
+  const loader = document.getElementById("startupLoader");
   
-  // Hide loader
-  setTimeout(() => { 
-    document.getElementById("startupLoader")?.classList?.add("hide"); 
-    setTimeout(() => document.getElementById("startupLoader")?.remove(), 300); 
-  }, 300);
-  
-  // Preload dati iniziali
-  setTimeout(() => { preloadAssets(); }, 500);
+  // Carica dati iniziali PRIMA di mostrare l'app
+  ApiClient.getInitialData()
+    .then(data => {
+      console.log('✅ Dati caricati:', data);
+      
+      // Salva in cache
+      if (data) {
+        Object.assign(window.APP_CACHE, { 
+          ...CacheManager.createEmpty(), 
+          ...(data || {}) 
+        });
+        hydrateMatches(window.APP_CACHE.matches || []); 
+        CacheManager.save(window.APP_CACHE);
+        window.APP_CACHE.meta.initialized = true;
+      }
+      
+      // Renderizza app
+      showHome();
+      renderAppFromCache();
+      
+      // Nascondi loader
+      setTimeout(() => { 
+        loader?.classList?.add("hide"); 
+        setTimeout(() => loader?.remove(), 300); 
+      }, 300);
+      
+    })
+    .catch(error => {
+      console.error('❌ Errore caricamento dati:', error);
+      alert('Errore connessione al backend. Verifica la configurazione.');
+      loader?.remove();
+    });
   
   // Global error handling
   window.addEventListener("error", e => console.error("Global error:", e.error||e.message));
-  window.addEventListener("beforeunload", () => { Cleanup.releaseAll(); CacheManager.save(window.APP_CACHE, 0); stopStandingsLiveRefresh(); });
+  window.addEventListener("beforeunload", () => { 
+    Cleanup.releaseAll(); 
+    CacheManager.save(window.APP_CACHE, 0); 
+  });
   
-  console.log("✅ App booted");
+  console.log("✅ App booted - Connected to Backend");
 }
 
 function preloadAssets() {
