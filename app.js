@@ -1,8 +1,3 @@
-/**
- * 🏆 TORNEO ADMIN - Frontend Production
- * Connesso direttamente a Google Apps Script Backend
- */
-
 // ============================================================================
 // 🔧 CONFIGURAZIONE - INSERISCI IL TUO BACKEND URL
 // ============================================================================
@@ -10,7 +5,7 @@
 const CONFIG = {
   // 🔥 SOSTITUISCI CON IL TUO URL APPS SCRIPT WEB APP
 
-  BACKEND_URL: 'https://script.google.com/macros/s/AKfycbxXq886t9BjggAWoLfMFs7-aamGuq4zqmcqcPJ8FpYPe9m0KwD3cMLZpymIAMo4Fybb/exec',
+  BACKEND_URL: 'https://script.google.com/macros/s/AKfycbyFkuO225irqSLQw9Y5v2fPJGTkEH7EX8uSt2KcmnT674UAoMq3zqp6Qgw4flTfJXJ_/exec',
   
   API_TIMEOUT: 30000,
   CACHE_VERSION: 'v3.0',
@@ -270,6 +265,7 @@ const ApiClient = {
   createFinalStageMatches: (matches) => ApiClient.call('createFinalStageMatches', [matches]),
   getFinalStageMatches: () => ApiClient.call('getFinalStageMatches'),
   saveMVPFinal: (matchId, playerId) => ApiClient.call('saveMVPFinal', [matchId, playerId]),
+  finalizeMVP: (matchId) => ApiClient.call('finalizeMVP', [matchId]),
   getTeamsByGironeSimple: (girone) => ApiClient.call('getTeamsByGironeSimple', [girone])
 };
 
@@ -1567,54 +1563,69 @@ async function toggleMatch() {
   if (!match) return;
   
   const newStatus = match.STATO_PARTITA === "LIVE" ? "FINITA" : "LIVE";
+  const oldStatus = match.STATO_PARTITA;
+  
+  // 🔥 1. Aggiorna UI SUBITO (ottimistico)
+  match.STATO_PARTITA = newStatus;
+  window.APP_STATE.lastMatch = match;
+  updateMatchUI(match);
+  
+  // Feedback visivo immediato
+  const btn = document.querySelector(".start-btn");
+  if (btn) {
+    btn.textContent = newStatus === "LIVE" ? "CONCLUDI" : "INIZIO";
+    btn.classList.toggle("active", newStatus === "LIVE");
+  }
   
   try {
-    // Aggiorna stato partita
-    const result = await ApiClient.updateMatchStatus(match.MATCH_ID, newStatus);
+    // 🔥 2. Chiama backend (senza bloccare UI)
+    await ApiClient.updateMatchStatus(match.MATCH_ID, newStatus);
     
-    // 🔥 SE CONCLUDE, CALCOLA MVP (se ci sono voti)
+    // 🔥 3. Se CONCLUDE, avvia calcolo MVP in background
     if (newStatus === "FINITA") {
-      // Chiama backend per finalizzare MVP
-      await ApiClient.finalizeMVP(match.MATCH_ID).catch(() => {
-        console.log('Nessun voto MVP presente');
-      });
+      // Non aspettare il risultato, lancia e dimentica
+      ApiClient.finalizeMVP(match.MATCH_ID)
+        .then(() => console.log('✅ MVP finalizzato'))
+        .catch(err => console.log('ℹ️ Nessun voto MVP o errore:', err.message));
       
       // Aggiorna cache locale
-      match.STATO_PARTITA = "FINITA";
-      window.APP_STATE.lastMatch = match;
-      
-      // Ricarica dati partita per ottenere MVP
-      const updatedMatch = await ApiClient.getMatchFull(match.MATCH_ID);
-      if (updatedMatch?.match) {
-        Object.assign(match, updatedMatch.match);
-        window.APP_STATE.lastMatch = match;
+      if (window.APP_CACHE.matches) {
+        const idx = window.APP_CACHE.matches.findIndex(m => m.MATCH_ID === match.MATCH_ID);
+        if (idx >= 0) {
+          window.APP_CACHE.matches[idx].STATO_PARTITA = "FINITA";
+          CacheManager.save(window.APP_CACHE);
+        }
       }
       
-      // Aggiorna UI
-      updateMatchUI(match);
-      renderMVPTab(
-        window.APP_CACHE.fullTeams?.[match.CASA_ID],
-        window.APP_CACHE.fullTeams?.[match.TRASFERTA_ID],
-        match
-      );
-      renderPlayersTab(
-        window.APP_CACHE.fullTeams?.[match.CASA_ID],
-        window.APP_CACHE.fullTeams?.[match.TRASFERTA_ID],
-        match
-      );
-      updateMVPBanner(match);
-      
-      alert("Partita conclusa! MVP calcolato.");
-    } else {
-      // INIZIA PARTITA
-      match.STATO_PARTITA = "LIVE";
-      window.APP_STATE.lastMatch = match;
-      updateMatchUI(match);
+      // Ricarica dati partita per MVP (async, non blocca)
+      ApiClient.getMatchFull(match.MATCH_ID)
+        .then(updated => {
+          if (updated?.match?.MVP) {
+            match.MVP = updated.match.MVP;
+            window.APP_STATE.lastMatch = match;
+            updateMVPBanner(match);
+            renderMVPTab(
+              window.APP_CACHE.fullTeams?.[match.CASA_ID],
+              window.APP_CACHE.fullTeams?.[match.TRASFERTA_ID],
+              match
+            );
+          }
+        })
+        .catch(() => {}); // Silenzioso se fallisce
     }
+    
+    // Aggiorna standings in background
+    refreshStandingsDebounced(500);
     
   } catch (error) {
     console.error('Error toggling match:', error);
-    alert('Errore: ' + error.message);
+    
+    // 🔥 Rollback UI se fallisce
+    match.STATO_PARTITA = oldStatus;
+    window.APP_STATE.lastMatch = match;
+    updateMatchUI(match);
+    
+    alert('Errore aggiornamento stato: ' + error.message);
   }
 }
 
