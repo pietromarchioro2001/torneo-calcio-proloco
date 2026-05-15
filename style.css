@@ -185,13 +185,13 @@ body{
 }
 
 .camp-left {
-  left: 12%; /* 🔥 Più vicino al centro (era 2%) */
+  left: 5%; /* 🔥 Più vicino al centro (era 2%) */
   transform: translateY(-50%);
   max-width: 30vw; /* 🔥 Limita larghezza per stare vicino al centro */
 }
 
 .camp-right {
-  right: 12%; /* 🔥 Più vicino al centro (era 2%) */
+  right: 5%; /* 🔥 Più vicino al centro (era 2%) */
   transform: translateY(-50%) scaleX(-1);
   max-width: 30vw;
 }
