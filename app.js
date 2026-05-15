@@ -1511,20 +1511,40 @@ function renderMatchPage(match) {
       
       <div class="match-content">
         <!-- TAB DIRETTA -->
+        <!-- TAB DIRETTA -->
         <div class="tab-content active" id="tab-diretta">
           <div class="teams-events">
+            
+            <!-- Pulsanti Evento -->
             <div class="events-actions">
               <div class="left">
                 <div class="phase-btn small" onclick="${canAddEvents ? "addEvent('casa')" : ""}" ${eventBtnDisabled}>
-                  + EVENTO
+                  + EVENTO CASA
                 </div>
               </div>
               <div class="right">
                 <div class="phase-btn small" onclick="${canAddEvents ? "addEvent('trasferta')" : ""}" ${eventBtnDisabled}>
-                  + EVENTO
+                  + EVENTO TRASFERTA
                 </div>
               </div>
             </div>
+            
+            <!-- Titolo Cronaca e Linea -->
+            <div class="cronaca-title center"><span>CRONACA</span></div>
+
+            <!-- 🔥 MVP BANNER MOSSO QUI (Sotto la cronaca) -->
+            <div id="mvpBanner" class="mvp-banner">
+              <div class="mvp-title">🏆 MVP DEL MATCH</div>
+              <div class="mvp-name"></div>
+            </div>
+
+            <!-- Lista Eventi -->
+            <div id="eventsTimeline" class="events-timeline">
+              <div id="eventsContent"></div>
+            </div>
+            
+          </div>
+        </div>
             
             <div class="cronaca-title center"><span>CRONACA</span></div>
             
