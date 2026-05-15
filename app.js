@@ -10,7 +10,7 @@
 const CONFIG = {
   // 🔥 SOSTITUISCI CON IL TUO URL APPS SCRIPT WEB APP
 
-  BACKEND_URL: 'https://script.google.com/macros/s/AKfycbxjsDWihn4GalgWFqZtYLJym4rQaCrNTXkp5oM7Czgfd6HqOeE5xA5P_IE_7fzp6I0E/exec',
+  BACKEND_URL: 'https://script.google.com/macros/s/AKfycbzN207wVjiK3RvqIne_Ie8Nk5vV1rotkiJ9-FiDH7Ib5RwpEIKpKssEfp-mg99p8U1X/exec',
   
   API_TIMEOUT: 15000,
   CACHE_VERSION: 'v3.0',
@@ -137,40 +137,42 @@ const CacheManager = {
 
 const ApiClient = {
   async call(action, payload = null) {
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), CONFIG.API_TIMEOUT);
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), CONFIG.API_TIMEOUT);
 
-    try {
-      const response = await fetch(CONFIG.BACKEND_URL, {
-        method: 'POST',
-        headers: { 
-          'Content-Type': 'application/json',
-          'Accept': 'application/json'
-        },
-        body: JSON.stringify({ action, payload }),
-        signal: controller.signal,
-      });
+  try {
+    // 🔥 CHIAVE: text/plain evita il preflight OPTIONS che blocca CORS
+    const response = await fetch(CONFIG.BACKEND_URL, {
+      method: 'POST',
+      headers: { 
+        'Content-Type': 'text/plain',  // ← CAMBIA QUESTO
+        'Accept': 'application/json'
+      },
+      body: JSON.stringify({ action, payload }),
+      signal: controller.signal
+      // ← Non serve mode: 'cors'
+    });
 
-      clearTimeout(timeout);
+    clearTimeout(timeout);
 
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-      }
-
-      const result = await response.json();
-      
-      if (result?.error || result?.success === false) {
-        throw new Error(result.error || 'Backend error');
-      }
-      
-      return result?.data ?? result;
-      
-    } catch (error) {
-      clearTimeout(timeout);
-      console.error(`API Error [${action}]:`, error);
-      throw error;
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}: ${response.statusText}`);
     }
-  },
+
+    const result = await response.json();
+    
+    if (result?.error || result?.success === false) {
+      throw new Error(result.error || 'Backend error');
+    }
+    
+    return result?.data ?? result;
+    
+  } catch (error) {
+    clearTimeout(timeout);
+    console.error(`API Error [${action}]:`, error);
+    throw error;
+  }
+},
 
   // Convenience wrappers - tutte le funzioni del tuo backend
   getInitialData: () => ApiClient.call('getInitialAdminData'),
