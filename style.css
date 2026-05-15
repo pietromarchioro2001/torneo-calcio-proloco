@@ -185,13 +185,13 @@ body{
 }
 
 .camp-left {
-  left: 5%; /* 🔥 Più vicino al centro (era 2%) */
+  left: 2%; /* 🔥 Più vicino al centro (era 2%) */
   transform: translateY(-50%);
   max-width: 30vw; /* 🔥 Limita larghezza per stare vicino al centro */
 }
 
 .camp-right {
-  right: 5%; /* 🔥 Più vicino al centro (era 2%) */
+  right: 2%; /* 🔥 Più vicino al centro (era 2%) */
   transform: translateY(-50%) scaleX(-1);
   max-width: 30vw;
 }
@@ -459,27 +459,27 @@ body{
   z-index:-1;
 }
 
-/* ===== CARD PROSSIMA PARTITA - HOME (COMPATTA E IN BASSO) ===== */
+/* ===== CARD PROSSIMA PARTITA / LIVE - HOME ===== */
 .home-next-match {
-  position: absolute; /* Rispetto a home-container */
-  bottom: 80px;       /* ~20px sopra la toolbar (che è alta ~60px) */
+  position: absolute;
+  bottom: 80px;
   left: 50%;
   transform: translateX(-50%);
   z-index: 100;
   
-  width: 90%;
-  max-width: 420px;   /* Stretta e compatta */
+  width: 85%;
+  max-width: 360px; /* 🔥 Più stretta */
   
   background: rgba(255, 255, 255, 0.95);
   backdrop-filter: blur(8px);
   border-radius: 12px;
   box-shadow: 0 -4px 20px rgba(0,0,0,0.1);
-  padding: 8px 12px;  /* Padding ridotto */
+  padding: 10px 16px;
   
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 8px;
+  gap: 12px;
   
   cursor: pointer;
   transition: transform 0.2s, box-shadow 0.2s;
@@ -495,59 +495,119 @@ body{
 .home-team-block {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
   flex: 1;
-  min-width: 0; /* Permette text-overflow se nomi lunghi */
+  min-width: 0;
 }
 
-.home-team-block.left { justify-content: flex-start; }
-.home-team-block.right { justify-content: flex-end; flex-direction: row-reverse; }
+.home-team-block.left { 
+  justify-content: flex-start; 
+}
 
+.home-team-block.right { 
+  justify-content: flex-end; 
+  flex-direction: row-reverse; /* 🔥 Logo a destra, nome a sinistra dentro il blocco */
+}
+
+/* 🔥 Loghi e nomi più grandi */
 .home-team {
-  font-size: 12px;      /* Testo più piccolo */
+  font-size: 15px; /* Aumentato */
   font-weight: 700;
   color: #333;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  letter-spacing: 0.5px;
 }
 
-/* Centro (Ora/Risultato) */
+.home-team-logo, .home-team-block img {
+  width: 38px; /* Aumentato */
+  height: 38px;
+  border-radius: 50%;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
+/* Centro: Ora/Risultato/LIVE */
 .home-match-center {
   text-align: center;
-  min-width: 60px;
+  min-width: 70px;
   display: flex;
   flex-direction: column;
   align-items: center;
+  justify-content: center;
 }
 
 .home-score {
-  font-size: 18px;
+  font-size: 20px;
   font-weight: 800;
   color: #7a1e2c;
   line-height: 1;
+  letter-spacing: 2px;
 }
 
 .home-match-time {
-  font-size: 14px;
+  font-size: 16px;
   font-weight: 700;
   color: #7a1e2c;
   line-height: 1;
 }
 
 .home-match-date {
-  font-size: 10px;
+  font-size: 11px;
   color: #888;
   margin-top: 2px;
 }
 
-/* Loghi */
-.home-team-logo, .home-team-block img {
-  width: 28px;
-  height: 28px;
+/* Stato LIVE */
+.home-live-badge {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+
+.home-live-text {
+  font-size: 13px;
+  font-weight: 800;
+  color: #dc2626;
+  letter-spacing: 1px;
+  animation: livePulse 1.5s infinite;
+}
+
+.home-live-dot {
+  width: 6px;
+  height: 6px;
+  background: #dc2626;
   border-radius: 50%;
-  object-fit: cover;
-  flex-shrink: 0;
+  animation: dotPulse 1.5s infinite;
+}
+
+@keyframes livePulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.6; }
+}
+
+@keyframes dotPulse {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.5); opacity: 0.5; }
+}
+
+/* Responsive per schermi piccoli */
+@media (max-width: 768px) {
+  .home-next-match {
+    max-width: 90%;
+    bottom: 70px;
+  }
+  
+  .home-team {
+    font-size: 13px;
+  }
+  
+  .home-team-logo, .home-team-block img {
+    width: 32px;
+    height: 32px;
+  }
 }
 
 /* =============================================================================================
