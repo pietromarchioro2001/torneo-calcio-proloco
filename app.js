@@ -10,7 +10,7 @@
 const CONFIG = {
   // 🔥 SOSTITUISCI CON IL TUO URL APPS SCRIPT WEB APP
 
-  BACKEND_URL: 'https://script.google.com/macros/s/AKfycbzYcTPGZwaM7R3LLVZB1sJEbQPF-XxhOVGaZZRW2HbC-IyiEnfbG3HdFol5KWLj1kC8/exec',
+  BACKEND_URL: 'https://script.google.com/macros/s/AKfycbxjsDWihn4GalgWFqZtYLJym4rQaCrNTXkp5oM7Czgfd6HqOeE5xA5P_IE_7fzp6I0E/exec',
   
   API_TIMEOUT: 15000,
   CACHE_VERSION: 'v3.0',
@@ -149,7 +149,6 @@ const ApiClient = {
         },
         body: JSON.stringify({ action, payload }),
         signal: controller.signal,
-        mode: 'cors'
       });
 
       clearTimeout(timeout);
