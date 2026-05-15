@@ -2156,53 +2156,65 @@ function bootAdminApp() {
     ApiClient.getInitialData().catch(() => null),
     minLoadTime
   ])
-    .then(data => {
-      console.log('✅ Dati caricati:', data);
+  .then(([data]) => {  // 🔥 CORRETTO: destructuring array
+    console.log('✅ Dati caricati:', data);
+    
+    if (data) {
+      // Merge intelligente con cache esistente
+      window.APP_CACHE = {
+        ...window.APP_CACHE,
+        teams: data.teams || window.APP_CACHE.teams,
+        matches: data.matches || window.APP_CACHE.matches,
+        standings: data.standings || window.APP_CACHE.standings,
+        events: data.events || window.APP_CACHE.events,
+        fullTeams: data.fullTeams || window.APP_CACHE.fullTeams,
+        playersMap: data.playersMap || window.APP_CACHE.playersMap,
+        meta: { ...window.APP_CACHE.meta, initialized: true }
+      };
       
-      if (data) {
-        // Merge intelligente con cache esistente
-        window.APP_CACHE = {
-          ...window.APP_CACHE,
-          teams: data.teams || window.APP_CACHE.teams,
-          matches: data.matches || window.APP_CACHE.matches,
-          standings: data.standings || window.APP_CACHE.standings,
-          events: data.events || window.APP_CACHE.events,
-          fullTeams: data.fullTeams || window.APP_CACHE.fullTeams,
-          playersMap: data.playersMap || window.APP_CACHE.playersMap,
-          meta: { ...window.APP_CACHE.meta, initialized: true }
-        };
-        
-        hydrateMatches(window.APP_CACHE.matches || []); 
-        CacheManager.save(window.APP_CACHE);
-        
-        // Aggiorna UI se siamo già su una pagina
-        const currentPath = window.location.hash || "#home";
-        if (currentPath.includes("matches")) {
-          renderMatches();
-        } else if (currentPath.includes("teams")) {
-          renderTeams();
-        } else if (currentPath.includes("standings")) {
-          renderStandings(window.APP_CACHE.standings || {});
-        }
+      hydrateMatches(window.APP_CACHE.matches || []); 
+      CacheManager.save(window.APP_CACHE);
+      
+      // Aggiorna UI se siamo già su una pagina
+      const currentPath = window.location.hash || "#home";
+      if (currentPath.includes("matches")) {
+        renderMatches();
+      } else if (currentPath.includes("teams")) {
+        renderTeams();
+      } else if (currentPath.includes("standings")) {
+        renderStandings(window.APP_CACHE.standings || {});
       }
-      
-      console.log("✅ App ready - Dati sincronizzati");
-      
-      // 🔥 DOPO i dati principali, carica flag fase finale (separato!)
-      return ApiClient.isFinalStageStarted().catch(err => {
-        console.warn('Could not check final stage:', err);
-        return false;
-      });
-    })
-    .then(started => {
-      if (!window.APP_CACHE.meta) window.APP_CACHE.meta = {};
-      window.APP_CACHE.meta.finalStageStarted = started;
-      console.log('Final stage started:', started);
-    })
-    .catch(error => {
-      console.error('❌ Errore caricamento dati:', error);
-      console.log('⚠️ App in modalità offline - usando cache locale');
+    }
+    
+    console.log("✅ App ready - Dati sincronizzati");
+    
+    // 🔥 DOPO i dati principali, carica flag fase finale (separato!)
+    return ApiClient.isFinalStageStarted().catch(err => {
+      console.warn('Could not check final stage:', err);
+      return false;
     });
+  })
+  .then(started => {
+    if (!window.APP_CACHE.meta) window.APP_CACHE.meta = {};
+    window.APP_CACHE.meta.finalStageStarted = started;
+    console.log('Final stage started:', started);
+    
+    // 🔥 Nascondi loader dopo caricamento completo
+    setTimeout(() => { 
+      loader?.classList?.add("hide"); 
+      setTimeout(() => loader?.remove(), 500); 
+    }, 300);
+  })
+  .catch(error => {
+    console.error('❌ Errore caricamento dati:', error);
+    console.log('⚠️ App in modalità offline - usando cache locale');
+    
+    // Nascondi loader anche in caso di errore
+    setTimeout(() => { 
+      loader?.classList?.add("hide"); 
+      setTimeout(() => loader?.remove(), 500); 
+    }, 300);
+  });
   
   // Global error handling
   window.addEventListener("error", e => console.error("Global error:", e.error||e.message));
