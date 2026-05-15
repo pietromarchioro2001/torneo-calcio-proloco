@@ -2682,7 +2682,7 @@ body{
 }
 
 /* ============================================
-   MVP STYLES
+   MVP STYLES - VERSIONE SOFT
 ============================================ */
 
 /* Coroncina MVP */
@@ -2702,8 +2702,8 @@ body{
 
 /* Row MVP evidenziata */
 .mvp-player-row {
-  background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%) !important;
-  border: 2px solid #d97706;
+  background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%) !important;
+  border: 2px solid #fbbf24;
   border-radius: 12px;
   position: relative;
   padding: 10px;
@@ -2717,34 +2717,34 @@ body{
 
 .mvp-player-photo,
 .mvp-player-avatar {
-  border: 3px solid #d97706 !important;
-  box-shadow: 0 0 12px rgba(217, 119, 6, 0.5);
+  border: 3px solid #fbbf24 !important;
+  box-shadow: 0 0 8px rgba(251, 191, 36, 0.4);
   border-radius: 50%;
 }
 
-/* Card MVP Winner */
+/* Card MVP Winner - COLORI SOFT */
 .mvp-winner-card {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   padding: 30px 20px;
-  background: linear-gradient(135deg, #fef3c7 0%, #fde68a 50%, #fbbf24 100%);
-  border: 3px solid #d97706;
+  background: linear-gradient(135deg, #ffffff 0%, #fffbeb 50%, #fef3c7 100%);
+  border: 3px solid #fbbf24;
   border-radius: 16px;
-  box-shadow: 0 8px 24px rgba(217, 119, 6, 0.3);
+  box-shadow: 0 4px 16px rgba(251, 191, 36, 0.2);
   animation: winnerGlow 3s infinite;
 }
 
 @keyframes winnerGlow {
-  0%, 100% { box-shadow: 0 8px 24px rgba(217, 119, 6, 0.3); }
-  50% { box-shadow: 0 12px 32px rgba(217, 119, 6, 0.5); }
+  0%, 100% { box-shadow: 0 4px 16px rgba(251, 191, 36, 0.2); }
+  50% { box-shadow: 0 6px 20px rgba(251, 191, 36, 0.3); }
 }
 
 .mvp-winner-badge {
   font-size: 14px;
   font-weight: 700;
-  color: #92400e;
+  color: #b45309;
   letter-spacing: 2px;
   margin-bottom: 12px;
   text-transform: uppercase;
@@ -2755,8 +2755,8 @@ body{
   height: 80px;
   border-radius: 50%;
   object-fit: cover;
-  border: 4px solid #d97706;
-  box-shadow: 0 4px 16px rgba(0,0,0,0.2);
+  border: 4px solid #fbbf24;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
   margin-bottom: 12px;
 }
 
@@ -2764,19 +2764,19 @@ body{
   width: 80px;
   height: 80px;
   border-radius: 50%;
-  background: #fbbf24;
+  background: #fef3c7;
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 40px;
-  border: 4px solid #d97706;
+  border: 4px solid #fbbf24;
   margin-bottom: 12px;
 }
 
 .mvp-winner-name {
   font-size: 20px;
   font-weight: 800;
-  color: #78350f;
+  color: #92400e;
   letter-spacing: 2px;
   text-transform: uppercase;
   margin-bottom: 4px;
@@ -2784,7 +2784,7 @@ body{
 
 .mvp-winner-team {
   font-size: 12px;
-  color: #92400e;
+  color: #b45309;
   font-weight: 600;
   letter-spacing: 1px;
 }
@@ -2796,13 +2796,13 @@ body{
 }
 
 .mvp-vote-row:hover {
-  background: #fef3c7;
+  background: #fffbeb;
   transform: translateX(4px);
 }
 
 .vote-check {
   opacity: 0;
-  color: #d97706;
+  color: #f59e0b;
   font-weight: 700;
   font-size: 18px;
   transition: opacity 0.2s;
@@ -2812,35 +2812,36 @@ body{
   opacity: 1;
 }
 
-/* MVP Banner */
+/* MVP Banner - POSIZIONATO NEL CONTENITORE */
 .mvp-banner {
-  position: absolute;
-  left: 50%;
-  top: 50%;
-  transform: translate(-50%, -50%);
-  z-index: 20;
+  position: relative;  /* ← CAMBIATO: non più absolute */
+  left: auto;
+  top: auto;
+  transform: none;
+  z-index: 10;
   display: none;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  min-width: 280px;
-  padding: 20px 30px;
-  background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
-  border: 3px solid #d97706;
-  border-radius: 16px;
-  backdrop-filter: blur(4px);
-  box-shadow: 0 8px 32px rgba(217, 119, 6, 0.4);
+  min-width: 240px;
+  max-width: 400px;
+  margin: 20px auto;  /* ← CENTRATO orizzontalmente */
+  padding: 16px 24px;
+  background: linear-gradient(135deg, #ffffff 0%, #fffbeb 100%);
+  border: 2px solid #fbbf24;
+  border-radius: 12px;
+  box-shadow: 0 4px 16px rgba(251, 191, 36, 0.25);
   animation: mvpAppear 0.5s ease;
 }
 
 @keyframes mvpAppear {
   from {
     opacity: 0;
-    transform: translate(-50%, -40%) scale(0.9);
+    transform: translateY(-10px);
   }
   to {
     opacity: 1;
-    transform: translate(-50%, -50%) scale(1);
+    transform: translateY(0);
   }
 }
 
@@ -2849,18 +2850,18 @@ body{
 }
 
 .mvp-title {
-  font-size: 12px;
+  font-size: 11px;
   letter-spacing: 3px;
-  color: #92400e;
+  color: #b45309;
   font-weight: 700;
   text-transform: uppercase;
 }
 
 .mvp-name {
-  margin-top: 8px;
-  font-size: 28px;
+  margin-top: 6px;
+  font-size: 24px;
   font-weight: 900;
-  color: #78350f;
+  color: #92400e;
   letter-spacing: 2px;
 }
 
