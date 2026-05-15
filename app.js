@@ -332,6 +332,22 @@ const Render = {
   }
 };
 
+function parseLocalDate(dateStr) {
+  if (!dateStr) return null;
+  const clean = dateStr.substring(0, 10);
+  const parts = clean.split("-");
+  if (parts.length !== 3) return null;
+  const [y, m, d] = parts.map(Number);
+  return new Date(y, m - 1, d);
+}
+
+function formatLocalDate(date) {
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, "0");
+  const d = String(date.getDate()).padStart(2, "0");
+  return `${y}-${m}-${d}`;
+}
+
 // ============================================================================
 // 🏠 CORE UI FUNCTIONS
 // ============================================================================
@@ -648,30 +664,67 @@ function showMatches() {
 
 function renderMatches() {
   const data = window.APP_CACHE.matches || [];
-  const matches = (data || []).map(m => ({ ...m, DATA: m.DATA?.slice?.(0,10), STATO_PARTITA: String(m.STATO_PARTITA || "").trim().toUpperCase() }));
   
-  const dates = [...new Set(matches.filter(m => m.DATA).map(m => m.DATA))].sort(); 
+  // Filtra solo partite valide
+  const matches = (data || [])
+    .filter(m => m?.MATCH_ID && m?.DATA)
+    .map(m => ({ 
+      ...m, 
+      DATA: String(m.DATA).slice(0, 10), 
+      STATO_PARTITA: String(m.STATO_PARTITA || "").trim().toUpperCase() 
+    }));
+  
+  // Estrai date uniche
+  const dates = [...new Set(matches.filter(m => m.DATA).map(m => m.DATA))]
+    .sort()
+    .slice(0, 10); // Limita a 10 giornate per performance
+  
   window.APP_STATE.availableDates = dates;
   
-  const today = new Date(), todayStr = today.getFullYear() + "-" + String(today.getMonth()+1).padStart(2,"0") + "-" + String(today.getDate()).padStart(2,"0");
+  // Seleziona prima data disponibile
+  const today = new Date();
+  const todayStr = formatLocalDate(today);
   const futureDates = dates.filter(d => d >= todayStr);
   
-  if (!window.APP_STATE.selectedDate) window.APP_STATE.selectedDate = futureDates[0] || dates[0] || todayStr;
+  if (!window.APP_STATE.selectedDate) {
+    window.APP_STATE.selectedDate = futureDates[0] || dates[0] || todayStr;
+  }
   
   renderDatesToolbar(); 
   renderMatchesByDate(window.APP_STATE.selectedDate);
 }
 
 function renderDatesToolbar() {
-  const container = document.getElementById("datesToolbar"); if (!container) return;
-  const now = new Date(), todayStr = now.getFullYear() + "-" + String(now.getMonth()+1).padStart(2,"0") + "-" + String(now.getDate()).padStart(2,"0");
+  const container = document.getElementById("datesToolbar");
+  if (!container) return;
+  
+  const now = new Date();
+  const todayStr = formatLocalDate(now);
+  
   let html = "";
+  
   window.APP_STATE.availableDates.forEach(d => {
-    const isActive = d === window.APP_STATE.selectedDate, isToday = d === todayStr, dateObj = parseLocalDate(d);
-    html += `<div class="date-item ${isActive?'active':''} ${isToday?'today':''}" onclick="selectDate('${Sanitizer.attr(d)}')"><div class="date-day">${dateObj.getDate()}</div><div class="date-month">${dateObj.toLocaleString("it-IT",{month:"short"})}</div></div>`;
+    const isActive = d === window.APP_STATE.selectedDate;
+    const isToday = d === todayStr;
+    const dateObj = parseLocalDate(d);
+    
+    if (!dateObj) return;
+    
+    const dayName = dateObj.toLocaleString("it-IT", { weekday: "short" }).toUpperCase();
+    const dayNum = dateObj.getDate();
+    const monthName = dateObj.toLocaleString("it-IT", { month: "short" });
+    
+    html += `
+      <div class="date-item ${isActive ? 'active' : ''} ${isToday ? 'today' : ''}" 
+           onclick="selectDate('${d}')">
+        <div class="date-day">${dayNum}</div>
+        <div class="date-month">${monthName}</div>
+      </div>
+    `;
   });
-  container.innerHTML = html; 
-  setTimeout(centerActiveDate, 0);
+  
+  container.innerHTML = html;
+  setTimeout(centerActiveDate, 100);
 }
 
 function selectDate(date) { 
@@ -689,34 +742,69 @@ function centerActiveDate() {
 }
 
 function renderMatchesByDate(date) {
-  const container = document.getElementById("matchesList"); if (!container) return;
-  const allMatches = Object.values(window.APP_STATE.matchesById).length > 0 
-    ? Object.values(window.APP_STATE.matchesById) 
-    : (window.APP_CACHE.matches || []);
+  const container = document.getElementById("matchesList");
+  if (!container) return;
   
-  let matches = allMatches.filter(m => m?.DATA?.substring(0,10) === date)
-    .sort((a,b) => ({ "LIVE":0, "PROGRAMMATA":1, "FINITA":2 }[a.STATO_PARTITA]??99) - ({ "LIVE":0, "PROGRAMMATA":1, "FINITA":2 }[b.STATO_PARTITA]??99));
+  const allMatches = window.APP_CACHE.matches || [];
+  
+  let matches = allMatches
+    .filter(m => {
+      const matchDate = String(m.DATA || "").slice(0, 10);
+      return matchDate === date;
+    })
+    .sort((a, b) => {
+      const order = { "LIVE": 0, "PROGRAMMATA": 1, "FINITA": 2 };
+      return (order[a.STATO_PARTITA] || 99) - (order[b.STATO_PARTITA] || 99);
+    });
   
   if (matches.length === 0) {
-    container.innerHTML = `<div style="text-align:center;padding:40px;color:#888">Nessuna partita per questa data</div>`;
+    container.innerHTML = `
+      <div style="text-align:center;padding:40px;color:#888">
+        <div style="font-size:3rem;margin-bottom:16px">📅</div>
+        <div>Nessuna partita per questa data</div>
+      </div>
+    `;
     return;
   }
   
   let html = "";
+  
   matches.forEach(m => {
     const logoCasa = `<div class="team-logo-placeholder"></div>`;
     const logoTrasf = `<div class="team-logo-placeholder"></div>`;
-    let center = "";
-    if (m.STATO_PARTITA === "LIVE") center = `<div class="score live">${m.GOL_CASA??0} - ${m.GOL_TRASFERTA??0}</div><div class="status live">LIVE</div>`;
-    else if (m.STATO_PARTITA === "FINITA") center = `<div class="score">${m.GOL_CASA??0} - ${m.GOL_TRASFERTA??0}</div><div class="status">TERMINATA</div>`;
-    else center = `<div class="time">🕒 ${Sanitizer.html(m.ORA || "--:--")}</div>`;
     
-    html += `<div class="match-card ${m.STATO_PARTITA==="LIVE"?"live-match":""}" onclick="openMatch('${Sanitizer.attr(m.MATCH_ID)}')">
-      <div class="team-block left">${logoCasa}<div class="team-name">${Render.teamName(m.SQUADRA_CASA)}</div></div>
-      <div class="match-center">${center}</div>
-      <div class="team-block right"><div class="team-name">${Render.teamName(m.SQUADRA_TRASFERTA)}</div>${logoTrasf}</div>
-      <div class="match-options" onclick='openMatchMenu(event, "${Sanitizer.attr(m.MATCH_ID)}")'>⋮</div></div>`;
+    let center = "";
+    if (m.STATO_PARTITA === "LIVE") {
+      center = `
+        <div class="score live">${m.GOL_CASA || 0} - ${m.GOL_TRASFERTA || 0}</div>
+        <div class="status live">LIVE</div>
+      `;
+    } else if (m.STATO_PARTITA === "FINITA") {
+      center = `
+        <div class="score">${m.GOL_CASA || 0} - ${m.GOL_TRASFERTA || 0}</div>
+        <div class="status">TERMINATA</div>
+      `;
+    } else {
+      center = `<div class="time">🕒 ${m.ORA || "--:--"}</div>`;
+    }
+    
+    html += `
+      <div class="match-card ${m.STATO_PARTITA === "LIVE" ? "live-match" : ""}" 
+           onclick="openMatch('${m.MATCH_ID}')">
+        <div class="team-block left">
+          ${logoCasa}
+          <div class="team-name">${(m.SQUADRA_CASA || "").toUpperCase()}</div>
+        </div>
+        <div class="match-center">${center}</div>
+        <div class="team-block right">
+          <div class="team-name">${(m.SQUADRA_TRASFERTA || "").toUpperCase()}</div>
+          ${logoTrasf}
+        </div>
+        <div class="match-options" onclick='event.stopPropagation(); openMatchMenu(event, "${m.MATCH_ID}")'>⋮</div>
+      </div>
+    `;
   });
+  
   container.innerHTML = html;
 }
 
