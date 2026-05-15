@@ -1144,12 +1144,27 @@ function renderPlayersList(players) {
     return;
   }
   
-  let html = "<table class='playersTable'><tr><th></th><th>NOME</th><th>GOL</th><th>ASS</th><th>AMM</th><th>ESP</th></tr>";
+  // 🔥 HEADER CON COLONNA MVP VINTI
+  let html = `
+    <table class='playersTable'>
+      <tr>
+        <th></th>
+        <th>NOME</th>
+        <th>GOL</th>
+        <th>ASS</th>
+        <th>AMM</th>
+        <th>ESP</th>
+        <th>🏆 MVP</th>
+      </tr>
+  `;
   
   players.forEach(p => {
     const photoHtml = p.FOTO_ID || p.FOTO_URL
       ? `<img src="${getCachedImage(p.FOTO_ID || p.FOTO_URL, 42)}" class="playerPhoto" alt="${p.NOME}" onerror="this.style.display='none';this.parentElement.innerHTML='<div class=\'playerPhotoEmpty\'></div>'">`
       : "<div class='playerPhotoEmpty'></div>";
+    
+    // 🔥 Valore MVP (gestisce sia MVP che MVP_VINTI)
+    const mvpCount = p.MVP_VINTI ?? p.MVP ?? 0;
     
     html += `
       <tr onclick="openPlayerPopup('${p.PLAYER_ID}')">
@@ -1159,6 +1174,7 @@ function renderPlayersList(players) {
         <td>${p.ASSIST || 0}</td>
         <td>${p.AMMONIZIONI || 0}</td>
         <td>${p.ESPULSIONI || 0}</td>
+        <td class="mvp-cell">${mvpCount}</td>
       </tr>
     `;
   });
