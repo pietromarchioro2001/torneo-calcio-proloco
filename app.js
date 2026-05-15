@@ -12,7 +12,7 @@ const CONFIG = {
 
   BACKEND_URL: 'https://script.google.com/macros/s/AKfycbxXq886t9BjggAWoLfMFs7-aamGuq4zqmcqcPJ8FpYPe9m0KwD3cMLZpymIAMo4Fybb/exec',
   
-  API_TIMEOUT: 15000,
+  API_TIMEOUT: 30000,
   CACHE_VERSION: 'v3.0',
   CACHE_MAX_AGE: 5 * 60 * 1000
 };
@@ -135,7 +135,7 @@ const CacheManager = {
 // 🎨 UTILITY FUNCTIONS - DEVONO ESSERE PRIME!
 // ============================================================================
 
-function getCachedImage(fileId, size = 200) {
+function getCachedImage(fileId, size = 400) {
   if (!fileId) return null;
   const version = localStorage.getItem("img_v_" + fileId) || '1';
   return `https://lh3.googleusercontent.com/d/${fileId}=w${size}?v=${version}`;
@@ -424,11 +424,12 @@ function showHome() {
   renderToolbar("home");
   const app = document.getElementById("app"); if (!app) return;
   const currentYear = new Date().getFullYear();
+  
   app.innerHTML = `
     <div class="home-container">
       <div class="home-sponsors">
-        <img src="https://picsum.photos/seed/sponsor1/120/40" alt="Sponsor 1" loading="lazy">
-        <img src="https://picsum.photos/seed/sponsor2/120/40" alt="Sponsor 2" loading="lazy">
+        <img src="${getCachedImage('https://i.imgur.com/NugXx1k.png', 120)}" alt="Sponsor 1">
+        <img src="${getCachedImage('https://i.imgur.com/oiMHzlC.jpeg', 120)}" alt="Sponsor 2">
       </div>
       <div class="home-bg">
         <svg class="camp camp-left" viewBox="0 0 400 600"><g transform="translate(0,600) scale(0.1,-0.1)" fill="#8c404e"><path d="M1992 5205 c-2 -148 -3 -161 -22 -173 -25 -16 -26 -50 0 -77 17 -18 18 -27 10 -85 -6 -36 -16 -85 -23 -109 -10 -33 -11 -52 -3 -73 15 -40 -8 -202 -45 -312 -43 -127 -80 -188 -182 -291 -65 -67 -98 -109 -125 -164 -35 -72 -37 -79 -37 -175 0 -91 3 -107 30 -161 16 -33 51 -82 78 -109 l49 -49 -5 -56 c-12 -135 -85 -240 -212 -308 -49 -26 -55 -33 -34 -33 57 0 59 -12 59 -298 l0 -261 -27 -19 c-16 -10 -37 -22 -48 -26 -17 -7 -17 -9 -5 -15 9 -3 27 -14 40 -24 l25 -17 0 -361 c0 -399 5 -372 -70 -385 l-40 -7 32 -26 32 -27 1 -274 c0 -150 3 -276 5 -279 13 -12 15 24 15 278 l1 273 30 26 30 25 -48 16 c-41 14 -48 20 -52 46 -3 17 -5 180 -5 362 l0 279 -27 25 c-24 20 -26 26 -13 33 55 34 52 15 51 305 0 266 0 267 -23 286 -13 10 -21 20 -18 22 3 2 29 19 58 37 109 69 172 181 172 306 0 59 -1 62 -46 105 -87 85 -126 202 -104 315 19 101 62 172 156 266 93 91 140 165 178 277 33 96 57 243 55 338 -1 44 3 104 8 134 l9 55 14 -60 c7 -33 14 -112 15 -175 2 -140 29 -259 87 -379 32 -67 58 -103 137 -185 104 -108 143 -173 162 -268 21 -111 -17 -228 -103 -314 l-50 -52 4 -73 c6 -127 64 -223 173 -291 28 -18 52 -33 54 -35 9 -6 -21 -32 -32 -27 -9 3 -12 -64 -10 -273 0 -299 -1 -282 53 -313 13 -7 10 -13 -12 -37 l-28 -29 0 -276 c0 -151 3 -316 6 -366 l7 -90 44 -13 45 -12 -27 -21 -26 -21 1 -274 c0 -151 3 -277 5 -280 13 -12 15 24 15 278 l1 273 30 26 30 25 -48 16 c-41 14 -48 20 -52 46 -3 17 -5 180 -5 362 l-1 333 25 17 c13 10 31 21 39 24 10 4 1 13 -30 30 l-44 24 -3 263 c-2 251 -2 262 18 282 11 11 30 20 43 20 16 0 8 8 -32 30 -143 79 -221 194 -221 327 0 37 6 48 51 93 27 27 62 76 77 108 22 49 26 71 27 158 0 96 -2 103 -37 175 -27 55 -60 98 -130 170 -109 112 -156 191 -193 330 -28 105 -44 272 -27 283 7 4 5 21 -4 53 -8 27 -19 77 -23 113 -8 57 -6 68 10 86 25 27 24 59 -2 77 -16 12 -21 28 -24 77 -4 55 -2 63 15 67 25 7 27 25 3 21 -16 -3 -19 8 -24 82 -4 69 -6 55 -7 -75z m38 -209 c0 -20 -25 -37 -44 -30 -19 7 -21 35 -4 52 14 14 48 -2 48 -22z"/></g></svg>
@@ -471,13 +472,13 @@ function renderTeams() {
       <div style="text-align:center;padding:40px;color:#888">
         <div style="font-size:3rem;margin-bottom:16px">⚽</div>
         <div>Nessuna squadra presente</div>
-        <div style="font-size:.9rem;margin-top:8px;color:#666">Clicca "+ NUOVA SQUADRA" per aggiungere</div>
       </div>
     `;
     return;
   }
   
-  let html = "<table class='teams-table'><tr><th></th><th>SQUADRA</th><th>GIRONE</th><th></th></tr>";
+  // 🔥 RIMOSSA COLONNA GIRONE
+  let html = "<table class='teams-table'><tr><th></th><th>SQUADRA</th><th></th></tr>";
   
   teams.forEach(t => {
     const logoHtml = t.LOGO_FILE_ID 
@@ -488,7 +489,6 @@ function renderTeams() {
       <tr class='team-row-click' data-id='${t.TEAM_ID}'>
         <td><div class="team-logo-box">${logoHtml}</div></td>
         <td><span class='teams-team-name'>${(t.NOME_SQUADRA || "").toUpperCase()}</span></td>
-        <td><span class='girone-badge'>${t.GIRONE || '-'}</span></td>
         <td><div class='delete-btn' data-del='${t.TEAM_ID}' onclick="event.stopPropagation(); deleteTeam('${t.TEAM_ID}')"></div></td>
       </tr>
     `;
@@ -497,7 +497,6 @@ function renderTeams() {
   html += "</table>";
   container.innerHTML = html;
   
-  // Aggiungi event listeners
   document.querySelectorAll(".team-row-click").forEach(row => {
     row.onclick = () => openTeamEditor(row.dataset.id);
   });
@@ -641,9 +640,31 @@ function renderTeamEditor(team, players = []) {
   const logoBox = document.getElementById("teamLogoBox");
   if (logoBox) {
     if (team.LOGO_FILE_ID) {
-      logoBox.innerHTML = `<img src="${getCachedImage(team.LOGO_FILE_ID, 512)}" class="team-header-logo" alt="Logo">`;
+      logoBox.innerHTML = `<img src="${getCachedImage(team.LOGO_FILE_ID, 512)}" class="team-header-logo" alt="Logo" onclick="teamLogoAction()">`;
     } else {
-      logoBox.innerHTML = `<div class="empty-logo">⚽</div>`;
+      logoBox.innerHTML = `<div class="empty-logo" onclick="uploadNewLogo()">⚽</div>`;
+    }
+  }
+  
+  // 🔥 FOTO SQUADRA
+  const photoBox = document.getElementById("teamPhotoBox");
+  if (photoBox) {
+    if (team.FOTO_SQUADRA_FILE_ID) {
+      photoBox.innerHTML = `
+        <div class="team-photo-wrapper">
+          <img src="${getCachedImage(team.FOTO_SQUADRA_FILE_ID, 800)}" 
+               class="team-photo-view loaded" 
+               alt="Foto squadra" 
+               onclick="teamPhotoAction()">
+        </div>
+      `;
+    } else {
+      photoBox.innerHTML = `
+        <div class="team-photo-empty" onclick="uploadNewTeamPhoto()">
+          <div class="team-photo-empty-plus">📷</div>
+          <div class="team-photo-empty-text">FOTO SQUADRA</div>
+        </div>
+      `;
     }
   }
   
@@ -1134,18 +1155,25 @@ function renderStandings(data) {
 function renderGironeTable(title, teams) {
   let html = `<div class="girone-block"><div class="girone-title">${Sanitizer.html(title)}</div><table class="standings-table"><thead><tr>
     <th></th><th class="team-col">SQUADRA</th><th>PT</th><th>PG</th><th>V</th><th>P</th><th>S</th><th>GF</th><th>GS</th><th>DR</th></tr></thead><tbody>`;
+  
   (teams||[]).forEach((t, idx) => {
-    const logo = `<div class="standings-logo-wrap"><div style="font-size:1rem">⚽</div></div>`;
+    // 🔥 LOGO SQUADRA
+    const logoHtml = t.logo 
+      ? `<img src="${getCachedImage(t.logo, 48)}" class="standings-logo" alt="${t.nome}" onerror="this.style.display='none'">`
+      : `<div style="font-size:1.2rem">⚽</div>`;
+    
     html += `<tr class="${idx<2?"qualified":""} ${t.live?"live-team-row":""}">
       <td class="pos-col">${idx+1}</td><td class="team-col">
-        <div class="standings-team">
-          <div class="standings-logo-wrap">${logo}</div>
+        <div class="standings-team" onclick="openTeamEditor('${Sanitizer.attr(t.id)}')">
+          <div class="standings-logo-wrap">${logoHtml}</div>
           <div class="standings-team-name ${t.live?"live-team-name":""}">${Sanitizer.html(t.nome)}</div>
           ${t.live?`<div class="live-dot"></div>`:""}
         </div></td>
       <td class="pts ${t.live?"live-pts":""}">${t.pt}</td><td>${t.pg}</td><td>${t.v}</td><td>${t.p}</td><td>${t.s}</td><td>${t.gf}</td><td>${t.gs}</td><td>${t.dr}</td></tr>`;
   });
-  html += `</tbody></table></div>`; return html;
+  
+  html += `</tbody></table></div>`; 
+  return html;
 }
 
 function loadFinalStage() {
