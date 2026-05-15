@@ -5,7 +5,7 @@
 const CONFIG = {
   // 🔥 SOSTITUISCI CON IL TUO URL APPS SCRIPT WEB APP
 
-  BACKEND_URL: 'https://script.google.com/macros/s/AKfycbwHSSRnsZUbwPBbstt1856txSJ4UeKcIeMaJJakQ3HLG9AWOvMbp81Dk5vvt9NX-55Q/exec',
+  BACKEND_URL: 'https://script.google.com/macros/s/AKfycbzmfASzrJHbB5gynkzXFX_ZS2-tvN6SQfl0Q4pJz499dqYgV-LceRRx4GR2Ze8DBlwn/exec',
   
   API_TIMEOUT: 30000,
   CACHE_VERSION: 'v3.0',
@@ -1294,6 +1294,17 @@ function renderMatchesByDate(date) {
   if (!container) return;
   
   const allMatches = window.APP_CACHE.matches || [];
+
+   // 🔥 DEBUG: Controlla partite FINALI
+  const finalMatches = allMatches.filter(m => m.FASE === "FINALI");
+  console.log('🔍 Partite FINALI:', finalMatches.map(m => ({
+    id: m.MATCH_ID,
+    key: m.matchKey,
+    data: m.DATA,
+    ora: m.ORA,
+    casa: m.SQUADRA_CASA,
+    trasferta: m.SQUADRA_TRASFERTA
+  })));
   
   // 🔥 FILTRA: Mostra TUTTE le partite (gironi + finali)
   let matches = allMatches
@@ -2259,15 +2270,76 @@ function renderFinalStage(data) {
 }
 
 function renderFinalBracket(matches) {
-  const container = document.getElementById("finalBracketContainer"); if (!container) return;
+  const container = document.getElementById("finalBracketContainer");
+  if (!container) return;
+  
+  // 🔥 Crea mappa matchKey → match per accesso rapido
+  const matchMap = {};
+  (matches || []).forEach(m => {
+    if (m.matchKey) {
+      matchMap[m.matchKey] = m;
+    }
+  });
+  
   container.innerHTML = `<div class="tournament-wrapper">
-    ${renderBracketMatch(null,"qf1")}${renderBracketMatch(null,"qf2")}${renderBracketMatch(null,"qf3")}${renderBracketMatch(null,"qf4")}
-    ${renderPlaceholderCard("SF1","sf1")}${renderPlaceholderCard("SF2","sf2")}${renderPlaceholderCard("FINALE 1°-2°","final-match")}${renderPlaceholderCard("FINALE 3°-4°","third-place")}</div>`;
+    <!-- Quarti -->
+    ${renderBracketMatch(matchMap["Q1"], "qf1")}
+    ${renderBracketMatch(matchMap["Q2"], "qf2")}
+    ${renderBracketMatch(matchMap["Q3"], "qf3")}
+    ${renderBracketMatch(matchMap["Q4"], "qf4")}
+    
+    <!-- Semi e Finali (placeholder finché non giocate) -->
+    ${renderPlaceholderCard("SF1", "sf1")}
+    ${renderPlaceholderCard("SF2", "sf2")}
+    ${renderPlaceholderCard("FINALE 1°-2°", "final-match")}
+    ${renderPlaceholderCard("FINALE 3°-4°", "third-place")}
+  </div>`;
 }
 
 function renderPlaceholderCard(label, cls="") { return `<div class="bracket-placeholder ${cls}"><div class="bracket-placeholder-title">${Sanitizer.html(label)}</div></div>`; }
 function renderBracketMatch(match, cls="") {
-  return `<div class="bracket-match placeholder-match ${cls}"><div class="placeholder-center">TBD</div></div>`;
+  // Se non c'è la partita, mostra placeholder
+  if (!match || !match.casa?.nome) {
+    return `<div class="bracket-match placeholder-match ${cls}"><div class="placeholder-center">TBD</div></div>`;
+  }
+  
+  // Loghi squadre
+  const logoCasa = match.casa?.logo 
+    ? `<img src="${getCachedImage(match.casa.logo, 32)}" alt="${match.casa.nome}" onerror="this.style.display='none'">`
+    : `<div style="width:32px;height:32px;border-radius:50%;background:#f0f0f0"></div>`;
+  
+  const logoTrasf = match.trasferta?.logo 
+    ? `<img src="${getCachedImage(match.trasferta.logo, 32)}" alt="${match.trasferta.nome}" onerror="this.style.display='none'">`
+    : `<div style="width:32px;height:32px;border-radius:50%;background:#f0f0f0"></div>`;
+  
+  // Punteggio o stato
+  const isLive = match.stato === "LIVE";
+  const isFinished = match.stato === "FINITA";
+  
+  let scoreHtml = "";
+  if (isLive || isFinished) {
+    scoreHtml = `<span class="bracket-score">${match.golCasa||0} - ${match.golTrasferta||0}</span>`;
+  } else if (match.ora) {
+    scoreHtml = `<span style="font-size:11px;color:#888">${match.ora}</span>`;
+  }
+  
+  // Indicatore LIVE
+  const liveDot = isLive ? '<span style="color:#dc2626;font-size:10px;margin-left:4px">●</span>' : '';
+  
+  return `
+    <div class="bracket-match ${cls}" onclick="openMatch('${match.matchId}')">
+      <div class="bracket-team">
+        ${logoCasa}
+        <span>${(match.casa?.nome || "TBD").toUpperCase()}</span>
+        ${liveDot}
+      </div>
+      <div class="bracket-team">
+        ${logoTrasf}
+        <span>${(match.trasferta?.nome || "TBD").toUpperCase()}</span>
+        ${scoreHtml}
+      </div>
+    </div>
+  `;
 }
 
 function createFinalStage() {
