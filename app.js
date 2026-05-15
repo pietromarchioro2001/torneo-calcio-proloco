@@ -1180,6 +1180,7 @@ function renderMatchesByDate(date) {
   
   const allMatches = window.APP_CACHE.matches || [];
   
+  // 🔥 FILTRA: Mostra TUTTE le partite (gironi + finali)
   let matches = allMatches
     .filter(m => {
       const matchDate = String(m.DATA || "").slice(0, 10);
@@ -1203,22 +1204,38 @@ function renderMatchesByDate(date) {
   let html = "";
   
   matches.forEach(m => {
-    const logoCasa = `<div class="team-logo-placeholder"></div>`;
-    const logoTrasf = `<div class="team-logo-placeholder"></div>`;
+    // 🔥 LOGHI SQUADRE
+    const logoCasa = m.LOGO_CASA 
+      ? `<img src="${getCachedImage(m.LOGO_CASA, 50)}" alt="${m.SQUADRA_CASA}" onerror="this.style.display='none';this.parentElement.innerHTML='<div class=\'team-logo-placeholder\'></div>'">`
+      : `<div class="team-logo-placeholder"></div>`;
+    
+    const logoTrasf = m.LOGO_TRASFERTA 
+      ? `<img src="${getCachedImage(m.LOGO_TRASFERTA, 50)}" alt="${m.SQUADRA_TRASFERTA}" onerror="this.style.display='none';this.parentElement.innerHTML='<div class=\'team-logo-placeholder\'></div>'">`
+      : `<div class="team-logo-placeholder"></div>`;
+    
+    // 🔥 FASE PARTITA (GIRONI/FINALI)
+    const faseBadge = m.FASE && m.FASE !== "GIRONI" 
+      ? `<div style="font-size:10px;color:#888;text-transform:uppercase;letter-spacing:1px;margin-top:4px">${m.FASE}</div>`
+      : '';
     
     let center = "";
     if (m.STATO_PARTITA === "LIVE") {
       center = `
         <div class="score live">${m.GOL_CASA || 0} - ${m.GOL_TRASFERTA || 0}</div>
         <div class="status live">LIVE</div>
+        ${faseBadge}
       `;
     } else if (m.STATO_PARTITA === "FINITA") {
       center = `
         <div class="score">${m.GOL_CASA || 0} - ${m.GOL_TRASFERTA || 0}</div>
         <div class="status">TERMINATA</div>
+        ${faseBadge}
       `;
     } else {
-      center = `<div class="time">🕒 ${m.ORA || "--:--"}</div>`;
+      center = `
+        <div class="time">🕒 ${m.ORA || "--:--"}</div>
+        ${faseBadge}
+      `;
     }
     
     html += `
@@ -1330,38 +1347,161 @@ function openMatch(id) {
 }
 
 function renderMatchPage(match) {
+  // 🔥 LOGHI SQUADRE
+  const logoCasa = match.LOGO_CASA 
+    ? `<img src="${getCachedImage(match.LOGO_CASA, 120)}" alt="${match.SQUADRA_CASA}" onerror="this.style.display='none'">`
+    : `<div style="width:70px;height:70px;border-radius:50%;background:#f0f0f0;display:flex;align-items:center;justify-content:center;font-size:1.5rem">⚽</div>`;
+  
+  const logoTrasf = match.LOGO_TRASFERTA 
+    ? `<img src="${getCachedImage(match.LOGO_TRASFERTA, 120)}" alt="${match.SQUADRA_TRASFERTA}" onerror="this.style.display='none'">`
+    : `<div style="width:70px;height:70px;border-radius:50%;background:#f0f0f0;display:flex;align-items:center;justify-content:center;font-size:1.5rem">⚽</div>`;
+  
   document.getElementById("app").innerHTML = `
     <div class="match-page">
       <div class="match-header-big">
-        <div class="team-big left"><div style="width:70px;height:70px;border-radius:50%;background:#f0f0f0;display:flex;align-items:center;justify-content:center;font-size:1.5rem">⚽</div><div class="team-big-name">${Render.teamName(match.SQUADRA_CASA)}</div></div>
+        <div class="team-big left">
+          ${logoCasa}
+          <div class="team-big-name">${(match.SQUADRA_CASA || "").toUpperCase()}</div>
+        </div>
         <div class="match-center">
-          <div class="match-controls-top"><div class="phase-btn start-btn" onclick="toggleMatch()">INIZIO</div></div>
-          <div class="score-big">${match.GOL_CASA||0} - ${match.GOL_TRASFERTA||0}</div>
+          <div class="match-controls-top">
+            <div class="phase-btn start-btn ${match.STATO_PARTITA === "LIVE" ? "active" : ""}" 
+                 onclick="toggleMatch()">
+              ${match.STATO_PARTITA === "LIVE" ? "CONCLUDI" : "INIZIA"}
+            </div>
+          </div>
+          <div class="score-big">${match.GOL_CASA || 0} - ${match.GOL_TRASFERTA || 0}</div>
           <div class="match-status" id="matchStatus"></div>
         </div>
-        <div class="team-big right"><div class="team-big-name">${Render.teamName(match.SQUADRA_TRASFERTA)}</div><div style="width:70px;height:70px;border-radius:50%;background:#f0f0f0;display:flex;align-items:center;justify-content:center;font-size:1.5rem">⚽</div></div>
+        <div class="team-big right">
+          <div class="team-big-name">${(match.SQUADRA_TRASFERTA || "").toUpperCase()}</div>
+          ${logoTrasf}
+        </div>
       </div>
+      
       <div class="match-toolbar">
         <div class="mt-btn active" data-tab="diretta">DIRETTA</div>
         <div class="mt-btn" data-tab="giocatori">GIOCATORI</div>
-        <div class="mt-btn disabled" id="tabBtnMVP" data-tab="mvp">MVP</div>
+        <div class="mt-btn ${match.STATO_PARTITA === "FINITA" ? "" : "disabled"}" 
+             data-tab="mvp" ${match.STATO_PARTITA !== "FINITA" ? "style=\"pointer-events:none;opacity:0.3\"" : ""}>
+          MVP
+        </div>
       </div>
+      
       <div class="match-content">
+        <!-- TAB DIRETTA -->
         <div class="tab-content active" id="tab-diretta">
           <div class="teams-events">
-            <div class="events-actions"><div class="left"><div class="phase-btn small" onclick="addEvent('casa')">+ EVENTO</div></div><div class="right"><div class="phase-btn small" onclick="addEvent('trasferta')">+ EVENTO</div></div></div>
+            <div class="events-actions">
+              <div class="left">
+                <div class="phase-btn small" onclick="addEvent('casa')" 
+                     ${match.STATO_PARTITA !== "LIVE" ? "style=\"opacity:0.5;pointer-events:none\"" : ""}>
+                  + EVENTO CASA
+                </div>
+              </div>
+              <div class="right">
+                <div class="phase-btn small" onclick="addEvent('trasferta')"
+                     ${match.STATO_PARTITA !== "LIVE" ? "style=\"opacity:0.5;pointer-events:none\"" : ""}>
+                  + EVENTO TRASFERTA
+                </div>
+              </div>
+            </div>
+            
             <div class="cronaca-title center"><span>CRONACA</span></div>
-            <div id="eventsTimeline" class="events-timeline"><div id="eventsContent"><div class="empty-events-grid"><div class="empty-team-events"><div class="empty-events-text">Nessun evento</div><div class="empty-events-icon">📋</div></div><div class="empty-team-events"><div class="empty-events-text">Nessun evento</div><div class="empty-events-icon">📋</div></div></div></div></div>
+            
+            <div id="eventsTimeline" class="events-timeline">
+              <div id="eventsContent"></div>
+            </div>
+            
             <div id="mvpBanner" class="mvp-banner"></div>
           </div>
         </div>
-        <div class="tab-content" id="tab-giocatori"><div style="text-align:center;padding:20px;color:#888">Seleziona un giocatore dalla lista</div></div>
-        <div class="tab-content" id="tab-mvp"><div style="text-align:center;padding:20px;color:#888">MVP disponibile a fine partita</div></div>
-        <div class="back-btn-wrapper"><div class="phase-btn secondary" onclick="showMatches()">INDIETRO</div></div>
+        
+        <!-- TAB GIOCATORI -->
+        <div class="tab-content" id="tab-giocatori">
+          <div class="players-columns" id="playersColumns">
+            <div style="text-align:center;padding:40px;color:#888;grid-column:1/-1">
+              Caricamento giocatori...
+            </div>
+          </div>
+        </div>
+        
+        <!-- TAB MVP -->
+        <div class="tab-content" id="tab-mvp">
+          <div class="players-columns" id="mvpColumns">
+            <div style="text-align:center;padding:40px;color:#888;grid-column:1/-1">
+              Seleziona il MVP della partita
+            </div>
+          </div>
+        </div>
+        
+        <div class="back-btn-wrapper">
+          <div class="phase-btn secondary" onclick="showMatches()">INDIETRO</div>
+        </div>
       </div>
-    </div>`;
-  window.APP_STATE.lastMatch = match; 
+    </div>
+  `;
+  
+  // Aggiorna UI stato
+  updateMatchUI(match);
+  
+  // Carica eventi
+  const events = window.APP_CACHE.events?.filter(e => e.MATCH_ID === match.MATCH_ID) || [];
+  renderEvents(events, match);
+  
+  // Carica giocatori (async)
+  loadPlayersForMatch(match);
+  
+  // MVP banner se finita
   updateMVPBanner(match);
+  
+  window.APP_STATE.lastMatch = match;
+}
+
+function renderEvents(events, match) {
+  const container = document.getElementById("eventsContent");
+  if (!container) return;
+  
+  if (!events?.length) {
+    container.innerHTML = `
+      <div class="empty-events-grid">
+        <div class="empty-team-events">
+          <div class="empty-events-text">Nessun evento</div>
+          <div class="empty-events-icon">📋</div>
+        </div>
+        <div class="empty-team-events">
+          <div class="empty-events-text">Nessun evento</div>
+          <div class="empty-events-icon">📋</div>
+        </div>
+      </div>
+    `;
+    return;
+  }
+  
+  // Ordina per minuto
+  events = [...events].sort((a, b) => (a.MINUTO || 0) - (b.MINUTO || 0));
+  
+  let html = "";
+  
+  events.forEach(e => {
+    const isCasa = String(e.TEAM_ID) === String(match.CASA_ID);
+    const icon = e.TIPO === "GOAL" ? "⚽" : e.TIPO === "AMMONIZIONE" ? "🟨" : "🟥";
+    
+    html += `
+      <div class="event-line ${isCasa ? "left" : "right"}">
+        <div class="event-content">
+          <span class="event-minute">${e.MINUTO}'</span>
+          <span class="event-icon">${icon}</span>
+          <span class="event-player">
+            ${(e.PLAYER || "").toUpperCase()}
+            ${e.ASSIST ? `<span class="assist">(${(e.ASSIST).toUpperCase()})</span>` : ""}
+          </span>
+        </div>
+      </div>
+    `;
+  });
+  
+  container.innerHTML = html;
 }
 
 function updateMatchUI(match) {
@@ -1405,6 +1545,172 @@ function toggleMatch() {
     if (res?.status) match.STATO_PARTITA = res.status;
     updateMatchUI(match);
   }).catch(() => updateMatchUI(match));
+}
+
+function loadPlayersForMatch(match) {
+  const casaId = match?.CASA_ID;
+  const trasfId = match?.TRASFERTA_ID;
+  
+  // Ottieni giocatori da cache o backend
+  const casaData = window.APP_CACHE.fullTeams?.[casaId];
+  const trasfData = window.APP_CACHE.fullTeams?.[trasfId];
+  
+  if (casaData && trasfData) {
+    renderPlayersTab(casaData, trasfData, match);
+    renderMVPTab(casaData, trasfData, match);
+    return;
+  }
+  
+  // Carica dal backend se non in cache
+  Promise.all([
+    ApiClient.getTeamFull(casaId).catch(() => null),
+    ApiClient.getTeamFull(trasfId).catch(() => null)
+  ])
+  .then(([casaRes, trasfRes]) => {
+    if (casaRes) {
+      if (!window.APP_CACHE.fullTeams) window.APP_CACHE.fullTeams = {};
+      window.APP_CACHE.fullTeams[casaId] = casaRes;
+    }
+    if (trasfRes) {
+      if (!window.APP_CACHE.fullTeams) window.APP_CACHE.fullTeams = {};
+      window.APP_CACHE.fullTeams[trasfId] = trasfRes;
+    }
+    
+    renderPlayersTab(casaRes, trasfRes, match);
+    renderMVPTab(casaRes, trasfRes, match);
+  })
+  .catch(err => console.error('Error loading players:', err));
+}
+
+function renderPlayersTab(casaData, trasfData, match) {
+  const container = document.getElementById("playersColumns");
+  if (!container) return;
+  
+  const casaPlayers = casaData?.players || [];
+  const trasfPlayers = trasfData?.players || [];
+  
+  // Ottieni eventi per badge
+  const events = window.APP_CACHE.events?.filter(e => e.MATCH_ID === match.MATCH_ID) || [];
+  const eventMap = {};
+  events.forEach(e => {
+    if (e.PLAYER_ID) {
+      if (!eventMap[e.PLAYER_ID]) eventMap[e.PLAYER_ID] = [];
+      eventMap[e.PLAYER_ID].push(e.TIPO);
+    }
+  });
+  
+  const renderPlayerList = (players, teamName) => {
+    if (!players.length) return `<div style="text-align:center;padding:20px;color:#888">Nessun giocatore</div>`;
+    
+    let html = "<div class='players-list'>";
+    players.forEach(p => {
+      const playerEvents = eventMap[p.PLAYER_ID] || [];
+      const badges = playerEvents.map(t => 
+        t === "GOAL" ? "⚽" : t === "AMMONIZIONE" ? "🟨" : "🟥"
+      ).join(" ");
+      
+      const photoHtml = p.FOTO_ID 
+        ? `<img src="${getCachedImage(p.FOTO_ID, 40)}" alt="${p.NOME}" onerror="this.style.display='none'">`
+        : `<div class="player-avatar-fallback">👤</div>`;
+      
+      html += `
+        <div class="player-row">
+          <div class="player-avatar">${photoHtml}</div>
+          <div class="player-name">
+            ${(p.NOME || "").toUpperCase()}
+            ${badges ? `<span class="player-badges">${badges}</span>` : ""}
+          </div>
+        </div>
+      `;
+    });
+    html += "</div>";
+    return html;
+  };
+  
+  container.innerHTML = `
+    <div class="players-col">
+      <div class="players-team">${(casaData?.team?.NOME_SQUADRA || match.SQUADRA_CASA || "").toUpperCase()}</div>
+      ${renderPlayerList(casaPlayers, match.SQUADRA_CASA)}
+    </div>
+    <div class="players-col">
+      <div class="players-team">${(trasfData?.team?.NOME_SQUADRA || match.SQUADRA_TRASFERTA || "").toUpperCase()}</div>
+      ${renderPlayerList(trasfPlayers, match.SQUADRA_TRASFERTA)}
+    </div>
+  `;
+}
+
+function renderMVPTab(casaData, trasfData, match) {
+  const container = document.getElementById("mvpColumns");
+  if (!container) return;
+  
+  if (match.STATO_PARTITA !== "FINITA") {
+    container.innerHTML = `<div style="text-align:center;padding:40px;color:#888;grid-column:1/-1">MVP disponibile solo a fine partita</div>`;
+    return;
+  }
+  
+  const casaPlayers = casaData?.players || [];
+  const trasfPlayers = trasfData?.players || [];
+  const currentMVP = match.MVP;
+  
+  const renderMVPList = (players) => {
+    if (!players.length) return `<div style="text-align:center;padding:20px;color:#888">Nessun giocatore</div>`;
+    
+    let html = "<div class='players-list'>";
+    players.forEach(p => {
+      const isSelected = p.NOME === currentMVP;
+      const photoHtml = p.FOTO_ID 
+        ? `<img src="${getCachedImage(p.FOTO_ID, 40)}" alt="${p.NOME}" onerror="this.style.display='none'">`
+        : `<div class="player-avatar-fallback">👤</div>`;
+      
+      html += `
+        <div class="player-row ${isSelected ? "selected" : ""}" 
+             onclick="selectMVP('${p.PLAYER_ID}', '${p.NOME.replace(/'/g, "\\'")}')">
+          <div class="player-avatar">${photoHtml}</div>
+          <div class="player-name">${(p.NOME || "").toUpperCase()}</div>
+          ${isSelected ? '<div class="player-check">✓</div>' : ''}
+        </div>
+      `;
+    });
+    html += "</div>";
+    return html;
+  };
+  
+  container.innerHTML = `
+    <div class="players-col">
+      <div class="players-team">${(casaData?.team?.NOME_SQUADRA || match.SQUADRA_CASA || "").toUpperCase()}</div>
+      ${renderMVPList(casaPlayers)}
+    </div>
+    <div class="players-col">
+      <div class="players-team">${(trasfData?.team?.NOME_SQUADRA || match.SQUADRA_TRASFERTA || "").toUpperCase()}</div>
+      ${renderMVPList(trasfPlayers)}
+    </div>
+  `;
+}
+
+async function selectMVP(playerId, playerName) {
+  const match = window.APP_STATE.lastMatch;
+  if (!match) return;
+  
+  try {
+    await ApiClient.saveMVPFinal(match.MATCH_ID, playerId);
+    
+    // Aggiorna MVP in cache
+    match.MVP = playerName;
+    window.APP_STATE.lastMatch = match;
+    
+    // Aggiorna UI
+    updateMVPBanner(match);
+    renderMVPTab(
+      window.APP_CACHE.fullTeams?.[match.CASA_ID],
+      window.APP_CACHE.fullTeams?.[match.TRASFERTA_ID],
+      match
+    );
+    
+    console.log('✅ MVP salvato:', playerName);
+  } catch (error) {
+    console.error('Error saving MVP:', error);
+    alert('Errore salvataggio MVP: ' + error.message);
+  }
 }
 
 // ============================================================================
