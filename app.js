@@ -449,29 +449,25 @@ function getNextMatchCard() {
 }
 
 /**
- * Genera HTML per la card partita nella home
+ * Genera HTML per la card partita nella home (Versione Compatta)
  */
 function renderHomeMatchCard(match, isLive) {
+  // Loghi
   const logoCasa = match.LOGO_CASA 
-    ? `<img src="${getCachedImage(match.LOGO_CASA, 40)}" alt="${match.SQUADRA_CASA}" onerror="this.style.display='none'">`
+    ? `<img src="${getCachedImage(match.LOGO_CASA, 32)}" alt="${match.SQUADRA_CASA}" onerror="this.style.display='none'">`
     : `<div class="home-team-logo">⚽</div>`;
   
   const logoTrasf = match.LOGO_TRASFERTA 
-    ? `<img src="${getCachedImage(match.LOGO_TRASFERTA, 40)}" alt="${match.SQUADRA_TRASFERTA}" onerror="this.style.display='none'">`
+    ? `<img src="${getCachedImage(match.LOGO_TRASFERTA, 32)}" alt="${match.SQUADRA_TRASFERTA}" onerror="this.style.display='none'">`
     : `<div class="home-team-logo">⚽</div>`;
   
-  const statusLabel = isLive ? "🔴 IN CORSO" : "📅 PROSSIMA PARTITA";
-  const statusClass = isLive ? "home-status-live" : "home-status-scheduled";
-  
+  // Centro: Risultato (se LIVE) o Ora/Data (se programmata)
   let centerContent = "";
   if (isLive) {
-    centerContent = `
-      <div class="home-score">${match.GOL_CASA || 0} - ${match.GOL_TRASFERTA || 0}</div>
-      <div class="home-match-time">LIVE</div>
-    `;
+    centerContent = `<div class="home-score">${match.GOL_CASA || 0} - ${match.GOL_TRASFERTA || 0}</div>`;
   } else {
     const dateObj = parseLocalDate(match.DATA);
-    const dateStr = dateObj ? `${dateObj.getDate()} ${dateObj.toLocaleString("it-IT", {month:"short"})}` : match.DATA;
+    const dateStr = dateObj ? `${dateObj.getDate()}/${dateObj.getMonth()+1}` : "";
     centerContent = `
       <div class="home-match-time">${match.ORA || "--:--"}</div>
       <div class="home-match-date">${dateStr}</div>
@@ -480,19 +476,21 @@ function renderHomeMatchCard(match, isLive) {
   
   return `
     <div class="home-next-match" onclick="openMatch('${match.MATCH_ID}')">
-      <div class="home-match-label ${statusClass}">${statusLabel}</div>
-      <div class="home-match-content">
-        <div class="home-match-teams">
-          ${logoCasa}
-          <span class="home-team">${(match.SQUADRA_CASA || "").toUpperCase()}</span>
-        </div>
-        <div class="home-match-center">
-          ${centerContent}
-        </div>
-        <div class="home-match-teams">
-          <span class="home-team">${(match.SQUADRA_TRASFERTA || "").toUpperCase()}</span>
-          ${logoTrasf}
-        </div>
+      <!-- Squadra Casa -->
+      <div class="home-team-block left">
+        ${logoCasa}
+        <span class="home-team">${(match.SQUADRA_CASA || "").toUpperCase()}</span>
+      </div>
+      
+      <!-- Centro -->
+      <div class="home-match-center">
+        ${centerContent}
+      </div>
+      
+      <!-- Squadra Trasferta -->
+      <div class="home-team-block right">
+        <span class="home-team">${(match.SQUADRA_TRASFERTA || "").toUpperCase()}</span>
+        ${logoTrasf}
       </div>
     </div>
   `;
