@@ -376,22 +376,6 @@ const Render = {
   }
 };
 
-function parseLocalDate(dateStr) {
-  if (!dateStr) return null;
-  const clean = dateStr.substring(0, 10);
-  const parts = clean.split("-");
-  if (parts.length !== 3) return null;
-  const [y, m, d] = parts.map(Number);
-  return new Date(y, m - 1, d);
-}
-
-function formatLocalDate(date) {
-  const y = date.getFullYear();
-  const m = String(date.getMonth() + 1).padStart(2, "0");
-  const d = String(date.getDate()).padStart(2, "0");
-  return `${y}-${m}-${d}`;
-}
-
 // ============================================================================
 // 🏠 CORE UI FUNCTIONS
 // ============================================================================
@@ -2170,21 +2154,8 @@ function bootAdminApp() {
     setTimeout(() => loader?.remove(), 300); 
   }, 500);
   
-  // 🔥 Carica dati in background (NON bloccante)
+  // 🔥 Carica dati PRINCIPALI
   ApiClient.getInitialData()
-  // Dopo getInitialData():
-  ApiClient.isFinalStageStarted()
-    .then(started => {
-      if (!window.APP_CACHE.meta) window.APP_CACHE.meta = {};
-      window.APP_CACHE.meta.finalStageStarted = started;
-      console.log('Final stage started:', started);
-    })
-    .catch(err => console.warn('Could not check final stage:', err));
-    .then(started => {
-      if (!window.APP_CACHE.meta) window.APP_CACHE.meta = {};
-      window.APP_CACHE.meta.finalStageStarted = started;
-    })
-    .catch(() => {});
     .then(data => {
       console.log('✅ Dati caricati:', data);
       
@@ -2216,10 +2187,20 @@ function bootAdminApp() {
       }
       
       console.log("✅ App ready - Dati sincronizzati");
+      
+      // 🔥 DOPO i dati principali, carica flag fase finale (separato!)
+      return ApiClient.isFinalStageStarted().catch(err => {
+        console.warn('Could not check final stage:', err);
+        return false;
+      });
+    })
+    .then(started => {
+      if (!window.APP_CACHE.meta) window.APP_CACHE.meta = {};
+      window.APP_CACHE.meta.finalStageStarted = started;
+      console.log('Final stage started:', started);
     })
     .catch(error => {
       console.error('❌ Errore caricamento dati:', error);
-      // Non bloccare l'app se il backend fallisce
       console.log('⚠️ App in modalità offline - usando cache locale');
     });
   
