@@ -123,15 +123,26 @@ body{
   position:relative;
 }
 
-.home-sponsors{
-  position:absolute;
-  top:25px;
-  display:flex;
-  gap:100px;
+.home-sponsors {
+  position: absolute;
+  top: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: clamp(30px, 8vw, 150px); /* Gap responsive */
+  z-index: 10;
+  align-items: center;
 }
 
-.home-sponsors img{
-  height:70px;
+.home-sponsors img {
+  height: clamp(60px, 10vh, 120px); /* Min 60px, max 120px */
+  width: auto;
+  object-fit: contain;
+  transition: transform 0.3s ease;
+}
+
+.home-sponsors img:hover {
+  transform: scale(1.05);
 }
 
 .home-subtitle{
@@ -157,30 +168,42 @@ body{
   opacity:0.6;
 }
 
-.home-bg{
-  position:absolute;
-  inset:0;
-  pointer-events:none;
-  overflow:hidden;
+.home-bg {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
 }
 
-.camp{
-  position:absolute;
-  top:50%;
-  transform:translateY(-50%) scale(1);
-  transform-origin:center;
-  height:120vh;
-  opacity:0.18;
-  pointer-events:none;
+.camp {
+  position: absolute;
+  top: 50%;
+  height: min(85vh, 700px); /* Si adatta ma max 700px */
+  width: auto;
+  opacity: 0.18;
+  pointer-events: none;
+  /* Mantiene proporzioni SVG */
+  preserveAspectRatio: xMidYMid meet;
 }
 
-.camp-left{
-  left:-40px;
-  transform:translateY(-55%) scale(0.9);
+.camp-left {
+  left: 2%;
+  transform: translateY(-50%);
+  max-width: 40vw; /* Max 40% viewport */
 }
 
-.camp-right{
-  right:-80px;
+.camp-right {
+  right: 2%;
+  transform: translateY(-50%) scaleX(-1); /* Specchiato */
+  max-width: 40vw;
+}
+
+.camp svg {
+  width: 100%;
+  height: 100%;
+  /* Preserva proporzioni senza deformare */
+  preserveAspectRatio: xMidYMid meet;
+  vector-effect: non-scaling-stroke;
 }
 
 .home-content{
@@ -3797,4 +3820,37 @@ body{
   /* Nascondi elementi non essenziali */
   .home-sponsors{ display:none; }
   .sub-title::before, .sub-title::after{ display:none; }
+}
+
+@media (max-width: 768px) {
+  .camp {
+    height: min(60vh, 400px); /* Più piccoli su mobile */
+    opacity: 0.12; /* Meno evidenti */
+  }
+  
+  .camp-left {
+    left: 0;
+  }
+  
+  .camp-right {
+    right: 0;
+  }
+  
+  .home-sponsors img {
+    height: clamp(40px, 8vh, 80px); /* Più piccoli su mobile */
+  }
+}
+
+@media (max-width: 480px) {
+  .camp {
+    display: none; /* Nascondi su schermi molto piccoli */
+  }
+  
+  .home-sponsors {
+    gap: 15px;
+  }
+  
+  .home-sponsors img {
+    height: 50px;
+  }
 }
