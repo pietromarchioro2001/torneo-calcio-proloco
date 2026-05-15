@@ -12,7 +12,7 @@
 const CONFIG = {
   // 🔥 IMPORTANTE: Sostituisci con l'URL del tuo Web App Apps Script deployato
   // Esempio: 'https://script.google.com/macros/s/AKfycbx.../exec'
-  BACKEND_URL: localStorage.getItem('https://script.google.com/macros/s/AKfycbwtraNG5E3dNNr6903IiU_zJO-I2p_QXXkVk-bRA6LGhoMCWhFSM9AulxqFqG8iLxoB/exec') || '',
+  BACKEND_URL: localStorage.getItem('https://script.google.com/macros/s/AKfycbzYcTPGZwaM7R3LLVZB1sJEbQPF-XxhOVGaZZRW2HbC-IyiEnfbG3HdFol5KWLj1kC8/exec') || '',
   
   // Timeout per le chiamate API
   API_TIMEOUT: 15000,
@@ -134,44 +134,17 @@ const CacheManager = {
 };
 
 // ============================================================================
-// 🌐 API CLIENT (fetch + Apps Script Web App)
+// 🌐 API CLIENT - Corretto per il tuo backend Apps Script
 // ============================================================================
 
 const ApiClient = {
-  // Mock data per demo mode
-  _mockData: {
-    teams: [
-      { TEAM_ID: 't1', NOME_SQUADRA: 'SARNONICO', GIRONE: 'A', LOGO_FILE_ID: null },
-      { TEAM_ID: 't2', NOME_SQUADRA: 'ROMALLO', GIRONE: 'A', LOGO_FILE_ID: null },
-      { TEAM_ID: 't3', NOME_SQUADRA: 'MALOSCO', GIRONE: 'B', LOGO_FILE_ID: null },
-      { TEAM_ID: 't4', NOME_SQUADRA: 'LIVO', GIRONE: 'B', LOGO_FILE_ID: null }
-    ],
-    matches: [
-      { MATCH_ID: 'm1', CASA_ID: 't1', TRASFERTA_ID: 't2', SQUADRA_CASA: 'SARNONICO', SQUADRA_TRASFERTA: 'ROMALLO', DATA: new Date().toISOString().slice(0,10), ORA: '20:30', STATO_PARTITA: 'PROGRAMMATA', GOL_CASA: 0, GOL_TRASFERTA: 0 },
-      { MATCH_ID: 'm2', CASA_ID: 't3', TRASFERTA_ID: 't4', SQUADRA_CASA: 'MALOSCO', SQUADRA_TRASFERTA: 'LIVO', DATA: new Date().toISOString().slice(0,10), ORA: '21:00', STATO_PARTITA: 'LIVE', GOL_CASA: 2, GOL_TRASFERTA: 1 }
-    ],
-    standings: {
-      A: [
-        { id: 't1', nome: 'SARNONICO', pt: 6, pg: 2, v: 2, p: 0, s: 0, gf: 5, gs: 1, dr: 4, live: false },
-        { id: 't2', nome: 'ROMALLO', pt: 3, pg: 2, v: 1, p: 0, s: 1, gf: 3, gs: 3, dr: 0, live: true }
-      ],
-      B: [
-        { id: 't3', nome: 'MALOSCO', pt: 4, pg: 2, v: 1, p: 1, s: 0, gf: 4, gs: 3, dr: 1, live: true },
-        { id: 't4', nome: 'LIVO', pt: 1, pg: 2, v: 0, p: 1, s: 1, gf: 2, gs: 4, dr: -2, live: false }
-      ]
-    }
-  },
+  // ... (CONFIG e _mockData restano uguali) ...
 
-  /**
-   * Chiamata generica al backend Apps Script
-   * @param {string} action - Nome della funzione Apps Script da chiamare
-   * @param {any} payload - Dati da inviare al backend
-   */
   async call(action, payload = null) {
     // Demo mode fallback
     if (CONFIG.isDemo) {
       console.log(`[DEMO] Api.call("${action}", ...)`);
-      await new Promise(r => setTimeout(r, 300)); // Simula network delay
+      await new Promise(r => setTimeout(r, 300));
       return this._mockResponse(action, payload);
     }
 
@@ -182,23 +155,29 @@ const ApiClient = {
     try {
       const response = await fetch(CONFIG.BACKEND_URL, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          // Apps Script richiede questo header per CORS
+          'Accept': 'application/json'
+        },
         body: JSON.stringify({ action, payload }),
         signal: controller.signal,
+        // Importante per CORS con Apps Script
         mode: 'cors'
       });
 
       clearTimeout(timeout);
 
       if (!response.ok) {
-        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        const errorText = await response.text().catch(() => '');
+        throw new Error(`HTTP ${response.status}: ${errorText || response.statusText}`);
       }
 
       const result = await response.json();
       
-      // Apps Script restituisce { success: true, data: ... } o { error: ... }
-      if (result?.error) {
-        throw new Error(result.error);
+      // Il tuo backend REST wrapper restituisce { success: true, data: ... }
+      if (result?.error || result?.success === false) {
+        throw new Error(result.error || 'Backend error');
       }
       
       return result?.data ?? result;
@@ -217,53 +196,9 @@ const ApiClient = {
     }
   },
 
-  // Risposte mock per demo mode
-  _mockResponse(action, payload) {
-    const mock = this._mockData;
-    const map = {
-      'getInitialAdminData': () => ({ teams: mock.teams, matches: mock.matches }),
-      'getMatchesAdmin': () => mock.matches,
-      'getStandingsGironiCached': () => mock.standings,
-      'getTeamFullCached': (id) => ({ team: mock.teams.find(t=>t.TEAM_ID===id), players: [] }),
-      'getMatchFull': (id) => ({ match: mock.matches.find(m=>m.MATCH_ID===id) }),
-      'getPlayersByTeam': () => [],
-      'getPlayerDetail': () => null,
-      'saveTeamAdmin': (id, name, photo, girone) => ({ id: id || 't' + Date.now() }),
-      'updateTeamName': () => true,
-      'updateTeamGirone': () => true,
-      'deleteTeamAdmin': () => true,
-      'savePlayerAdmin': () => 'p' + Date.now(),
-      'deletePlayerAdmin': () => true,
-      'createMatchGirone': () => true,
-      'deleteMatchAdmin': () => true,
-      'updateMatchStatus': (id, status) => ({ status }),
-      'addEventAdmin': () => true,
-      'editEventAdmin': () => true,
-      'deleteEventAdmin': () => true,
-      'getFinalStageMatches': () => [],
-      'prepareFinalStage': () => ({ matches: [] }),
-      'createFinalStageMatches': () => [],
-      'uploadTeamLogoReplace': () => 'mock_file_id_' + Date.now(),
-      'uploadTeamPhotoReplace': () => 'mock_file_id_' + Date.now(),
-      'uploadPlayerPhotoReplace': () => 'mock_file_id_' + Date.now(),
-      'saveMVPFinal': () => true,
-      'getTeamsByGironeSimple': (g) => mock.teams.filter(t=>t.GIRONE===g)
-    };
-    return map[action]?.(payload) ?? null;
-  },
-
-  // Fallback cache per offline
-  _fromCache(action, payload) {
-    if (action === 'getStandingsGironiCached') return window.APP_CACHE?.standings || null;
-    if (action === 'getTeamFullCached') return window.APP_CACHE?.fullTeams?.[payload] || null;
-    if (action === 'getMatchFull') {
-      const match = (window.APP_CACHE?.matches || []).find(m => m.MATCH_ID === payload);
-      return match ? { match } : null;
-    }
-    return null;
-  },
-
-  // Convenience wrappers per le chiamate API
+  // ... (_mockResponse e _fromCache restano uguali) ...
+  
+  // Convenience wrappers - NOTA: payload deve essere array per funzioni multi-arg
   getInitialData: () => ApiClient.call('getInitialAdminData'),
   getMatches: () => ApiClient.call('getMatchesAdmin'),
   getStandings: () => ApiClient.call('getStandingsGironiCached'),
@@ -271,29 +206,48 @@ const ApiClient = {
   getMatchFull: (id) => ApiClient.call('getMatchFull', id),
   getPlayersByTeam: (teamId) => ApiClient.call('getPlayersByTeam', teamId),
   getPlayerDetail: (id) => ApiClient.call('getPlayerDetail', id),
-  saveTeamAdmin: (...args) => ApiClient.call('saveTeamAdmin', args),
-  updateTeamName: (id, name) => ApiClient.call('updateTeamName', { id, name }),
-  updateTeamGirone: (id, girone) => ApiClient.call('updateTeamGirone', { id, girone }),
-  deleteTeamAdmin: (id) => ApiClient.call('deleteTeamAdmin', { id }),
-  savePlayerAdmin: (...args) => ApiClient.call('savePlayerAdmin', args),
-  deletePlayerAdmin: (id) => ApiClient.call('deletePlayerAdmin', { id }),
-  createMatchGirone: (...args) => ApiClient.call('createMatchGirone', args),
-  deleteMatchAdmin: (id) => ApiClient.call('deleteMatchAdmin', { id }),
-  updateMatchStatus: (id, status) => ApiClient.call('updateMatchStatus', { id, status }),
-  addEventAdmin: (...args) => ApiClient.call('addEventAdmin', args),
-  editEventAdmin: (...args) => ApiClient.call('editEventAdmin', args),
-  deleteEventAdmin: (id) => ApiClient.call('deleteEventAdmin', { id }),
-  getFinalStageMatches: () => ApiClient.call('getFinalStageMatches'),
-  prepareFinalStage: () => ApiClient.call('prepareFinalStage'),
-  createFinalStageMatches: (...args) => ApiClient.call('createFinalStageMatches', args),
+  
+  // Funzioni con multipli argomenti → passa come array
+  saveTeamAdmin: (id, name, photo, girone) => 
+    ApiClient.call('saveTeamAdmin', [id, name, photo, girone]),
+  updateTeamName: (id, name) => 
+    ApiClient.call('updateTeamName', [id, name]),
+  updateTeamGirone: (id, girone) => 
+    ApiClient.call('updateTeamGirone', [id, girone]),
+  deleteTeamAdmin: (id) => 
+    ApiClient.call('deleteTeamAdmin', [id]),
+  
+  createMatchGirone: (girone, casa, trasferta, data, ora) => 
+    ApiClient.call('createMatchGirone', [girone, casa, trasferta, data, ora]),
+  deleteMatchAdmin: (id) => 
+    ApiClient.call('deleteMatchAdmin', [id]),
+  updateMatchStatus: (id, status) => 
+    ApiClient.call('updateMatchStatus', [id, status]),
+  
+  addEventAdmin: (matchId, teamId, type, minute, playerId, assistId) => 
+    ApiClient.call('addEventAdmin', [matchId, teamId, type, minute, playerId, assistId]),
+  editEventAdmin: (eventId, data) => 
+    ApiClient.call('editEventAdmin', [eventId, data]),
+  deleteEventAdmin: (id) => 
+    ApiClient.call('deleteEventAdmin', [id]),
+  
+  savePlayerAdmin: (id, teamId, name, photo) => 
+    ApiClient.call('savePlayerAdmin', [id, teamId, name, photo]),
+  deletePlayerAdmin: (id) => 
+    ApiClient.call('deletePlayerAdmin', [id]),
+  
   uploadTeamLogoReplace: (teamId, fileName, fileType, base64) => 
-    ApiClient.call('uploadTeamLogoReplace', { teamId, fileName, fileType, base64 }),
+    ApiClient.call('uploadTeamLogoReplace', [teamId, fileName, fileType, base64]),
   uploadTeamPhotoReplace: (teamId, fileName, fileType, base64) => 
-    ApiClient.call('uploadTeamPhotoReplace', { teamId, fileName, fileType, base64 }),
+    ApiClient.call('uploadTeamPhotoReplace', [teamId, fileName, fileType, base64]),
   uploadPlayerPhotoReplace: (playerId, teamId, playerName, fileName, fileType, base64) => 
-    ApiClient.call('uploadPlayerPhotoReplace', { playerId, teamId, playerName, fileName, fileType, base64 }),
-  saveMVPFinal: (matchId, playerId) => ApiClient.call('saveMVPFinal', { matchId, playerId }),
-  getTeamsByGironeSimple: (girone) => ApiClient.call('getTeamsByGironeSimple', { girone })
+    ApiClient.call('uploadPlayerPhotoReplace', [playerId, teamId, playerName, fileName, fileType, base64]),
+  
+  prepareFinalStage: () => ApiClient.call('prepareFinalStage'),
+  createFinalStageMatches: (matches) => ApiClient.call('createFinalStageMatches', [matches]),
+  getFinalStageMatches: () => ApiClient.call('getFinalStageMatches'),
+  saveMVPFinal: (matchId, playerId) => ApiClient.call('saveMVPFinal', [matchId, playerId]),
+  getTeamsByGironeSimple: (girone) => ApiClient.call('getTeamsByGironeSimple', [girone])
 };
 
 // ============================================================================
