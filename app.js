@@ -2138,92 +2138,71 @@ function createFinalStage() {
 function bootAdminApp() {
   console.log("🚀 Booting Torneo Admin - PRODUCTION MODE");
   
-  // Init cache
   window.APP_CACHE = CacheManager.load();
-  
-  // Mostra loader
   const loader = document.getElementById("startupLoader");
   
-  // 🔥 MOSTRA SUBITO LA HOME (non aspettare i dati)
+  // Mostra subito UI
   showHome();
   renderToolbar("home");
   
-  // 🔥 RITARDO MINIMO 1 secondo (opzionale)
-  const minLoadTime = new Promise(resolve => setTimeout(resolve, 1000));
-  
-  // Carica dati + ritardo minimo
-  Promise.all([
-    ApiClient.getInitialData().catch(() => null),
-    minLoadTime
-  ])
-  .then(([data]) => {  // 🔥 CORRETTO: destructuring array
-    console.log('✅ Dati caricati:', data);
-    
-    if (data) {
-      // Merge intelligente con cache esistente
-      window.APP_CACHE = {
-        ...window.APP_CACHE,
-        teams: data.teams || window.APP_CACHE.teams,
-        matches: data.matches || window.APP_CACHE.matches,
-        standings: data.standings || window.APP_CACHE.standings,
-        events: data.events || window.APP_CACHE.events,
-        fullTeams: data.fullTeams || window.APP_CACHE.fullTeams,
-        playersMap: data.playersMap || window.APP_CACHE.playersMap,
-        meta: { ...window.APP_CACHE.meta, initialized: true }
-      };
+  // 🔥 NESSUN RITARDO - Carica solo i dati
+  ApiClient.getInitialData()
+    .then(data => {
+      console.log('✅ Dati caricati:', data);
       
-      hydrateMatches(window.APP_CACHE.matches || []); 
-      CacheManager.save(window.APP_CACHE);
-      
-      // Aggiorna UI se siamo già su una pagina
-      const currentPath = window.location.hash || "#home";
-      if (currentPath.includes("matches")) {
-        renderMatches();
-      } else if (currentPath.includes("teams")) {
-        renderTeams();
-      } else if (currentPath.includes("standings")) {
-        renderStandings(window.APP_CACHE.standings || {});
+      if (data) {
+        window.APP_CACHE = {
+          ...window.APP_CACHE,
+          teams: data.teams || window.APP_CACHE.teams,
+          matches: data.matches || window.APP_CACHE.matches,
+          standings: data.standings || window.APP_CACHE.standings,
+          events: data.events || window.APP_CACHE.events,
+          fullTeams: data.fullTeams || window.APP_CACHE.fullTeams,
+          playersMap: data.playersMap || window.APP_CACHE.playersMap,
+          meta: { ...window.APP_CACHE.meta, initialized: true }
+        };
+        
+        hydrateMatches(window.APP_CACHE.matches || []); 
+        CacheManager.save(window.APP_CACHE);
+        
+        const currentPath = window.location.hash || "#home";
+        if (currentPath.includes("matches")) renderMatches();
+        else if (currentPath.includes("teams")) renderTeams();
+        else if (currentPath.includes("standings")) renderStandings(window.APP_CACHE.standings || {});
       }
-    }
-    
-    console.log("✅ App ready - Dati sincronizzati");
-    
-    // 🔥 DOPO i dati principali, carica flag fase finale (separato!)
-    return ApiClient.isFinalStageStarted().catch(err => {
-      console.warn('Could not check final stage:', err);
-      return false;
+      
+      console.log("✅ App ready");
+      
+      // Carica flag fase finale (non bloccante)
+      ApiClient.isFinalStageStarted()
+        .then(started => {
+          if (!window.APP_CACHE.meta) window.APP_CACHE.meta = {};
+          window.APP_CACHE.meta.finalStageStarted = started;
+        })
+        .catch(() => {});
+      
+      // Nascondi loader IMMEDIATAMENTE dopo dati
+      setTimeout(() => { 
+        loader?.classList?.add("hide"); 
+        setTimeout(() => loader?.remove(), 300); 
+      }, 200); // Solo 200ms per transizione fluida
+    })
+    .catch(error => {
+      console.error('❌ Errore:', error);
+      // Nascondi loader anche in errore
+      setTimeout(() => { 
+        loader?.classList?.add("hide"); 
+        setTimeout(() => loader?.remove(), 300); 
+      }, 200);
     });
-  })
-  .then(started => {
-    if (!window.APP_CACHE.meta) window.APP_CACHE.meta = {};
-    window.APP_CACHE.meta.finalStageStarted = started;
-    console.log('Final stage started:', started);
-    
-    // 🔥 Nascondi loader dopo caricamento completo
-    setTimeout(() => { 
-      loader?.classList?.add("hide"); 
-      setTimeout(() => loader?.remove(), 500); 
-    }, 300);
-  })
-  .catch(error => {
-    console.error('❌ Errore caricamento dati:', error);
-    console.log('⚠️ App in modalità offline - usando cache locale');
-    
-    // Nascondi loader anche in caso di errore
-    setTimeout(() => { 
-      loader?.classList?.add("hide"); 
-      setTimeout(() => loader?.remove(), 500); 
-    }, 300);
-  });
   
-  // Global error handling
   window.addEventListener("error", e => console.error("Global error:", e.error||e.message));
   window.addEventListener("beforeunload", () => { 
     Cleanup.releaseAll(); 
     CacheManager.save(window.APP_CACHE, 0); 
   });
   
-  console.log("✅ App booted - UI pronta");
+  console.log("✅ App booted");
 }
 
 function preloadAssets() {
