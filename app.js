@@ -1154,7 +1154,7 @@ function renderPlayersList(players) {
         <th>ASS</th>
         <th>AMM</th>
         <th>ESP</th>
-        <th>🏆 MVP</th>
+        <th>MVP</th>
       </tr>
   `;
   
