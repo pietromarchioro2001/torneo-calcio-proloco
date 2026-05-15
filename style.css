@@ -504,9 +504,17 @@ body{
   justify-content: flex-start; 
 }
 
-.home-team-block.right { 
-  justify-content: flex-end; 
-  flex-direction: row-reverse; /* 🔥 Logo a destra, nome a sinistra dentro il blocco */
+/* Squadra Destra - Fix Allineamento */
+.home-team-block.right {
+  justify-content: flex-end;
+  margin-left: auto; /* 🔥 Spinge tutto il blocco a destra */
+  text-align: right; /* 🔥 Allinea il testo a destra */
+}
+
+/* Assicurati che il nome dentro sia allineato a destra */
+.home-team-block.right .home-team {
+  text-align: right;
+  display: block; /* Necessario per text-align su span flex */
 }
 
 /* 🔥 Loghi e nomi più grandi */
@@ -2645,8 +2653,8 @@ body{
   display:flex;
   justify-content:center;        /* centro visivo */
   overflow-x:auto;
-  gap:12px;
-  padding:15px 20px;
+  gap:8px;
+  padding:8px 20px;
   scroll-behavior:smooth;
 
   scroll-snap-type:x mandatory; /* 🔥 magia */
@@ -2656,7 +2664,8 @@ body{
 .date-item{
   flex:0 0 auto;
   width:70px;
-  padding:10px 0;
+  padding:6px 0;
+  min-height: 48px;
 
   border-radius:14px;
   background:#f1f1f1;
@@ -2686,12 +2695,12 @@ body{
 }
 
 .date-day{
-  font-size:18px;
+  font-size:16px;
   font-weight:800;
 }
 
 .date-month{
-  font-size:10px;
+  font-size:9px;
   opacity:0.7;
   text-transform:uppercase;
 }
@@ -2857,6 +2866,47 @@ body{
   border-radius:50%;
   background:#efefef;
   flex:0 0 42px;
+}
+
+#mvpBanner {
+  position: relative; /* 🔥 Torna nel flusso normale */
+  left: auto;
+  top: auto;
+  transform: none;
+  width: 100%;
+  max-width: 400px;
+  margin: 16px auto 0; /* 🔥 16px (~1cm) dalla riga cronaca */
+  padding: 12px;
+  background: #fffbeb;
+  border: 2px solid #fbbf24;
+  border-radius: 12px;
+  text-align: center;
+  display: none; /* Nascosto di default */
+  box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+}
+
+#mvpBanner.show {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Stile interno MVP */
+#mvpBanner .mvp-title {
+  font-size: 11px;
+  color: #b45309;
+  font-weight: 700;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  margin-bottom: 4px;
+}
+
+#mvpBanner .mvp-name {
+  font-size: 20px;
+  color: #78350f;
+  font-weight: 800;
+  text-transform: uppercase;
 }
 
 /* ============================================
