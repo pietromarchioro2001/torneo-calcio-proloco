@@ -3610,16 +3610,15 @@ body{
 
 .bracket-match {
   position: absolute;
-  width: 200px;   /* Dimensione fissa */
-  height: 110px;  /* Dimensione fissa */
+  width: 200px;   /* ✅ Larghezza fissa uguale per tutte */
+  height: 110px;  /* ✅ Altezza fissa uguale per tutte */
   
-  /* Stile richiesto: Bianco, Bordo continuo, Rilievo */
   background: #ffffff;
-  border: 1px solid #e0e0e0; 
+  border: 1px solid #e0e0e0;
   box-shadow: 0 4px 15px rgba(0,0,0,0.08);
   border-radius: 16px;
   
-  padding: 12px 10px 12px 16px; 
+  padding: 12px 10px 12px 16px;
   box-sizing: border-box;
   
   display: flex;
@@ -3639,14 +3638,15 @@ body{
 /* Bordo dorato solo per la Finale */
 /* ===== CARD FINALI - NESSUNA ANIMAZIONE ===== */
 .bracket-match.final-match {
-  border: 2px solid #d8ab2f;  /* ✅ Bordo oro */
-  left: 50%;                   /* ✅ Posizione */
-  margin-left: -100px;         /* ✅ Centra senza transform (width è 200px) */
-  animation: none !important;  /* ✅ Niente animazioni */
+  border: 2px solid #d8ab2f !important;  /* ✅ Bordo oro forzato */
+  left: 50%;
+  margin-left: -100px;
+  top: 300px;
+  z-index: 10;
 }
 
 .bracket-match.final-match:hover {
-  transform: none !important;  /* ✅ Niente hover */
+  transform: none !important;
 }
 
 /* Placeholder finale - Statico */
@@ -3665,16 +3665,16 @@ body{
   background: #ffffff;
   border: 1px solid #e0e0e0;
   box-shadow: 0 4px 15px rgba(0,0,0,0.08);
-  opacity: 1 !important;  /* 🔥 Visibile al 100% */
+  opacity: 1 !important;
 }
 
-/* Testo placeholder - PIÙ GRANDE e visibile */
+/* Testo placeholder */
 .bracket-match.bracket-placeholder div {
-  font-size: 13px !important;    /* 🔥 Più grande (era 11px) */
+  font-size: 12px !important;
   font-weight: 700 !important;
-  color: #333333 !important;     /* 🔥 Grigio scuro (era #999) */
-  opacity: 0.8 !important;         /* 🔥 Non trasparente */
-  letter-spacing: 1.5px !important;
+  color: #666666 !important;
+  opacity: 1 !important;
+  letter-spacing: 1px !important;
 }
 
 .bracket-match.bracket-placeholder:hover {
@@ -3719,9 +3719,8 @@ body{
 
 .third-place {
   left: 50%;
-  margin-left: -100px;  /* ✅ Centra senza transform */
+  margin-left: -100px;
   top: 500px;
-  animation: none !important;
 }
 
 .third-place:hover {
@@ -3858,10 +3857,10 @@ body{
 .bracket-match.bracket-placeholder.final-match,
 .bracket-match.bracket-placeholder.third-place {
   left: 50%;
-  margin-left: -110px;  /* ✅ Centra (width è 220px) */
-  opacity: 1 !important;
-  transform: none !important;
-  animation: none !important;
+  margin-left: -100px;  /* ✅ Centrato come le altre */
+  width: 200px;         /* ✅ Stessa larghezza */
+  height: 110px;        /* ✅ Stessa altezza */
+  border: 1px solid #e0e0e0 !important;
 }
 
 /* =============================================================================================
