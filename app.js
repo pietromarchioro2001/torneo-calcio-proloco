@@ -2305,30 +2305,26 @@ function renderBracketMatch(match, cls="") {
   
   // Loghi squadre
   const logoCasa = match.casa?.logo 
-    ? `<img src="${getCachedImage(match.casa.logo, 32)}" alt="${match.casa.nome}" onerror="this.style.display='none'">`
-    : `<div style="width:32px;height:32px;border-radius:50%;background:#f0f0f0"></div>`;
+    ? `<img src="${getCachedImage(match.casa.logo, 24)}" alt="${match.casa.nome}" onerror="this.style.display='none'">`
+    : `<div style="width:24px;height:24px;border-radius:50%;background:#f0f0f0"></div>`;
   
   const logoTrasf = match.trasferta?.logo 
-    ? `<img src="${getCachedImage(match.trasferta.logo, 32)}" alt="${match.trasferta.nome}" onerror="this.style.display='none'">`
-    : `<div style="width:32px;height:32px;border-radius:50%;background:#f0f0f0"></div>`;
+    ? `<img src="${getCachedImage(match.trasferta.logo, 24)}" alt="${match.trasferta.nome}" onerror="this.style.display='none'">`
+    : `<div style="width:24px;height:24px;border-radius:50%;background:#f0f0f0"></div>`;
   
   // 🔥 Punteggio o stato
   const isLive = match.stato === "LIVE";
   const isFinished = match.stato === "FINITA";
-  const isScheduled = match.stato === "PROGRAMMATA";
   
   let scoreHtml = "";
   if (isLive) {
-    // 🔥 LIVE: punteggio + animazione
     scoreHtml = `
       <span class="bracket-score live">${match.golCasa||0} - ${match.golTrasferta||0}</span>
-      <span class="live-indicator">●</span>
+      <span class="live-indicator"></span>
     `;
   } else if (isFinished) {
-    // Finita: punteggio
     scoreHtml = `<span class="bracket-score">${match.golCasa||0} - ${match.golTrasferta||0}</span>`;
   } else {
-    // 🔥 Programmata: mostra 0-0 (non l'ora)
     scoreHtml = `<span class="bracket-score scheduled">0 - 0</span>`;
   }
   
@@ -2336,12 +2332,12 @@ function renderBracketMatch(match, cls="") {
     <div class="bracket-match ${cls}" onclick="openMatch('${match.matchId}')">
       <div class="bracket-team">
         ${logoCasa}
-        <span>${(match.casa?.nome || "TBD").toUpperCase()}</span>
+        <span>${(match.casa?.nome || "TBD").substring(0, 8).toUpperCase()}</span>
+        ${scoreHtml}
       </div>
       <div class="bracket-team">
         ${logoTrasf}
-        <span>${(match.trasferta?.nome || "TBD").toUpperCase()}</span>
-        ${scoreHtml}
+        <span>${(match.trasferta?.nome || "TBD").substring(0, 8).toUpperCase()}</span>
       </div>
     </div>
   `;
