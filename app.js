@@ -2269,14 +2269,20 @@ function loadFinalStage() {
 }
 
 function renderFinalStage(data) {
-  const container = document.getElementById("standingsContent"); if (!container) return;
+  const container = document.getElementById("standingsContent"); 
+  if (!container) return;
   if (!data?.length) {
     container.innerHTML = `<div class="final-empty"><div class="final-empty-icon">🏆</div><div class="final-empty-title">FASE FINALE</div><div class="final-empty-line"></div>
       <div class="final-empty-text">Crea la fase finale per visualizzare il tabellone del torneo.</div>
       <div class="phase-btn" onclick="createFinalStage()">CREA FASE FINALE</div></div>`; return;
   }
   container.innerHTML = `<div class="final-stage-page"><div id="finalBracketContainer"></div></div>`;
+  
+  // 1. Disegna il tabellone
   renderFinalBracket(data);
+  
+  // 2. 🔥 INSERISCI IL PULSANTE DOPO AVER DISEGNATO IL TABELLONE
+  renderNextPhaseButton();
 }
 
 function renderFinalBracket(matches) {
@@ -2307,55 +2313,63 @@ function renderFinalBracket(matches) {
 }
 
 function renderNextPhaseButton() {
+  // Rimuovi pulsanti vecchi se esistono
+  const oldBtn = document.getElementById("next-phase-action-btn");
+  if (oldBtn) oldBtn.remove();
+
   const container = document.getElementById("finalBracketContainer");
   if (!container) return;
-  
-  // Rimuovi pulsanti esistenti
-  container.parentNode.querySelectorAll('.next-phase-btn').forEach(b => b.remove());
-  
+
+  // Controlla lo stato delle partite dal cache
   const quarti = window.APP_CACHE.finalStage?.filter(m => m.turno === "QUARTI") || [];
-  const quartiFiniti = quarti.filter(m => m.stato === "FINITA");
-  const quartiCompletati = quarti.length === 4 && quartiFiniti.length === 4;
+  const quartiFiniti = quarti.filter(m => m.stato === "FINITA").length;
   
   const semi = window.APP_CACHE.finalStage?.filter(m => m.turno === "SEMIFINALE") || [];
-  const semiFinita = semi.filter(m => m.stato === "FINITA");
-  const semiCompletate = semi.length === 2 && semiFinita.length === 2;
-  
-  // Mostra sempre il pulsante, ma disabilitato se necessario
-  let btnLabel = "";
-  let btnDisabled = false;
-  let phaseAction = "";
-  
-  if (!quartiCompletati) {
-    btnLabel = "🔒 COMPLETA I QUARTI DI FINALE";
-    btnDisabled = true;
-  } else if (!semiCompletate && quartiCompletati) {
-    btnLabel = "🔜 PROSSIMA FASE: SEMIFINALI";
-    btnDisabled = false;
-    phaseAction = "SEMIFINALI";
-  } else if (semiCompletate) {
-    btnLabel = "🏆 PROSSIMA FASE: FINALI";
-    btnDisabled = false;
-    phaseAction = "FINALI";
-  } else {
-    btnLabel = "🔒 COMPLETA LE SEMIFINALI";
-    btnDisabled = true;
+  const semiFiniti = semi.filter(m => m.stato === "FINITA").length;
+
+  // Logica del pulsante
+  let isReady = false;
+  let text = "🔒 COMPLETA LE PARTITE PER AVANZARE";
+  let action = null;
+
+  // Se siamo ai Quarti
+  if (quartiFiniti === 4) {
+    isReady = true;
+    text = "🔜 CREA SEMIFINALI";
+    action = "SEMIFINALI";
+  } 
+  // Se siamo alle Semifinali
+  else if (quarti.length >= 4 && semiFiniti === 2) {
+    isReady = true;
+    text = "🏆 CREA FINALI";
+    action = "FINALI";
+  } 
+  // Altrimenti
+  else {
+    isReady = false;
+    // Testo dinamico basato su cosa manca
+    if (quartiFiniti < 4) text = `🔒 COMPLETA I QUARTI (${quartiFiniti}/4)`;
+    else if (semiFiniti < 2) text = `🔒 COMPLETA LE SEMIFINALI (${semiFiniti}/2)`;
   }
+
+  // Crea il contenitore del pulsante
+  const btnWrapper = document.createElement("div");
+  btnWrapper.className = "next-phase-button";
+  btnWrapper.id = "next-phase-action-btn";
+
+  // Crea il bottone
+  const btn = document.createElement("button");
+  btn.className = `next-phase-btn ${isReady ? '' : 'disabled'}`;
+  btn.textContent = text;
   
-  const btn = document.createElement("div");
-  btn.className = `phase-btn next-phase-btn ${btnDisabled ? 'disabled' : ''}`;
-  btn.style.marginTop = "20px";
-  btn.style.marginLeft = "50%";
-  btn.style.transform = "translateX(-50%)";
-  btn.style.opacity = btnDisabled ? "0.5" : "1";
-  btn.style.cursor = btnDisabled ? "not-allowed" : "pointer";
-  btn.textContent = btnLabel;
-  
-  if (!btnDisabled) {
-    btn.onclick = () => openNextPhasePopup(phaseAction);
+  if (isReady) {
+    btn.onclick = () => openNextPhasePopup(action);
   }
+
+  btnWrapper.appendChild(btn);
   
-  container.parentNode.appendChild(btn);
+  // Inserisci il pulsante DOPO il tabellone (dentro final-stage-page)
+  container.parentNode.appendChild(btnWrapper);
 }
 
 function openNextPhasePopup(phase) {
