@@ -1747,6 +1747,7 @@ body{
 .match-card{
   background:white;
   border-radius:16px;
+  min-height: 88px;
   padding:16px 20px;
   margin:10px;
   position:relative;
@@ -1770,6 +1771,17 @@ body{
 .match-card.live-match{
   border:2px solid #8c404e;
   box-shadow:0 0 18px rgba(140,64,78,0.28);
+}
+
+.match-center .time {
+  font-size: 17px !important; /* 🔥 Ora più evidente */
+  font-weight: 700;
+}
+
+.match-center .match-fase-badge {
+  font-size: 13px !important; /* 🔥 Badge (QUARTI/SEMIFINALE) più grande */
+  font-weight: 600;
+  margin-top: 4px;
 }
 
 .score{
@@ -3631,7 +3643,7 @@ body{
 
 /* Bordo dorato solo per la Finale */
 .bracket-match.final-match {
-  border: 2px solid #d8ab2f;
+  border: 2px solid #d8ab2f !important;
 }
 
 @keyframes scorePulse {
