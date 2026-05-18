@@ -3580,17 +3580,12 @@ body{
 }
 
 
-.tournament-wrapper{
-  position:relative;
-
-  width:100%;
-  max-width:1400px;
-
-  height:760px;
-
-  margin:0 auto;
-
-  overflow:hidden;
+.tournament-wrapper {
+  position: relative;
+  width: 100%;
+  max-width: 1200px;
+  height: 760px;
+  margin: 0 auto;
 }
 
 .final-stage-page{
@@ -3608,8 +3603,8 @@ body{
 
 .bracket-match {
   position: absolute;
-  width: 200px;  /* Larghezza fissa */
-  height: 110px; /* Altezza fissa */
+  width: 200px;   /* Larghezza fissa */
+  height: 100px;  /* Altezza fissa */
   
   background: #fff;
   border-radius: 16px;
@@ -3625,24 +3620,13 @@ body{
   gap: 8px;
   
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
-.bracket-match.bracket-placeholder {
-  background: #fafafa;
-  border: 2px dashed #e0e0e0;
-  cursor: default;
-}
-
-.bracket-match.bracket-placeholder:hover {
-  transform: none;
-  box-shadow: 0 4px 16px rgba(0,0,0,0.08);
-}
-
+/* Hover solo verticale, niente spostamenti strani */
 .bracket-match:hover {
-  transform: translateY(-2px);
+  transform: translateY(-3px);
   box-shadow: 0 6px 20px rgba(0,0,0,0.12);
-  border-color: rgba(122, 30, 44, 0.2);
 }
 
 .bracket-match.final-match {
@@ -3652,6 +3636,19 @@ body{
 @keyframes scorePulse {
   0%, 100% { opacity: 1; }
   50% { opacity: 0.7; }
+}
+
+.bracket-match.bracket-placeholder {
+  background: #fafafa;
+  border: 2px dashed #e0e0e0;
+  cursor: default;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+}
+
+/* Disabilita hover sulle vuote */
+.bracket-match.bracket-placeholder:hover {
+  transform: none;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.04);
 }
 
 .live-indicator {
@@ -3673,55 +3670,17 @@ body{
                                       POSIZIONI
 ===============================================================================================*/
 
-/* QUARTI SX */
+.qf1 { left: 30px; top: 140px; }
+.qf2 { left: 30px; top: 440px; }
+.qf3 { right: 30px; top: 140px; }
+.qf4 { right: 30px; top: 440px; }
 
-.qf1{
-  left:20px;
-  top:140px;
-}
+.sf1 { left: 250px; top: 290px; }
+.sf2 { right: 250px; top: 290px; }
 
-.qf2{
-  left:20px;
-  top:430px;
-}
-
-/* SEMI SX */
-
-.sf1{
-  left:240px;
-  top:285px;
-}
-
-.sf2{
-  right:240px;
-  top:285px;
-}
-
-.final-match{
-  left:50%;
-  top:285px;
-
-  transform:translateX(-50%);
-}
-
-.third-place{
-  left:50%;
-  top:500px;
-
-  transform:translateX(-50%);
-}
-
-/* QUARTI DX */
-
-.qf3{
-  right:20px;
-  top:140px;
-}
-
-.qf4{
-  right:20px;
-  top:430px;
-}
+/* Centro senza transform per evitare conflitti hover */
+.final-match { left: 50%; margin-left: -100px; top: 290px; }
+.third-place { left: 50%; margin-left: -100px; top: 490px; }
 
 /* =============================================================================================
                                       TEAM
@@ -3732,7 +3691,7 @@ body{
   align-items: center;
   justify-content: space-between;
   gap: 8px;
-  padding: 3px 0;
+  padding: 2px 0;
 }
 
 .bracket-team img {
@@ -3749,8 +3708,8 @@ body{
   font-weight: 700;
   color: #333;
   white-space: nowrap;
-  overflow: visible;  /* 🔥 Mostra tutto il testo */
-  text-overflow: clip;  /* 🔥 No ellipsis */
+  overflow: hidden;
+  text-overflow: ellipsis;
   text-transform: uppercase;
   letter-spacing: 0.5px;
 }
@@ -3759,15 +3718,14 @@ body{
 .bracket-score {
   font-size: 16px;
   font-weight: 900;
-  color: #7a1e2c;  /* 🔥 Granata */
+  color: #7a1e2c;
   margin-left: 8px;
   white-space: nowrap;
   letter-spacing: 1px;
-  min-width: 45px;
+  min-width: 40px;
   text-align: right;
 }
 
-/* LIVE animation */
 .bracket-score.live {
   color: #dc2626;
   animation: scorePulse 2s infinite;
