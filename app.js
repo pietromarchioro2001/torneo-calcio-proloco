@@ -5,7 +5,7 @@
 const CONFIG = {
   // 🔥 SOSTITUISCI CON IL TUO URL APPS SCRIPT WEB APP
 
-  BACKEND_URL: 'https://script.google.com/macros/s/AKfycbznrh-ixx8DqPyDmdeIPGOsze9Z3HVtu2Nx-WS3NCANWrD0ZDwGokxkt4rBO0PORTUj/exec',
+  BACKEND_URL: 'https://script.google.com/macros/s/AKfycbz5rFdCkwd0cGXt82GTHsZqeyGyeYhaT4_qGnBnCpsLaRj0Trn9TX16JJxKm73nMYF4/exec',
   
   API_TIMEOUT: 30000,
   CACHE_VERSION: 'v3.0',
@@ -264,6 +264,10 @@ const ApiClient = {
   prepareFinalStage: () => ApiClient.call('prepareFinalStage'),
   createFinalStageMatches: (matches) => ApiClient.call('createFinalStageMatches', [matches]),
   getFinalStageMatches: () => ApiClient.call('getFinalStageMatches'),
+  createSemiFinals: (dataSF1, oraSF1, dataSF2, oraSF2) => 
+    ApiClient.call('createSemiFinals', [dataSF1, oraSF1, dataSF2, oraSF2]),
+  createFinals: (dataFinale1, oraFinale1, dataFinale2, oraFinale2) => 
+    ApiClient.call('createFinals', [dataFinale1, oraFinale1, dataFinale2, oraFinale2]),
   saveMVPFinal: (matchId, playerId) => ApiClient.call('saveMVPFinal', [matchId, playerId]),
   isFinalStageStarted: () => ApiClient.call('isFinalStageStarted'),
   finalizeMVP: (matchId) => ApiClient.call('finalizeMVP', [matchId]),
@@ -2305,6 +2309,107 @@ function renderFinalBracket(matches) {
   </div>`;
 }
 
+function renderNextPhaseButton() {
+  const container = document.getElementById("finalBracketContainer");
+  if (!container) return;
+  
+  // Controlla se i quarti sono tutti finiti
+  const quarti = window.APP_CACHE.finalStage?.filter(m => m.turno === "QUARTI") || [];
+  const quartiFiniti = quarti.filter(m => m.stato === "FINITA");
+  
+  if (quarti.length === 4 && quartiFiniti.length === 4) {
+    // Mostra pulsante per creare semifinali
+    const btn = document.createElement("div");
+    btn.className = "phase-btn";
+    btn.style.marginTop = "20px";
+    btn.style.marginLeft = "50%";
+    btn.style.transform = "translateX(-50%)";
+    btn.textContent = "🔜 PROSSIMA FASE: SEMIFINALI";
+    btn.onclick = () => openNextPhasePopup("SEMIFINALI");
+    container.parentNode.appendChild(btn);
+  }
+  
+  // Controlla se le semifinali sono tutte finite
+  const semi = window.APP_CACHE.finalStage?.filter(m => m.turno === "SEMIFINALE") || [];
+  const semiFinita = semi.filter(m => m.stato === "FINITA");
+  
+  if (semi.length === 2 && semiFinita.length === 2) {
+    const btn = document.createElement("div");
+    btn.className = "phase-btn";
+    btn.style.marginTop = "20px";
+    btn.style.marginLeft = "50%";
+    btn.style.transform = "translateX(-50%)";
+    btn.textContent = "🏆 PROSSIMA FASE: FINALI";
+    btn.onclick = () => openNextPhasePopup("FINALI");
+    container.parentNode.appendChild(btn);
+  }
+}
+
+function openNextPhasePopup(phase) {
+  const modal = document.createElement("div");
+  modal.className = "modalOverlay";
+  
+  const title = phase === "SEMIFINALI" ? "CREA SEMIFINALI" : "CREA FINALI";
+  const match1Label = phase === "SEMIFINALI" ? "SEMIFINALE 1" : "FINALE 1°-2°";
+  const match2Label = phase === "SEMIFINALI" ? "SEMIFINALE 2" : "FINALE 3°-4°";
+  
+  modal.innerHTML = `
+    <div class="modalBox" style="max-width:500px;">
+      <div class="modalTitle">${title}</div>
+      <div class="match-form">
+        <div style="margin-bottom:20px;">
+          <div style="font-weight:700;margin-bottom:8px;">${match1Label}</div>
+          <input type="date" id="date1" class="match-input" style="margin-right:10px;">
+          <input type="time" id="time1" class="match-input">
+        </div>
+        <div>
+          <div style="font-weight:700;margin-bottom:8px;">${match2Label}</div>
+          <input type="date" id="date2" class="match-input" style="margin-right:10px;">
+          <input type="time" id="time2" class="match-input">
+        </div>
+        <div class="modalActions" style="margin-top:20px;">
+          <div class="phase-btn" onclick="saveNextPhase('${phase}')">CREA PARTITE</div>
+          <div class="phase-btn secondary" onclick="this.closest('.modalOverlay').remove()">ANNULLA</div>
+        </div>
+      </div>
+    </div>
+  `;
+  
+  document.body.appendChild(modal);
+  modal.onclick = (e) => { if (e.target === modal) modal.remove(); };
+  modal.querySelector(".modalBox").onclick = (e) => e.stopPropagation();
+}
+
+async function saveNextPhase(phase) {
+  const date1 = document.getElementById("date1")?.value;
+  const time1 = document.getElementById("time1")?.value;
+  const date2 = document.getElementById("date2")?.value;
+  const time2 = document.getElementById("time2")?.value;
+  
+  if (!date1 || !time1 || !date2 || !time2) {
+    alert("Compila tutte le date e gli orari");
+    return;
+  }
+  
+  try {
+    if (phase === "SEMIFINALI") {
+      await ApiClient.createSemiFinals(date1, time1, date2, time2);
+    } else {
+      await ApiClient.createFinals(date1, time1, date2, time2);
+    }
+    
+    // Chiudi popup e ricarica tabellone
+    document.querySelector(".modalOverlay")?.remove();
+    loadFinalStage(); // Ricarica i dati dal backend
+    
+    alert("Partite create con successo!");
+    
+  } catch (error) {
+    console.error('Error creating next phase:', error);
+    alert('Errore: ' + error.message);
+  }
+}
+
 function renderPlaceholderCard(label, cls="") {
   return `
     <div class="bracket-match bracket-placeholder ${cls}">
@@ -2317,12 +2422,10 @@ function renderPlaceholderCard(label, cls="") {
 }
 
 function renderBracketMatch(match, cls="") {
-  // Se non c'è la partita, mostra placeholder
   if (!match || !match.casa?.nome) {
     return `<div class="bracket-placeholder ${cls}"><div class="bracket-placeholder-title">TBD</div></div>`;
   }
   
-  // Loghi squadre
   const logoCasa = match.casa?.logo 
     ? `<img src="${getCachedImage(match.casa.logo, 24)}" alt="${match.casa.nome}" onerror="this.style.display='none'">`
     : `<div style="width:24px;height:24px;border-radius:50%;background:#f0f0f0"></div>`;
@@ -2331,7 +2434,6 @@ function renderBracketMatch(match, cls="") {
     ? `<img src="${getCachedImage(match.trasferta.logo, 24)}" alt="${match.trasferta.nome}" onerror="this.style.display='none'">`
     : `<div style="width:24px;height:24px;border-radius:50%;background:#f0f0f0"></div>`;
   
-  // 🔥 Punteggio o stato
   const isLive = match.stato === "LIVE";
   const isFinished = match.stato === "FINITA";
   
@@ -2346,15 +2448,27 @@ function renderBracketMatch(match, cls="") {
   const scoreClass = isLive ? "bracket-score live" : "bracket-score scheduled";
   const liveDot = isLive ? '<span class="live-indicator"></span>' : '';
   
+  // 🔥 Determina vincitore/perdente se finita
+  let casaClass = "", trasfClass = "";
+  if (isFinished) {
+    if (scoreCasa > scoreTrasf) {
+      casaClass = "winner";
+      trasfClass = "loser";
+    } else {
+      casaClass = "loser";
+      trasfClass = "winner";
+    }
+  }
+  
   return `
-    <div class="bracket-match ${cls}" onclick="openMatch('${match.matchId}')">
-      <div class="bracket-team">
+    <div class="bracket-match ${cls} ${isFinished ? 'concluded' : ''}" onclick="openMatch('${match.matchId}')">
+      <div class="bracket-team ${casaClass}">
         ${logoCasa}
         <span>${(match.casa?.nome || "TBD").toUpperCase()}</span>
         <span class="${scoreClass}">${scoreCasa}</span>
         ${liveDot}
       </div>
-      <div class="bracket-team">
+      <div class="bracket-team ${trasfClass}">
         ${logoTrasf}
         <span>${(match.trasferta?.nome || "TBD").toUpperCase()}</span>
         <span class="${scoreClass}">${scoreTrasf}</span>
