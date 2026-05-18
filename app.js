@@ -1755,6 +1755,14 @@ function openEventPopup(team) {
   const match = window.APP_STATE.lastMatch;
   const teamId = team === "casa" ? match.CASA_ID : match.TRASFERTA_ID;
   
+  console.log('🔍 Apertura evento:', {
+    team,
+    teamId,
+    matchId: match.MATCH_ID,
+    casaId: match.CASA_ID,
+    trasfertaId: match.TRASFERTA_ID
+  });
+  
   const modal = document.createElement("div");
   modal.className = "modalOverlay";
   modal.innerHTML = `
@@ -1767,8 +1775,8 @@ function openEventPopup(team) {
           <option value="ESPULSIONE">🟥 Espulsione</option>
         </select>
         <input id="eventMinute" class="match-input" type="number" placeholder="Minuto" min="1" max="120">
-        <select id="eventPlayer" class="match-select"><option value="">Seleziona giocatore</option></select>
-        <select id="eventAssist" class="match-select"><option value="">Assist (opzionale)</option></select>
+        <select id="eventPlayer" class="match-select"><option value="">Caricamento giocatori...</option></select>
+        <select id="eventAssist" class="match-select"><option value="">Nessun assist</option></select>
         <div class="modalActions">
           <div class="phase-btn" onclick="saveEvent('${team}')">SALVA</div>
           <div class="phase-btn secondary" onclick="this.closest('.modalOverlay').remove()">ANNULLA</div>
@@ -1781,10 +1789,16 @@ function openEventPopup(team) {
   modal.onclick = (e) => { if (e.target === modal) modal.remove(); };
   document.getElementById("eventBox").onclick = (e) => e.stopPropagation();
   
-  // Carica giocatori della squadra
+  // 🔥 Carica giocatori della squadra CORRETTA
   ApiClient.getPlayersByTeam(teamId)
-    .then(players => populateEventSelects(players))
-    .catch(err => console.error('Error loading players:', err));
+    .then(players => {
+      console.log('✅ Giocatori caricati:', players?.length, 'per teamId:', teamId);
+      populateEventSelects(players);
+    })
+    .catch(err => {
+      console.error('❌ Errore caricamento giocatori:', err);
+      alert('Errore caricamento giocatori');
+    });
 }
 
 function populateEventSelects(players) {
@@ -1807,7 +1821,10 @@ function populateEventSelects(players) {
 
 async function saveEvent(team) {
   const match = window.APP_STATE.lastMatch;
-  if (!match) return;
+  if (!match) {
+    alert("Partita non caricata");
+    return;
+  }
   
   const type = document.getElementById("eventType")?.value;
   const minute = parseInt(document.getElementById("eventMinute")?.value);
@@ -1820,9 +1837,24 @@ async function saveEvent(team) {
     return;
   }
   
+  // 🔥 Determina teamId corretto
+  const teamId = team === "casa" ? match.CASA_ID : match.TRASFERTA_ID;
+  
+  console.log('💾 Salvataggio evento:', {
+    matchId: match.MATCH_ID,
+    teamId,
+    team,
+    type,
+    minute,
+    playerId,
+    assistId,
+    casaId: match.CASA_ID,
+    trasfertaId: match.TRASFERTA_ID
+  });
+  
   try {
     // Chiama backend
-    await ApiClient.addEventAdmin(match.MATCH_ID, team === "casa" ? match.CASA_ID : match.TRASFERTA_ID, type, minute, playerId, assistId);
+    await ApiClient.addEventAdmin(match.MATCH_ID, teamId, type, minute, playerId, assistId);
     
     // Chiudi popup
     document.querySelector(".modalOverlay")?.remove();
@@ -1840,7 +1872,7 @@ async function saveEvent(team) {
       match
     );
     
-    // Aggiorna standings in background
+    // Aggiorna standings
     refreshStandingsDebounced(1000);
     
   } catch (error) {
