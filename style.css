@@ -1672,9 +1672,10 @@ body{
 }
 
 .mvp-cell {
-  font-weight: 700;
-  color: #999;
+  font-weight: 400 !important;  /* 🔥 Sottile come GOL/ASS/AMM/ESP */
+  color: #000000 !important;    /* 🔥 Nero come gli altri */
   font-size: 14px;
+  text-align: center;
 }
 
 
@@ -3645,15 +3646,23 @@ body{
   50% { opacity: 0.7; }
 }
 
+/* Card placeholder - NON trasparente */
 .bracket-match.bracket-placeholder {
-  background: #ffffff; /* Sfondo bianco */
-  border: 1px solid #e0e0e0; /* Bordo continuo, NON tratteggiato */
-  box-shadow: 0 4px 15px rgba(0,0,0,0.08); /* Stesso rilievo */
-  cursor: default;
-  opacity: 0.6; /* Testo leggermente trasparente */
+  background: #ffffff;
+  border: 1px solid #e0e0e0;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+  opacity: 1 !important;  /* 🔥 Visibile al 100% */
 }
 
-/* Niente hover sulle vuote */
+/* Testo placeholder - PIÙ GRANDE e visibile */
+.bracket-match.bracket-placeholder div {
+  font-size: 13px !important;    /* 🔥 Più grande (era 11px) */
+  font-weight: 700 !important;
+  color: #333333 !important;     /* 🔥 Grigio scuro (era #999) */
+  opacity: 1 !important;         /* 🔥 Non trasparente */
+  letter-spacing: 1.5px !important;
+}
+
 .bracket-match.bracket-placeholder:hover {
   transform: none;
   box-shadow: 0 4px 15px rgba(0,0,0,0.08);
