@@ -3678,12 +3678,22 @@ body{
 .qf4 { right: 20px; top: 450px; }
 
 /* Semifinali spostate verso l'esterno (più vicine ai quarti) */
-.sf1 { left: 240px; top: 300px; }
-.sf2 { right: 240px; top: 300px; }
+.sf1 { left: 260px; top: 300px; }
+.sf2 { right: 260px; top: 300px; }
 
 /* Centro senza transform per evitare conflitti hover */
-.final-match { left: 50%; margin-left: -100px; top: 290px; }
-.third-place { left: 50%; margin-left: -100px; top: 490px; }
+.final-match { 
+  left: 50%; 
+  transform: translateX(-50%); 
+  top: 300px; 
+  z-index: 10;
+}
+
+.third-place { 
+  left: 50%; 
+  transform: translateX(-50%); 
+  top: 500px; 
+}
 
 /* =============================================================================================
                                       TEAM
