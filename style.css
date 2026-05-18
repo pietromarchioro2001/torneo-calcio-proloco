@@ -3606,66 +3606,58 @@ body{
                                         CARD
 ===============================================================================================*/
 
-.bracket-match{
-
-  position:absolute;
-
-  width:150px;
-  height:104px;
-
-  background:#fff;
-
-  border-radius:24px;
-
-  box-shadow:
-    0 4px 18px rgba(0,0,0,.06);
-
-  border:2px solid transparent;
-
-  padding:12px 12px;
-
-  box-sizing:border-box;
-
-  display:flex;
-  flex-direction:column;
-  justify-content:center;
-
-  gap:8px;
+/* ===== BRACKET MATCH - CARD FASE FINALE ===== */
+.bracket-match {
+  position: absolute;
+  width: 160px;  /* 🔥 Leggermente più larga */
+  height: auto;
+  min-height: 90px;
+  
+  background: #fff;
+  border-radius: 16px;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.08);
+  border: 2px solid transparent;
+  
+  padding: 10px 14px;
+  box-sizing: border-box;
+  
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 6px;
+  
+  cursor: pointer;
+  transition: all 0.2s ease;
 }
 
-.bracket-match.final-match{
-  border:2px solid #d8ab2f;
+.bracket-match:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(0,0,0,0.12);
+  border-color: rgba(122, 30, 44, 0.2);
 }
 
-/* ===== BRACKET MATCH - LIVE ANIMATION ===== */
-.bracket-score.live {
-  color: #dc2626;
-  font-weight: 800;
-  animation: scorePulse 2s infinite;
+.bracket-match.final-match {
+  border: 2px solid #d8ab2f;
 }
 
 @keyframes scorePulse {
-  0%, 100% { opacity: 1; transform: scale(1); }
-  50% { opacity: 0.8; transform: scale(1.05); }
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
 }
 
 .live-indicator {
   display: inline-block;
-  color: #dc2626;
-  font-size: 8px;
-  margin-left: 4px;
+  width: 6px;
+  height: 6px;
+  background: #dc2626;
+  border-radius: 50%;
+  margin-left: 6px;
   animation: dotPulse 1.5s infinite;
 }
 
 @keyframes dotPulse {
   0%, 100% { opacity: 1; transform: scale(1); }
   50% { opacity: 0.4; transform: scale(1.3); }
-}
-
-.bracket-score.scheduled {
-  color: #888;
-  font-weight: 600;
-  font-size: 11px;
 }
 
 /* =============================================================================================
@@ -3726,85 +3718,79 @@ body{
                                       TEAM
 ===============================================================================================*/
 
-.bracket-team{
-
-  display:flex;
-  align-items:center;
-
-  gap:6px;
+/* Team row */
+.bracket-team {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  padding: 2px 0;
 }
 
-.bracket-team img{
-
-  width:24px;
-  height:24px;
-
-  object-fit:contain;
+.bracket-team img {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  object-fit: contain;
+  flex-shrink: 0;
 }
 
-.bracket-team span{
-
-  flex:1;
-
-  font-size:13px;
-  font-weight:800;
-
-  white-space:nowrap;
-  overflow:hidden;
-  text-overflow:ellipsis;
+.bracket-team span {
+  flex: 1;
+  font-size: 11px;
+  font-weight: 700;
+  color: #333;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
 }
 
-.bracket-score{
-
-  font-size:15px;
-  font-weight:900;
-
-  color:#8b2332;
+/* 🔥 RISULTATO PARTITA - GRANATA GRASSETTO */
+.bracket-score {
+  font-size: 15px;
+  font-weight: 900;
+  color: #7a1e2c;  /* 🔥 Granata */
+  margin-left: 6px;
+  white-space: nowrap;
+  letter-spacing: 1px;
 }
 
-/* meno spazio inutile */
+/* LIVE animation */
+.bracket-score.live {
+  color: #dc2626;
+  animation: scorePulse 2s infinite;
+}
 
-.bracket-team{
-  padding:2px 0;
+
+.bracket-score.scheduled {
+  color: #888;
+  font-weight: 700;
+  font-size: 13px;
 }
 
 /* =============================================================================================
                                    PLACEHOLDER
 ===============================================================================================*/
 
-.bracket-placeholder{
 
-  position:absolute;
-
-  width:150px;
-  height:104px;
-
-  background:#fff;
-
-  border-radius:24px;
-
-  box-shadow:
-    0 4px 18px rgba(0,0,0,.06);
-
-  border:2px solid transparent;
-
-  padding:14px 16px;
-
-  box-sizing:border-box;
-
-  display:flex;
-  align-items:center;
-  justify-content:center;
-
-  text-align:center;
-
-  color:#9a9a9a;
-
-  font-weight:800;
-
-  letter-spacing:3px;
-
-  text-transform:uppercase;
+/* Placeholder */
+.bracket-placeholder {
+  position: absolute;
+  width: 160px;
+  height: 90px;
+  background: #fafafa;
+  border-radius: 16px;
+  border: 2px dashed #e0e0e0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #999;
+  font-weight: 700;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
 }
 
 .bracket-placeholder-title{
