@@ -3584,7 +3584,7 @@ body{
   position:relative;
 
   width:100%;
-  max-width:1280px;
+  max-width:1400px;
 
   height:760px;
 
@@ -3606,25 +3606,24 @@ body{
                                         CARD
 ===============================================================================================*/
 
-/* ===== BRACKET MATCH - CARD FASE FINALE ===== */
 .bracket-match {
   position: absolute;
-  width: 160px;  /* 🔥 Leggermente più larga */
+  width: 220px;  /* 🔥 Più larga per nomi completi */
   height: auto;
-  min-height: 90px;
+  min-height: 100px;
   
   background: #fff;
   border-radius: 16px;
   box-shadow: 0 4px 16px rgba(0,0,0,0.08);
   border: 2px solid transparent;
   
-  padding: 10px 14px;
+  padding: 12px 16px;
   box-sizing: border-box;
   
   display: flex;
   flex-direction: column;
   justify-content: center;
-  gap: 6px;
+  gap: 8px;
   
   cursor: pointer;
   transition: all 0.2s ease;
@@ -3718,18 +3717,17 @@ body{
                                       TEAM
 ===============================================================================================*/
 
-/* Team row */
 .bracket-team {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 6px;
-  padding: 2px 0;
+  gap: 8px;
+  padding: 3px 0;
 }
 
 .bracket-team img {
-  width: 22px;
-  height: 22px;
+  width: 24px;
+  height: 24px;
   border-radius: 50%;
   object-fit: contain;
   flex-shrink: 0;
@@ -3737,24 +3735,26 @@ body{
 
 .bracket-team span {
   flex: 1;
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 700;
   color: #333;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
   text-transform: uppercase;
-  letter-spacing: 0.3px;
+  letter-spacing: 0.5px;
 }
 
 /* 🔥 RISULTATO PARTITA - GRANATA GRASSETTO */
 .bracket-score {
-  font-size: 15px;
+  font-size: 16px;
   font-weight: 900;
   color: #7a1e2c;  /* 🔥 Granata */
-  margin-left: 6px;
+  margin-left: 8px;
   white-space: nowrap;
   letter-spacing: 1px;
+  min-width: 45px;
+  text-align: right;
 }
 
 /* LIVE animation */
@@ -3763,27 +3763,30 @@ body{
   animation: scorePulse 2s infinite;
 }
 
+@keyframes scorePulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
+}
 
 .bracket-score.scheduled {
   color: #888;
   font-weight: 700;
-  font-size: 13px;
+  font-size: 14px;
 }
 
 /* =============================================================================================
                                    PLACEHOLDER
 ===============================================================================================*/
 
-
-/* Placeholder */
 .bracket-placeholder {
   position: absolute;
-  width: 160px;
-  height: 90px;
+  width: 220px;
+  height: 100px;
   background: #fafafa;
   border-radius: 16px;
   border: 2px dashed #e0e0e0;
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
   color: #999;
@@ -3791,11 +3794,13 @@ body{
   font-size: 12px;
   text-transform: uppercase;
   letter-spacing: 1px;
+  padding: 10px;
+  text-align: center;
 }
 
-.bracket-placeholder-title{
-  font-size:15px;
-  line-height:1.5;
+.bracket-placeholder-title {
+  font-size: 13px;
+  line-height: 1.4;
 }
 
 .placeholder-match{
@@ -3818,160 +3823,6 @@ body{
 
   letter-spacing:.04em;
 }
-
-/* =============================================================================================
-                                      LINEE
-===============================================================================================*/
-
-/* LINEA ORIZZONTALE QUARTI -> SEMI */
-
-.qf1::after,
-.qf2::after{
-
-  content:"";
-
-  position:absolute;
-
-  right:-34px;
-  top:50%;
-
-  width:34px;
-  height:2px;
-
-  background:#cfcfcf;
-}
-
-.qf3::before,
-.qf4::before{
-
-  content:"";
-
-  position:absolute;
-
-  left:-34px;
-  top:50%;
-
-  width:34px;
-  height:2px;
-
-  background:#cfcfcf;
-}
-
-/* VERTICALI QUARTI */
-
-.tournament-wrapper::before{
-
-  content:"";
-
-  position:absolute;
-
-  left:200px;
-  top:192px;
-
-  width:2px;
-  height:290px;
-
-  background:#cfcfcf;
-}
-
-.tournament-wrapper::after{
-
-  content:"";
-
-  position:absolute;
-
-  right:200px;
-  top:192px;
-
-  width:2px;
-  height:290px;
-
-  background:#cfcfcf;
-}
-
-/* LINEE SEMI */
-
-.sf1::before{
-
-  content:"";
-
-  position:absolute;
-
-  left:-42px;
-  top:50%;
-
-  width:42px;
-  height:2px;
-
-  background:#cfcfcf;
-}
-
-.sf2::before{
-
-  content:"";
-
-  position:absolute;
-
-  right:-42px;
-  top:50%;
-
-  width:42px;
-  height:2px;
-
-  background:#cfcfcf;
-}
-
-/* LINEE FINALE */
-
-.final-match::before{
-
-  content:"";
-
-  position:absolute;
-
-  left:-85px;
-  top:50%;
-
-  width:85px;
-  height:2px;
-
-  background:#cfcfcf;
-}
-
-.final-match::after{
-
-  content:"";
-
-  position:absolute;
-
-  right:-85px;
-  top:50%;
-
-  width:85px;
-  height:2px;
-
-  background:#cfcfcf;
-}
-
-/* LINEA VERTICALE FINALE -> 3/4 */
-
-.third-place::before{
-
-  content:"";
-
-  position:absolute;
-
-  top:-110px;
-  left:50%;
-
-  width:2px;
-  height:110px;
-
-  background:#cfcfcf;
-
-  transform:translateX(-50%);
-}
-
 
 /* =============================================================================================
                                      RESPONSIVE MOBILE
