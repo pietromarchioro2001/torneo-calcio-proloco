@@ -5,7 +5,7 @@
 const CONFIG = {
   // 🔥 SOSTITUISCI CON IL TUO URL APPS SCRIPT WEB APP
 
-  BACKEND_URL: 'https://script.google.com/macros/s/AKfycbwLrCpz6-eqwIBuRT2j45CX0aorEbIifcGH4OJYMc9ySUJ7j7jaUFFHzEwgSNE0IDBn/exec',
+  BACKEND_URL: 'https://script.google.com/macros/s/AKfycbznrh-ixx8DqPyDmdeIPGOsze9Z3HVtu2Nx-WS3NCANWrD0ZDwGokxkt4rBO0PORTUj/exec',
   
   API_TIMEOUT: 30000,
   CACHE_VERSION: 'v3.0',
@@ -1328,64 +1328,69 @@ function renderMatchesByDate(date) {
   let html = "";
   
   matches.forEach(m => {
-    // 🔥 LOGHI SQUADRE
-    const logoCasa = m.LOGO_CASA 
-      ? `<img src="${getCachedImage(m.LOGO_CASA, 50)}" alt="${m.SQUADRA_CASA}" onerror="this.style.display='none';this.parentElement.innerHTML='<div class=\'team-logo-placeholder\'></div>'">`
-      : `<div class="team-logo-placeholder"></div>`;
-    
-    const logoTrasf = m.LOGO_TRASFERTA 
-      ? `<img src="${getCachedImage(m.LOGO_TRASFERTA, 50)}" alt="${m.SQUADRA_TRASFERTA}" onerror="this.style.display='none';this.parentElement.innerHTML='<div class=\'team-logo-placeholder\'></div>'">`
-      : `<div class="team-logo-placeholder"></div>`;
-    
-    // 🔥 FASE PARTITA - Mostra turno specifico
-    let faseBadge = "";
-    if (m.FASE && m.FASE !== "GIRONI") {
-      const turnoMap = {
-        "QUARTI": "QUARTI",
-        "SEMIFINALE": "SEMIFINALE", 
-        "FINALE": "FINALE",
-        "3_POSTO": "FINALE 3°-4°"
-      };
-      const turno = turnoMap[m.turno] || m.FASE;
-      faseBadge = `<div style="font-size:10px;color:#888;text-transform:uppercase;letter-spacing:1px;margin-top:4px">${turno}</div>`;
-    }
-    
-    let center = "";
-    if (m.STATO_PARTITA === "LIVE") {
-      center = `
-        <div class="score live">${m.GOL_CASA || 0} - ${m.GOL_TRASFERTA || 0}</div>
-        <div class="status live">LIVE</div>
-        ${faseBadge}
-      `;
-    } else if (m.STATO_PARTITA === "FINITA") {
-      center = `
-        <div class="score">${m.GOL_CASA || 0} - ${m.GOL_TRASFERTA || 0}</div>
-        <div class="status">TERMINATA</div>
-        ${faseBadge}
-      `;
-    } else {
-      center = `
-        <div class="time">🕒 ${m.ORA || "--:--"}</div>
-        ${faseBadge}
-      `;
-    }
-    
-    html += `
-      <div class="match-card ${m.STATO_PARTITA === "LIVE" ? "live-match" : ""}" 
-           onclick="openMatch('${m.MATCH_ID}')">
-        <div class="team-block left">
-          ${logoCasa}
-          <div class="team-name">${(m.SQUADRA_CASA || "").toUpperCase()}</div>
-        </div>
-        <div class="match-center">${center}</div>
-        <div class="team-block right">
-          <div class="team-name">${(m.SQUADRA_TRASFERTA || "").toUpperCase()}</div>
-          ${logoTrasf}
-        </div>
-        <div class="match-options" onclick='event.stopPropagation(); openMatchMenu(event, "${m.MATCH_ID}")'>⋮</div>
-      </div>
+  // 🔥 LOGHI SQUADRE
+  const logoCasa = m.LOGO_CASA 
+    ? `<img src="${getCachedImage(m.LOGO_CASA, 50)}" alt="${m.SQUADRA_CASA}" onerror="this.style.display='none';this.parentElement.innerHTML='<div class=\'team-logo-placeholder\'></div>'">`
+    : `<div class="team-logo-placeholder"></div>`;
+  
+  const logoTrasf = m.LOGO_TRASFERTA 
+    ? `<img src="${getCachedImage(m.LOGO_TRASFERTA, 50)}" alt="${m.SQUADRA_TRASFERTA}" onerror="this.style.display='none';this.parentElement.innerHTML='<div class=\'team-logo-placeholder\'></div>'">`
+    : `<div class="team-logo-placeholder"></div>`;
+  
+  // 🔥 FASE PARTITA - Leggi dalla colonna O (turno) invece che I (fase)
+  let faseBadge = "";
+  if (m.turno) {
+    const turnoMap = {
+      "Q1": "QUARTI",
+      "Q2": "QUARTI",
+      "Q3": "QUARTI",
+      "Q4": "QUARTI",
+      "SF1": "SEMIFINALE",
+      "SF2": "SEMIFINALE",
+      "F": "FINALE",
+      "TP": "FINALE 3°-4°"
+    };
+    const turno = turnoMap[m.turno] || m.turno;
+    faseBadge = `<div style="font-size:10px;color:#888;text-transform:uppercase;letter-spacing:1px;margin-top:4px">${turno}</div>`;
+  }
+  
+  let center = "";
+  if (m.STATO_PARTITA === "LIVE") {
+    center = `
+      <div class="score live">${m.GOL_CASA || 0} - ${m.GOL_TRASFERTA || 0}</div>
+      <div class="status live">LIVE</div>
+      ${faseBadge}
     `;
-  });
+  } else if (m.STATO_PARTITA === "FINITA") {
+    center = `
+      <div class="score">${m.GOL_CASA || 0} - ${m.GOL_TRASFERTA || 0}</div>
+      <div class="status">TERMINATA</div>
+      ${faseBadge}
+    `;
+  } else {
+    center = `
+      <div class="time">🕒 ${m.ORA || "--:--"}</div>
+      ${faseBadge}
+    `;
+  }
+  
+  // Usa lo stesso stile per TUTTE le card (gironi e finali)
+  html += `
+    <div class="match-card ${m.STATO_PARTITA === "LIVE" ? "live-match" : ""}" 
+         onclick="openMatch('${m.MATCH_ID}')">
+      <div class="team-block left">
+        ${logoCasa}
+        <div class="team-name">${(m.SQUADRA_CASA || "").toUpperCase()}</div>
+      </div>
+      <div class="match-center">${center}</div>
+      <div class="team-block right">
+        <div class="team-name">${(m.SQUADRA_TRASFERTA || "").toUpperCase()}</div>
+        ${logoTrasf}
+      </div>
+      <div class="match-options" onclick='event.stopPropagation(); openMatchMenu(event, "${m.MATCH_ID}")'>⋮</div>
+    </div>
+  `;
+});
   
   container.innerHTML = html;
 }
