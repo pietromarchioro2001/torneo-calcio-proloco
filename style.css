@@ -3586,15 +3586,35 @@ body{
   font-size:14px;
 }
 
-/* Pulsante Prossima Fase - Sempre visibile */
-.next-phase-btn {
-  margin-top: 20px;
-  margin-left: 50%;
-  transform: translateX(-50%);
+.next-phase-button {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  margin-top: 30px;  /* Spazio sotto la card 3°-4° */
 }
 
+.next-phase-btn {
+  background-color: #7a1e2c; /* Granata */
+  color: white;
+  padding: 12px 24px;
+  border-radius: 8px;
+  font-weight: 700;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: opacity 0.3s;
+  letter-spacing: 1px;
+  border: none;
+  font-size: 14px;
+}
+
+.next-phase-btn:hover {
+  opacity: 0.9;
+}
+
+/* Stile quando è disabilitato (fase non completa) */
 .next-phase-btn.disabled {
-  opacity: 0.5;
+  background-color: #ccc;
+  color: #666;
   cursor: not-allowed;
   pointer-events: none;
 }
@@ -3662,9 +3682,13 @@ body{
   transform: none !important;
 }
 
+.bracket-placeholder.final-match {
+  border: 2px solid #d8ab2f !important;
+}
+
 /* Placeholder finale - Statico */
 .bracket-match.bracket-placeholder.final-match {
-  opacity: 0.8 !important;
+  opacity: 0.9 !important;
   transform: none !important;
 }
 
