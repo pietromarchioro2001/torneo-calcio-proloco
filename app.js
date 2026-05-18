@@ -1484,17 +1484,6 @@ function openMatch(id) {
 
 function renderMatchPage(match) {
 
-  // 🔥 PULSANTI EVENTI - DEBUG
-const canAddEvents = isLive && (match.FASE === "FINALI" || !finalStageStarted);
-console.log('🔍 DEBUG EVENTI:', {
-  isLive,
-  fase: match.FASE,
-  finalStageStarted,
-  canAddEvents,
-  matchId: match.MATCH_ID
-});
-
-const eventBtnDisabled = !canAddEvents ? "style=\"opacity:0.5;pointer-events:none;cursor:not-allowed\"" : "";
   // 🔥 LOGHI SQUADRE
   const logoCasa = match.LOGO_CASA 
     ? `<img src="${getCachedImage(match.LOGO_CASA, 120)}" alt="${match.SQUADRA_CASA}" onerror="this.style.display='none'">`
@@ -1522,7 +1511,15 @@ const eventBtnDisabled = !canAddEvents ? "style=\"opacity:0.5;pointer-events:non
   
   // 🔥 PULSANTI EVENTI
   const canAddEvents = isLive && (match.FASE === "FINALI" || !finalStageStarted);
-  const eventBtnDisabled = !canAddEvents ? "style=\"opacity:0.5;pointer-events:none;cursor:not-allowed\"" : "";
+  console.log('🔍 DEBUG EVENTI:', {
+  isLive,
+  fase: match.FASE,
+  finalStageStarted,
+  canAddEvents,
+  matchId: match.MATCH_ID
+});
+
+const eventBtnDisabled = !canAddEvents ? "style=\"opacity:0.5;pointer-events:none;cursor:not-allowed\"" : "";
   
   // 🔥 PULSANTE INIZIA/CONCLUDI
   const canToggleMatch = match.FASE === "FINALI" || !finalStageStarted || !isFinished;
