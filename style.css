@@ -567,11 +567,12 @@ body{
   margin-top: 2px;
 }
 
+/* ===== HOME CARD - LIVE IN LINEA ===== */
 .home-live-badge {
   display: flex;
-  flex-direction: column;  /* 🔥 Metti in verticale */
+  flex-direction: row;  /* 🔥 Orizzontale, non verticale */
   align-items: center;
-  gap: 4px;
+  gap: 6px;
   justify-content: center;
   margin-top: 4px;
 }
@@ -582,6 +583,7 @@ body{
   color: #dc2626;
   letter-spacing: 1px;
   animation: liveTextPulse 2s infinite;
+  white-space: nowrap;
 }
 
 .home-live-dot {
@@ -591,6 +593,7 @@ body{
   border-radius: 50%;
   animation: liveDotPulse 1.5s infinite;
   display: inline-block;
+  flex-shrink: 0;
 }
 
 @keyframes liveTextPulse {
