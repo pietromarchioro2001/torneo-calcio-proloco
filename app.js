@@ -5,7 +5,7 @@
 const CONFIG = {
   // 🔥 SOSTITUISCI CON IL TUO URL APPS SCRIPT WEB APP
 
-  BACKEND_URL: 'https://script.google.com/macros/s/AKfycbzmfASzrJHbB5gynkzXFX_ZS2-tvN6SQfl0Q4pJz499dqYgV-LceRRx4GR2Ze8DBlwn/exec',
+  BACKEND_URL: 'https://script.google.com/macros/s/AKfycbwLrCpz6-eqwIBuRT2j45CX0aorEbIifcGH4OJYMc9ySUJ7j7jaUFFHzEwgSNE0IDBn/exec',
   
   API_TIMEOUT: 30000,
   CACHE_VERSION: 'v3.0',
@@ -1213,7 +1213,6 @@ function showMatches() {
 function renderMatches() {
   const data = window.APP_CACHE.matches || [];
   
-  // Filtra solo partite valide
   const matches = (data || [])
     .filter(m => m?.MATCH_ID && m?.DATA)
     .map(m => ({ 
@@ -1222,14 +1221,13 @@ function renderMatches() {
       STATO_PARTITA: String(m.STATO_PARTITA || "").trim().toUpperCase() 
     }));
   
-  // Estrai date uniche
+  // 🔥 AUMENTA LIMITE A 30 DATE (era 10)
   const dates = [...new Set(matches.filter(m => m.DATA).map(m => m.DATA))]
     .sort()
-    .slice(0, 10); // Limita a 10 giornate per performance
+    .slice(0, 30);  // ← CAMBIATO DA 10 A 30
   
   window.APP_STATE.availableDates = dates;
   
-  // Seleziona prima data disponibile
   const today = new Date();
   const todayStr = formatLocalDate(today);
   const futureDates = dates.filter(d => d >= todayStr);
@@ -2300,17 +2298,17 @@ function renderPlaceholderCard(label, cls="") { return `<div class="bracket-plac
 function renderBracketMatch(match, cls="") {
   // Se non c'è la partita, mostra placeholder
   if (!match || !match.casa?.nome) {
-    return `<div class="bracket-match placeholder-match ${cls}"><div class="placeholder-center">TBD</div></div>`;
+    return `<div class="bracket-placeholder ${cls}">TBD</div>`;
   }
   
   // Loghi squadre
   const logoCasa = match.casa?.logo 
-    ? `<img src="${getCachedImage(match.casa.logo, 24)}" alt="${match.casa.nome}" onerror="this.style.display='none'">`
-    : `<div style="width:24px;height:24px;border-radius:50%;background:#f0f0f0"></div>`;
+    ? `<img src="${getCachedImage(match.casa.logo, 22)}" alt="${match.casa.nome}" onerror="this.style.display='none'">`
+    : `<div style="width:22px;height:22px;border-radius:50%;background:#f0f0f0"></div>`;
   
   const logoTrasf = match.trasferta?.logo 
-    ? `<img src="${getCachedImage(match.trasferta.logo, 24)}" alt="${match.trasferta.nome}" onerror="this.style.display='none'">`
-    : `<div style="width:24px;height:24px;border-radius:50%;background:#f0f0f0"></div>`;
+    ? `<img src="${getCachedImage(match.trasferta.logo, 22)}" alt="${match.trasferta.nome}" onerror="this.style.display='none'">`
+    : `<div style="width:22px;height:22px;border-radius:50%;background:#f0f0f0"></div>`;
   
   // 🔥 Punteggio o stato
   const isLive = match.stato === "LIVE";
@@ -2325,6 +2323,7 @@ function renderBracketMatch(match, cls="") {
   } else if (isFinished) {
     scoreHtml = `<span class="bracket-score">${match.golCasa||0} - ${match.golTrasferta||0}</span>`;
   } else {
+    // 🔥 Programmata: mostra 0-0 in grigio
     scoreHtml = `<span class="bracket-score scheduled">0 - 0</span>`;
   }
   
@@ -2332,12 +2331,12 @@ function renderBracketMatch(match, cls="") {
     <div class="bracket-match ${cls}" onclick="openMatch('${match.matchId}')">
       <div class="bracket-team">
         ${logoCasa}
-        <span>${(match.casa?.nome || "TBD").substring(0, 8).toUpperCase()}</span>
+        <span>${(match.casa?.nome || "TBD").substring(0, 10).toUpperCase()}</span>
         ${scoreHtml}
       </div>
       <div class="bracket-team">
         ${logoTrasf}
-        <span>${(match.trasferta?.nome || "TBD").substring(0, 8).toUpperCase()}</span>
+        <span>${(match.trasferta?.nome || "TBD").substring(0, 10).toUpperCase()}</span>
       </div>
     </div>
   `;
