@@ -1197,6 +1197,90 @@ function deleteTeam(id) {
 }
 
 // ============================================================================
+// 🗑 EVENT MENU & DELETE
+// ============================================================================
+
+function openEventMenu(ev, eventId, matchId) {
+  ev.stopPropagation();
+  ev.preventDefault();
+  
+  // Rimuovi menu esistenti
+  document.querySelectorAll(".event-popup-menu").forEach(e => e.remove());
+  
+  const menu = document.createElement("div");
+  menu.className = "event-popup-menu";
+  menu.innerHTML = `<div onclick="deleteEvent('${eventId}', '${matchId}'); this.parentElement.remove()">🗑 Elimina evento</div>`;
+  menu.style.cssText = `
+    position: fixed;
+    left: ${ev.clientX}px;
+    top: ${ev.clientY}px;
+    background: white;
+    border-radius: 6px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    padding: 8px 0;
+    z-index: 10000;
+    min-width: 140px;
+  `;
+  
+  const menuItem = menu.querySelector("div");
+  menuItem.style.cssText = `
+    padding: 8px 16px;
+    cursor: pointer;
+    font-size: 13px;
+    color: #333;
+  `;
+  menuItem.onmouseover = () => menuItem.style.background = "#f5f5f5";
+  menuItem.onmouseout = () => menuItem.style.background = "white";
+  
+  menu.onclick = e => e.stopPropagation();
+  document.body.appendChild(menu);
+  
+  // Chiudi cliccando fuori
+  setTimeout(() => {
+    const close = e => {
+      if (!menu.contains(e.target)) {
+        menu.remove();
+        document.removeEventListener("click", close);
+      }
+    };
+    document.addEventListener("click", close, { once: true });
+  }, 0);
+}
+
+async function deleteEvent(eventId, matchId) {
+  if (!confirm("Eliminare questo evento?")) return;
+  
+  try {
+    await ApiClient.deleteEventAdmin(eventId);
+    
+    // Ricarica eventi
+    const events = await ApiClient.getEventsAdmin(matchId);
+    window.APP_CACHE.eventsByMatch = window.APP_CACHE.eventsByMatch || {};
+    window.APP_CACHE.eventsByMatch[matchId] = events;
+    CacheManager.save(window.APP_CACHE);
+    
+    // Ricarica partita completa
+    const match = await ApiClient.getMatchFull(matchId);
+    if (match?.match) {
+      window.APP_STATE.lastMatch = match.match;
+      renderEvents(events, match.match);
+      
+      // Aggiorna punteggio
+      const scoreEl = document.querySelector(".score-big");
+      if (scoreEl) {
+        scoreEl.textContent = `${match.match.GOL_CASA || 0} - ${match.match.GOL_TRASFERTA || 0}`;
+      }
+    }
+    
+    refreshStandingsDebounced(500);
+    
+  } catch (error) {
+    console.error('Error deleting event:', error);
+    alert('Errore eliminazione evento: ' + error.message);
+  }
+}
+
+// ============================================================================
 // ⚽ MATCHES FUNCTIONS
 // ============================================================================
 
@@ -1673,6 +1757,11 @@ function renderEvents(events, match) {
     const isCasa = String(e.TEAM_ID) === String(match.CASA_ID);
     const icon = e.TIPO === "GOAL" ? "⚽" : e.TIPO === "AMMONIZIONE" ? "🟨" : "🟥";
     
+    // 🔥 Tre puntini per eliminare (solo se c'è EVENT_ID)
+    const deleteBtn = e.EVENT_ID 
+      ? `<span class="event-options" onclick="openEventMenu(event, '${e.EVENT_ID}', '${match.MATCH_ID}')" style="cursor:pointer;margin-left:8px;color:#999;font-size:14px">⋮</span>` 
+      : '';
+    
     html += `
       <div class="event-line ${isCasa ? "left" : "right"}">
         <div class="event-content">
@@ -1682,7 +1771,7 @@ function renderEvents(events, match) {
             ${(e.PLAYER || "").toUpperCase()}
             ${e.ASSIST ? `<span class="assist">(${(e.ASSIST).toUpperCase()})</span>` : ""}
           </span>
-          ${e.EVENT_ID ? `<span class="event-options" onclick="openEventMenu(event, '${e.EVENT_ID}', '${match.MATCH_ID}')" style="cursor:pointer;margin-left:8px;color:#999;font-size:14px">⋮</span>` : ''}
+          ${deleteBtn}
         </div>
       </div>
     `;
