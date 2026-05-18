@@ -461,6 +461,7 @@ body{
 
 /* ===== CARD PROSSIMA PARTITA / LIVE - HOME ===== */
 .home-next-match {
+  min-height: 90px;
   position: absolute;
   bottom: 80px;
   left: 50%;
@@ -568,11 +569,12 @@ body{
 }
 
 /* ===== HOME CARD - LIVE IN LINEA ===== */
+/* ===== HOME CARD - LIVE SOTTO AL RISULTATO ===== */
 .home-live-badge {
   display: flex;
-  flex-direction: row;  /* 🔥 Orizzontale, non verticale */
+  flex-direction: column;  /* 🔥 Verticale, non orizzontale */
   align-items: center;
-  gap: 6px;
+  gap: 4px;
   justify-content: center;
   margin-top: 4px;
 }
@@ -583,7 +585,6 @@ body{
   color: #dc2626;
   letter-spacing: 1px;
   animation: liveTextPulse 2s infinite;
-  white-space: nowrap;
 }
 
 .home-live-dot {
@@ -593,7 +594,6 @@ body{
   border-radius: 50%;
   animation: liveDotPulse 1.5s infinite;
   display: inline-block;
-  flex-shrink: 0;
 }
 
 @keyframes liveTextPulse {
@@ -2322,6 +2322,16 @@ body{
 /* nome */
 .event-player{
   letter-spacing:0.5px;
+}
+
+.event-delete {
+  opacity: 0.6;
+  transition: opacity 0.2s;
+}
+
+.event-delete:hover {
+  opacity: 1;
+  color: #dc2626 !important;
 }
 
 .match-status{
