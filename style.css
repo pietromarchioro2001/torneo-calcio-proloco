@@ -3608,9 +3608,8 @@ body{
 
 .bracket-match {
   position: absolute;
-  width: 220px;  /* 🔥 Più larga per nomi completi */
-  height: auto;
-  min-height: 100px;
+  width: 200px;  /* Larghezza fissa */
+  height: 110px; /* Altezza fissa */
   
   background: #fff;
   border-radius: 16px;
@@ -3627,6 +3626,17 @@ body{
   
   cursor: pointer;
   transition: all 0.2s ease;
+}
+
+.bracket-match.bracket-placeholder {
+  background: #fafafa;
+  border: 2px dashed #e0e0e0;
+  cursor: default;
+}
+
+.bracket-match.bracket-placeholder:hover {
+  transform: none;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.08);
 }
 
 .bracket-match:hover {
@@ -3739,8 +3749,8 @@ body{
   font-weight: 700;
   color: #333;
   white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  overflow: visible;  /* 🔥 Mostra tutto il testo */
+  text-overflow: clip;  /* 🔥 No ellipsis */
   text-transform: uppercase;
   letter-spacing: 0.5px;
 }
