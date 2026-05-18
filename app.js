@@ -1367,7 +1367,7 @@ if (m.STATO_PARTITA === "LIVE") {
   `;
 } else {
   center = `
-    <div class="time">🕒 ${m.ORA || "--:--"}</div>
+    <div class="time"> ${m.ORA || "--:--"}</div>
     ${faseBadge}
   `;
 }
