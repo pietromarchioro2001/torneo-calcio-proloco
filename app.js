@@ -1338,41 +1338,39 @@ function renderMatchesByDate(date) {
     : `<div class="team-logo-placeholder"></div>`;
   
   // 🔥 FASE PARTITA - Leggi dalla colonna O (turno) invece che I (fase)
-  let faseBadge = "";
-  if (m.turno) {
-    const turnoMap = {
-      "Q1": "QUARTI",
-      "Q2": "QUARTI",
-      "Q3": "QUARTI",
-      "Q4": "QUARTI",
-      "SF1": "SEMIFINALE",
-      "SF2": "SEMIFINALE",
-      "F": "FINALE",
-      "TP": "FINALE 3°-4°"
-    };
-    const turno = turnoMap[m.turno] || m.turno;
-    faseBadge = `<div style="font-size:10px;color:#888;text-transform:uppercase;letter-spacing:1px;margin-top:4px">${turno}</div>`;
-  }
-  
-  let center = "";
-  if (m.STATO_PARTITA === "LIVE") {
-    center = `
-      <div class="score live">${m.GOL_CASA || 0} - ${m.GOL_TRASFERTA || 0}</div>
-      <div class="status live">LIVE</div>
-      ${faseBadge}
-    `;
-  } else if (m.STATO_PARTITA === "FINITA") {
-    center = `
-      <div class="score">${m.GOL_CASA || 0} - ${m.GOL_TRASFERTA || 0}</div>
-      <div class="status">TERMINATA</div>
-      ${faseBadge}
-    `;
-  } else {
-    center = `
-      <div class="time">🕒 ${m.ORA || "--:--"}</div>
-      ${faseBadge}
-    `;
-  }
+  // 🔥 FASE PARTITA - Leggi TURNO da colonna O (index 14)
+let faseBadge = "";
+const turnoVal = m.TURNO || m.turno || m.matchKey || "";
+
+if (turnoVal) {
+  const turnoMap = {
+    "Q1": "QUARTI", "Q2": "QUARTI", "Q3": "QUARTI", "Q4": "QUARTI",
+    "SF1": "SEMIFINALE", "SF2": "SEMIFINALE",
+    "F": "FINALE", "TP": "FINALE 3°-4°"
+  };
+  const turno = turnoMap[turnoVal] || turnoVal;
+  faseBadge = `<div style="font-size:10px;color:#888;text-transform:uppercase;letter-spacing:1px;margin-top:4px">${turno}</div>`;
+}
+
+let center = "";
+if (m.STATO_PARTITA === "LIVE") {
+  center = `
+    <div class="score live">${m.GOL_CASA || 0} - ${m.GOL_TRASFERTA || 0}</div>
+    <div class="status live">LIVE</div>
+    ${faseBadge}
+  `;
+} else if (m.STATO_PARTITA === "FINITA") {
+  center = `
+    <div class="score">${m.GOL_CASA || 0} - ${m.GOL_TRASFERTA || 0}</div>
+    <div class="status">TERMINATA</div>
+    ${faseBadge}
+  `;
+} else {
+  center = `
+    <div class="time">🕒 ${m.ORA || "--:--"}</div>
+    ${faseBadge}
+  `;
+}
   
   // Usa lo stesso stile per TUTTE le card (gironi e finali)
   html += `
@@ -2310,9 +2308,9 @@ function renderFinalBracket(matches) {
 function renderPlaceholderCard(label, cls="") {
   return `
     <div class="bracket-match bracket-placeholder ${cls}">
-      <div style="text-align:center;opacity:0.5;">
-        <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px">${Sanitizer.html(label)}</div>
-        <div style="font-size:10px;color:#999">TBD</div>
+      <div style="text-align:center; opacity:0.6; width:100%;">
+        <div style="font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:1px; color:#666; margin-bottom:6px;">${Sanitizer.html(label)}</div>
+        <div style="font-size:10px; color:#999; font-weight:600;">TBD</div>
       </div>
     </div>
   `;
