@@ -2046,47 +2046,119 @@ async function saveEvent(team) {
     return;
   }
   
-  // 🔥 Determina teamId corretto
+  // 🔥 1. CALCOLA CORRETTAMENTE IL TEAM_ID
   const teamId = team === "casa" ? match.CASA_ID : match.TRASFERTA_ID;
+  const teamName = team === "casa" ? match.SQUADRA_CASA : match.SQUADRA_TRASFERTA;
   
   console.log('💾 Salvataggio evento:', {
-    matchId: match.MATCH_ID,
-    teamId,
     team,
+    teamId,
+    teamName,
+    matchId: match.MATCH_ID,
     type,
     minute,
     playerId,
-    assistId,
-    casaId: match.CASA_ID,
-    trasfertaId: match.TRASFERTA_ID
+    assistId
   });
   
+  // 🔥 2. OTTIENI NOME GIOCATORE DALLA CACHE
+  const players = window.APP_CACHE.fullTeams?.[teamId]?.players || [];
+  const player = players.find(p => p.PLAYER_ID === playerId);
+  const playerName = player?.NOME || "Sconosciuto";
+  
+  const assistPlayer = assistId ? players.find(p => p.PLAYER_ID === assistId) : null;
+  const assistName = assistPlayer?.NOME || "";
+  
+  // 🔥 3. AGGIUNGI EVENTO LOCALMENTE SUBITO (OTTIMISTICO)
+  const newEvent = {
+    EVENT_ID: 'temp_' + Date.now(), // ID temporaneo
+    MATCH_ID: match.MATCH_ID,
+    TEAM_ID: teamId,
+    TIPO: type,
+    MINUTO: minute,
+    PLAYER_ID: playerId,
+    PLAYER: playerName,
+    ASSIST: assistName,
+    ASSIST_ID: assistId
+  };
+  
+  // Aggiungi alla cache locale
+  if (!window.APP_CACHE.eventsByMatch) window.APP_CACHE.eventsByMatch = {};
+  if (!window.APP_CACHE.eventsByMatch[match.MATCH_ID]) {
+    window.APP_CACHE.eventsByMatch[match.MATCH_ID] = [];
+  }
+  window.APP_CACHE.eventsByMatch[match.MATCH_ID].push(newEvent);
+  CacheManager.save(window.APP_CACHE);
+  
+  // 🔥 4. AGGIORNA PUNTEGGIO IMMEDIATAMENTE
+  if (type === 'GOAL') {
+    if (team === "casa") {
+      match.GOL_CASA = (match.GOL_CASA || 0) + 1;
+    } else {
+      match.GOL_TRASFERTA = (match.GOL_TRASFERTA || 0) + 1;
+    }
+    
+    // Aggiorna UI punteggio
+    const scoreEl = document.querySelector(".score-big");
+    if (scoreEl) {
+      scoreEl.textContent = `${match.GOL_CASA} - ${match.GOL_TRASFERTA}`;
+    }
+  }
+  
+  // 🔥 5. AGGIORNA UI EVENTI IMMEDIATAMENTE
+  renderEvents(window.APP_CACHE.eventsByMatch[match.MATCH_ID], match);
+  
+  // 🔥 6. AGGIORNA TAB GIOCATORI
+  renderPlayersTab(
+    window.APP_CACHE.fullTeams?.[match.CASA_ID],
+    window.APP_CACHE.fullTeams?.[match.TRASFERTA_ID],
+    match
+  );
+  
+  // 🔥 7. CHIUDI POPUP IMMEDIATAMENTE
+  document.querySelector(".modalOverlay")?.remove();
+  
+  // 🔥 8. POI SALVA SUL BACKEND (in background)
   try {
-    // Chiama backend
     await ApiClient.addEventAdmin(match.MATCH_ID, teamId, type, minute, playerId, assistId);
     
-    // Chiudi popup
-    document.querySelector(".modalOverlay")?.remove();
-    
-    // Ricarica eventi e UI
+    // 🔥 9. RICARICA DATI REALI DAL SERVER (sincronizzazione)
     const events = await ApiClient.getEventsAdmin(match.MATCH_ID);
-    window.APP_CACHE.eventsByMatch = window.APP_CACHE.eventsByMatch || {};
     window.APP_CACHE.eventsByMatch[match.MATCH_ID] = events;
     CacheManager.save(window.APP_CACHE);
     
+    // Ri-renderizza con dati reali (sostituisce ID temporaneo con reale)
     renderEvents(events, match);
-    renderPlayersTab(
-      window.APP_CACHE.fullTeams?.[match.CASA_ID],
-      window.APP_CACHE.fullTeams?.[match.TRASFERTA_ID],
-      match
-    );
     
     // Aggiorna standings
     refreshStandingsDebounced(1000);
     
+    console.log('✅ Evento salvato con successo');
+    
   } catch (error) {
-    console.error('Error saving event:', error);
+    console.error('❌ Errore salvataggio evento:', error);
     alert('Errore salvataggio evento: ' + error.message);
+    
+    // 🔥 10. ROLLBACK SE FALLISCE
+    // Rimuovi evento temporaneo
+    window.APP_CACHE.eventsByMatch[match.MATCH_ID] = 
+      window.APP_CACHE.eventsByMatch[match.MATCH_ID].filter(e => e.EVENT_ID !== newEvent.EVENT_ID);
+    
+    // Ripristina punteggio
+    if (type === 'GOAL') {
+      if (team === "casa") {
+        match.GOL_CASA = Math.max(0, match.GOL_CASA - 1);
+      } else {
+        match.GOL_TRASFERTA = Math.max(0, match.GOL_TRASFERTA - 1);
+      }
+      const scoreEl = document.querySelector(".score-big");
+      if (scoreEl) {
+        scoreEl.textContent = `${match.GOL_CASA} - ${match.GOL_TRASFERTA}`;
+      }
+    }
+    
+    renderEvents(window.APP_CACHE.eventsByMatch[match.MATCH_ID], match);
+    CacheManager.save(window.APP_CACHE);
   }
 }
 
