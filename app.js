@@ -1337,10 +1337,18 @@ function renderMatchesByDate(date) {
       ? `<img src="${getCachedImage(m.LOGO_TRASFERTA, 50)}" alt="${m.SQUADRA_TRASFERTA}" onerror="this.style.display='none';this.parentElement.innerHTML='<div class=\'team-logo-placeholder\'></div>'">`
       : `<div class="team-logo-placeholder"></div>`;
     
-    // 🔥 FASE PARTITA (GIRONI/FINALI)
-    const faseBadge = m.FASE && m.FASE !== "GIRONI" 
-      ? `<div style="font-size:10px;color:#888;text-transform:uppercase;letter-spacing:1px;margin-top:4px">${m.FASE}</div>`
-      : '';
+    // 🔥 FASE PARTITA - Mostra turno specifico
+    let faseBadge = "";
+    if (m.FASE && m.FASE !== "GIRONI") {
+      const turnoMap = {
+        "QUARTI": "QUARTI",
+        "SEMIFINALE": "SEMIFINALE", 
+        "FINALE": "FINALE",
+        "3_POSTO": "FINALE 3°-4°"
+      };
+      const turno = turnoMap[m.turno] || m.FASE;
+      faseBadge = `<div style="font-size:10px;color:#888;text-transform:uppercase;letter-spacing:1px;margin-top:4px">${turno}</div>`;
+    }
     
     let center = "";
     if (m.STATO_PARTITA === "LIVE") {
@@ -2298,45 +2306,45 @@ function renderPlaceholderCard(label, cls="") { return `<div class="bracket-plac
 function renderBracketMatch(match, cls="") {
   // Se non c'è la partita, mostra placeholder
   if (!match || !match.casa?.nome) {
-    return `<div class="bracket-placeholder ${cls}">TBD</div>`;
+    return `<div class="bracket-placeholder ${cls}"><div class="bracket-placeholder-title">TBD</div></div>`;
   }
   
   // Loghi squadre
   const logoCasa = match.casa?.logo 
-    ? `<img src="${getCachedImage(match.casa.logo, 22)}" alt="${match.casa.nome}" onerror="this.style.display='none'">`
-    : `<div style="width:22px;height:22px;border-radius:50%;background:#f0f0f0"></div>`;
+    ? `<img src="${getCachedImage(match.casa.logo, 24)}" alt="${match.casa.nome}" onerror="this.style.display='none'">`
+    : `<div style="width:24px;height:24px;border-radius:50%;background:#f0f0f0"></div>`;
   
   const logoTrasf = match.trasferta?.logo 
-    ? `<img src="${getCachedImage(match.trasferta.logo, 22)}" alt="${match.trasferta.nome}" onerror="this.style.display='none'">`
-    : `<div style="width:22px;height:22px;border-radius:50%;background:#f0f0f0"></div>`;
+    ? `<img src="${getCachedImage(match.trasferta.logo, 24)}" alt="${match.trasferta.nome}" onerror="this.style.display='none'">`
+    : `<div style="width:24px;height:24px;border-radius:50%;background:#f0f0f0"></div>`;
   
   // 🔥 Punteggio o stato
   const isLive = match.stato === "LIVE";
   const isFinished = match.stato === "FINITA";
   
-  let scoreHtml = "";
-  if (isLive) {
-    scoreHtml = `
-      <span class="bracket-score live">${match.golCasa||0} - ${match.golTrasferta||0}</span>
-      <span class="live-indicator"></span>
-    `;
-  } else if (isFinished) {
-    scoreHtml = `<span class="bracket-score">${match.golCasa||0} - ${match.golTrasferta||0}</span>`;
-  } else {
-    // 🔥 Programmata: mostra 0-0 in grigio
-    scoreHtml = `<span class="bracket-score scheduled">0 - 0</span>`;
+  let scoreCasa = "0";
+  let scoreTrasf = "0";
+  
+  if (isLive || isFinished) {
+    scoreCasa = match.golCasa || 0;
+    scoreTrasf = match.golTrasferta || 0;
   }
+  
+  const scoreClass = isLive ? "bracket-score live" : "bracket-score scheduled";
+  const liveDot = isLive ? '<span class="live-indicator"></span>' : '';
   
   return `
     <div class="bracket-match ${cls}" onclick="openMatch('${match.matchId}')">
       <div class="bracket-team">
         ${logoCasa}
-        <span>${(match.casa?.nome || "TBD").substring(0, 10).toUpperCase()}</span>
-        ${scoreHtml}
+        <span>${(match.casa?.nome || "TBD").toUpperCase()}</span>
+        <span class="${scoreClass}">${scoreCasa}</span>
+        ${liveDot}
       </div>
       <div class="bracket-team">
         ${logoTrasf}
-        <span>${(match.trasferta?.nome || "TBD").substring(0, 10).toUpperCase()}</span>
+        <span>${(match.trasferta?.nome || "TBD").toUpperCase()}</span>
+        <span class="${scoreClass}">${scoreTrasf}</span>
       </div>
     </div>
   `;
