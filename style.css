@@ -3678,8 +3678,8 @@ body{
 .qf4 { right: 20px; top: 450px; }
 
 /* Semifinali spostate verso l'esterno (più vicine ai quarti) */
-.sf1 { left: 260px; top: 300px; }
-.sf2 { right: 260px; top: 300px; }
+.sf1 { left: 220px; top: 300px; }
+.sf2 { right: 220px; top: 300px; }
 
 /* Centro senza transform per evitare conflitti hover */
 .final-match { 
