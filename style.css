@@ -2334,6 +2334,21 @@ body{
   color: #dc2626 !important;
 }
 
+.event-options {
+  opacity: 0.6;
+  transition: opacity 0.2s;
+  user-select: none;
+}
+
+.event-options:hover {
+  opacity: 1;
+  color: #dc2626 !important;
+}
+
+.event-popup-menu {
+  font-family: inherit;
+}
+
 .match-status{
   margin-top:8px;
   font-size:14px;
