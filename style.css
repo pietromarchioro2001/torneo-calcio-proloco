@@ -1747,7 +1747,6 @@ body{
 .match-card{
   background:white;
   border-radius:16px;
-  min-height: 88px;
   padding:16px 20px;
   margin:10px;
   position:relative;
