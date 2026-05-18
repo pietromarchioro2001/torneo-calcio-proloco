@@ -225,6 +225,7 @@ const ApiClient = {
   getMatchFull: (id) => ApiClient.call('getMatchFull', id),
   getPlayersByTeam: (teamId) => ApiClient.call('getPlayersByTeam', teamId),
   getPlayerDetail: (id) => ApiClient.call('getPlayerDetail', id),
+  getEventsAdmin: (matchId) => ApiClient.call('getEventsAdmin', matchId),
   
   saveTeamAdmin: (id, name, photo, girone) => 
     ApiClient.call('saveTeamAdmin', [id, name, photo, girone]),
@@ -1295,15 +1296,33 @@ function renderMatchesByDate(date) {
   const allMatches = window.APP_CACHE.matches || [];
   
   // 🔥 FILTRA: Mostra TUTTE le partite (gironi + finali)
-  let matches = allMatches
-    .filter(m => {
-      const matchDate = String(m.DATA || "").slice(0, 10);
-      return matchDate === date;
-    })
-    .sort((a, b) => {
-      const order = { "LIVE": 0, "PROGRAMMATA": 1, "FINITA": 2 };
-      return (order[a.STATO_PARTITA] || 99) - (order[b.STATO_PARTITA] || 99);
-    });
+  // 🔥 FILTRA e ORDINA: LIVE sempre sopra
+let matches = allMatches
+  .filter(m => {
+    const matchDate = String(m.DATA || "").slice(0, 10);
+    return matchDate === date;
+  })
+  .sort((a, b) => {
+    // Priorità: LIVE > PROGRAMMATA > FINITA
+    const getPriority = (m) => {
+      if (m.STATO_PARTITA === "LIVE") return 0;
+      if (m.STATO_PARTITA === "PROGRAMMATA") return 1;
+      if (m.STATO_PARTITA === "FINITA") return 2;
+      return 3;
+    };
+    
+    const priorityA = getPriority(a);
+    const priorityB = getPriority(b);
+    
+    // Se stessa priorità, ordina per ora
+    if (priorityA === priorityB) {
+      const timeA = a.ORA || "00:00";
+      const timeB = b.ORA || "00:00";
+      return timeA.localeCompare(timeB);
+    }
+    
+    return priorityA - priorityB;
+  });
   
   if (matches.length === 0) {
     container.innerHTML = `
