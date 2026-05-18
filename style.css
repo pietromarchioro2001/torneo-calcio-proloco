@@ -3920,6 +3920,14 @@ body{
   border: 1px solid #e0e0e0 !important;
 }
 
+/* 🔥 OVERRIDE ASSOLUTO PER BORDO ORO */
+div.bracket-placeholder.final-match,
+div.bracket-match.final-match {
+    border: 2px solid #d8ab2f !important;
+    /* Opzionale: leggera ombra dorata per evidenziarlo */
+    box-shadow: 0 4px 15px rgba(216, 179, 47, 0.2) !important;
+}
+
 /* =============================================================================================
                                      RESPONSIVE MOBILE
 ===============================================================================================*/
