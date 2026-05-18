@@ -1247,39 +1247,6 @@ function openEventMenu(ev, eventId, matchId) {
   }, 0);
 }
 
-async function deleteEvent(eventId, matchId) {
-  if (!confirm("Eliminare questo evento?")) return;
-  
-  try {
-    await ApiClient.deleteEventAdmin(eventId);
-    
-    // Ricarica eventi
-    const events = await ApiClient.getEventsAdmin(matchId);
-    window.APP_CACHE.eventsByMatch = window.APP_CACHE.eventsByMatch || {};
-    window.APP_CACHE.eventsByMatch[matchId] = events;
-    CacheManager.save(window.APP_CACHE);
-    
-    // Ricarica partita completa
-    const match = await ApiClient.getMatchFull(matchId);
-    if (match?.match) {
-      window.APP_STATE.lastMatch = match.match;
-      renderEvents(events, match.match);
-      
-      // Aggiorna punteggio
-      const scoreEl = document.querySelector(".score-big");
-      if (scoreEl) {
-        scoreEl.textContent = `${match.match.GOL_CASA || 0} - ${match.match.GOL_TRASFERTA || 0}`;
-      }
-    }
-    
-    refreshStandingsDebounced(500);
-    
-  } catch (error) {
-    console.error('Error deleting event:', error);
-    alert('Errore eliminazione evento: ' + error.message);
-  }
-}
-
 // ============================================================================
 // ⚽ MATCHES FUNCTIONS
 // ============================================================================
@@ -1746,7 +1713,6 @@ function renderEvents(events, match) {
     return;
   }
   
-  // Ordina per minuto e FILTRA eventi al 0'
   events = [...events]
     .filter(e => e.MINUTO > 0)
     .sort((a, b) => (a.MINUTO || 0) - (b.MINUTO || 0));
@@ -1757,13 +1723,13 @@ function renderEvents(events, match) {
     const isCasa = String(e.TEAM_ID) === String(match.CASA_ID);
     const icon = e.TIPO === "GOAL" ? "⚽" : e.TIPO === "AMMONIZIONE" ? "🟨" : "🟥";
     
-    // 🔥 Tre puntini per eliminare (solo se c'è EVENT_ID)
     const deleteBtn = e.EVENT_ID 
       ? `<span class="event-options" onclick="openEventMenu(event, '${e.EVENT_ID}', '${match.MATCH_ID}')" style="cursor:pointer;margin-left:8px;color:#999;font-size:14px">⋮</span>` 
       : '';
     
     html += `
-      <div class="event-line ${isCasa ? "left" : "right"}">
+      <div class="event-line ${isCasa ? "left" : "right"}" 
+           data-event-id="${e.EVENT_ID || ''}">  <!-- 🔥 AGGIUNTO -->
         <div class="event-content">
           <span class="event-minute">${e.MINUTO}'</span>
           <span class="event-icon">${icon}</span>
@@ -1831,33 +1797,83 @@ function openEventMenu(ev, eventId, matchId) {
 async function deleteEvent(eventId, matchId) {
   if (!confirm("Eliminare questo evento?")) return;
   
+  // 🔥 1. TROVA L'ELEMENTO NEL DOM E RIMUOVILO SUBITO
+  const eventElement = document.querySelector(`[data-event-id="${eventId}"]`);
+  if (eventElement) {
+    eventElement.style.transition = 'all 0.3s ease';
+    eventElement.style.opacity = '0';
+    eventElement.style.transform = 'translateX(20px)';
+    setTimeout(() => eventElement.remove(), 300);
+  }
+  
+  // 🔥 2. AGGIORNA SUBITO LA CACHE LOCALE
+  if (window.APP_CACHE.eventsByMatch?.[matchId]) {
+    window.APP_CACHE.eventsByMatch[matchId] = 
+      window.APP_CACHE.eventsByMatch[matchId].filter(e => e.EVENT_ID !== eventId);
+    CacheManager.save(window.APP_CACHE);
+  }
+  
+  // 🔥 3. AGGIORNA IL PUNTEGGIO IMMEDIATAMENTE (calcolo locale)
+  updateScoreLocally(matchId, eventId);
+  
   try {
+    // 🔥 4. POI CHIAMA IL BACKEND (in background)
     await ApiClient.deleteEventAdmin(eventId);
     
-    // Ricarica eventi
+    // 🔥 5. RICARICA DATI AGGIORNATI DAL SERVER (per sicurezza)
     const events = await ApiClient.getEventsAdmin(matchId);
     window.APP_CACHE.eventsByMatch = window.APP_CACHE.eventsByMatch || {};
     window.APP_CACHE.eventsByMatch[matchId] = events;
     CacheManager.save(window.APP_CACHE);
     
-    // Ricarica partita completa
+    // 🔥 6. RICARICA PARTITA COMPLETA
     const match = await ApiClient.getMatchFull(matchId);
     if (match?.match) {
       window.APP_STATE.lastMatch = match.match;
-      renderEvents(events, match.match);
       
-      // Aggiorna punteggio
+      // Aggiorna punteggio dal server
       const scoreEl = document.querySelector(".score-big");
       if (scoreEl) {
         scoreEl.textContent = `${match.match.GOL_CASA || 0} - ${match.match.GOL_TRASFERTA || 0}`;
       }
+      
+      // Ri-renderizza eventi (sincronizza con server)
+      renderEvents(events, match.match);
     }
     
     refreshStandingsDebounced(500);
     
   } catch (error) {
     console.error('Error deleting event:', error);
+    
+    // 🔥 7. ROLLBACK SE IL BACKEND FALLISCE
     alert('Errore eliminazione evento: ' + error.message);
+    location.reload(); // Ricarica per sincronizzare con il server
+  }
+}
+
+// 🔥 FUNZIONE HELPER PER AGGIORNARE PUNTEGGIO LOCALE
+function updateScoreLocally(matchId, eventId) {
+  const match = window.APP_STATE.lastMatch;
+  if (!match) return;
+  
+  const events = window.APP_CACHE.eventsByMatch?.[matchId] || [];
+  const event = events.find(e => e.EVENT_ID === eventId);
+  
+  if (event?.TIPO === 'GOAL') {
+    // Decrementa gol squadra
+    const isCasa = String(event.TEAM_ID) === String(match.CASA_ID);
+    if (isCasa) {
+      match.GOL_CASA = Math.max(0, (match.GOL_CASA || 0) - 1);
+    } else {
+      match.GOL_TRASFERTA = Math.max(0, (match.GOL_TRASFERTA || 0) - 1);
+    }
+    
+    // Aggiorna UI punteggio
+    const scoreEl = document.querySelector(".score-big");
+    if (scoreEl) {
+      scoreEl.textContent = `${match.GOL_CASA || 0} - ${match.GOL_TRASFERTA || 0}`;
+    }
   }
 }
 
