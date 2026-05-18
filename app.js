@@ -1706,7 +1706,7 @@ function renderEvents(events, match) {
   
   let html = "";
   events.forEach(e => {
-    // 🔥 Confronto robusto teamId
+    // 🔥 CONFRONTO ROBUSTO: forza stringa su entrambi i lati
     const isCasa = String(e.TEAM_ID) === String(match.CASA_ID);
     const icon = e.TIPO === "GOAL" ? "⚽" : e.TIPO === "AMMONIZIONE" ? "🟨" : "🟥";
     
@@ -1783,7 +1783,6 @@ function openEventMenu(ev, eventId, matchId) {
 async function deleteEvent(eventId, matchId) {
   if (!confirm("Eliminare evento?")) return;
   
-  // 🔥 Trova evento nella cache
   const events = window.APP_CACHE.eventsByMatch?.[matchId] || [];
   const event = events.find(e => String(e.EVENT_ID) === String(eventId));
   if (!event) { alert("Evento non trovato"); return; }
@@ -1792,7 +1791,7 @@ async function deleteEvent(eventId, matchId) {
   window.APP_CACHE.eventsByMatch[matchId] = events.filter(e => String(e.EVENT_ID) !== String(eventId));
   CacheManager.save(window.APP_CACHE);
   
-  // 🔥 Aggiorna punteggio se era un gol
+  // 🔥 Aggiorna punteggio se era gol
   const match = window.APP_STATE.lastMatch;
   if (match && event.TIPO === 'GOAL') {
     const isCasa = String(event.TEAM_ID) === String(match.CASA_ID);
@@ -1810,8 +1809,8 @@ async function deleteEvent(eventId, matchId) {
   // 🔥 Aggiorna UI immediatamente
   renderEvents(window.APP_CACHE.eventsByMatch[matchId], match);
   renderPlayersTab(
-    window.APP_CACHE.fullTeams?.[match.CASA_ID],
-    window.APP_CACHE.fullTeams?.[match.TRASFERTA_ID],
+    window.APP_CACHE.fullTeams?.[String(match.CASA_ID)],
+    window.APP_CACHE.fullTeams?.[String(match.TRASFERTA_ID)],
     match
   );
   
@@ -1822,7 +1821,7 @@ async function deleteEvent(eventId, matchId) {
   } catch (error) {
     console.error('Errore eliminazione:', error);
     alert('Errore: ' + error.message);
-    location.reload(); // Sync forzato
+    location.reload();
   }
 }
 
@@ -1914,7 +1913,9 @@ function addEvent(team) {
 // 🔥 Funzione helper per il popup evento
 function openEventPopup(team) {
   const match = window.APP_STATE.lastMatch;
-  const teamId = team === "casa" ? match.CASA_ID : match.TRASFERTA_ID;
+  
+  // 🔥 FORZA STRINGA per evitare mismatch
+  const teamId = String(team === "casa" ? match.CASA_ID : match.TRASFERTA_ID);
   
   const modal = document.createElement("div");
   modal.className = "modalOverlay";
@@ -1942,17 +1943,19 @@ function openEventPopup(team) {
   modal.onclick = (e) => { if (e.target === modal) modal.remove(); };
   document.getElementById("eventBox").onclick = (e) => e.stopPropagation();
   
-  // 🔥 LETTURA CORRETTA DALLA CACHE
-  const cachedTeam = window.APP_CACHE.fullTeams?.[teamId];
-  const players = cachedTeam?.players || [];  // ✅ cachedTeam.players, non cachedTeam
+  // 🔥 CERCA NELLA CACHE CON CHIAVE STRINGA
+  const cachedTeam = window.APP_CACHE.fullTeams?.[teamId] || 
+                     window.APP_CACHE.fullTeams?.[String(teamId)];
   
-  console.log('📦 Giocatori cache:', players.length, 'teamId:', teamId);
+  const players = cachedTeam?.players || [];
+  
+  console.log('📦 Cache lookup:', { teamId, found: players.length > 0 });
   
   if (players.length > 0) {
-    populateEventSelects(players);  // ✅ Mostra SUBITO
+    populateEventSelects(players);
   }
   
-  // 🔥 Aggiorna dal backend solo per refresh (non blocca UI)
+  // Refresh da backend (non blocca UI)
   ApiClient.getPlayersByTeam(teamId)
     .then(freshPlayers => {
       if (!window.APP_CACHE.fullTeams) window.APP_CACHE.fullTeams = {};
@@ -1962,12 +1965,11 @@ function openEventPopup(team) {
       };
       CacheManager.save(window.APP_CACHE);
       
-      // Aggiorna select se popup ancora aperto E i dati sono cambiati
       if (document.getElementById("eventPlayer") && freshPlayers?.length !== players.length) {
         populateEventSelects(freshPlayers);
       }
     })
-    .catch(err => console.error('Errore refresh giocatori:', err));
+    .catch(err => console.error('Errore refresh:', err));
 }
 
 function populateEventSelects(players) {
@@ -2002,19 +2004,21 @@ async function saveEvent(team) {
     return;
   }
   
-  // 🔥 CALCOLO TEAM_ID ROBUSTO (gestisce string/number)
+  // 🔥 FORZA STRINGA per teamId (CRUCIALE)
   const teamId = String(team === "casa" ? match.CASA_ID : match.TRASFERTA_ID);
   
-  // 🔥 Trova giocatore dalla cache (confronto stringa)
-  const players = window.APP_CACHE.fullTeams?.[teamId]?.players || 
-                  window.APP_CACHE.fullTeams?.[String(teamId)]?.players || [];
+  // 🔥 Cerca giocatore con confronto stringa
+  const cachedTeam = window.APP_CACHE.fullTeams?.[teamId];
+  const players = cachedTeam?.players || [];
   const player = players.find(p => String(p.PLAYER_ID) === String(playerId));
   const playerName = player?.NOME || "";
   
   const assistPlayer = assistId ? players.find(p => String(p.PLAYER_ID) === String(assistId)) : null;
   const assistName = assistPlayer?.NOME || "";
   
-  // 🔥 AGGIORNA PUNTEGGIO SUBITO (prima di salvare)
+  console.log('💾 Salvataggio:', { team, teamId, playerName, playerId });
+  
+  // 🔥 AGGIORNA PUNTEGGIO SUBITO (prima del backend)
   if (type === 'GOAL') {
     if (team === "casa") {
       match.GOL_CASA = (Number(match.GOL_CASA) || 0) + 1;
@@ -2034,7 +2038,7 @@ async function saveEvent(team) {
   try {
     await ApiClient.addEventAdmin(match.MATCH_ID, teamId, type, minute, playerId, assistId);
     
-    // Ricarica eventi e UI
+    // Ricarica eventi
     const events = await ApiClient.getEventsAdmin(match.MATCH_ID);
     if (!window.APP_CACHE.eventsByMatch) window.APP_CACHE.eventsByMatch = {};
     window.APP_CACHE.eventsByMatch[match.MATCH_ID] = events;
@@ -2042,8 +2046,8 @@ async function saveEvent(team) {
     
     renderEvents(events, match);
     renderPlayersTab(
-      window.APP_CACHE.fullTeams?.[match.CASA_ID],
-      window.APP_CACHE.fullTeams?.[match.TRASFERTA_ID],
+      window.APP_CACHE.fullTeams?.[String(match.CASA_ID)],
+      window.APP_CACHE.fullTeams?.[String(match.TRASFERTA_ID)],
       match
     );
     
@@ -2052,7 +2056,6 @@ async function saveEvent(team) {
   } catch (error) {
     console.error('Errore salvataggio:', error);
     alert('Errore: ' + error.message);
-    // Opzionale: location.reload() per sync
   }
 }
 
