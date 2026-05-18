@@ -3804,6 +3804,35 @@ body{
   letter-spacing:.04em;
 }
 
+/* ===== CARD CONCLUSA - VINCITORE/PERDENTE ===== */
+.bracket-match.concluded .bracket-team.winner {
+  opacity: 1;
+}
+
+.bracket-match.concluded .bracket-team.winner span {
+  font-weight: 900 !important;
+  color: #333 !important;
+}
+
+.bracket-match.concluded .bracket-team.winner .bracket-score {
+  font-weight: 900 !important;
+  color: #7a1e2c !important;
+}
+
+.bracket-match.concluded .bracket-team.loser {
+  opacity: 0.4;
+}
+
+.bracket-match.concluded .bracket-team.loser span {
+  font-weight: 400 !important;
+  color: #999 !important;
+}
+
+.bracket-match.concluded .bracket-team.loser .bracket-score {
+  font-weight: 400 !important;
+  color: #ccc !important;
+}
+
 /* =============================================================================================
                                      RESPONSIVE MOBILE
 ===============================================================================================*/
