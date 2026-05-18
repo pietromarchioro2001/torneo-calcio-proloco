@@ -3639,13 +3639,14 @@ body{
 /* Bordo dorato solo per la Finale */
 /* ===== CARD FINALI - NESSUNA ANIMAZIONE ===== */
 .bracket-match.final-match {
-  border: 2px solid #d8ab2f;
-  transform: none !important;  /* 🔥 Rimuovi qualsiasi trasformazione */
-  animation: none !important;  /* 🔥 Rimuovi animazioni */
+  border: 2px solid #d8ab2f;  /* ✅ Bordo oro */
+  left: 50%;                   /* ✅ Posizione */
+  margin-left: -100px;         /* ✅ Centra senza transform (width è 200px) */
+  animation: none !important;  /* ✅ Niente animazioni */
 }
 
 .bracket-match.final-match:hover {
-  transform: none !important;  /* 🔥 Niente spostamento hover */
+  transform: none !important;  /* ✅ Niente hover */
 }
 
 /* Placeholder finale - Statico */
@@ -3709,18 +3710,22 @@ body{
 .sf1 { left: 200px; top: 300px; }
 .sf2 { right: 200px; top: 300px; }
 
-/* Centro senza transform per evitare conflitti hover */
 .final-match { 
-  left: 50%; 
-  transform: translateX(-50%); 
+  left: 50%;
+  margin-left: -100px;  /* Invece di transform: translateX(-50%) */
   top: 300px; 
   z-index: 10;
 }
 
-.third-place { 
-  left: 50%; 
-  transform: translateX(-50%); 
-  top: 500px; 
+.third-place {
+  left: 50%;
+  margin-left: -100px;  /* ✅ Centra senza transform */
+  top: 500px;
+  animation: none !important;
+}
+
+.third-place:hover {
+  transform: none !important;
 }
 
 /* =============================================================================================
@@ -3848,6 +3853,15 @@ body{
 .bracket-match.concluded .bracket-team.loser .bracket-score {
   font-weight: 400 !important;
   color: #ccc !important;
+}
+
+.bracket-match.bracket-placeholder.final-match,
+.bracket-match.bracket-placeholder.third-place {
+  left: 50%;
+  margin-left: -110px;  /* ✅ Centra (width è 220px) */
+  opacity: 1 !important;
+  transform: none !important;
+  animation: none !important;
 }
 
 /* =============================================================================================
