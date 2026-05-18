@@ -1724,12 +1724,12 @@ function renderEvents(events, match) {
     const icon = e.TIPO === "GOAL" ? "⚽" : e.TIPO === "AMMONIZIONE" ? "🟨" : "🟥";
     
     const deleteBtn = e.EVENT_ID 
-      ? `<span class="event-options" onclick="openEventMenu(event, '${e.EVENT_ID}', '${match.MATCH_ID}')" style="cursor:pointer;margin-left:8px;color:#999;font-size:14px">⋮</span>` 
+      ? `<span class="event-options" onclick="openEventMenu(event, '${e.EVENT_ID}', '${match.MATCH_ID}')">⋮</span>` 
       : '';
     
     html += `
       <div class="event-line ${isCasa ? "left" : "right"}" 
-           data-event-id="${e.EVENT_ID || ''}">  <!-- 🔥 AGGIUNTO -->
+           data-event-id="${e.EVENT_ID || ''}">
         <div class="event-content">
           <span class="event-minute">${e.MINUTO}'</span>
           <span class="event-icon">${icon}</span>
@@ -1793,12 +1793,23 @@ function openEventMenu(ev, eventId, matchId) {
   }, 0);
 }
 
-
 async function deleteEvent(eventId, matchId) {
   if (!confirm("Eliminare questo evento?")) return;
   
-  // 🔥 1. TROVA L'ELEMENTO NEL DOM E RIMUOVILO SUBITO
-  const eventElement = document.querySelector(`[data-event-id="${eventId}"]`);
+  // 🔥 TROVA ELEMENTO NEL DOM
+  const allEvents = document.querySelectorAll('[data-event-id]');
+  let eventElement = null;
+  allEvents.forEach(el => {
+    if (el.dataset.eventId === eventId) eventElement = el;
+  });
+  
+  // 🔥 TROVA EVENTO NELLA CACHE
+  const events = window.APP_CACHE.eventsByMatch?.[matchId] || [];
+  const event = events.find(e => e.EVENT_ID === eventId);
+  
+  if (!event) { alert("Evento non trovato"); return; }
+  
+  // 🔥 RIMUIVI DAL DOM IMMEDIATAMENTE (con animazione)
   if (eventElement) {
     eventElement.style.transition = 'all 0.3s ease';
     eventElement.style.opacity = '0';
@@ -1806,49 +1817,42 @@ async function deleteEvent(eventId, matchId) {
     setTimeout(() => eventElement.remove(), 300);
   }
   
-  // 🔥 2. AGGIORNA SUBITO LA CACHE LOCALE
-  if (window.APP_CACHE.eventsByMatch?.[matchId]) {
-    window.APP_CACHE.eventsByMatch[matchId] = 
-      window.APP_CACHE.eventsByMatch[matchId].filter(e => e.EVENT_ID !== eventId);
-    CacheManager.save(window.APP_CACHE);
-  }
+  // 🔥 AGGIORNA CACHE LOCALE SUBITO
+  window.APP_CACHE.eventsByMatch[matchId] = events.filter(e => e.EVENT_ID !== eventId);
+  CacheManager.save(window.APP_CACHE);
   
-  // 🔥 3. AGGIORNA IL PUNTEGGIO IMMEDIATAMENTE (calcolo locale)
-  updateScoreLocally(matchId, eventId);
-  
-  try {
-    // 🔥 4. POI CHIAMA IL BACKEND (in background)
-    await ApiClient.deleteEventAdmin(eventId);
-    
-    // 🔥 5. RICARICA DATI AGGIORNATI DAL SERVER (per sicurezza)
-    const events = await ApiClient.getEventsAdmin(matchId);
-    window.APP_CACHE.eventsByMatch = window.APP_CACHE.eventsByMatch || {};
-    window.APP_CACHE.eventsByMatch[matchId] = events;
-    CacheManager.save(window.APP_CACHE);
-    
-    // 🔥 6. RICARICA PARTITA COMPLETA
-    const match = await ApiClient.getMatchFull(matchId);
-    if (match?.match) {
-      window.APP_STATE.lastMatch = match.match;
-      
-      // Aggiorna punteggio dal server
-      const scoreEl = document.querySelector(".score-big");
-      if (scoreEl) {
-        scoreEl.textContent = `${match.match.GOL_CASA || 0} - ${match.match.GOL_TRASFERTA || 0}`;
-      }
-      
-      // Ri-renderizza eventi (sincronizza con server)
-      renderEvents(events, match.match);
+  // 🔥 AGGIORNA PUNTEGGIO IMMEDIATAMENTE
+  const match = window.APP_STATE.lastMatch;
+  if (match && event.TIPO === 'GOAL') {
+    const isCasa = String(event.TEAM_ID) === String(match.CASA_ID);
+    if (isCasa) {
+      match.GOL_CASA = Math.max(0, match.GOL_CASA - 1);
+    } else {
+      match.GOL_TRASFERTA = Math.max(0, match.GOL_TRASFERTA - 1);
     }
     
+    const scoreEl = document.querySelector(".score-big");
+    if (scoreEl) {
+      scoreEl.textContent = `${match.GOL_CASA} - ${match.GOL_TRASFERTA}`;
+    }
+  }
+  
+  // 🔥 AGGIORNA UI
+  renderEvents(window.APP_CACHE.eventsByMatch[matchId], match);
+  renderPlayersTab(
+    window.APP_CACHE.fullTeams?.[match.CASA_ID],
+    window.APP_CACHE.fullTeams?.[match.TRASFERTA_ID],
+    match
+  );
+  
+  // 🔥 POI ELIMINA DAL BACKEND
+  try {
+    await ApiClient.deleteEventAdmin(eventId);
     refreshStandingsDebounced(500);
-    
   } catch (error) {
-    console.error('Error deleting event:', error);
-    
-    // 🔥 7. ROLLBACK SE IL BACKEND FALLISCE
-    alert('Errore eliminazione evento: ' + error.message);
-    location.reload(); // Ricarica per sincronizzare con il server
+    console.error('Errore eliminazione:', error);
+    alert('Errore: ' + error.message);
+    location.reload(); // Sync con server
   }
 }
 
@@ -1942,12 +1946,6 @@ function openEventPopup(team) {
   const match = window.APP_STATE.lastMatch;
   const teamId = team === "casa" ? match.CASA_ID : match.TRASFERTA_ID;
   
-  console.log('🔍 Apertura evento:', {
-    team,
-    teamId,
-    matchId: match.MATCH_ID
-  });
-  
   const modal = document.createElement("div");
   modal.className = "modalOverlay";
   modal.innerHTML = `
@@ -1960,7 +1958,7 @@ function openEventPopup(team) {
           <option value="ESPULSIONE">🟥 Espulsione</option>
         </select>
         <input id="eventMinute" class="match-input" type="number" placeholder="Minuto" min="1" max="120">
-        <select id="eventPlayer" class="match-select"><option value="">Caricamento...</option></select>
+        <select id="eventPlayer" class="match-select"><option value="">Seleziona giocatore</option></select>
         <select id="eventAssist" class="match-select"><option value="">Nessun assist</option></select>
         <div class="modalActions">
           <div class="phase-btn" onclick="saveEvent('${team}')">SALVA</div>
@@ -1974,40 +1972,36 @@ function openEventPopup(team) {
   modal.onclick = (e) => { if (e.target === modal) modal.remove(); };
   document.getElementById("eventBox").onclick = (e) => e.stopPropagation();
   
-  // 🔥 1. CONTROLLA PRIMA NELLA CACHE (istantaneo)
+  // 🔥 1. CARICA SUBITO DALLA CACHE (istantaneo)
   const cachedTeam = window.APP_CACHE.fullTeams?.[teamId];
   const cachedPlayers = cachedTeam?.players || [];
   
+  console.log('📦 Cache giocatori:', cachedPlayers.length, 'per team', teamId);
+  
   if (cachedPlayers.length > 0) {
-    console.log('✅ Giocatori dalla cache:', cachedPlayers.length);
     populateEventSelects(cachedPlayers);
   }
   
-  // 🔥 2. AGGIORNA DAL BACKEND (in background, senza bloccare)
-  ApiClient.getPlayersByTeam(teamId)
-    .then(players => {
-      console.log('✅ Giocatori dal backend:', players?.length);
-      
-      // Aggiorna cache
-      if (!window.APP_CACHE.fullTeams) window.APP_CACHE.fullTeams = {};
-      if (!window.APP_CACHE.fullTeams[teamId]) {
-        window.APP_CACHE.fullTeams[teamId] = { players: [] };
-      }
-      window.APP_CACHE.fullTeams[teamId].players = players || [];
-      CacheManager.save(window.APP_CACHE);
-      
-      // Se il popup è ancora aperto, aggiorna le select
-      if (document.getElementById("eventPlayer")) {
-        populateEventSelects(players);
-      }
-    })
-    .catch(err => {
-      console.error('❌ Errore caricamento giocatori:', err);
-      // Se non ci sono giocatori in cache, mostra errore
-      if (cachedPlayers.length === 0) {
-        alert('Errore caricamento giocatori');
-      }
-    });
+  // 🔥 2. AGGIORNA DAL BACKEND (solo se necessario, in background)
+  const needsRefresh = !cachedPlayers.length || (Date.now() - (cachedTeam?.lastUpdate || 0)) > 60000;
+  
+  if (needsRefresh) {
+    ApiClient.getPlayersByTeam(teamId)
+      .then(players => {
+        if (!window.APP_CACHE.fullTeams) window.APP_CACHE.fullTeams = {};
+        window.APP_CACHE.fullTeams[teamId] = { 
+          players: players || [], 
+          lastUpdate: Date.now() 
+        };
+        CacheManager.save(window.APP_CACHE);
+        
+        // Aggiorna select se popup ancora aperto
+        if (document.getElementById("eventPlayer")) {
+          populateEventSelects(players);
+        }
+      })
+      .catch(err => console.error('Errore caricamento giocatori:', err));
+  }
 }
 
 function populateEventSelects(players) {
@@ -2030,67 +2024,50 @@ function populateEventSelects(players) {
 
 async function saveEvent(team) {
   const match = window.APP_STATE.lastMatch;
-  if (!match) {
-    alert("Partita non caricata");
-    return;
-  }
+  if (!match) { alert("Partita non caricata"); return; }
   
   const type = document.getElementById("eventType")?.value;
   const minute = parseInt(document.getElementById("eventMinute")?.value);
   const playerId = document.getElementById("eventPlayer")?.value;
   const assistId = document.getElementById("eventAssist")?.value || "";
   
-  // Validazioni
   if (!type || !minute || minute < 1 || !playerId) {
     alert("Compila tutti i campi obbligatori");
     return;
   }
   
-  // 🔥 1. CALCOLA CORRETTAMENTE IL TEAM_ID
+  // 🔥 CALCOLA TEAM_ID CORRETTO
   const teamId = team === "casa" ? match.CASA_ID : match.TRASFERTA_ID;
-  const teamName = team === "casa" ? match.SQUADRA_CASA : match.SQUADRA_TRASFERTA;
   
-  console.log('💾 Salvataggio evento:', {
-    team,
-    teamId,
-    teamName,
-    matchId: match.MATCH_ID,
-    type,
-    minute,
-    playerId,
-    assistId
-  });
-  
-  // 🔥 2. OTTIENI NOME GIOCATORE DALLA CACHE
+  // 🔥 OTTIENI DATI GIOCATORE DALLA CACHE
   const players = window.APP_CACHE.fullTeams?.[teamId]?.players || [];
   const player = players.find(p => p.PLAYER_ID === playerId);
-  const playerName = player?.NOME || "Sconosciuto";
+  const playerName = player?.NOME || "";
   
   const assistPlayer = assistId ? players.find(p => p.PLAYER_ID === assistId) : null;
   const assistName = assistPlayer?.NOME || "";
   
-  // 🔥 3. AGGIUNGI EVENTO LOCALMENTE SUBITO (OTTIMISTICO)
-  const newEvent = {
-    EVENT_ID: 'temp_' + Date.now(), // ID temporaneo
+  // 🔥 CREA EVENTO LOCALE
+  const tempEvent = {
+    EVENT_ID: 'temp_' + Date.now(),
     MATCH_ID: match.MATCH_ID,
     TEAM_ID: teamId,
     TIPO: type,
     MINUTO: minute,
     PLAYER_ID: playerId,
     PLAYER: playerName,
-    ASSIST: assistName,
-    ASSIST_ID: assistId
+    ASSIST: assistName
   };
   
-  // Aggiungi alla cache locale
+  // 🔥 AGGIUNGI ALLA CACHE SUBITO
   if (!window.APP_CACHE.eventsByMatch) window.APP_CACHE.eventsByMatch = {};
   if (!window.APP_CACHE.eventsByMatch[match.MATCH_ID]) {
     window.APP_CACHE.eventsByMatch[match.MATCH_ID] = [];
   }
-  window.APP_CACHE.eventsByMatch[match.MATCH_ID].push(newEvent);
+  window.APP_CACHE.eventsByMatch[match.MATCH_ID].push(tempEvent);
   CacheManager.save(window.APP_CACHE);
   
-  // 🔥 4. AGGIORNA PUNTEGGIO IMMEDIATAMENTE
+  // 🔥 AGGIORNA PUNTEGGIO IMMEDIATAMENTE
   if (type === 'GOAL') {
     if (team === "casa") {
       match.GOL_CASA = (match.GOL_CASA || 0) + 1;
@@ -2098,63 +2075,49 @@ async function saveEvent(team) {
       match.GOL_TRASFERTA = (match.GOL_TRASFERTA || 0) + 1;
     }
     
-    // Aggiorna UI punteggio
     const scoreEl = document.querySelector(".score-big");
     if (scoreEl) {
       scoreEl.textContent = `${match.GOL_CASA} - ${match.GOL_TRASFERTA}`;
     }
   }
   
-  // 🔥 5. AGGIORNA UI EVENTI IMMEDIATAMENTE
+  // 🔥 AGGIORNA UI IMMEDIATAMENTE
   renderEvents(window.APP_CACHE.eventsByMatch[match.MATCH_ID], match);
-  
-  // 🔥 6. AGGIORNA TAB GIOCATORI
   renderPlayersTab(
     window.APP_CACHE.fullTeams?.[match.CASA_ID],
     window.APP_CACHE.fullTeams?.[match.TRASFERTA_ID],
     match
   );
   
-  // 🔥 7. CHIUDI POPUP IMMEDIATAMENTE
+  // 🔥 CHIUDI POPUP SUBITO
   document.querySelector(".modalOverlay")?.remove();
   
-  // 🔥 8. POI SALVA SUL BACKEND (in background)
+  // 🔥 POI SALVA SUL BACKEND
   try {
     await ApiClient.addEventAdmin(match.MATCH_ID, teamId, type, minute, playerId, assistId);
     
-    // 🔥 9. RICARICA DATI REALI DAL SERVER (sincronizzazione)
+    // Sincronizza con server
     const events = await ApiClient.getEventsAdmin(match.MATCH_ID);
     window.APP_CACHE.eventsByMatch[match.MATCH_ID] = events;
     CacheManager.save(window.APP_CACHE);
-    
-    // Ri-renderizza con dati reali (sostituisce ID temporaneo con reale)
     renderEvents(events, match);
     
-    // Aggiorna standings
-    refreshStandingsDebounced(1000);
-    
-    console.log('✅ Evento salvato con successo');
+    refreshStandingsDebounced(500);
     
   } catch (error) {
-    console.error('❌ Errore salvataggio evento:', error);
-    alert('Errore salvataggio evento: ' + error.message);
+    console.error('Errore salvataggio:', error);
+    alert('Errore: ' + error.message);
     
-    // 🔥 10. ROLLBACK SE FALLISCE
-    // Rimuovi evento temporaneo
+    // Rollback
     window.APP_CACHE.eventsByMatch[match.MATCH_ID] = 
-      window.APP_CACHE.eventsByMatch[match.MATCH_ID].filter(e => e.EVENT_ID !== newEvent.EVENT_ID);
+      window.APP_CACHE.eventsByMatch[match.MATCH_ID].filter(e => e.EVENT_ID !== tempEvent.EVENT_ID);
     
-    // Ripristina punteggio
     if (type === 'GOAL') {
-      if (team === "casa") {
-        match.GOL_CASA = Math.max(0, match.GOL_CASA - 1);
-      } else {
-        match.GOL_TRASFERTA = Math.max(0, match.GOL_TRASFERTA - 1);
-      }
+      if (team === "casa") match.GOL_CASA--;
+      else match.GOL_TRASFERTA--;
+      
       const scoreEl = document.querySelector(".score-big");
-      if (scoreEl) {
-        scoreEl.textContent = `${match.GOL_CASA} - ${match.GOL_TRASFERTA}`;
-      }
+      if (scoreEl) scoreEl.textContent = `${match.GOL_CASA} - ${match.GOL_TRASFERTA}`;
     }
     
     renderEvents(window.APP_CACHE.eventsByMatch[match.MATCH_ID], match);
