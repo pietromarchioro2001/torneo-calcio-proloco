@@ -3603,13 +3603,14 @@ body{
 
 .bracket-match {
   position: absolute;
-  width: 200px;   /* Larghezza fissa */
-  height: 100px;  /* Altezza fissa */
+  width: 200px;   /* Dimensione fissa */
+  height: 110px;  /* Dimensione fissa */
   
-  background: #fff;
+  /* Stile richiesto: Bianco, Bordo continuo, Rilievo */
+  background: #ffffff;
+  border: 1px solid #e0e0e0; 
+  box-shadow: 0 4px 15px rgba(0,0,0,0.08);
   border-radius: 16px;
-  box-shadow: 0 4px 16px rgba(0,0,0,0.08);
-  border: 2px solid transparent;
   
   padding: 12px 16px;
   box-sizing: border-box;
@@ -3619,16 +3620,16 @@ body{
   justify-content: center;
   gap: 8px;
   
-  cursor: pointer;
   transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
-/* Hover solo verticale, niente spostamenti strani */
+/* Hover su tutte le card */
 .bracket-match:hover {
   transform: translateY(-3px);
-  box-shadow: 0 6px 20px rgba(0,0,0,0.12);
+  box-shadow: 0 8px 20px rgba(0,0,0,0.12);
 }
 
+/* Bordo dorato solo per la Finale */
 .bracket-match.final-match {
   border: 2px solid #d8ab2f;
 }
@@ -3639,16 +3640,17 @@ body{
 }
 
 .bracket-match.bracket-placeholder {
-  background: #fafafa;
-  border: 2px dashed #e0e0e0;
+  background: #ffffff; /* Sfondo bianco */
+  border: 1px solid #e0e0e0; /* Bordo continuo, NON tratteggiato */
+  box-shadow: 0 4px 15px rgba(0,0,0,0.08); /* Stesso rilievo */
   cursor: default;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+  opacity: 0.6; /* Testo leggermente trasparente */
 }
 
-/* Disabilita hover sulle vuote */
+/* Niente hover sulle vuote */
 .bracket-match.bracket-placeholder:hover {
   transform: none;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+  box-shadow: 0 4px 15px rgba(0,0,0,0.08);
 }
 
 .live-indicator {
@@ -3670,13 +3672,14 @@ body{
                                       POSIZIONI
 ===============================================================================================*/
 
-.qf1 { left: 30px; top: 140px; }
-.qf2 { left: 30px; top: 440px; }
-.qf3 { right: 30px; top: 140px; }
-.qf4 { right: 30px; top: 440px; }
+.qf1 { left: 20px; top: 150px; }
+.qf2 { left: 20px; top: 450px; }
+.qf3 { right: 20px; top: 150px; }
+.qf4 { right: 20px; top: 450px; }
 
-.sf1 { left: 250px; top: 290px; }
-.sf2 { right: 250px; top: 290px; }
+/* Semifinali spostate verso l'esterno (più vicine ai quarti) */
+.sf1 { left: 240px; top: 300px; }
+.sf2 { right: 240px; top: 300px; }
 
 /* Centro senza transform per evitare conflitti hover */
 .final-match { left: 50%; margin-left: -100px; top: 290px; }
@@ -3691,15 +3694,12 @@ body{
   align-items: center;
   justify-content: space-between;
   gap: 8px;
-  padding: 2px 0;
 }
 
 .bracket-team img {
   width: 24px;
   height: 24px;
   border-radius: 50%;
-  object-fit: contain;
-  flex-shrink: 0;
 }
 
 .bracket-team span {
@@ -3707,34 +3707,23 @@ body{
   font-size: 12px;
   font-weight: 700;
   color: #333;
+  /* Mostra nome completo, niente puntini */
   white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  overflow: visible; 
+  text-overflow: clip;
   text-transform: uppercase;
-  letter-spacing: 0.5px;
 }
 
-/* 🔥 RISULTATO PARTITA - GRANATA GRASSETTO */
 .bracket-score {
   font-size: 16px;
   font-weight: 900;
-  color: #7a1e2c;
+  color: #7a1e2c; /* Granata */
   margin-left: 8px;
-  white-space: nowrap;
-  letter-spacing: 1px;
-  min-width: 40px;
-  text-align: right;
 }
 
-.bracket-score.live {
-  color: #dc2626;
-  animation: scorePulse 2s infinite;
-}
-
-@keyframes scorePulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.7; }
-}
+/* Animazione LIVE */
+.bracket-score.live { color: #dc2626; animation: scorePulse 2s infinite; }
+@keyframes scorePulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.7; } }
 
 .bracket-score.scheduled {
   color: #888;
