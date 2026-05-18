@@ -2310,36 +2310,52 @@ function renderNextPhaseButton() {
   const container = document.getElementById("finalBracketContainer");
   if (!container) return;
   
-  // Controlla se i quarti sono tutti finiti
+  // Rimuovi pulsanti esistenti
+  container.parentNode.querySelectorAll('.next-phase-btn').forEach(b => b.remove());
+  
   const quarti = window.APP_CACHE.finalStage?.filter(m => m.turno === "QUARTI") || [];
   const quartiFiniti = quarti.filter(m => m.stato === "FINITA");
+  const quartiCompletati = quarti.length === 4 && quartiFiniti.length === 4;
   
-  if (quarti.length === 4 && quartiFiniti.length === 4) {
-    // Mostra pulsante per creare semifinali
-    const btn = document.createElement("div");
-    btn.className = "phase-btn";
-    btn.style.marginTop = "20px";
-    btn.style.marginLeft = "50%";
-    btn.style.transform = "translateX(-50%)";
-    btn.textContent = "🔜 PROSSIMA FASE: SEMIFINALI";
-    btn.onclick = () => openNextPhasePopup("SEMIFINALI");
-    container.parentNode.appendChild(btn);
-  }
-  
-  // Controlla se le semifinali sono tutte finite
   const semi = window.APP_CACHE.finalStage?.filter(m => m.turno === "SEMIFINALE") || [];
   const semiFinita = semi.filter(m => m.stato === "FINITA");
+  const semiCompletate = semi.length === 2 && semiFinita.length === 2;
   
-  if (semi.length === 2 && semiFinita.length === 2) {
-    const btn = document.createElement("div");
-    btn.className = "phase-btn";
-    btn.style.marginTop = "20px";
-    btn.style.marginLeft = "50%";
-    btn.style.transform = "translateX(-50%)";
-    btn.textContent = "🏆 PROSSIMA FASE: FINALI";
-    btn.onclick = () => openNextPhasePopup("FINALI");
-    container.parentNode.appendChild(btn);
+  // Mostra sempre il pulsante, ma disabilitato se necessario
+  let btnLabel = "";
+  let btnDisabled = false;
+  let phaseAction = "";
+  
+  if (!quartiCompletati) {
+    btnLabel = "🔒 COMPLETA I QUARTI DI FINALE";
+    btnDisabled = true;
+  } else if (!semiCompletate && quartiCompletati) {
+    btnLabel = "🔜 PROSSIMA FASE: SEMIFINALI";
+    btnDisabled = false;
+    phaseAction = "SEMIFINALI";
+  } else if (semiCompletate) {
+    btnLabel = "🏆 PROSSIMA FASE: FINALI";
+    btnDisabled = false;
+    phaseAction = "FINALI";
+  } else {
+    btnLabel = "🔒 COMPLETA LE SEMIFINALI";
+    btnDisabled = true;
   }
+  
+  const btn = document.createElement("div");
+  btn.className = `phase-btn next-phase-btn ${btnDisabled ? 'disabled' : ''}`;
+  btn.style.marginTop = "20px";
+  btn.style.marginLeft = "50%";
+  btn.style.transform = "translateX(-50%)";
+  btn.style.opacity = btnDisabled ? "0.5" : "1";
+  btn.style.cursor = btnDisabled ? "not-allowed" : "pointer";
+  btn.textContent = btnLabel;
+  
+  if (!btnDisabled) {
+    btn.onclick = () => openNextPhasePopup(phaseAction);
+  }
+  
+  container.parentNode.appendChild(btn);
 }
 
 function openNextPhasePopup(phase) {
@@ -2411,7 +2427,7 @@ function renderPlaceholderCard(label, cls="") {
   return `
     <div class="bracket-match bracket-placeholder ${cls}">
       <div style="text-align:center; width:100%; display:flex; align-items:center; justify-content:center; height:100%;">
-        <div style="font-size:13px; font-weight:700; text-transform:uppercase; letter-spacing:1.5px; color:#333;">${Sanitizer.html(label)}</div>
+        <div style="font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:1px; color:#666;">${Sanitizer.html(label)}</div>
       </div>
     </div>
   `;
