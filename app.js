@@ -5,7 +5,7 @@
 const CONFIG = {
   // 🔥 SOSTITUISCI CON IL TUO URL APPS SCRIPT WEB APP
 
-  BACKEND_URL: 'https://script.google.com/macros/s/AKfycbxIApDYGnDUnEB-GrMLaqwhGtTwZ9ZK_U439TI59nq3Tf3CmP8Pm4BFdI2EfkCmEDxP/exec',
+  BACKEND_URL: 'https://script.google.com/macros/s/AKfycbzYWB4CN4HlkgAPjD4Hl9RkcG66MnI45zCa7AzskKIhXhHzNU2AU1Ecrp9EQf9y1UDG/exec',
   
   API_TIMEOUT: 30000,
   CACHE_VERSION: 'v3.0',
@@ -1156,29 +1156,29 @@ function renderPlayersList(players) {
   `;
   
   players.forEach(p => {
-    const photoHtml = p.FOTO_ID 
-      ? `<img src="${getCachedImage(p.FOTO_ID, 42)}" class="playerPhoto" alt="${p.NOME}" onerror="this.style.display='none';this.parentElement.innerHTML='<div class=\'playerPhotoEmpty\'></div>'">`
-      : "<div class='playerPhotoEmpty'></div>";
-    
-    // 🔥 Usa i campi corretti dal backend
-    const gol = p.GOL ?? 0;
-    const assist = p.ASSIST ?? 0;
-    const amm = p.AMMONIZIONI ?? 0;
-    const esp = p.ESPULSIONI ?? 0;
-    const mvp = p.MVP_VINTI ?? 0;  // ✅ Colonna I
-    
-    html += `
-      <tr onclick="openPlayerPopup('${p.PLAYER_ID}')">
-        <td>${photoHtml}</td>
-        <td>${(p.NOME || "").toUpperCase()}</td>
-        <td>${gol}</td>
-        <td>${assist}</td>
-        <td>${amm}</td>
-        <td>${esp}</td>
-        <td class="mvp-cell">${mvp}</td>
-      </tr>
-    `;
-  });
+  const photoHtml = p.FOTO_ID 
+    ? `<img src="${getCachedImage(p.FOTO_ID, 42)}" class="playerPhoto" alt="${p.NOME}" onerror="this.style.display='none';this.parentElement.innerHTML='<div class=\'playerPhotoEmpty\'></div>'">`
+    : "<div class='playerPhotoEmpty'></div>";
+  
+  // 🔥 FORZA VALORI NUMERICI (anche se null/undefined)
+  const gol = Number(p.GOL) || 0;
+  const assist = Number(p.ASSIST) || 0;
+  const amm = Number(p.AMMONIZIONI) || 0;
+  const esp = Number(p.ESPULSIONI) || 0;
+  const mvp = Number(p.MVP_VINTI) || 0;  // ✅ Sempre un numero, mai vuoto
+  
+  html += `
+    <tr onclick="openPlayerPopup('${p.PLAYER_ID}')">
+      <td>${photoHtml}</td>
+      <td>${(p.NOME || "").toUpperCase()}</td>
+      <td>${gol}</td>
+      <td>${assist}</td>
+      <td>${amm}</td>
+      <td>${esp}</td>
+      <td class="mvp-cell">${mvp}</td>  <!-- ✅ Mostra sempre il numero -->
+    </tr>
+  `;
+});
   
   html += "</table>";
   container.innerHTML = html;
@@ -2410,8 +2410,8 @@ async function saveNextPhase(phase) {
 function renderPlaceholderCard(label, cls="") {
   return `
     <div class="bracket-match bracket-placeholder ${cls}">
-      <div style="text-align:center; opacity:0.4; width:100%; display:flex; align-items:center; justify-content:center; height:100%;">
-        <div style="font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:1px; color:#999;">${Sanitizer.html(label)}</div>
+      <div style="text-align:center; width:100%; display:flex; align-items:center; justify-content:center; height:100%;">
+        <div style="font-size:13px; font-weight:700; text-transform:uppercase; letter-spacing:1.5px; color:#333;">${Sanitizer.html(label)}</div>
       </div>
     </div>
   `;
