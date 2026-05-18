@@ -3612,7 +3612,7 @@ body{
   box-shadow: 0 4px 15px rgba(0,0,0,0.08);
   border-radius: 16px;
   
-  padding: 12px 16px;
+  padding: 12px 10px 12px 16px; 
   box-sizing: border-box;
   
   display: flex;
@@ -3678,8 +3678,8 @@ body{
 .qf4 { right: 20px; top: 450px; }
 
 /* Semifinali spostate verso l'esterno (più vicine ai quarti) */
-.sf1 { left: 220px; top: 300px; }
-.sf2 { right: 220px; top: 300px; }
+.sf1 { left: 200px; top: 300px; }
+.sf2 { right: 200px; top: 300px; }
 
 /* Centro senza transform per evitare conflitti hover */
 .final-match { 
@@ -3727,11 +3727,13 @@ body{
 .bracket-score {
   font-size: 16px;
   font-weight: 900;
-  color: #7a1e2c; /* Granata */
-  margin-left: 8px;
+  color: #7a1e2c;
+  margin-left: auto; /* Spinge il punteggio tutto a destra */
+  text-align: right; /* Allinea i numeri a destra */
+  min-width: 24px; /* Larghezza minima per evitare salti se cambiano le cifre */
+  letter-spacing: 0.5px;
 }
 
-/* Animazione LIVE */
 .bracket-score.live { color: #dc2626; animation: scorePulse 2s infinite; }
 @keyframes scorePulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.7; } }
 
