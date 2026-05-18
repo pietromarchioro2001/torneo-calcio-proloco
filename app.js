@@ -2320,36 +2320,29 @@ function renderNextPhaseButton() {
   const container = document.getElementById("finalBracketContainer");
   if (!container) return;
 
-  // Controlla lo stato delle partite dal cache
-  const quarti = window.APP_CACHE.finalStage?.filter(m => m.turno === "QUARTI") || [];
+  // Prendi i dati dalla cache
+  const finalStageData = window.APP_CACHE.finalStage || [];
+  
+  const quarti = finalStageData.filter(m => m.turno === "QUARTI");
   const quartiFiniti = quarti.filter(m => m.stato === "FINITA").length;
   
-  const semi = window.APP_CACHE.finalStage?.filter(m => m.turno === "SEMIFINALE") || [];
+  const semi = finalStageData.filter(m => m.turno === "SEMIFINALE");
   const semiFiniti = semi.filter(m => m.stato === "FINITA").length;
 
-  // Logica del pulsante
+  // Logica: Il pulsante si attiva SOLO se tutti i quarti sono finiti (per creare semi)
+  // O se tutte le semi sono finite (per creare finali)
   let isReady = false;
-  let text = "🔒 COMPLETA LE PARTITE PER AVANZARE";
   let action = null;
 
-  // Se siamo ai Quarti
+  // Se 4 quarti finiti -> Possiamo creare le Semifinali
   if (quartiFiniti === 4) {
     isReady = true;
-    text = "🔜 CREA SEMIFINALI";
     action = "SEMIFINALI";
   } 
-  // Se siamo alle Semifinali
-  else if (quarti.length >= 4 && semiFiniti === 2) {
+  // Se 4 quarti finiti E 2 semi finite -> Possiamo creare le Finali
+  else if (quartiFiniti === 4 && semiFiniti === 2) {
     isReady = true;
-    text = "🏆 CREA FINALI";
     action = "FINALI";
-  } 
-  // Altrimenti
-  else {
-    isReady = false;
-    // Testo dinamico basato su cosa manca
-    if (quartiFiniti < 4) text = `🔒 COMPLETA I QUARTI (${quartiFiniti}/4)`;
-    else if (semiFiniti < 2) text = `🔒 COMPLETA LE SEMIFINALI (${semiFiniti}/2)`;
   }
 
   // Crea il contenitore del pulsante
@@ -2359,17 +2352,24 @@ function renderNextPhaseButton() {
 
   // Crea il bottone
   const btn = document.createElement("button");
+  // Se non è pronto, aggiungi la classe disabled
   btn.className = `next-phase-btn ${isReady ? '' : 'disabled'}`;
-  btn.textContent = text;
   
+  // SCRITTA FISSA
+  btn.textContent = "PROSSIMA FASE";
+  
+  // Azione click solo se pronto
   if (isReady) {
     btn.onclick = () => openNextPhasePopup(action);
   }
 
   btnWrapper.appendChild(btn);
   
-  // Inserisci il pulsante DOPO il tabellone (dentro final-stage-page)
-  container.parentNode.appendChild(btnWrapper);
+  // Inserisci il pulsante sotto il tabellone
+  const pageContainer = document.querySelector('.final-stage-page');
+  if(pageContainer) {
+    pageContainer.appendChild(btnWrapper);
+  }
 }
 
 function openNextPhasePopup(phase) {
