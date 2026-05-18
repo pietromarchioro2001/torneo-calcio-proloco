@@ -3637,8 +3637,21 @@ body{
 }
 
 /* Bordo dorato solo per la Finale */
+/* ===== CARD FINALI - NESSUNA ANIMAZIONE ===== */
 .bracket-match.final-match {
-  border: 2px solid #d8ab2f !important;
+  border: 2px solid #d8ab2f;
+  transform: none !important;  /* 🔥 Rimuovi qualsiasi trasformazione */
+  animation: none !important;  /* 🔥 Rimuovi animazioni */
+}
+
+.bracket-match.final-match:hover {
+  transform: none !important;  /* 🔥 Niente spostamento hover */
+}
+
+/* Placeholder finale - Statico */
+.bracket-match.bracket-placeholder.final-match {
+  opacity: 0.8 !important;
+  transform: none !important;
 }
 
 @keyframes scorePulse {
@@ -3659,7 +3672,7 @@ body{
   font-size: 13px !important;    /* 🔥 Più grande (era 11px) */
   font-weight: 700 !important;
   color: #333333 !important;     /* 🔥 Grigio scuro (era #999) */
-  opacity: 1 !important;         /* 🔥 Non trasparente */
+  opacity: 0.8 !important;         /* 🔥 Non trasparente */
   letter-spacing: 1.5px !important;
 }
 
