@@ -2312,26 +2312,31 @@ function renderBracketMatch(match, cls="") {
     ? `<img src="${getCachedImage(match.trasferta.logo, 32)}" alt="${match.trasferta.nome}" onerror="this.style.display='none'">`
     : `<div style="width:32px;height:32px;border-radius:50%;background:#f0f0f0"></div>`;
   
-  // Punteggio o stato
+  // 🔥 Punteggio o stato
   const isLive = match.stato === "LIVE";
   const isFinished = match.stato === "FINITA";
+  const isScheduled = match.stato === "PROGRAMMATA";
   
   let scoreHtml = "";
-  if (isLive || isFinished) {
+  if (isLive) {
+    // 🔥 LIVE: punteggio + animazione
+    scoreHtml = `
+      <span class="bracket-score live">${match.golCasa||0} - ${match.golTrasferta||0}</span>
+      <span class="live-indicator">●</span>
+    `;
+  } else if (isFinished) {
+    // Finita: punteggio
     scoreHtml = `<span class="bracket-score">${match.golCasa||0} - ${match.golTrasferta||0}</span>`;
-  } else if (match.ora) {
-    scoreHtml = `<span style="font-size:11px;color:#888">${match.ora}</span>`;
+  } else {
+    // 🔥 Programmata: mostra 0-0 (non l'ora)
+    scoreHtml = `<span class="bracket-score scheduled">0 - 0</span>`;
   }
-  
-  // Indicatore LIVE
-  const liveDot = isLive ? '<span style="color:#dc2626;font-size:10px;margin-left:4px">●</span>' : '';
   
   return `
     <div class="bracket-match ${cls}" onclick="openMatch('${match.matchId}')">
       <div class="bracket-team">
         ${logoCasa}
         <span>${(match.casa?.nome || "TBD").toUpperCase()}</span>
-        ${liveDot}
       </div>
       <div class="bracket-team">
         ${logoTrasf}
