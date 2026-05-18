@@ -3586,37 +3586,41 @@ body{
   font-size:14px;
 }
 
+/* 🔥 STILE DEL PULSANTE "PROSSIMA FASE" */
 .next-phase-button {
   width: 100%;
   display: flex;
   justify-content: center;
-  margin-top: 30px;  /* Spazio sotto la card 3°-4° */
+  margin-top: 40px; /* Spazio sotto la card 3°-4° */
 }
 
 .next-phase-btn {
-  background-color: #7a1e2c; /* Granata */
+  background-color: #7a1e2c; /* Granata (Attivo) */
   color: white;
-  padding: 12px 24px;
+  padding: 14px 30px;
   border-radius: 8px;
   font-weight: 700;
   text-transform: uppercase;
   cursor: pointer;
-  transition: opacity 0.3s;
+  transition: all 0.3s ease;
   letter-spacing: 1px;
   border: none;
-  font-size: 14px;
+  font-size: 15px;
+  box-shadow: 0 4px 12px rgba(122, 30, 44, 0.3);
 }
 
 .next-phase-btn:hover {
-  opacity: 0.9;
+  transform: translateY(-2px);
+  background-color: #94283b;
 }
 
 /* Stile quando è disabilitato (fase non completa) */
 .next-phase-btn.disabled {
-  background-color: #ccc;
-  color: #666;
+  background-color: #e5e5e5;
+  color: #999;
   cursor: not-allowed;
   pointer-events: none;
+  box-shadow: none;
 }
 
 
@@ -3688,7 +3692,7 @@ body{
 
 /* Placeholder finale - Statico */
 .bracket-match.bracket-placeholder.final-match {
-  opacity: 0.9 !important;
+  opacity: 1 !important;
   transform: none !important;
 }
 
@@ -3717,6 +3721,22 @@ body{
 .bracket-match.bracket-placeholder:hover {
   transform: none;
   box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+}
+
+.bracket-match, 
+.bracket-placeholder {
+  width: 200px !important;
+  height: 110px !important;
+  min-width: 200px;
+  min-height: 110px;
+  box-sizing: border-box;
+  flex-shrink: 0; /* Evita che si rimpiccioliscano */
+}
+
+/* 🔥 FORZA BORDO ORO SULLA FINALE (Anche se placeholder) */
+.bracket-match.final-match,
+.bracket-placeholder.final-match {
+  border: 2px solid #d8ab2f !important;
 }
 
 .live-indicator {
