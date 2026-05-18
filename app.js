@@ -5,7 +5,7 @@
 const CONFIG = {
   // 🔥 SOSTITUISCI CON IL TUO URL APPS SCRIPT WEB APP
 
-  BACKEND_URL: 'https://script.google.com/macros/s/AKfycbz5rFdCkwd0cGXt82GTHsZqeyGyeYhaT4_qGnBnCpsLaRj0Trn9TX16JJxKm73nMYF4/exec',
+  BACKEND_URL: 'https://script.google.com/macros/s/AKfycbxIApDYGnDUnEB-GrMLaqwhGtTwZ9ZK_U439TI59nq3Tf3CmP8Pm4BFdI2EfkCmEDxP/exec',
   
   API_TIMEOUT: 30000,
   CACHE_VERSION: 'v3.0',
@@ -1051,9 +1051,8 @@ function loadPlayerData(player) {
   document.getElementById("playerNameInput").value = player?.NOME || "";
   
   const box = document.getElementById("playerPhotoUpload");
-  if (player?.FOTO_ID || player?.FOTO_URL) {
-    const fotoId = player.FOTO_ID || player.FOTO_URL;
-    box.innerHTML = `<img src="${getCachedImage(fotoId, 200)}" class="playerPhotoBig" alt="${player.NOME}">`;
+  if (player?.FOTO_ID) {
+    box.innerHTML = `<img src="${getCachedImage(player.FOTO_ID, 200)}" class="playerPhotoBig" alt="${player.NOME}">`;
     box.classList.add("has-photo");
   } else {
     box.innerHTML = "FOTO GIOCATORE";
@@ -1080,11 +1079,9 @@ async function savePlayerPopup() {
   const teamId = window.APP_STATE.currentTeamId;
   
   try {
-    // Salva giocatore
     const playerId = await ApiClient.savePlayerAdmin(currentPlayerId, teamId, name.toUpperCase(), "");
     currentPlayerId = playerId;
     
-    // Upload foto se presente
     if (playerPhotoTemp) {
       const base64 = await fileToBase64(playerPhotoTemp);
       const newPhotoId = await ApiClient.uploadPlayerPhotoReplace(
@@ -1096,7 +1093,6 @@ async function savePlayerPopup() {
         base64
       );
       
-      // Aggiorna cache
       if (window.APP_CACHE.playersMap) {
         window.APP_CACHE.playersMap[playerId] = {
           ...window.APP_CACHE.playersMap[playerId],
@@ -1107,10 +1103,7 @@ async function savePlayerPopup() {
       }
     }
     
-    // Chiudi popup
     document.querySelector(".modalOverlay")?.remove();
-    
-    // Ricarica lista giocatori
     await loadTeamData(teamId);
     
   } catch (error) {
@@ -1163,22 +1156,26 @@ function renderPlayersList(players) {
   `;
   
   players.forEach(p => {
-    const photoHtml = p.FOTO_ID || p.FOTO_URL
-      ? `<img src="${getCachedImage(p.FOTO_ID || p.FOTO_URL, 42)}" class="playerPhoto" alt="${p.NOME}" onerror="this.style.display='none';this.parentElement.innerHTML='<div class=\'playerPhotoEmpty\'></div>'">`
+    const photoHtml = p.FOTO_ID 
+      ? `<img src="${getCachedImage(p.FOTO_ID, 42)}" class="playerPhoto" alt="${p.NOME}" onerror="this.style.display='none';this.parentElement.innerHTML='<div class=\'playerPhotoEmpty\'></div>'">`
       : "<div class='playerPhotoEmpty'></div>";
     
-    // 🔥 Valore MVP (gestisce sia MVP che MVP_VINTI)
-    const mvpCount = p.MVP_VINTI ?? p.MVP ?? 0;
+    // 🔥 Usa i campi corretti dal backend
+    const gol = p.GOL ?? 0;
+    const assist = p.ASSIST ?? 0;
+    const amm = p.AMMONIZIONI ?? 0;
+    const esp = p.ESPULSIONI ?? 0;
+    const mvp = p.MVP_VINTI ?? 0;  // ✅ Colonna I
     
     html += `
       <tr onclick="openPlayerPopup('${p.PLAYER_ID}')">
         <td>${photoHtml}</td>
         <td>${(p.NOME || "").toUpperCase()}</td>
-        <td>${p.GOL || 0}</td>
-        <td>${p.ASSIST || 0}</td>
-        <td>${p.AMMONIZIONI || 0}</td>
-        <td>${p.ESPULSIONI || 0}</td>
-        <td class="mvp-cell">${mvpCount}</td>
+        <td>${gol}</td>
+        <td>${assist}</td>
+        <td>${amm}</td>
+        <td>${esp}</td>
+        <td class="mvp-cell">${mvp}</td>
       </tr>
     `;
   });
@@ -2413,9 +2410,8 @@ async function saveNextPhase(phase) {
 function renderPlaceholderCard(label, cls="") {
   return `
     <div class="bracket-match bracket-placeholder ${cls}">
-      <div style="text-align:center; opacity:0.6; width:100%;">
-        <div style="font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:1px; color:#666; margin-bottom:6px;">${Sanitizer.html(label)}</div>
-        <div style="font-size:10px; color:#999; font-weight:600;">TBD</div>
+      <div style="text-align:center; opacity:0.4; width:100%; display:flex; align-items:center; justify-content:center; height:100%;">
+        <div style="font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:1px; color:#999;">${Sanitizer.html(label)}</div>
       </div>
     </div>
   `;
@@ -2423,7 +2419,7 @@ function renderPlaceholderCard(label, cls="") {
 
 function renderBracketMatch(match, cls="") {
   if (!match || !match.casa?.nome) {
-    return `<div class="bracket-placeholder ${cls}"><div class="bracket-placeholder-title">TBD</div></div>`;
+    return `<div class="bracket-placeholder ${cls}"><div class="bracket-placeholder-title"></div></div>`;
   }
   
   const logoCasa = match.casa?.logo 
