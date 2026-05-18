@@ -1662,9 +1662,9 @@ function renderEvents(events, match) {
     return;
   }
   
-  // Ordina per minuto e FILTRA eventi al 0' (inizio partita)
+  // Ordina per minuto e FILTRA eventi al 0'
   events = [...events]
-    .filter(e => e.MINUTO > 0)  // 🔥 Nascondi eventi al minuto 0
+    .filter(e => e.MINUTO > 0)
     .sort((a, b) => (a.MINUTO || 0) - (b.MINUTO || 0));
   
   let html = "";
@@ -1682,12 +1682,46 @@ function renderEvents(events, match) {
             ${(e.PLAYER || "").toUpperCase()}
             ${e.ASSIST ? `<span class="assist">(${(e.ASSIST).toUpperCase()})</span>` : ""}
           </span>
+          ${e.EVENT_ID ? `<span class="event-delete" onclick="deleteEvent('${e.EVENT_ID}', '${match.MATCH_ID}')" style="cursor:pointer;margin-left:8px;color:#999;font-size:12px">✕</span>` : ''}
         </div>
       </div>
     `;
   });
   
   container.innerHTML = html;
+}
+
+async function deleteEvent(eventId, matchId) {
+  if (!confirm("Eliminare questo evento?")) return;
+  
+  try {
+    await ApiClient.deleteEventAdmin(eventId);
+    
+    // Ricarica eventi
+    const events = await ApiClient.getEventsAdmin(matchId);
+    window.APP_CACHE.eventsByMatch = window.APP_CACHE.eventsByMatch || {};
+    window.APP_CACHE.eventsByMatch[matchId] = events;
+    CacheManager.save(window.APP_CACHE);
+    
+    // Ricarica partita completa per aggiornare punteggio
+    const match = await ApiClient.getMatchFull(matchId);
+    if (match?.match) {
+      window.APP_STATE.lastMatch = match.match;
+      renderEvents(events, match.match);
+      
+      // Aggiorna punteggio header
+      const scoreEl = document.querySelector(".score-big");
+      if (scoreEl) {
+        scoreEl.textContent = `${match.match.GOL_CASA || 0} - ${match.match.GOL_TRASFERTA || 0}`;
+      }
+    }
+    
+    refreshStandingsDebounced(500);
+    
+  } catch (error) {
+    console.error('Error deleting event:', error);
+    alert('Errore eliminazione evento: ' + error.message);
+  }
 }
 
 function updateMatchUI(match) {
