@@ -1780,7 +1780,7 @@ function renderEvents(events, match) {
   container.innerHTML = html;
 }
 
-unction openEventMenu(ev, eventId, matchId) {
+function openEventMenu(ev, eventId, matchId) {
   ev.stopPropagation();
   ev.preventDefault();
   
