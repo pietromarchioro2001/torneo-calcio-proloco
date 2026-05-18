@@ -1945,9 +1945,7 @@ function openEventPopup(team) {
   console.log('🔍 Apertura evento:', {
     team,
     teamId,
-    matchId: match.MATCH_ID,
-    casaId: match.CASA_ID,
-    trasfertaId: match.TRASFERTA_ID
+    matchId: match.MATCH_ID
   });
   
   const modal = document.createElement("div");
@@ -1962,7 +1960,7 @@ function openEventPopup(team) {
           <option value="ESPULSIONE">🟥 Espulsione</option>
         </select>
         <input id="eventMinute" class="match-input" type="number" placeholder="Minuto" min="1" max="120">
-        <select id="eventPlayer" class="match-select"><option value="">Caricamento giocatori...</option></select>
+        <select id="eventPlayer" class="match-select"><option value="">Caricamento...</option></select>
         <select id="eventAssist" class="match-select"><option value="">Nessun assist</option></select>
         <div class="modalActions">
           <div class="phase-btn" onclick="saveEvent('${team}')">SALVA</div>
@@ -1976,15 +1974,39 @@ function openEventPopup(team) {
   modal.onclick = (e) => { if (e.target === modal) modal.remove(); };
   document.getElementById("eventBox").onclick = (e) => e.stopPropagation();
   
-  // 🔥 Carica giocatori della squadra CORRETTA
+  // 🔥 1. CONTROLLA PRIMA NELLA CACHE (istantaneo)
+  const cachedTeam = window.APP_CACHE.fullTeams?.[teamId];
+  const cachedPlayers = cachedTeam?.players || [];
+  
+  if (cachedPlayers.length > 0) {
+    console.log('✅ Giocatori dalla cache:', cachedPlayers.length);
+    populateEventSelects(cachedPlayers);
+  }
+  
+  // 🔥 2. AGGIORNA DAL BACKEND (in background, senza bloccare)
   ApiClient.getPlayersByTeam(teamId)
     .then(players => {
-      console.log('✅ Giocatori caricati:', players?.length, 'per teamId:', teamId);
-      populateEventSelects(players);
+      console.log('✅ Giocatori dal backend:', players?.length);
+      
+      // Aggiorna cache
+      if (!window.APP_CACHE.fullTeams) window.APP_CACHE.fullTeams = {};
+      if (!window.APP_CACHE.fullTeams[teamId]) {
+        window.APP_CACHE.fullTeams[teamId] = { players: [] };
+      }
+      window.APP_CACHE.fullTeams[teamId].players = players || [];
+      CacheManager.save(window.APP_CACHE);
+      
+      // Se il popup è ancora aperto, aggiorna le select
+      if (document.getElementById("eventPlayer")) {
+        populateEventSelects(players);
+      }
     })
     .catch(err => {
       console.error('❌ Errore caricamento giocatori:', err);
-      alert('Errore caricamento giocatori');
+      // Se non ci sono giocatori in cache, mostra errore
+      if (cachedPlayers.length === 0) {
+        alert('Errore caricamento giocatori');
+      }
     });
 }
 
