@@ -1673,15 +1673,10 @@ body{
 
 .mvp-cell {
   font-weight: 700;
-  color: #666666; /* Colore oro per MVP */
+  color: #999;
   font-size: 14px;
 }
 
-/* Evidenzia se MVP > 0 */
-.mvp-cell:not(:empty):not(.mvp-cell:contains("0")) {
-  background: rgba(251, 191, 36, 0.1);
-  border-radius: 4px;
-}
 
 /* =============================================================================================
                                          PARTITE
