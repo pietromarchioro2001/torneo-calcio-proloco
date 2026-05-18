@@ -2302,7 +2302,17 @@ function renderFinalBracket(matches) {
   </div>`;
 }
 
-function renderPlaceholderCard(label, cls="") { return `<div class="bracket-placeholder ${cls}"><div class="bracket-placeholder-title">${Sanitizer.html(label)}</div></div>`; }
+function renderPlaceholderCard(label, cls="") {
+  return `
+    <div class="bracket-match bracket-placeholder ${cls}">
+      <div style="text-align:center;opacity:0.5;">
+        <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px">${Sanitizer.html(label)}</div>
+        <div style="font-size:10px;color:#999">TBD</div>
+      </div>
+    </div>
+  `;
+}
+
 function renderBracketMatch(match, cls="") {
   // Se non c'è la partita, mostra placeholder
   if (!match || !match.casa?.nome) {
