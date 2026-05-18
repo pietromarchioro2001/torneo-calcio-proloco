@@ -3637,6 +3637,37 @@ body{
   border:2px solid #d8ab2f;
 }
 
+/* ===== BRACKET MATCH - LIVE ANIMATION ===== */
+.bracket-score.live {
+  color: #dc2626;
+  font-weight: 800;
+  animation: scorePulse 2s infinite;
+}
+
+@keyframes scorePulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.8; transform: scale(1.05); }
+}
+
+.live-indicator {
+  display: inline-block;
+  color: #dc2626;
+  font-size: 8px;
+  margin-left: 4px;
+  animation: dotPulse 1.5s infinite;
+}
+
+@keyframes dotPulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.4; transform: scale(1.3); }
+}
+
+.bracket-score.scheduled {
+  color: #888;
+  font-weight: 600;
+  font-size: 11px;
+}
+
 /* =============================================================================================
                                       POSIZIONI
 ===============================================================================================*/
