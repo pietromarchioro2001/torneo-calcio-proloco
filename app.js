@@ -1862,12 +1862,17 @@ function renderEvents(events, match) {
   
   events.forEach(e => {
     // 🔥 Confronto robusto - NORMALIZZA gli ID
-    const teamId = String(e.TEAM_ID || "").trim();
-    const casaId = String(match.CASA_ID || "").trim();
-    const trasfertaId = String(match.TRASFERTA_ID || "").trim();
-    
-    const isCasa = teamId === casaId;
-    const isTrasferta = teamId === trasfertaId;
+  const teamId = String(e.TEAM_ID || "").trim();
+  const casaId = String(match.CASA_ID || "").trim();
+  const trasfertaId = String(match.TRASFERTA_ID || "").trim();
+  
+  // 🔥 Debug se non matcha
+  if (teamId !== casaId && teamId !== trasfertaId) {
+    console.warn(`⚠️ TEAM_ID "${teamId}" non corrisponde a CASA "${casaId}" o TRASFERTA "${trasfertaId}"`);
+  }
+  
+  const isCasa = teamId === casaId;
+  const isTrasferta = teamId === trasfertaId;
     
     console.log(`  Evento ${e.MINUTO}' - TEAM_ID: "${teamId}", CASA: "${casaId}", Match: ${isCasa ? 'CASA' : (isTrasferta ? 'TRASFERTA' : '???')}`);
     
@@ -2138,11 +2143,17 @@ function openEventPopup(team) {
     return;
   }
   
-  const teamId = String(team === "casa" ? match.CASA_ID : match.TRASFERTA_ID);
+  // 🔥 Recupera teamId in modo sicuro
+  const teamId = team === "casa" 
+    ? String(match.CASA_ID || "").trim() 
+    : String(match.TRASFERTA_ID || "").trim();
+    
   const teamName = team === "casa" ? match.SQUADRA_CASA : match.SQUADRA_TRASFERTA;
   
-  if (!teamId || teamId === "undefined" || teamId === "null") {
-    alert("Errore ID squadra");
+  // 🔥 Validazione più precisa
+  if (!teamId || teamId === "undefined" || teamId === "null" || teamId === "") {
+    console.error('❌ teamId invalido:', { team, match });
+    alert("Errore: ID squadra non valido. Ricarica la pagina.");
     return;
   }
   
@@ -2282,20 +2293,6 @@ async function saveEvent(team) {
   const assistPlayer = assistId ? players.find(p => String(p.PLAYER_ID) === String(assistId)) : null;
   const assistName = assistPlayer?.NOME || "";
   
-  // 🔥 1. AGGIORNA PUNTEGGIO SUBITO
-  if (type === 'GOAL') {
-    if (team === "casa") {
-      match.GOL_CASA = (Number(match.GOL_CASA) || 0) + 1;
-    } else {
-      match.GOL_TRASFERTA = (Number(match.GOL_TRASFERTA) || 0) + 1;
-    }
-    
-    const scoreEl = document.querySelector(".score-big");
-    if (scoreEl) {
-      scoreEl.textContent = `${match.GOL_CASA} - ${match.GOL_TRASFERTA}`;
-    }
-  }
-  
   // 🔥 2. AGGIUNGI EVENTO ALLA CACHE
   const tempEvent = {
     EVENT_ID: 'temp_' + Date.now(),
@@ -2313,6 +2310,8 @@ async function saveEvent(team) {
     window.APP_CACHE.eventsByMatch[match.MATCH_ID] = [];
   }
   window.APP_CACHE.eventsByMatch[match.MATCH_ID].push(tempEvent);
+
+  updateScoreFromEvents(match.MATCH_ID); 
   
   // 🔥 3. AGGIORNA UI IMMEDIATAMENTE
   renderEvents(window.APP_CACHE.eventsByMatch[match.MATCH_ID], match);
@@ -2371,6 +2370,32 @@ if (window.APP_STATE.matchesById[match.MATCH_ID]) {
         location.reload();
       }
     });
+}
+
+// ✅ AGGIUNGI QUESTA FUNZIONE (fuori da saveEvent):
+function updateScoreFromEvents(matchId) {
+  const match = window.APP_STATE.lastMatch;
+  if (!match) return;
+  
+  const events = window.APP_CACHE.eventsByMatch?.[matchId] || [];
+  const goals = events.filter(e => e.TIPO === 'GOAL');
+  
+  let golCasa = 0;
+  let golTrasferta = 0;
+  
+  goals.forEach(g => {
+    if (String(g.TEAM_ID) === String(match.CASA_ID)) {
+      golCasa++;
+    } else if (String(g.TEAM_ID) === String(match.TRASFERTA_ID)) {
+      golTrasferta++;
+    }
+  });
+  
+  // Aggiorna UI
+  const scoreEl = document.querySelector(".score-big");
+  if (scoreEl) {
+    scoreEl.textContent = `${golCasa} - ${golTrasferta}`;
+  }
 }
 
 async function toggleMatch() {
