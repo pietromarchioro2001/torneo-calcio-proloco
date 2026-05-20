@@ -1664,25 +1664,31 @@ function getSafeMatchData(matchId) {
 }
 
 function renderMatchPage(match) {
-  // 🔥 Se non è un oggetto match, esci
   if (!match || !match.MATCH_ID) {
-    console.error('❌ renderMatchPage: match non valido', match);
+    console.error('Match non valido', match);
     return;
   }
   
-  console.log(' Rendering match:', match.MATCH_ID, match.SQUADRA_CASA, 'vs', match.SQUADRA_TRASFERTA);
-
-  // 🔥 Loghi (con fallback)
-  const logoCasa = match.LOGO_CASA 
-    ? `<img src="${getCachedImage(match.LOGO_CASA, 120)}" alt="${match.SQUADRA_CASA}" onerror="this.style.display='none'">`
-    : `<div style="width:70px;height:70px;border-radius:50%;background:#f0f0f0;display:flex;align-items:center;justify-content:center;font-size:1.5rem">⚽</div>`;
+  // 🔥 RECUPERA NOMI E LOGHI SE MANCANO
+  if (!match.SQUADRA_CASA || !match.LOGO_CASA) {
+    const casaData = window.APP_CACHE.fullTeams?.[String(match.CASA_ID)];
+    if (casaData?.team) {
+      match.SQUADRA_CASA = casaData.team.NOME_SQUADRA || "CASA";
+      match.LOGO_CASA = casaData.team.LOGO_FILE_ID || "";
+    }
+  }
   
-  const logoTrasf = match.LOGO_TRASFERTA 
-    ? `<img src="${getCachedImage(match.LOGO_TRASFERTA, 120)}" alt="${match.SQUADRA_TRASFERTA}" onerror="this.style.display='none'">`
-    : `<div style="width:70px;height:70px;border-radius:50%;background:#f0f0f0;display:flex;align-items:center;justify-content:center;font-size:1.5rem">⚽</div>`;
+  if (!match.SQUADRA_TRASFERTA || !match.LOGO_TRASFERTA) {
+    const trasfData = window.APP_CACHE.fullTeams?.[String(match.TRASFERTA_ID)];
+    if (trasfData?.team) {
+      match.SQUADRA_TRASFERTA = trasfData.team.NOME_SQUADRA || "TRASFERTA";
+      match.LOGO_TRASFERTA = trasfData.team.LOGO_FILE_ID || "";
+    }
+  }
   
-  const nomeCasa = (match.SQUADRA_CASA || "CASA").toUpperCase();
-  const nomeTrasf = (match.SQUADRA_TRASFERTA || "TRASFERTA").toUpperCase();
+  // ORA USA I NOMI REALI
+  const nomeCasa = (match.SQUADRA_CASA).toUpperCase();
+  const nomeTrasf = (match.SQUADRA_TRASFERTA).toUpperCase();
 
   const isLive = match.STATO_PARTITA === "LIVE";
   const isFinished = match.STATO_PARTITA === "FINITA";
@@ -1805,16 +1811,42 @@ function renderEvents(events, match) {
   if (!container) return;
   
   if (!events?.length) {
-    container.innerHTML = `<div class="empty-events-grid">...</div>`;
+    container.innerHTML = `
+      <div class="empty-events-grid">
+        <div class="empty-team-events">
+          <div class="empty-events-text">Nessun evento</div>
+          <div class="empty-events-icon">📋</div>
+        </div>
+        <div class="empty-team-events">
+          <div class="empty-events-text">Nessun evento</div>
+          <div class="empty-events-icon">📋</div>
+        </div>
+      </div>
+    `;
     return;
   }
+  
+  console.log('🔍 Debug eventi:', {
+    matchId: match.MATCH_ID,
+    casaId: match.CASA_ID,
+    trasfertaId: match.TRASFERTA_ID,
+    eventiCount: events.length
+  });
   
   events = [...events].filter(e => e.MINUTO > 0).sort((a, b) => (a.MINUTO || 0) - (b.MINUTO || 0));
   
   let html = "";
   events.forEach(e => {
-    // 🔥 CONFRONTO ROBUSTO: forza stringa su entrambi i lati
-    const isCasa = String(e.TEAM_ID) === String(match.CASA_ID);
+    // 🔥 Confronto robusto
+    const teamId = String(e.TEAM_ID || "");
+    const casaId = String(match.CASA_ID || "");
+    const trasfertaId = String(match.TRASFERTA_ID || "");
+    
+    const isCasa = teamId === casaId;
+    const isTrasferta = teamId === trasfertaId;
+    
+    console.log(`Evento ${e.MINUTO}' - TEAM_ID: ${teamId}, CASA: ${casaId}, Match: ${isCasa ? 'CASA' : 'TRASFERTA'}`);
+    
     const icon = e.TIPO === "GOAL" ? "⚽" : e.TIPO === "AMMONIZIONE" ? "🟨" : "🟥";
     
     const deleteBtn = e.EVENT_ID 
