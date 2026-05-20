@@ -529,50 +529,6 @@ body{
   letter-spacing: 0.5px;
 }
 
-/* 🔥 AGGIUNGI QUESTO NEL CSS */
-
-/* Logo placeholder per home */
-.home-team-logo {
-  width: 34px;
-  height: 34px;
-  border-radius: 50%;
-  background: #f0f0f0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 1.2rem;
-  flex-shrink: 0;
-}
-
-/* Placeholder per card partite */
-.team-logo-placeholder {
-  width: 42px;
-  height: 42px;
-  border-radius: 50%;
-  background: #efefef;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 1.3rem;
-  flex-shrink: 0;
-}
-
-/* Fix per immagini che falliscono */
-.match-card .team-block img[src=""],
-.match-card .team-block img:not([src]),
-.home-team-block img[src=""],
-.home-team-block img:not([src]) {
-  display: none !important;
-}
-
-/* Mostra placeholder quando immagine fallisce */
-.match-card .team-block img[src=""] + .team-logo-placeholder,
-.match-card .team-block img:not([src]) + .team-logo-placeholder,
-.home-team-block img[src=""] + .home-team-logo,
-.home-team-block img:not([src]) + .home-team-logo {
-  display: flex !important;
-}
-
 .home-team-logo, .home-team-block img {
   width: 34px; /* Aumentato */
   height: 34px;
@@ -642,6 +598,50 @@ body{
   border-radius: 50%;
   animation: liveDotPulse 1.5s infinite;
   margin: 0; /* Rimuovi margini extra */
+}
+
+/* 🔥 AGGIUNGI QUESTO NEL CSS */
+
+/* Logo placeholder per home */
+.home-team-logo {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: #f0f0f0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.2rem;
+  flex-shrink: 0;
+}
+
+/* Placeholder per card partite */
+.team-logo-placeholder {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  background: #efefef;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.3rem;
+  flex-shrink: 0;
+}
+
+/* Fix per immagini che falliscono */
+.match-card .team-block img[src=""],
+.match-card .team-block img:not([src]),
+.home-team-block img[src=""],
+.home-team-block img:not([src]) {
+  display: none !important;
+}
+
+/* Mostra placeholder quando immagine fallisce */
+.match-card .team-block img[src=""] + .team-logo-placeholder,
+.match-card .team-block img:not([src]) + .team-logo-placeholder,
+.home-team-block img[src=""] + .home-team-logo,
+.home-team-block img:not([src]) + .home-team-logo {
+  display: flex !important;
 }
 
 @keyframes liveTextPulse {
