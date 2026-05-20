@@ -505,13 +505,19 @@ function updateMatchScoreFromEvents(match, events) {
  * Genera HTML per la card partita nella home (Versione Compatta)
  */
 function renderHomeMatchCard(match, isLive) {
-  // Loghi
+  // 🔥 Loghi con gestione errori corretta
   const logoCasa = match.LOGO_CASA 
-    ? `<img src="${getCachedImage(match.LOGO_CASA, 38)}" alt="${match.SQUADRA_CASA}" onerror="this.style.display='none'">`
+    ? `<img src="${getCachedImage(match.LOGO_CASA, 38)}" 
+            alt="${match.SQUADRA_CASA}" 
+            onerror="this.style.display='none'; this.nextElementSibling.style.display='flex'">
+       <div class="home-team-logo" style="display:none">⚽</div>`
     : `<div class="home-team-logo">⚽</div>`;
   
   const logoTrasf = match.LOGO_TRASFERTA 
-    ? `<img src="${getCachedImage(match.LOGO_TRASFERTA, 38)}" alt="${match.SQUADRA_TRASFERTA}" onerror="this.style.display='none'">`
+    ? `<img src="${getCachedImage(match.LOGO_TRASFERTA, 38)}" 
+            alt="${match.SQUADRA_TRASFERTA}" 
+            onerror="this.style.display='none'; this.nextElementSibling.style.display='flex'">
+       <div class="home-team-logo" style="display:none">⚽</div>`
     : `<div class="home-team-logo">⚽</div>`;
   
   // Centro: LIVE o Ora/Data
@@ -1438,14 +1444,20 @@ let matches = allMatches
   let html = "";
   
   matches.forEach(m => {
-    // 🔥 LOGHI SQUADRE
-    const logoCasa = m.LOGO_CASA 
-      ? `<img src="${getCachedImage(m.LOGO_CASA, 50)}" alt="${m.SQUADRA_CASA}" onerror="this.style.display='none';this.parentElement.innerHTML='<div class=\'team-logo-placeholder\'></div>'">`
-      : `<div class="team-logo-placeholder"></div>`;
-    
-    const logoTrasf = m.LOGO_TRASFERTA 
-      ? `<img src="${getCachedImage(m.LOGO_TRASFERTA, 50)}" alt="${m.SQUADRA_TRASFERTA}" onerror="this.style.display='none';this.parentElement.innerHTML='<div class=\'team-logo-placeholder\'></div>'">`
-      : `<div class="team-logo-placeholder"></div>`;
+    // 🔥 Loghi con gestione errori corretta
+  const logoCasa = m.LOGO_CASA 
+    ? `<img src="${getCachedImage(m.LOGO_CASA, 50)}" 
+            alt="${m.SQUADRA_CASA}" 
+            onerror="this.style.display='none'; this.nextElementSibling.style.display='flex'">
+       <div class="team-logo-placeholder" style="display:none">⚽</div>`
+    : `<div class="team-logo-placeholder">⚽</div>`;
+  
+  const logoTrasf = m.LOGO_TRASFERTA 
+    ? `<img src="${getCachedImage(m.LOGO_TRASFERTA, 50)}" 
+            alt="${m.SQUADRA_TRASFERTA}" 
+            onerror="this.style.display='none'; this.nextElementSibling.style.display='flex'">
+       <div class="team-logo-placeholder" style="display:none">⚽</div>`
+    : `<div class="team-logo-placeholder">⚽</div>`;
     
     // 🔥 FASE PARTITA - Nascondi se LIVE
     let faseBadge = "";
