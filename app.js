@@ -2104,100 +2104,80 @@ async function saveEvent(team) {
     return;
   }
   
-  // 🔥 Validazione teamId
+  // 🔥 Calcola teamId corretto (forza stringa)
   const teamId = String(team === "casa" ? match.CASA_ID : match.TRASFERTA_ID);
   
-  if (!teamId || teamId === "undefined" || teamId === "null" || teamId === "") {
-    console.error('❌ teamId invalido:', { team, match });
-    alert("Errore interno: squadra non identificata");
-    return;
-  }
+  // 🔥 Trova nome giocatore dalla cache
+  const players = window.APP_CACHE.fullTeams?.[teamId]?.players || [];
+  const player = players.find(p => String(p.PLAYER_ID) === String(playerId));
+  const playerName = player?.NOME || "";
   
-  // 🔥 Feedback visivo immediato
-  const btn = document.querySelector(".modalBox .phase-btn:first-child");
-  if (btn) {
-    const originalText = btn.textContent;
-    btn.textContent = "SALVATAGGIO...";
-    btn.style.opacity = "0.7";
-    btn.style.pointerEvents = "none";
-  }
+  const assistPlayer = assistId ? players.find(p => String(p.PLAYER_ID) === String(assistId)) : null;
+  const assistName = assistPlayer?.NOME || "";
   
-  try {
-    // 🔥 Salva sul backend
-    await ApiClient.addEventAdmin(match.MATCH_ID, teamId, type, minute, playerId, assistId);
-    
-    // 🔥 Aggiorna punteggio locale IMMEDIATAMENTE
-    if (type === 'GOAL') {
-      if (team === "casa") {
-        match.GOL_CASA = (Number(match.GOL_CASA) || 0) + 1;
-      } else {
-        match.GOL_TRASFERTA = (Number(match.GOL_TRASFERTA) || 0) + 1;
-      }
-      const scoreEl = document.querySelector(".score-big");
-      if (scoreEl) {
-        scoreEl.textContent = `${match.GOL_CASA} - ${match.GOL_TRASFERTA}`;
-        // 🔥 Animazione conferma
-        scoreEl.style.transform = "scale(1.2)";
-        setTimeout(() => scoreEl.style.transform = "scale(1)", 200);
-      }
+  // 🔥 1. AGGIORNA PUNTEGGIO SUBITO (se gol)
+  if (type === 'GOAL') {
+    if (team === "casa") {
+      match.GOL_CASA = (Number(match.GOL_CASA) || 0) + 1;
+    } else {
+      match.GOL_TRASFERTA = (Number(match.GOL_TRASFERTA) || 0) + 1;
     }
-    
-    // 🔥 Ricarica eventi e aggiorna UI
-    const events = await ApiClient.getEventsAdmin(match.MATCH_ID);
-    if (!window.APP_CACHE.eventsByMatch) window.APP_CACHE.eventsByMatch = {};
-    window.APP_CACHE.eventsByMatch[match.MATCH_ID] = events;
-    CacheManager.save(window.APP_CACHE);
-    
-    renderEvents(events, match);
-    renderPlayersTab(
-      window.APP_CACHE.fullTeams?.[String(match.CASA_ID)],
-      window.APP_CACHE.fullTeams?.[String(match.TRASFERTA_ID)],
-      match
-    );
-    
-    // 🔥 Chiudi popup con feedback
-    document.querySelector(".modalOverlay")?.remove();
-    
-    // 🔥 Toast di conferma
-    showToast(`✅ Evento registrato: ${type} al ${minute}'`);
-    
-    refreshStandingsDebounced(500);
-    
-  } catch (error) {
-    console.error('❌ Errore salvataggio:', error);
-    alert('Errore: ' + error.message);
-    
-    // Ripristina bottone
-    if (btn) {
-      btn.textContent = "SALVA";
-      btn.style.opacity = "1";
-      btn.style.pointerEvents = "auto";
+    const scoreEl = document.querySelector(".score-big");
+    if (scoreEl) {
+      scoreEl.textContent = `${match.GOL_CASA} - ${match.GOL_TRASFERTA}`;
     }
   }
-}
-
-// 🔥 Helper per toast
-function showToast(message) {
-  const toast = document.createElement("div");
-  toast.style.cssText = `
-    position: fixed;
-    bottom: 80px;
-    left: 50%;
-    transform: translateX(-50%);
-    background: #22c55e;
-    color: white;
-    padding: 12px 24px;
-    border-radius: 8px;
-    font-weight: 600;
-    z-index: 10000;
-    animation: slideUp 0.3s ease;
-  `;
-  toast.textContent = message;
-  document.body.appendChild(toast);
-  setTimeout(() => {
-    toast.style.opacity = "0";
-    setTimeout(() => toast.remove(), 300);
-  }, 2000);
+  
+  // 🔥 2. CREA EVENTO E AGGIUNGI ALLA CACHE
+  const tempEvent = {
+    EVENT_ID: 'temp_' + Date.now(),
+    MATCH_ID: match.MATCH_ID,
+    TEAM_ID: teamId,
+    TIPO: type,
+    MINUTO: minute,
+    PLAYER_ID: playerId,
+    PLAYER: playerName,
+    ASSIST: assistName
+  };
+  
+  if (!window.APP_CACHE.eventsByMatch) window.APP_CACHE.eventsByMatch = {};
+  if (!window.APP_CACHE.eventsByMatch[match.MATCH_ID]) {
+    window.APP_CACHE.eventsByMatch[match.MATCH_ID] = [];
+  }
+  window.APP_CACHE.eventsByMatch[match.MATCH_ID].push(tempEvent);
+  
+  // 🔥 3. AGGIORNA UI IMMEDIATAMENTE
+  renderEvents(window.APP_CACHE.eventsByMatch[match.MATCH_ID], match);
+  renderPlayersTab(
+    window.APP_CACHE.fullTeams?.[String(match.CASA_ID)],
+    window.APP_CACHE.fullTeams?.[String(match.TRASFERTA_ID)],
+    match
+  );
+  
+  // 🔥 4. CHIUDI POPUP SUBITO (NESSUN "SALVATAGGIO...", NESSUN ALERT)
+  document.querySelector(".modalOverlay")?.remove();
+  
+  // 🔥 5. SALVA SUL BACKEND IN BACKGROUND (fire-and-forget)
+  ApiClient.addEventAdmin(match.MATCH_ID, teamId, type, minute, playerId, assistId)
+    .then(() => {
+      // Sync con server dopo salvataggio
+      return ApiClient.getEventsAdmin(match.MATCH_ID);
+    })
+    .then(events => {
+      window.APP_CACHE.eventsByMatch[match.MATCH_ID] = events;
+      CacheManager.save(window.APP_CACHE);
+      renderEvents(events, match);
+      refreshStandingsDebounced(500);
+    })
+    .catch(error => {
+      console.error('Errore salvataggio evento:', error);
+      // Rollback solo per errori critici (es. teamId invalido)
+      if (error.message?.includes('teamId') || error.message?.includes('non valido')) {
+        alert('Errore: ' + error.message);
+        location.reload();
+      }
+      // Per altri errori: l'evento resta in UI, si sincronizza al prossimo refresh
+    });
 }
 
 async function toggleMatch() {
