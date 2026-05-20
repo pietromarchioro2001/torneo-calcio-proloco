@@ -226,6 +226,8 @@ const ApiClient = {
   getPlayersByTeam: (teamId) => ApiClient.call('getPlayersByTeam', teamId),
   getPlayerDetail: (id) => ApiClient.call('getPlayerDetail', id),
   getEventsAdmin: (matchId) => ApiClient.call('getEventsAdmin', matchId),
+  saveMVPVote: (matchId, userId, playerId) => 
+    ApiClient.call('saveMVPVote', [matchId, userId, playerId]),
   
   saveTeamAdmin: (id, name, photo, girone) => 
     ApiClient.call('saveTeamAdmin', [id, name, photo, girone]),
