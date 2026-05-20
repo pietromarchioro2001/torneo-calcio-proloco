@@ -5,7 +5,7 @@
 const CONFIG = {
   // 🔥 SOSTITUISCI CON IL TUO URL APPS SCRIPT WEB APP
 
-  BACKEND_URL: 'https://script.google.com/macros/s/AKfycbxWMaj-jOfFQv4lIECs55GAkngLQqYfdqiwYRd_69mv0S3BTPjF9JbpWTZToy86v3Qv/exec',
+  BACKEND_URL: 'https://script.google.com/macros/s/AKfycbzO2kDZmuwLdyk5Jxj-RXpc5v_I9bPNs8y8uvXR3GlWLZSqaRI0xy6h0PYhqo-V7H6j/exec',
   
   API_TIMEOUT: 30000,
   CACHE_VERSION: 'v3.0',
@@ -1581,10 +1581,12 @@ function openMatch(id) {
   if (cachedMatch && cachedMatch.CASA_ID && cachedMatch.TRASFERTA_ID) {
     console.log('✅ Match COMPLETO dalla cache:', {
       casaId: cachedMatch.CASA_ID,
-      trasfertaId: cachedMatch.TRASFERTA_ID
+      trasfertaId: cachedMatch.TRASFERTA_ID,
+      squadraCasa: cachedMatch.SQUADRA_CASA,
+      squadraTrasferta: cachedMatch.SQUADRA_TRASFERTA
     });
     
-    // Renderizza SUBITO
+    // Renderizza SUBITO con dati cache
     renderMatchPage(cachedMatch);
     updateMatchUI(cachedMatch);
     
@@ -1594,9 +1596,12 @@ function openMatch(id) {
     // Renderizza eventi
     const events = window.APP_CACHE.eventsByMatch?.[id] || [];
     renderEvents(events, cachedMatch);
+    
+    // Carica giocatori
+    loadPlayersForMatch(cachedMatch);
   }
   
-  // Aggiorna dal backend (background)
+  // Aggiorna dal backend (background) - MA NON SOVRASCRIVERE SE ID VUOTI
   ApiClient.getMatchFull(id)
     .then(res => {
       if (myNonce !== window.APP_STATE._matchRequestNonce) return;
@@ -1604,23 +1609,42 @@ function openMatch(id) {
       
       const freshMatch = res.match;
       
-      // 🔥 VALIDAZIONE: se il backend ritorna ID vuoti, IGNORALO
-      if (!freshMatch.CASA_ID || !freshMatch.TRASFERTA_ID) {
-        console.warn('⚠️ Backend ha ritornato ID vuoti, uso cache:', freshMatch);
-        return; // Non sovrascrivere lastMatch con dati incompleti
+      // 🔥 VALIDAZIONE STRICT: se il backend ritorna ID vuoti, IGNORALO COMPLETAMENTE
+      if (!freshMatch.CASA_ID || !freshMatch.TRASFERTA_ID || 
+          freshMatch.CASA_ID === "" || freshMatch.TRASFERTA_ID === "") {
+        console.warn('⚠️ Backend ha ritornato ID VUOTI, MANTENGO CACHE:', freshMatch);
+        console.warn('  - CASA_ID:', freshMatch.CASA_ID);
+        console.warn('  - TRASFERTA_ID:', freshMatch.TRASFERTA_ID);
+        return; // ESCI SENZA FARE NULLA
       }
       
-      // Aggiorna cache e stato
+      // Solo se gli ID sono validi, aggiorna
+      console.log('✅ Backend dati validi, aggiorno cache');
       window.APP_STATE.matchesById[freshMatch.MATCH_ID] = freshMatch;
       window.APP_STATE.lastMatch = freshMatch;
       
-      // Aggiorna UI solo se necessario
+      // Aggiorna cache globale matches
+      if (window.APP_CACHE.matches) {
+        const idx = window.APP_CACHE.matches.findIndex(m => String(m.MATCH_ID) === String(freshMatch.MATCH_ID));
+        if (idx >= 0) {
+          window.APP_CACHE.matches[idx] = { ...window.APP_CACHE.matches[idx], ...freshMatch };
+          CacheManager.save(window.APP_CACHE);
+        }
+      }
+      
+      // Aggiorna UI solo se cambia qualcosa
       if (cachedMatch && (freshMatch.GOL_CASA !== cachedMatch.GOL_CASA || 
-          freshMatch.GOL_TRASFERTA !== cachedMatch.GOL_TRASFERTA)) {
+          freshMatch.GOL_TRASFERTA !== cachedMatch.GOL_TRASFERTA ||
+          freshMatch.STATO_PARTITA !== cachedMatch.STATO_PARTITA)) {
+        console.log('🔄 Aggiorno UI con nuovi dati backend');
         renderMatchPage(freshMatch);
+        loadPlayersForMatch(freshMatch);
       }
     })
-    .catch(err => console.error('❌ Errore backend:', err));
+    .catch(err => {
+      console.error('❌ Errore backend getMatchFull:', err);
+      // Mantieni cache
+    });
 }
 
 function getSafeMatchData(matchId) {
@@ -3386,11 +3410,9 @@ function bootAdminApp() {
   console.log("✅ App booted");
 }
 
-// 🔥 Nuova funzione: precarica eventi per partite recenti
 function preloadRecentEvents() {
   const matches = window.APP_CACHE.matches || [];
   
-  // Trova partite LIVE o finite nelle ultime 24 ore
   const now = new Date();
   const recentMatches = matches.filter(m => {
     if (m.STATO_PARTITA === "LIVE") return true;
@@ -3399,7 +3421,7 @@ function preloadRecentEvents() {
       const matchDate = parseLocalDate(m.DATA);
       if (matchDate) {
         const diffHours = (now - matchDate) / (1000 * 60 * 60);
-        return diffHours < 24; // Ultime 24 ore
+        return diffHours < 24;
       }
     }
     return false;
@@ -3407,11 +3429,9 @@ function preloadRecentEvents() {
   
   console.log('📥 Precaricamento eventi per', recentMatches.length, 'partite');
   
-  // Carica eventi in background
   recentMatches.forEach(m => {
     if (!window.APP_CACHE.eventsByMatch) window.APP_CACHE.eventsByMatch = {};
     
-    // Se non abbiamo già eventi, caricali
     if (!window.APP_CACHE.eventsByMatch[m.MATCH_ID]) {
       ApiClient.getEventsAdmin(m.MATCH_ID)
         .then(events => {
@@ -3421,6 +3441,16 @@ function preloadRecentEvents() {
         })
         .catch(err => console.error(`❌ Errore eventi ${m.MATCH_ID}:`, err));
     }
+    
+    // 🔥 Precarica anche i dati completi del match
+    ApiClient.getMatchFull(m.MATCH_ID)
+      .then(data => {
+        if (data?.match && data.match.CASA_ID && data.match.TRASFERTA_ID) {
+          window.APP_STATE.matchesById[m.MATCH_ID] = data.match;
+          console.log(`✅ Match precaricato: ${m.MATCH_ID}`);
+        }
+      })
+      .catch(err => console.error(`❌ Errore precaricamento match ${m.MATCH_ID}:`, err));
   });
 }
 
