@@ -1673,32 +1673,55 @@ function openMatch(id) {
 }
 
 function getSafeMatchData(matchId) {
-  // 1. Cerca nella cache globale matches
-  let match = window.APP_CACHE.matches?.find(m => String(m.MATCH_ID) === String(matchId));
+  if (!matchId) return null;
   
-  // 2. Cerca in matchesById (stato corrente)
-  if (!match) match = window.APP_STATE.matchesById?.[matchId];
+  const strMatchId = String(matchId);
   
-  // 3. Se manca qualcosa (es. LOGO_CASA), recuperiamolo dai dati completi della squadra
-  if (match) {
-    // Controlla squadra Casa
-    if (!match.LOGO_CASA || !match.SQUADRA_CASA) {
-      const casaData = window.APP_CACHE.fullTeams?.[String(match.CASA_ID)];
-      if (casaData?.team) {
-        match.LOGO_CASA = casaData.team.LOGO_FILE_ID;
-        match.SQUADRA_CASA = casaData.team.NOME_SQUADRA;
+  // 1. Cerca in matchesById (stato corrente - di solito più completo)
+  let match = window.APP_STATE.matchesById?.[strMatchId];
+  
+  // 2. Cerca nella cache globale matches
+  if (!match && window.APP_CACHE.matches) {
+    match = window.APP_CACHE.matches.find(m => String(m.MATCH_ID) === strMatchId);
+  }
+  
+  if (!match) {
+    console.error('❌ Match non trovato in nessuna cache:', matchId);
+    return null;
+  }
+  
+  // 🔥 3. RECUPERA NOMI E LOGHI SE MANCANO (da fullTeams)
+  if (match.CASA_ID) {
+    const casaData = window.APP_CACHE.fullTeams?.[String(match.CASA_ID)];
+    if (casaData?.team) {
+      // Solo se sono vuoti o undefined
+      if (!match.SQUADRA_CASA || match.SQUADRA_CASA === "") {
+        match.SQUADRA_CASA = casaData.team.NOME_SQUADRA || "";
       }
-    }
-    
-    // Controlla squadra Trasferta
-    if (!match.LOGO_TRASFERTA || !match.SQUADRA_TRASFERTA) {
-      const trasfData = window.APP_CACHE.fullTeams?.[String(match.TRASFERTA_ID)];
-      if (trasfData?.team) {
-        match.LOGO_TRASFERTA = trasfData.team.LOGO_FILE_ID;
-        match.SQUADRA_TRASFERTA = trasfData.team.NOME_SQUADRA;
+      if (!match.LOGO_CASA || match.LOGO_CASA === "") {
+        match.LOGO_CASA = casaData.team.LOGO_FILE_ID || "";
       }
     }
   }
+  
+  if (match.TRASFERTA_ID) {
+    const trasfData = window.APP_CACHE.fullTeams?.[String(match.TRASFERTA_ID)];
+    if (trasfData?.team) {
+      // Solo se sono vuoti o undefined
+      if (!match.SQUADRA_TRASFERTA || match.SQUADRA_TRASFERTA === "") {
+        match.SQUADRA_TRASFERTA = trasfData.team.NOME_SQUADRA || "";
+      }
+      if (!match.LOGO_TRASFERTA || match.LOGO_TRASFERTA === "") {
+        match.LOGO_TRASFERTA = trasfData.team.LOGO_FILE_ID || "";
+      }
+    }
+  }
+  
+  // 🔥 4. Valori di default se ancora mancano
+  match.SQUADRA_CASA = match.SQUADRA_CASA || "SQUADRA CASA";
+  match.SQUADRA_TRASFERTA = match.SQUADRA_TRASFERTA || "SQUADRA TRASFERTA";
+  match.GOL_CASA = Number(match.GOL_CASA) || 0;
+  match.GOL_TRASFERTA = Number(match.GOL_TRASFERTA) || 0;
   
   return match;
 }
@@ -2000,15 +2023,19 @@ async function deleteEvent(eventId, matchId) {
         match.GOL_TRASFERTA = Math.max(0, (Number(match.GOL_TRASFERTA) || 0) - 1);
       }
       
-      // 🔥 AGGIORNA ANCHE LA CACHE GLOBALE (IMPORTANTE PER LA HOME)
-      if (window.APP_CACHE.matches) {
-        const idx = window.APP_CACHE.matches.findIndex(m => String(m.MATCH_ID) === strMatchId);
-        if (idx >= 0) {
-          window.APP_CACHE.matches[idx].GOL_CASA = match.GOL_CASA;
-          window.APP_CACHE.matches[idx].GOL_TRASFERTA = match.GOL_TRASFERTA;
-          CacheManager.save(window.APP_CACHE);
-        }
-      }
+     // 🔥 AGGIORNA CACHE GLOBALE (preservando nomi/loghi)
+if (window.APP_CACHE.matches) {
+  const idx = window.APP_CACHE.matches.findIndex(m => String(m.MATCH_ID) === String(matchId));
+  if (idx >= 0) {
+    const existingMatch = window.APP_CACHE.matches[idx];
+    window.APP_CACHE.matches[idx] = {
+      ...existingMatch,  // ← PRESERVA TUTTO
+      GOL_CASA: match.GOL_CASA,
+      GOL_TRASFERTA: match.GOL_TRASFERTA
+    };
+    CacheManager.save(window.APP_CACHE);
+  }
+}
       
       // Aggiorna UI Punteggio
       const scoreEl = document.querySelector(".score-big");
@@ -2316,32 +2343,33 @@ async function saveEvent(team) {
     match
   );
   
-  // 🔥 4. 🔥 AGGIORNA CACHE GLOBALE MATCHES (fondamentale per la home!)
-  if (window.APP_CACHE.matches) {
-    const matchIndex = window.APP_CACHE.matches.findIndex(m => String(m.MATCH_ID) === String(match.MATCH_ID));
-    if (matchIndex >= 0) {
-      // 🔥 Aggiorna la partita nella cache globale con il nuovo punteggio
-      window.APP_CACHE.matches[matchIndex] = {
-        ...window.APP_CACHE.matches[matchIndex], // 🔥 MANTIENI TUTTI I DATI ESISTENTI (Loghi, Nomi)
-        GOL_CASA: match.GOL_CASA,
-        GOL_TRASFERTA: match.GOL_TRASFERTA,
-        MATCH_ID: match.MATCH_ID, // Assicurati che l'ID ci sia
-        CASA_ID: match.CASA_ID,
-        TRASFERTA_ID: match.TRASFERTA_ID
-      };
-      CacheManager.save(window.APP_CACHE);
-      console.log('✅ Cache globale matches aggiornata:', window.APP_CACHE.matches[matchIndex]);
-    }
-  }
-  
-  // 🔥 5. AGGIORNA ANCHE matchesById
-  if (window.APP_STATE.matchesById[match.MATCH_ID]) {
-    window.APP_STATE.matchesById[match.MATCH_ID] = {
-      ...window.APP_STATE.matchesById[match.MATCH_ID],
+  // 🔥 AGGIORNA CACHE GLOBALE MATCHES (senza perdere dati!)
+if (window.APP_CACHE.matches) {
+  const matchIndex = window.APP_CACHE.matches.findIndex(m => String(m.MATCH_ID) === String(match.MATCH_ID));
+  if (matchIndex >= 0) {
+    // 🔥 Preserva TUTTI i campi esistenti, aggiorna SOLO i gol
+    const existingMatch = window.APP_CACHE.matches[matchIndex];
+    window.APP_CACHE.matches[matchIndex] = {
+      ...existingMatch,  // ← MANTIENI TUTTO (nomi, loghi, date, ecc.)
       GOL_CASA: match.GOL_CASA,
-      GOL_TRASFERTA: match.GOL_TRASFERTA
+      GOL_TRASFERTA: match.GOL_TRASFERTA,
+      STATO_PARTITA: match.STATO_PARTITA || existingMatch.STATO_PARTITA
     };
+    CacheManager.save(window.APP_CACHE);
+    console.log('✅ Cache matches aggiornata (preservando nomi/loghi)');
   }
+}
+
+// 🔥 AGGIORNA ANCHE matchesById
+if (window.APP_STATE.matchesById[match.MATCH_ID]) {
+  const existingMatch = window.APP_STATE.matchesById[match.MATCH_ID];
+  window.APP_STATE.matchesById[match.MATCH_ID] = {
+    ...existingMatch,  // ← MANTIENI TUTTO
+    GOL_CASA: match.GOL_CASA,
+    GOL_TRASFERTA: match.GOL_TRASFERTA,
+    STATO_PARTITA: match.STATO_PARTITA || existingMatch.STATO_PARTITA
+  };
+}
   
   // 🔥 6. CHIUDI POPUP SUBITO
   document.querySelector(".modalOverlay")?.remove();
