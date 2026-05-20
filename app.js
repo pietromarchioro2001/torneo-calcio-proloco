@@ -1686,6 +1686,15 @@ function renderMatchPage(match) {
     }
   }
   
+  // 🔥 ORA DEFINISCI ANCHE I LOGHI (mancavano!)
+  const logoCasa = match.LOGO_CASA 
+    ? `<img src="${getCachedImage(match.LOGO_CASA, 120)}" alt="${match.SQUADRA_CASA}" onerror="this.style.display='none'">`
+    : `<div style="width:70px;height:70px;border-radius:50%;background:#f0f0f0;display:flex;align-items:center;justify-content:center;font-size:1.5rem">⚽</div>`;
+  
+  const logoTrasf = match.LOGO_TRASFERTA 
+    ? `<img src="${getCachedImage(match.LOGO_TRASFERTA, 120)}" alt="${match.SQUADRA_TRASFERTA}" onerror="this.style.display='none'">`
+    : `<div style="width:70px;height:70px;border-radius:50%;background:#f0f0f0;display:flex;align-items:center;justify-content:center;font-size:1.5rem">⚽</div>`;
+  
   // ORA USA I NOMI REALI
   const nomeCasa = (match.SQUADRA_CASA).toUpperCase();
   const nomeTrasf = (match.SQUADRA_TRASFERTA).toUpperCase();
@@ -1700,7 +1709,8 @@ function renderMatchPage(match) {
     : `<div class="mt-btn disabled" data-tab="mvp">🏆 MVP</div>`;
   
   // Pulsanti evento
-  const canAddEvents = isLive && (match.FASE === "FINALI" || !finalStageStarted);
+  const canAddEvents = match.STATO_PARTITA === "LIVE" && 
+                       (match.FASE === "FINALI" || !finalStageStarted);
   const eventBtnDisabled = !canAddEvents ? "style=\"opacity:0.5;pointer-events:none;cursor:not-allowed\"" : "";
   
   // Pulsante inizia/concludi
