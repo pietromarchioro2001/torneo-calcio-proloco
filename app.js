@@ -1836,26 +1836,32 @@ function renderEvents(events, match) {
     return;
   }
   
-  console.log('🔍 Debug eventi:', {
-    matchId: match.MATCH_ID,
-    casaId: match.CASA_ID,
-    trasfertaId: match.TRASFERTA_ID,
-    eventiCount: events.length
-  });
+  // 🔥 DEBUG: Controlla gli ID
+  console.log('🔍 DEBUG RENDER EVENTI:');
+  console.log('  Match ID:', match.MATCH_ID);
+  console.log('  CASA_ID:', match.CASA_ID, typeof match.CASA_ID);
+  console.log('  TRASFERTA_ID:', match.TRASFERTA_ID, typeof match.TRASFERTA_ID);
+  console.log('  Totale eventi:', events.length);
   
   events = [...events].filter(e => e.MINUTO > 0).sort((a, b) => (a.MINUTO || 0) - (b.MINUTO || 0));
   
   let html = "";
+  let eventsLeft = 0;
+  let eventsRight = 0;
+  
   events.forEach(e => {
-    // 🔥 Confronto robusto
-    const teamId = String(e.TEAM_ID || "");
-    const casaId = String(match.CASA_ID || "");
-    const trasfertaId = String(match.TRASFERTA_ID || "");
+    // 🔥 Confronto robusto - NORMALIZZA gli ID
+    const teamId = String(e.TEAM_ID || "").trim();
+    const casaId = String(match.CASA_ID || "").trim();
+    const trasfertaId = String(match.TRASFERTA_ID || "").trim();
     
     const isCasa = teamId === casaId;
     const isTrasferta = teamId === trasfertaId;
     
-    console.log(`Evento ${e.MINUTO}' - TEAM_ID: ${teamId}, CASA: ${casaId}, Match: ${isCasa ? 'CASA' : 'TRASFERTA'}`);
+    console.log(`  Evento ${e.MINUTO}' - TEAM_ID: "${teamId}", CASA: "${casaId}", Match: ${isCasa ? 'CASA' : (isTrasferta ? 'TRASFERTA' : '???')}`);
+    
+    if (isCasa) eventsLeft++;
+    else eventsRight++;
     
     const icon = e.TIPO === "GOAL" ? "⚽" : e.TIPO === "AMMONIZIONE" ? "🟨" : "🟥";
     
@@ -1878,6 +1884,8 @@ function renderEvents(events, match) {
       </div>
     `;
   });
+  
+  console.log(`✅ Eventi sinistra (casa): ${eventsLeft}, destra (trasferta): ${eventsRight}`);
   
   container.innerHTML = html;
 }
