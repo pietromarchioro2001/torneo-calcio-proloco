@@ -1571,48 +1571,28 @@ function openMatch(id) {
   
   console.log('🔍 Apertura match:', id);
   
-  // 🔥 Usa getSafeMatchData per avere dati completi
-  const safeMatch = getSafeMatchData(id);
+  // 🔥 PRIORITÀ: Cerca SEMPRE prima nella cache completa
+  const cachedMatch = window.APP_CACHE.matches?.find(m => String(m.MATCH_ID) === String(id));
   
-  if (safeMatch) {
-    console.log('✅ Match dalla cache:', {
-      id: safeMatch.MATCH_ID,
-      casaId: safeMatch.CASA_ID,
-      trasfertaId: safeMatch.TRASFERTA_ID,
-      squadraCasa: safeMatch.SQUADRA_CASA,
-      squadraTrasferta: safeMatch.SQUADRA_TRASFERTA
+  if (cachedMatch && cachedMatch.CASA_ID && cachedMatch.TRASFERTA_ID) {
+    console.log('✅ Match COMPLETO dalla cache:', {
+      casaId: cachedMatch.CASA_ID,
+      trasfertaId: cachedMatch.TRASFERTA_ID
     });
     
-    // Verifica che gli ID ci siano
-    if (!safeMatch.CASA_ID || !safeMatch.TRASFERTA_ID) {
-      console.error('❌ ID squadre ancora mancanti dopo recovery!');
-      // Forza reload dal backend
-      ApiClient.getMatchFull(id)
-        .then(res => {
-          if (res?.match) {
-            window.APP_STATE.matchesById[res.match.MATCH_ID] = res.match;
-            openMatch(id); // Retry
-          }
-        })
-        .catch(err => {
-          alert("Errore caricamento partita: " + err.message);
-        });
-      return;
-    }
+    // Renderizza SUBITO
+    renderMatchPage(cachedMatch);
+    updateMatchUI(cachedMatch);
     
-    // Renderizza con dati sicuri
-    renderMatchPage(safeMatch);
-    updateMatchUI(safeMatch);
-    
-    // SALVA lastMatch
-    window.APP_STATE.lastMatch = safeMatch;
+    // 🔥 SALVA lastMatch SOLO se ha gli ID
+    window.APP_STATE.lastMatch = { ...cachedMatch };
     
     // Renderizza eventi
     const events = window.APP_CACHE.eventsByMatch?.[id] || [];
-    renderEvents(events, safeMatch);
+    renderEvents(events, cachedMatch);
   }
   
-  // Aggiorna dal backend
+  // Aggiorna dal backend (background)
   ApiClient.getMatchFull(id)
     .then(res => {
       if (myNonce !== window.APP_STATE._matchRequestNonce) return;
@@ -1620,17 +1600,19 @@ function openMatch(id) {
       
       const freshMatch = res.match;
       
-      // Aggiorna cache
-      window.APP_STATE.matchesById[freshMatch.MATCH_ID] = freshMatch;
-      
-      // Aggiorna lastMatch SOLO se è ancora lo stesso match
-      if (String(window.APP_STATE.lastMatch?.MATCH_ID) === String(freshMatch.MATCH_ID)) {
-        window.APP_STATE.lastMatch = freshMatch;
+      // 🔥 VALIDAZIONE: se il backend ritorna ID vuoti, IGNORALO
+      if (!freshMatch.CASA_ID || !freshMatch.TRASFERTA_ID) {
+        console.warn('⚠️ Backend ha ritornato ID vuoti, uso cache:', freshMatch);
+        return; // Non sovrascrivere lastMatch con dati incompleti
       }
       
-      // Aggiorna UI se cambia qualcosa
-      if (freshMatch.GOL_CASA !== safeMatch?.GOL_CASA || 
-          freshMatch.GOL_TRASFERTA !== safeMatch?.GOL_TRASFERTA) {
+      // Aggiorna cache e stato
+      window.APP_STATE.matchesById[freshMatch.MATCH_ID] = freshMatch;
+      window.APP_STATE.lastMatch = freshMatch;
+      
+      // Aggiorna UI solo se necessario
+      if (cachedMatch && (freshMatch.GOL_CASA !== cachedMatch.GOL_CASA || 
+          freshMatch.GOL_TRASFERTA !== cachedMatch.GOL_TRASFERTA)) {
         renderMatchPage(freshMatch);
       }
     })
@@ -2162,43 +2144,58 @@ function updateMVPBanner(match) {
 }
 
 function addEvent(team) {
-  const match = window.APP_STATE.lastMatch;
+  // 🔥 RECUPERA MATCH DA PIÙ FONTI
+  let match = window.APP_STATE.lastMatch;
   
-  // 🔥 DEBUG COMPLETO
+  // Se lastMatch è incompleto, cerca altrove
+  if (!match || !match.CASA_ID || !match.TRASFERTA_ID) {
+    const matchId = window.APP_STATE.currentMatchId;
+    
+    // 1. Cerca in matchesById
+    match = window.APP_STATE.matchesById?.[matchId];
+    
+    // 2. Cerca in APP_CACHE.matches
+    if (!match?.CASA_ID) {
+      match = window.APP_CACHE.matches?.find(m => String(m.MATCH_ID) === String(matchId));
+    }
+    
+    // 3. Cerca in APP_STATE.matchesById (fallback)
+    if (!match?.CASA_ID) {
+      match = window.APP_STATE.matchesById?.[matchId];
+    }
+  }
+  
   console.log('🔍 DEBUG addEvent:', {
     matchExists: !!match,
     matchId: match?.MATCH_ID,
     casaId: match?.CASA_ID,
     trasfertaId: match?.TRASFERTA_ID,
     squadraCasa: match?.SQUADRA_CASA,
-    squadraTrasferta: match?.SQUADRA_TRASFERTA,
-    statoPartita: match?.STATO_PARTITA
+    squadraTrasferta: match?.SQUADRA_TRASFERTA
   });
   
-  // 🔥 Controllo stato partita
+  // Validazione finale
   if (!match) {
-    alert("Partita non caricata");
+    alert("Partita non caricata. Ricarica la pagina.");
     return;
   }
   
   if (!match.CASA_ID || !match.TRASFERTA_ID) {
-    console.error('❌ CASA_ID o TRASFERTA_ID mancanti!', match);
-    alert("Errore: dati squadra non completi. Ricarica la pagina.");
+    console.error('❌ ID squadra mancanti!', match);
+    alert("Errore: dati squadra incompleti. Ricarica la pagina o seleziona di nuovo la partita.");
     return;
   }
   
   if (match.STATO_PARTITA !== "LIVE") {
-    alert("La partita non è in corso - gli eventi possono essere aggiunti solo durante il LIVE");
+    alert("La partita non è in corso");
     return;
   }
   
-  // 🔥 Controllo fase finale (blocca modifiche ai gironi)
   if (match.FASE === "GIRONI" && window.APP_CACHE.meta?.finalStageStarted) {
-    alert("Impossibile modificare eventi: la fase finale è già iniziata");
+    alert("Impossibile modificare eventi: fase finale iniziata");
     return;
   }
   
-  // 🔥 Apri popup evento
   openEventPopup(team);
 }
 
@@ -3124,6 +3121,31 @@ function renderBracketMatch(match, cls="") {
   `;
 }
 
+function recoverMatchFromCache(matchId) {
+  if (!matchId) return null;
+  
+  // Priorità: cerca dove ci sono più probabilità di trovare dati completi
+  const sources = [
+    () => window.APP_STATE.matchesById?.[matchId],
+    () => window.APP_CACHE.matches?.find(m => String(m.MATCH_ID) === String(matchId)),
+    () => {
+      const cached = window.APP_CACHE.fullTeams;
+      // Se abbiamo i team, ricostruisci match
+      return null; // Implementazione opzionale
+    }
+  ];
+  
+  for (const source of sources) {
+    const match = source();
+    if (match?.CASA_ID && match?.TRASFERTA_ID) {
+      console.log('✅ Match recuperato da cache');
+      return { ...match };
+    }
+  }
+  
+  return null;
+}
+
 function createFinalStage() {
   if (!confirm("Confermi il passaggio alla FASE FINALE?")) return;
   alert("Demo: fase finale creata! (backend non configurato)");
@@ -3134,6 +3156,18 @@ function createFinalStage() {
 // ============================================================================
 
 function bootAdminApp() {
+  Object.defineProperty(window.APP_STATE, 'lastMatch', {
+  set(value) {
+    if (value && (!value.CASA_ID || !value.TRASFERTA_ID)) {
+      console.error('🚨 TENTATIVO DI SALVARE lastMatch INCOMPLETO:', value);
+      // Non bloccare, ma logga
+    }
+    this._lastMatch = value;
+  },
+  get() {
+    return this._lastMatch;
+  }
+});
   console.log("🚀 Booting Torneo Admin - PRODUCTION MODE");
   
   window.APP_CACHE = CacheManager.load();
