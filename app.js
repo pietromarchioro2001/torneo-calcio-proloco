@@ -517,14 +517,16 @@ function renderHomeMatchCard(match, isLive) {
   // Centro: LIVE o Ora/Data
   let centerContent = "";
   if (isLive) {
-    centerContent = `
-      <div class="home-live-badge">
-        <div class="home-score">${match.GOL_CASA || 0} - ${match.GOL_TRASFERTA || 0}</div>
+  centerContent = `
+    <div class="home-live-badge">
+      <div class="home-score">${match.GOL_CASA || 0} - ${match.GOL_TRASFERTA || 0}</div>
+      <div class="home-live-row">
         <div class="home-live-text">LIVE</div>
         <div class="home-live-dot"></div>
       </div>
-    `;
-  } else {
+    </div>
+  `;
+} else {
     const dateObj = parseLocalDate(match.DATA);
     const dateStr = dateObj ? `${dateObj.getDate()}/${dateObj.getMonth()+1}` : "";
     centerContent = `
