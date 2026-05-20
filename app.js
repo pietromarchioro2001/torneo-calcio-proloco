@@ -2446,12 +2446,16 @@ async function toggleMatch() {
   const newStatus = match.STATO_PARTITA === "LIVE" ? "FINITA" : "LIVE";
   const oldStatus = match.STATO_PARTITA;
   
-  // 🔥 1. Aggiorna UI SUBITO (ottimistico)
+  // 🔥 SE CONCLUDE, INVIA TUTTI I VOTI PRIMA
+  if (newStatus === "FINITA") {
+    await submitAllMVPVotes(match.MATCH_ID);
+  }
+  
+  // Aggiorna UI SUBITO
   match.STATO_PARTITA = newStatus;
   window.APP_STATE.lastMatch = match;
   updateMatchUI(match);
   
-  // Feedback visivo immediato
   const btn = document.querySelector(".start-btn");
   if (btn) {
     btn.textContent = newStatus === "LIVE" ? "CONCLUDI" : "INIZIA";
@@ -2459,10 +2463,9 @@ async function toggleMatch() {
   }
   
   try {
-    // 🔥 2. Chiama backend
     await ApiClient.updateMatchStatus(match.MATCH_ID, newStatus);
     
-    // 🔥 3. AGGIORNA CACHE LOCALE IMMEDIATAMENTE
+    // Aggiorna cache locale
     if (window.APP_CACHE.matches) {
       const idx = window.APP_CACHE.matches.findIndex(m => m.MATCH_ID === match.MATCH_ID);
       if (idx >= 0) {
@@ -2471,12 +2474,11 @@ async function toggleMatch() {
       }
     }
     
-    // 🔥 4. RICARICA DATI AGGIORNATI (fondamentale per FINALI)
+    // Ricarica dati aggiornati
     await ApiClient.getMatchFull(match.MATCH_ID).then(updated => {
       if (updated?.match) {
         window.APP_STATE.lastMatch = { ...match, ...updated.match };
         
-        // Aggiorna anche nella cache matches
         if (window.APP_CACHE.matches) {
           const idx = window.APP_CACHE.matches.findIndex(m => m.MATCH_ID === match.MATCH_ID);
           if (idx >= 0) {
@@ -2485,7 +2487,6 @@ async function toggleMatch() {
           }
         }
         
-        // Aggiorna UI con dati freschi
         updateMatchUI(window.APP_STATE.lastMatch);
         renderEvents(window.APP_CACHE.eventsByMatch[match.MATCH_ID] || [], window.APP_STATE.lastMatch);
         renderPlayersTab(
@@ -2496,25 +2497,23 @@ async function toggleMatch() {
       }
     });
     
-    // 🔥 5. Se CONCLUDE, avvia calcolo MVP
+    // Se CONCLUDE, finalizza MVP
     if (newStatus === "FINITA") {
       ApiClient.finalizeMVP(match.MATCH_ID)
         .then(() => console.log('✅ MVP finalizzato'))
         .catch(err => console.log('ℹ️ Nessun voto MVP o errore:', err.message));
       
-      // Ricarica tabellone fase finale
       if (window.APP_STATE._activeStandingsTab === "fasefinale") {
         loadFinalStage();
       }
     }
     
-    // Aggiorna standings
     refreshStandingsDebounced(500);
     
   } catch (error) {
     console.error('Error toggling match:', error);
     
-    // Rollback UI se fallisce
+    // Rollback
     match.STATO_PARTITA = oldStatus;
     window.APP_STATE.lastMatch = match;
     updateMatchUI(match);
@@ -2691,10 +2690,11 @@ function renderMVPTab(casaData, trasfData, match) {
       
       html += `
         <div class="player-row mvp-vote-row" 
-             onclick="voteMVP('${p.PLAYER_ID}', '${p.NOME.replace(/'/g, "\\'")}')">
+             onclick="voteMVP('${p.PLAYER_ID}', '${p.NOME.replace(/'/g, "\\'")}', event)"
+             style="cursor:pointer;transition:all 0.3s;">
           <div class="player-avatar">${photoHtml}</div>
           <div class="player-name">${(p.NOME || "").toUpperCase()}</div>
-          <div class="vote-check">✓</div>
+          <div class="vote-check" style="opacity:0;">✓</div>
         </div>
       `;
     });
@@ -2744,33 +2744,93 @@ async function selectMVP(playerId, playerName) {
   }
 }
 
-// 🔥 VOTAZIONE MVP (durante la partita)
-async function voteMVP(playerId, playerName) {
+async function voteMVP(playerId, playerName, event) {
   const match = window.APP_STATE.lastMatch;
   if (!match || match.STATO_PARTITA !== "LIVE") {
-    alert("La votazione è disponibile solo durante la partita");
+    // Silenziosamente ignora se non è LIVE
     return;
   }
   
-  try {
-    // Salva voto (backend dovrà gestire i voti multipli utenti)
-    await ApiClient.saveMVPVote(match.MATCH_ID, playerId);
-    
-    // Feedback visivo
-    alert(`✅ Hai votato ${playerName} come MVP!`);
-    
-    // Evidenzia selezione (opzionale)
-    document.querySelectorAll('.mvp-vote-row').forEach(row => {
-      row.style.background = '';
-      row.querySelector('.vote-check').style.opacity = '0';
-    });
-    event.currentTarget.style.background = '#fef3c7';
-    event.currentTarget.querySelector('.vote-check').style.opacity = '1';
-    
-  } catch (error) {
-    console.error('Error voting MVP:', error);
-    alert('Errore votazione: ' + error.message);
+  // 🔥 SALVA VOTO LOCALE (in memoria)
+  if (!window.APP_STATE.localMVPVotes) {
+    window.APP_STATE.localMVPVotes = {};
   }
+  
+  // Genera un ID univoco per questo dispositivo/utente
+  let voterId = localStorage.getItem('mvp_voter_id');
+  if (!voterId) {
+    voterId = 'voter_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+    localStorage.setItem('mvp_voter_id', voterId);
+  }
+  
+  // Salva il voto localmente
+  window.APP_STATE.localMVPVotes[voterId] = {
+    matchId: match.MATCH_ID,
+    playerId: playerId,
+    playerName: playerName,
+    timestamp: Date.now()
+  };
+  
+  // 🔥 AGGIORNA UI - Evidenzia giocatore selezionato
+  document.querySelectorAll('.mvp-vote-row').forEach(row => {
+    row.style.background = '';
+    row.style.opacity = '0.6';
+  });
+  
+  // Evidenzia il giocatore votato
+  const selectedRow = event?.currentTarget || 
+                      document.querySelector(`[onclick*="'${playerId}'"]`)?.closest('.mvp-vote-row');
+  if (selectedRow) {
+    selectedRow.style.background = '#fef3c7';
+    selectedRow.style.opacity = '1';
+  }
+  
+  // 🔥 NESSUN ALERT - silenzio totale
+  console.log(`✅ Voto salvato localmente: ${playerName}`);
+  
+  // Aggiorna contatore voti locali
+  updateLocalMVPCounter();
+}
+
+function updateLocalMVPCounter() {
+  const votes = window.APP_STATE.localMVPVotes || {};
+  const matchId = window.APP_STATE.currentMatchId;
+  
+  // Conta voti per questa partita
+  const matchVotes = Object.values(votes).filter(v => v.matchId === matchId);
+  const counts = {};
+  
+  matchVotes.forEach(v => {
+    counts[v.playerId] = (counts[v.playerId] || 0) + 1;
+  });
+  
+  // Mostra contatori UI (opzionale, solo per admin)
+  console.log('📊 Voti locali:', counts);
+}
+
+async function submitAllMVPVotes(matchId) {
+  const votes = window.APP_STATE.localMVPVotes || {};
+  const matchVotes = Object.values(votes).filter(v => v.matchId === matchId);
+  
+  if (matchVotes.length === 0) {
+    console.log('📭 Nessun voto da inviare');
+    return;
+  }
+  
+  console.log(`📤 Invio ${matchVotes.length} voti al backend...`);
+  
+  // Invia tutti i voti al backend
+  const promises = matchVotes.map(vote => {
+    return ApiClient.saveMVPVote(matchId, vote.voterId || vote.timestamp, vote.playerId)
+      .catch(err => console.error('❌ Errore invio voto:', err));
+  });
+  
+  await Promise.all(promises);
+  
+  console.log(`✅ ${matchVotes.length} voti inviati con successo!`);
+  
+  // Pulisci voti locali dopo l'invio
+  delete window.APP_STATE.localMVPVotes;
 }
 
 // ============================================================================
