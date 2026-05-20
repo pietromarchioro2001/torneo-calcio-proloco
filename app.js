@@ -505,20 +505,30 @@ function updateMatchScoreFromEvents(match, events) {
  * Genera HTML per la card partita nella home (Versione Compatta)
  */
 function renderHomeMatchCard(match, isLive) {
-  // 🔥 Loghi con gestione errori corretta
+  // 🔥 Loghi con fallback inline robusto
   const logoCasa = match.LOGO_CASA 
-    ? `<img src="${getCachedImage(match.LOGO_CASA, 38)}" 
-            alt="${match.SQUADRA_CASA}" 
-            onerror="this.style.display='none'; this.nextElementSibling.style.display='flex'">
-       <div class="home-team-logo" style="display:none">⚽</div>`
-    : `<div class="home-team-logo">⚽</div>`;
+    ? `<div class="home-team-logo-wrap">
+        <img src="${getCachedImage(match.LOGO_CASA, 38)}" 
+             alt="${match.SQUADRA_CASA}" 
+             class="home-team-logo-img"
+             onerror="this.style.display='none'; this.parentElement.querySelector('.home-team-logo-fallback').style.display='flex'">
+        <div class="home-team-logo-fallback" style="display:none">⚽</div>
+      </div>`
+    : `<div class="home-team-logo-wrap">
+        <div class="home-team-logo-fallback">⚽</div>
+      </div>`;
   
   const logoTrasf = match.LOGO_TRASFERTA 
-    ? `<img src="${getCachedImage(match.LOGO_TRASFERTA, 38)}" 
-            alt="${match.SQUADRA_TRASFERTA}" 
-            onerror="this.style.display='none'; this.nextElementSibling.style.display='flex'">
-       <div class="home-team-logo" style="display:none">⚽</div>`
-    : `<div class="home-team-logo">⚽</div>`;
+    ? `<div class="home-team-logo-wrap">
+        <img src="${getCachedImage(match.LOGO_TRASFERTA, 38)}" 
+             alt="${match.SQUADRA_TRASFERTA}" 
+             class="home-team-logo-img"
+             onerror="this.style.display='none'; this.parentElement.querySelector('.home-team-logo-fallback').style.display='flex'">
+        <div class="home-team-logo-fallback" style="display:none">⚽</div>
+      </div>`
+    : `<div class="home-team-logo-wrap">
+        <div class="home-team-logo-fallback">⚽</div>
+      </div>`;
   
   // Centro: LIVE o Ora/Data
   let centerContent = "";
@@ -1444,20 +1454,30 @@ let matches = allMatches
   let html = "";
   
   matches.forEach(m => {
-    // 🔥 Loghi con gestione errori corretta
+    // 🔥 Loghi con fallback robusto
   const logoCasa = m.LOGO_CASA 
-    ? `<img src="${getCachedImage(m.LOGO_CASA, 50)}" 
-            alt="${m.SQUADRA_CASA}" 
-            onerror="this.style.display='none'; this.nextElementSibling.style.display='flex'">
-       <div class="team-logo-placeholder" style="display:none">⚽</div>`
-    : `<div class="team-logo-placeholder">⚽</div>`;
+    ? `<div class="team-logo-placeholder-wrap">
+        <img src="${getCachedImage(m.LOGO_CASA, 50)}" 
+             alt="${m.SQUADRA_CASA}" 
+             class="team-logo-placeholder-img"
+             onerror="this.style.display='none'; this.parentElement.querySelector('.team-logo-placeholder-fallback').style.display='flex'">
+        <div class="team-logo-placeholder-fallback" style="display:none">⚽</div>
+      </div>`
+    : `<div class="team-logo-placeholder-wrap">
+        <div class="team-logo-placeholder-fallback">⚽</div>
+      </div>`;
   
   const logoTrasf = m.LOGO_TRASFERTA 
-    ? `<img src="${getCachedImage(m.LOGO_TRASFERTA, 50)}" 
-            alt="${m.SQUADRA_TRASFERTA}" 
-            onerror="this.style.display='none'; this.nextElementSibling.style.display='flex'">
-       <div class="team-logo-placeholder" style="display:none">⚽</div>`
-    : `<div class="team-logo-placeholder">⚽</div>`;
+    ? `<div class="team-logo-placeholder-wrap">
+        <img src="${getCachedImage(m.LOGO_TRASFERTA, 50)}" 
+             alt="${m.SQUADRA_TRASFERTA}" 
+             class="team-logo-placeholder-img"
+             onerror="this.style.display='none'; this.parentElement.querySelector('.team-logo-placeholder-fallback').style.display='flex'">
+        <div class="team-logo-placeholder-fallback" style="display:none">⚽</div>
+      </div>`
+    : `<div class="team-logo-placeholder-wrap">
+        <div class="team-logo-placeholder-fallback">⚽</div>
+      </div>`;
     
     // 🔥 FASE PARTITA - Nascondi se LIVE
     let faseBadge = "";
