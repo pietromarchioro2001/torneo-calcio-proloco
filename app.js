@@ -2776,10 +2776,6 @@ function renderMVPTab(casaData, trasfData, match) {
   };
   
   container.innerHTML = `
-    <div style="text-align:center;padding:12px;background:#fff5e6;border-radius:8px;margin-bottom:16px;grid-column:1/-1">
-      <div style="font-size:13px;font-weight:700;color:#b45309">🎫 VOTA IL MVP</div>
-      <div style="font-size:11px;color:#92400e;margin-top:2px">Clicca sul giocatore per votare</div>
-    </div>
     <div class="players-col">
       <div class="players-team">${(casaData?.team?.NOME_SQUADRA || match.SQUADRA_CASA || "").toUpperCase()}</div>
       ${renderMVPVoteList(casaPlayers, match.CASA_ID)}
