@@ -2441,11 +2441,19 @@ body{
   border-color:#222;
 }
 
-.players-columns{
-  display:flex;
-  gap:40px;
-  margin-top:20px;
-  position:relative;
+.players-col {
+  width: 50%;
+  box-sizing: border-box; /* 🔥 Include padding nel calcolo della larghezza */
+  padding: 0 12px;        /* 🔥 Spazio interno per evitare la linea centrale */
+}
+
+.players-columns {
+  display: flex;
+  gap: 40px;
+  margin-top: 20px;
+  position: relative;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .player-badges{
@@ -3073,28 +3081,29 @@ body{
   letter-spacing: 1px;
 }
 
-/* MVP Vote Row */
 .mvp-vote-row {
+  box-sizing: border-box;    /* 🔥 Padding e border inclusi nella larghezza */
+  overflow: hidden;          /* 🔥 Contiene il background all'interno */
   position: relative;
-  padding: 12px;
-  border-radius: 8px;
   margin: 8px 0;
-  transition: all 0.3s ease;
+  border-radius: 8px;
 }
 
+/* 🔥 Quando selezionata, il background resta dentro */
+.mvp-vote-row[style*="background"],
 .mvp-vote-row:hover {
-  background: #f5f5f5;
+  box-sizing: border-box;
+  overflow: hidden;
 }
 
+/* 🔥 La checkmark deve restare dentro la card */
 .mvp-vote-row .vote-check {
   position: absolute;
   right: 16px;
   top: 50%;
   transform: translateY(-50%);
-  color: #059669;
-  font-weight: bold;
-  font-size: 1.4rem;
-  transition: opacity 0.3s;
+  z-index: 2;
+  pointer-events: none; /* Non interferisce col click */
 }
 
 .vote-check {
