@@ -1584,20 +1584,18 @@ function openMatch(id) {
       squadraTrasferta: cached.SQUADRA_TRASFERTA
     });
     
-    // 🔥 Assicurati che gli ID ci siano
-    if (!cached.CASA_ID || !cached.TRASFERTA_ID) {
-      console.error('❌ Match cached senza CASA_ID o TRASFERTA_ID!');
-    }
-    
     // 🔥 Renderizza SUBITO con i dati cached
     renderMatchPage(cached);
     updateMatchUI(cached);
-    window.APP_STATE.lastMatch = cached;
+    
+    // 🔥 SALVA lastMatch COMPLETO (usa getSafeMatchData)
+    const safeMatch = getSafeMatchData(id);
+    window.APP_STATE.lastMatch = safeMatch || cached;
     
     // Renderizza eventi
     const events = window.APP_CACHE.eventsByMatch?.[id] || [];
     console.log('✅ Eventi dalla cache:', events.length);
-    renderEvents(events, cached);
+    renderEvents(events, safeMatch || cached);
   }
   
   // 🔥 Aggiorna dal backend (background)
@@ -1610,7 +1608,11 @@ function openMatch(id) {
       
       // Aggiorna cache
       window.APP_STATE.matchesById[freshMatch.MATCH_ID] = freshMatch;
-      window.APP_STATE.lastMatch = freshMatch;
+      
+      // 🔥 Aggiorna lastMatch SOLO se è ancora lo stesso match
+      if (String(window.APP_STATE.lastMatch?.MATCH_ID) === String(freshMatch.MATCH_ID)) {
+        window.APP_STATE.lastMatch = freshMatch;
+      }
       
       // Aggiorna UI solo se cambia qualcosa
       if (freshMatch.GOL_CASA !== cached?.GOL_CASA || 
@@ -1620,6 +1622,7 @@ function openMatch(id) {
     })
     .catch(err => console.error('❌ Errore backend:', err));
 }
+
 function getSafeMatchData(matchId) {
   if (!matchId) return null;
   
@@ -2293,7 +2296,7 @@ async function saveEvent(team) {
   const assistPlayer = assistId ? players.find(p => String(p.PLAYER_ID) === String(assistId)) : null;
   const assistName = assistPlayer?.NOME || "";
   
-  // 🔥 2. AGGIUNGI EVENTO ALLA CACHE
+  // 🔥 1. AGGIUNGI EVENTO ALLA CACHE
   const tempEvent = {
     EVENT_ID: 'temp_' + Date.now(),
     MATCH_ID: match.MATCH_ID,
@@ -2310,10 +2313,8 @@ async function saveEvent(team) {
     window.APP_CACHE.eventsByMatch[match.MATCH_ID] = [];
   }
   window.APP_CACHE.eventsByMatch[match.MATCH_ID].push(tempEvent);
-
-  updateScoreFromEvents(match.MATCH_ID); 
   
-  // 🔥 3. AGGIORNA UI IMMEDIATAMENTE
+  // 🔥 2. AGGIORNA UI IMMEDIATAMENTE
   renderEvents(window.APP_CACHE.eventsByMatch[match.MATCH_ID], match);
   renderPlayersTab(
     window.APP_CACHE.fullTeams?.[String(match.CASA_ID)],
@@ -2321,38 +2322,13 @@ async function saveEvent(team) {
     match
   );
   
-  // 🔥 AGGIORNA CACHE GLOBALE MATCHES (senza perdere dati!)
-if (window.APP_CACHE.matches) {
-  const matchIndex = window.APP_CACHE.matches.findIndex(m => String(m.MATCH_ID) === String(match.MATCH_ID));
-  if (matchIndex >= 0) {
-    // 🔥 Preserva TUTTI i campi esistenti, aggiorna SOLO i gol
-    const existingMatch = window.APP_CACHE.matches[matchIndex];
-    window.APP_CACHE.matches[matchIndex] = {
-      ...existingMatch,  // ← MANTIENI TUTTO (nomi, loghi, date, ecc.)
-      GOL_CASA: match.GOL_CASA,
-      GOL_TRASFERTA: match.GOL_TRASFERTA,
-      STATO_PARTITA: match.STATO_PARTITA || existingMatch.STATO_PARTITA
-    };
-    CacheManager.save(window.APP_CACHE);
-    console.log('✅ Cache matches aggiornata (preservando nomi/loghi)');
-  }
-}
-
-// 🔥 AGGIORNA ANCHE matchesById
-if (window.APP_STATE.matchesById[match.MATCH_ID]) {
-  const existingMatch = window.APP_STATE.matchesById[match.MATCH_ID];
-  window.APP_STATE.matchesById[match.MATCH_ID] = {
-    ...existingMatch,  // ← MANTIENI TUTTO
-    GOL_CASA: match.GOL_CASA,
-    GOL_TRASFERTA: match.GOL_TRASFERTA,
-    STATO_PARTITA: match.STATO_PARTITA || existingMatch.STATO_PARTITA
-  };
-}
+  // 🔥 3. CALCOLA PUNTEGGIO DAGLI EVENTI (NON modificare lastMatch!)
+  updateScoreFromEvents(match.MATCH_ID);
   
-  // 🔥 6. CHIUDI POPUP SUBITO
+  // 🔥 4. CHIUDI POPUP SUBITO
   document.querySelector(".modalOverlay")?.remove();
   
-  // 🔥 7. SALVA SUL BACKEND (background)
+  // 🔥 5. SALVA SUL BACKEND (background)
   ApiClient.addEventAdmin(match.MATCH_ID, teamId, type, minute, playerId, assistId)
     .then(() => {
       return ApiClient.getEventsAdmin(match.MATCH_ID);
@@ -2361,6 +2337,7 @@ if (window.APP_STATE.matchesById[match.MATCH_ID]) {
       window.APP_CACHE.eventsByMatch[match.MATCH_ID] = events;
       CacheManager.save(window.APP_CACHE);
       renderEvents(events, match);
+      updateScoreFromEvents(match.MATCH_ID);  // ← Ricalcola dal server
       refreshStandingsDebounced(500);
     })
     .catch(error => {
@@ -2372,7 +2349,7 @@ if (window.APP_STATE.matchesById[match.MATCH_ID]) {
     });
 }
 
-// ✅ AGGIUNGI QUESTA FUNZIONE (fuori da saveEvent):
+// 🔥 Aggiungi questa funzione (fuori da saveEvent)
 function updateScoreFromEvents(matchId) {
   const match = window.APP_STATE.lastMatch;
   if (!match) return;
