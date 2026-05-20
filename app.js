@@ -1866,6 +1866,10 @@ function renderMatchPage(match) {
   
   // Aggiorna UI
   updateMatchUI(match);
+
+  if (match.STATO_PARTITA === "FINITA" && match.MVP) {
+    updateMVPBanner(match); // Mostra banner centrale con MVP
+  }
   
   // 🔥 Renderizza eventi dalla cache
   const events = window.APP_CACHE.eventsByMatch?.[match.MATCH_ID] || [];
@@ -2445,15 +2449,10 @@ async function toggleMatch() {
   const match = window.APP_STATE.lastMatch;
   if (!match) return;
   
+  // Determina il nuovo stato
   const newStatus = match.STATO_PARTITA === "LIVE" ? "FINITA" : "LIVE";
-  const oldStatus = match.STATO_PARTITA;
   
-  // 🔥 SE CONCLUDE, INVIA TUTTI I VOTI PRIMA
-  if (newStatus === "FINITA") {
-    await submitAllMVPVotes(match.MATCH_ID);
-  }
-  
-  // Aggiorna UI SUBITO
+  // Aggiorna UI localmente subito (per reattività)
   match.STATO_PARTITA = newStatus;
   window.APP_STATE.lastMatch = match;
   updateMatchUI(match);
@@ -2465,62 +2464,61 @@ async function toggleMatch() {
   }
   
   try {
+    // 1. Invia stato al backend
     await ApiClient.updateMatchStatus(match.MATCH_ID, newStatus);
     
-    // Aggiorna cache locale
-    if (window.APP_CACHE.matches) {
-      const idx = window.APP_CACHE.matches.findIndex(m => m.MATCH_ID === match.MATCH_ID);
-      if (idx >= 0) {
-        window.APP_CACHE.matches[idx].STATO_PARTITA = newStatus;
-        CacheManager.save(window.APP_CACHE);
-      }
-    }
+    // 2. 🔥 FONDAMENTALE: Riscarica i dati della partita DAL BACKEND
+    // Questo serve per riavere CASA_ID/TRASFERTA_ID puliti ed evitare che gli eventi vadano a destra
+    const fullData = await ApiClient.getMatchFull(match.MATCH_ID);
     
-    // Ricarica dati aggiornati
-    await ApiClient.getMatchFull(match.MATCH_ID).then(updated => {
-      if (updated?.match) {
-        window.APP_STATE.lastMatch = { ...match, ...updated.match };
-        
-        if (window.APP_CACHE.matches) {
-          const idx = window.APP_CACHE.matches.findIndex(m => m.MATCH_ID === match.MATCH_ID);
-          if (idx >= 0) {
-            window.APP_CACHE.matches[idx] = { ...window.APP_CACHE.matches[idx], ...updated.match };
-            CacheManager.save(window.APP_CACHE);
-          }
-        }
-        
-        updateMatchUI(window.APP_STATE.lastMatch);
-        renderEvents(window.APP_CACHE.eventsByMatch[match.MATCH_ID] || [], window.APP_STATE.lastMatch);
-        renderPlayersTab(
-          window.APP_CACHE.fullTeams?.[match.CASA_ID],
-          window.APP_CACHE.fullTeams?.[match.TRASFERTA_ID],
-          window.APP_STATE.lastMatch
-        );
-      }
-    });
-    
-    // Se CONCLUDE, finalizza MVP
-    if (newStatus === "FINITA") {
-      ApiClient.finalizeMVP(match.MATCH_ID)
-        .then(() => console.log('✅ MVP finalizzato'))
-        .catch(err => console.log('ℹ️ Nessun voto MVP o errore:', err.message));
+    if (fullData?.match) {
+      const freshMatch = fullData.match;
       
-      if (window.APP_STATE._activeStandingsTab === "fasefinale") {
-        loadFinalStage();
+      // Aggiorna lo stato globale con i dati freschi e completi
+      window.APP_STATE.lastMatch = freshMatch;
+      window.APP_STATE.matchesById[freshMatch.MATCH_ID] = freshMatch;
+      
+      // Aggiorna la cache locale
+      if (window.APP_CACHE.matches) {
+        const idx = window.APP_CACHE.matches.findIndex(m => m.MATCH_ID === freshMatch.MATCH_ID);
+        if (idx >= 0) {
+          window.APP_CACHE.matches[idx] = { ...window.APP_CACHE.matches[idx], ...freshMatch };
+          CacheManager.save(window.APP_CACHE);
+        }
+      }
+      
+      // 3. Rendi la pagina con i dati SICURI (risolve il problema eventi a destra)
+      renderMatchPage(freshMatch);
+      
+      // 4. Se siamo in FINITA, attiva il calcolo MVP
+      if (newStatus === "FINITA") {
+        // Mostra un feedback visivo (opzionale)
+        console.log("🏆 Partita conclusa. Calcolo MVP in corso...");
+        
+        // Invia i voti locali (se la logica è quella discussa prima)
+        await submitAllMVPVotes(freshMatch.MATCH_ID);
+        
+        // Chiama il backend per calcolare il vincitore
+        await ApiClient.finalizeMVP(freshMatch.MATCH_ID);
+        
+        // 🔥 RILEGGI I DATI DOPO IL CALCOLO MVP
+        // Serve per aggiornare il campo MVP nel match object
+        setTimeout(async () => {
+          const finalData = await ApiClient.getMatchFull(freshMatch.MATCH_ID);
+          if (finalData?.match) {
+            window.APP_STATE.lastMatch = finalData.match;
+            renderMatchPage(finalData.match); // Ridisegna tutto (Banner + Corone)
+            refreshStandingsDebounced(1000);
+          }
+        }, 1500); // Aspetta 1.5s per dare tempo al server di calcolare
+      } else {
+        refreshStandingsDebounced(500);
       }
     }
-    
-    refreshStandingsDebounced(500);
     
   } catch (error) {
-    console.error('Error toggling match:', error);
-    
-    // Rollback
-    match.STATO_PARTITA = oldStatus;
-    window.APP_STATE.lastMatch = match;
-    updateMatchUI(match);
-    
-    alert('Errore aggiornamento stato: ' + error.message);
+    console.error('Errore toggle match:', error);
+    alert("Errore durante l'aggiornamento: " + error.message);
   }
 }
 
@@ -2636,7 +2634,7 @@ function renderMVPTab(casaData, trasfData, match) {
   const isFinished = match.STATO_PARTITA === "FINITA";
   const currentMVP = match.MVP;
   
-  // 🔥 SE NON È LIVE O FINITA, MOSTRA MESSAGGIO
+  // 🔥 CASO 1: Partita non iniziata o in pausa → MVP non disponibile
   if (!isLive && !isFinished) {
     container.innerHTML = `
       <div style="text-align:center;padding:40px;color:#888;grid-column:1/-1">
@@ -2647,10 +2645,12 @@ function renderMVPTab(casaData, trasfData, match) {
     return;
   }
   
-  // 🔥 SE È FINITA, MOSTRA MVP VINCITORE
+  // 🔥 CASO 2: Partita FINITA con MVP calcolato → MOSTRA VINCITORE
   if (isFinished && currentMVP) {
     const renderMVPWinner = (players, teamName) => {
-      const mvpPlayer = players.find(p => p.NOME === currentMVP);
+      const mvpPlayer = players.find(p => 
+        String(p.NOME || "").toUpperCase() === String(currentMVP).toUpperCase()
+      );
       if (!mvpPlayer) return "";
       
       const photoHtml = mvpPlayer.FOTO_ID 
@@ -2667,22 +2667,54 @@ function renderMVPTab(casaData, trasfData, match) {
       `;
     };
     
+    // Mostra vincitore SOLO nella colonna della sua squadra
+    const casaHasMVP = casaPlayers.some(p => 
+      String(p.NOME || "").toUpperCase() === String(currentMVP).toUpperCase()
+    );
+    const trasfHasMVP = trasfPlayers.some(p => 
+      String(p.NOME || "").toUpperCase() === String(currentMVP).toUpperCase()
+    );
+    
     container.innerHTML = `
       <div class="players-col">
         <div class="players-team">${(casaData?.team?.NOME_SQUADRA || match.SQUADRA_CASA || "").toUpperCase()}</div>
-        ${renderMVPWinner(casaPlayers, match.SQUADRA_CASA)}
+        ${casaHasMVP ? renderMVPWinner(casaPlayers, match.SQUADRA_CASA) : ''}
       </div>
       <div class="players-col">
         <div class="players-team">${(trasfData?.team?.NOME_SQUADRA || match.SQUADRA_TRASFERTA || "").toUpperCase()}</div>
-        ${renderMVPWinner(trasfPlayers, match.SQUADRA_TRASFERTA)}
+        ${trasfHasMVP ? renderMVPWinner(trasfPlayers, match.SQUADRA_TRASFERTA) : ''}
       </div>
     `;
     return;
   }
   
-  // 🔥 SE È LIVE, MOSTRA SELEZIONE PER VOTARE
-  const renderMVPVoteList = (players) => {
+  // 🔥 CASO 3: Partita FINITA ma MVP non ancora calcolato (backend in elaborazione)
+  if (isFinished && !currentMVP) {
+    container.innerHTML = `
+      <div style="text-align:center;padding:40px;color:#888;grid-column:1/-1">
+        <div style="font-size:3rem;margin-bottom:16px">⏳</div>
+        <div>Calcolo MVP in corso...</div>
+        <div style="font-size:12px;margin-top:8px;opacity:0.7">Attendere prego</div>
+      </div>
+    `;
+    return;
+  }
+  
+  // 🔥 CASO 4: Partita LIVE → Mostra interfaccia di voto
+  const renderMVPVoteList = (players, teamId) => {
     if (!players.length) return `<div style="text-align:center;padding:20px;color:#888">Nessun giocatore</div>`;
+    
+    // 🔥 Carica voto esistente per questa squadra
+    const savedVote = localStorage.getItem(`mvp_vote_${match.MATCH_ID}`);
+    let selectedPlayerId = null;
+    if (savedVote) {
+      try {
+        const voteData = JSON.parse(savedVote);
+        if (voteData.playerId) {
+          selectedPlayerId = voteData.playerId;
+        }
+      } catch(e) {}
+    }
     
     let html = "<div class='players-list'>";
     players.forEach(p => {
@@ -2690,33 +2722,43 @@ function renderMVPTab(casaData, trasfData, match) {
         ? `<img src="${getCachedImage(p.FOTO_ID, 40)}" alt="${p.NOME}">`
         : `<div class="player-avatar-fallback">👤</div>`;
       
+      // 🔥 Evidenzia se è il giocatore già votato
+      const isSelected = String(p.PLAYER_ID) === String(selectedPlayerId);
+      const bgStyle = isSelected ? 'background:#fef3c7;opacity:1;' : '';
+      const checkOpacity = isSelected ? 'opacity:1' : 'opacity:0';
+      
       html += `
-    <div class="player-row mvp-vote-row" 
-         onclick="voteMVP('${p.PLAYER_ID}', '${p.NOME.replace(/'/g, "\\'")}', event)"
-         style="cursor:pointer;transition:all 0.3s;">
-      <div class="player-avatar">${photoHtml}</div>
-      <div class="player-name">
-        ${(p.NOME || "").toUpperCase()}
-      </div>
-      <div class="vote-check" style="opacity:0;font-size:1.2rem;">✓</div>
-    </div>
-  `;
+        <div class="player-row mvp-vote-row" 
+             onclick="voteMVP('${p.PLAYER_ID}', '${p.NOME.replace(/'/g, "\\'")}', event)"
+             style="cursor:pointer;transition:all 0.3s;${bgStyle}">
+          <div class="player-avatar">${photoHtml}</div>
+          <div class="player-name">
+            ${(p.NOME || "").toUpperCase()}
+          </div>
+          <div class="vote-check" style="${checkOpacity};font-size:1.2rem;color:#059669;font-weight:bold;">✓</div>
+        </div>
+      `;
     });
     html += "</div>";
     return html;
   };
   
   container.innerHTML = `
+    <div style="text-align:center;padding:12px;background:#fff5e6;border-radius:8px;margin-bottom:16px;grid-column:1/-1">
+      <div style="font-size:13px;font-weight:700;color:#b45309">🎫 VOTA IL MVP</div>
+      <div style="font-size:11px;color:#92400e;margin-top:2px">Clicca sul giocatore per votare</div>
+    </div>
     <div class="players-col">
       <div class="players-team">${(casaData?.team?.NOME_SQUADRA || match.SQUADRA_CASA || "").toUpperCase()}</div>
-      ${renderMVPVoteList(casaPlayers)}
+      ${renderMVPVoteList(casaPlayers, match.CASA_ID)}
     </div>
     <div class="players-col">
       <div class="players-team">${(trasfData?.team?.NOME_SQUADRA || match.SQUADRA_TRASFERTA || "").toUpperCase()}</div>
-      ${renderMVPVoteList(trasfPlayers)}
+      ${renderMVPVoteList(trasfPlayers, match.TRASFERTA_ID)}
     </div>
   `;
 
+  // 🔥 Carica voto esistente dopo il rendering
   setTimeout(() => loadExistingMVPVote(match.MATCH_ID), 50);
 }
 
