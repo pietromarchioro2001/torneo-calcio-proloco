@@ -1672,9 +1672,50 @@ function openMatch(id) {
   });
 }
 
-function renderMatchPage(match) {
+function getSafeMatchData(matchId) {
+  // 1. Cerca nella cache globale matches
+  let match = window.APP_CACHE.matches?.find(m => String(m.MATCH_ID) === String(matchId));
+  
+  // 2. Cerca in matchesById (stato corrente)
+  if (!match) match = window.APP_STATE.matchesById?.[matchId];
+  
+  // 3. Se manca qualcosa (es. LOGO_CASA), recuperiamolo dai dati completi della squadra
+  if (match) {
+    // Controlla squadra Casa
+    if (!match.LOGO_CASA || !match.SQUADRA_CASA) {
+      const casaData = window.APP_CACHE.fullTeams?.[String(match.CASA_ID)];
+      if (casaData?.team) {
+        match.LOGO_CASA = casaData.team.LOGO_FILE_ID;
+        match.SQUADRA_CASA = casaData.team.NOME_SQUADRA;
+      }
+    }
+    
+    // Controlla squadra Trasferta
+    if (!match.LOGO_TRASFERTA || !match.SQUADRA_TRASFERTA) {
+      const trasfData = window.APP_CACHE.fullTeams?.[String(match.TRASFERTA_ID)];
+      if (trasfData?.team) {
+        match.LOGO_TRASFERTA = trasfData.team.LOGO_FILE_ID;
+        match.SQUADRA_TRASFERTA = trasfData.team.NOME_SQUADRA;
+      }
+    }
+  }
+  
+  return match;
+}
 
-  // 🔥 LOGHI SQUADRE
+function renderMatchPage(matchIdRaw) {
+  // 🔥 1. Recupera dati in modo SICURO (Garantisce che Loghi e Nomi ci siano)
+  let match = getSafeMatchData(matchIdRaw);
+  
+  if (!match) {
+    console.error("Match not found in cache:", matchIdRaw);
+    alert("Errore: Dati partita non trovati. Ricarica la pagina.");
+    return;
+  }
+
+  console.log("📦 Rendering partita:", match.MATCH_ID, "Stato:", match.STATO_PARTITA);
+
+  // 🔥 2. Loghi Sicuri (Fallback se mancano ancora)
   const logoCasa = match.LOGO_CASA 
     ? `<img src="${getCachedImage(match.LOGO_CASA, 120)}" alt="${match.SQUADRA_CASA}" onerror="this.style.display='none'">`
     : `<div style="width:70px;height:70px;border-radius:50%;background:#f0f0f0;display:flex;align-items:center;justify-content:center;font-size:1.5rem">⚽</div>`;
@@ -1683,33 +1724,15 @@ function renderMatchPage(match) {
     ? `<img src="${getCachedImage(match.LOGO_TRASFERTA, 120)}" alt="${match.SQUADRA_TRASFERTA}" onerror="this.style.display='none'">`
     : `<div style="width:70px;height:70px;border-radius:50%;background:#f0f0f0;display:flex;align-items:center;justify-content:center;font-size:1.5rem">⚽</div>`;
   
-  // 🔥 STATI PARTITA
+  // 🔥 Nomi Sicuri
+  const nomeCasa = (match.SQUADRA_CASA || "SQUADRA A").toUpperCase();
+  const nomeTrasf = (match.SQUADRA_TRASFERTA || "SQUADRA B").toUpperCase();
+
+  // 🔥 Stati
   const isLive = match.STATO_PARTITA === "LIVE";
   const isFinished = match.STATO_PARTITA === "FINITA";
   const isGroupStage = !match.FASE || match.FASE === "GIRONI";
   const finalStageStarted = window.APP_CACHE.meta?.finalStageStarted;
-
-   // Carica eventi DALLA CACHE subito
-  const cachedEvents = window.APP_CACHE.eventsByMatch?.[match.MATCH_ID] || [];
-  console.log('📦 Eventi cached in renderMatchPage:', cachedEvents.length);
-  
-  // ... (resto del rendering) ...
-  
-  // 🔥 Renderizza eventi immediatamente dalla cache
-  renderEvents(cachedEvents, match);
-  
-  // Poi aggiorna dal backend (non blocca)
-  ApiClient.getEventsAdmin(match.MATCH_ID)
-    .then(freshEvents => {
-      window.APP_CACHE.eventsByMatch[match.MATCH_ID] = freshEvents;
-      CacheManager.save(window.APP_CACHE);
-      
-      // Aggiorna UI solo se ci sono nuovi eventi
-      if (freshEvents.length !== cachedEvents.length) {
-        renderEvents(freshEvents, match);
-      }
-    })
-    .catch(err => console.error('Errore refresh eventi:', err));
   
   // 🔥 TAB MVP
   let mvpTabHtml = "";
@@ -1721,17 +1744,9 @@ function renderMatchPage(match) {
     mvpTabHtml = `<div class="mt-btn disabled" data-tab="mvp">MVP</div>`;
   }
   
-  // 🔥 PULSANTI EVENTI
+  // 🔥 PULSANTI EVENTI (Abilitati solo se LIVE)
   const canAddEvents = isLive && (match.FASE === "FINALI" || !finalStageStarted);
-  console.log('🔍 DEBUG EVENTI:', {
-  isLive,
-  fase: match.FASE,
-  finalStageStarted,
-  canAddEvents,
-  matchId: match.MATCH_ID
-});
-
-const eventBtnDisabled = !canAddEvents ? "style=\"opacity:0.5;pointer-events:none;cursor:not-allowed\"" : "";
+  const eventBtnDisabled = !canAddEvents ? "style=\"opacity:0.5;pointer-events:none;cursor:not-allowed\"" : "";
   
   // 🔥 PULSANTE INIZIA/CONCLUDI
   const canToggleMatch = match.FASE === "FINALI" || !finalStageStarted || !isFinished;
@@ -1742,7 +1757,7 @@ const eventBtnDisabled = !canAddEvents ? "style=\"opacity:0.5;pointer-events:non
       <div class="match-header-big">
         <div class="team-big left">
           ${logoCasa}
-          <div class="team-big-name">${(match.SQUADRA_CASA || "").toUpperCase()}</div>
+          <div class="team-big-name">${nomeCasa}</div>
         </div>
         <div class="match-center">
           <div class="match-controls-top">
@@ -1756,7 +1771,7 @@ const eventBtnDisabled = !canAddEvents ? "style=\"opacity:0.5;pointer-events:non
           <div class="match-status" id="matchStatus"></div>
         </div>
         <div class="team-big right">
-          <div class="team-big-name">${(match.SQUADRA_TRASFERTA || "").toUpperCase()}</div>
+          <div class="team-big-name">${nomeTrasf}</div>
           ${logoTrasf}
         </div>
       </div>
@@ -1790,7 +1805,7 @@ const eventBtnDisabled = !canAddEvents ? "style=\"opacity:0.5;pointer-events:non
             <!-- Titolo Cronaca -->
             <div class="cronaca-title center"><span>CRONACA</span></div>
 
-            <!-- 🔥 MVP BANNER (Sotto la cronaca, prima degli eventi) -->
+            <!-- 🔥 MVP BANNER -->
             <div id="mvpBanner" class="mvp-banner">
               <div class="mvp-title">🏆 MVP DEL MATCH</div>
               <div class="mvp-name"></div>
@@ -1829,22 +1844,36 @@ const eventBtnDisabled = !canAddEvents ? "style=\"opacity:0.5;pointer-events:non
     </div>
   `;
   
-  // Aggiorna UI stato
+  // 🔥 3. Aggiorna UI stato (LIVE/FINITA)
   updateMatchUI(match);
   
-  // Carica eventi
-  const events = window.APP_CACHE.events?.filter(e => e.MATCH_ID === match.MATCH_ID) || [];
-  renderEvents(events, match);
+  // 🔥 4. Renderizza EVENTI SUBITO dalla cache (Istantaneo)
+  const cachedEvents = window.APP_CACHE.eventsByMatch?.[match.MATCH_ID] || [];
+  console.log('📦 Eventi renderizzati subito:', cachedEvents.length);
+  renderEvents(cachedEvents, match);
   
-  // Carica giocatori (async)
+  // 🔥 5. Carica Giocatori (Async)
   loadPlayersForMatch(match);
   
-  // MVP banner se finita
+  // 🔥 6. MVP Banner se finita
   if (isFinished) {
     updateMVPBanner(match);
   }
   
+  // 🔥 7. Salva stato corrente
   window.APP_STATE.lastMatch = match;
+  
+  // 🔥 8. Refresh eventi dal backend (Aggiorna se ci sono novità in background)
+  ApiClient.getEventsAdmin(match.MATCH_ID)
+    .then(freshEvents => {
+      if (freshEvents && freshEvents.length !== cachedEvents.length) {
+        console.log('🔄 Aggiornamento eventi da backend...');
+        window.APP_CACHE.eventsByMatch[match.MATCH_ID] = freshEvents;
+        CacheManager.save(window.APP_CACHE);
+        renderEvents(freshEvents, match);
+      }
+    })
+    .catch(err => console.error('Errore refresh eventi:', err));
 }
 
 function renderEvents(events, match) {
@@ -1937,69 +1966,75 @@ function openEventMenu(ev, eventId, matchId) {
 async function deleteEvent(eventId, matchId) {
   if (!confirm("Eliminare evento?")) return;
   
-  const events = window.APP_CACHE.eventsByMatch?.[matchId] || [];
-  const event = events.find(e => String(e.EVENT_ID) === String(eventId));
-  if (!event) { alert("Evento non trovato"); return; }
+  // 🔥 1. Forziamo tutto a STRINGA per il confronto
+  const strEventId = String(eventId);
+  const strMatchId = String(matchId);
   
-  // 🔥 Rimuovi evento
-  window.APP_CACHE.eventsByMatch[matchId] = events.filter(e => String(e.EVENT_ID) !== String(eventId));
+  const events = window.APP_CACHE.eventsByMatch?.[strMatchId] || [];
   
-  // 🔥 Ricalcola punteggio
+  // 🔥 2. Filtriamo via l'evento
+  const newEvents = events.filter(e => String(e.EVENT_ID) !== strEventId);
+  
+  // Se non ha trovato nulla da rimuovere, usciamo
+  if (newEvents.length === events.length) {
+    console.warn("Evento non trovato in cache locale:", strEventId);
+  }
+
+  // 🔥 3. Aggiorniamo la cache subito
+  window.APP_CACHE.eventsByMatch[strMatchId] = newEvents;
+  CacheManager.save(window.APP_CACHE);
+  
+  // 🔥 4. Ricalcolo Punteggio Locale
   const match = window.APP_STATE.lastMatch;
-  if (match && event.TIPO === 'GOAL') {
-    const isCasa = String(event.TEAM_ID) === String(match.CASA_ID);
-    if (isCasa) {
-      match.GOL_CASA = Math.max(0, (Number(match.GOL_CASA) || 0) - 1);
-    } else {
-      match.GOL_TRASFERTA = Math.max(0, (Number(match.GOL_TRASFERTA) || 0) - 1);
-    }
+  if (match && String(match.MATCH_ID) === strMatchId) {
     
-    // 🔥 Aggiorna cache globale MATCHES
-    if (window.APP_CACHE.matches) {
-      const matchIndex = window.APP_CACHE.matches.findIndex(m => String(m.MATCH_ID) === String(matchId));
-      if (matchIndex >= 0) {
-        window.APP_CACHE.matches[matchIndex] = {
-          ...window.APP_CACHE.matches[matchIndex],
-          GOL_CASA: match.GOL_CASA,
-          GOL_TRASFERTA: match.GOL_TRASFERTA
-        };
-        CacheManager.save(window.APP_CACHE);
+    // Troviamo l'evento eliminato per sapere se era un gol
+    const deletedEvent = events.find(e => String(e.EVENT_ID) === strEventId);
+    
+    if (deletedEvent && deletedEvent.TIPO === 'GOAL') {
+      const isCasa = String(deletedEvent.TEAM_ID) === String(match.CASA_ID);
+      
+      if (isCasa) {
+        match.GOL_CASA = Math.max(0, (Number(match.GOL_CASA) || 0) - 1);
+      } else {
+        match.GOL_TRASFERTA = Math.max(0, (Number(match.GOL_TRASFERTA) || 0) - 1);
+      }
+      
+      // 🔥 AGGIORNA ANCHE LA CACHE GLOBALE (IMPORTANTE PER LA HOME)
+      if (window.APP_CACHE.matches) {
+        const idx = window.APP_CACHE.matches.findIndex(m => String(m.MATCH_ID) === strMatchId);
+        if (idx >= 0) {
+          window.APP_CACHE.matches[idx].GOL_CASA = match.GOL_CASA;
+          window.APP_CACHE.matches[idx].GOL_TRASFERTA = match.GOL_TRASFERTA;
+          CacheManager.save(window.APP_CACHE);
+        }
+      }
+      
+      // Aggiorna UI Punteggio
+      const scoreEl = document.querySelector(".score-big");
+      if (scoreEl) {
+        scoreEl.textContent = `${match.GOL_CASA} - ${match.GOL_TRASFERTA}`;
       }
     }
     
-    // 🔥 Aggiorna matchesById
-    if (window.APP_STATE.matchesById[matchId]) {
-      window.APP_STATE.matchesById[matchId] = {
-        ...window.APP_STATE.matchesById[matchId],
-        GOL_CASA: match.GOL_CASA,
-        GOL_TRASFERTA: match.GOL_TRASFERTA
-      };
-    }
+    // 🔥 5. Ridisegna subito la lista eventi (senza quello cancellato)
+    renderEvents(newEvents, match);
     
-    const scoreEl = document.querySelector(".score-big");
-    if (scoreEl) {
-      scoreEl.textContent = `${match.GOL_CASA} - ${match.GOL_TRASFERTA}`;
-    }
+    // Aggiorna tab giocatori
+    renderPlayersTab(
+      window.APP_CACHE.fullTeams?.[String(match.CASA_ID)],
+      window.APP_CACHE.fullTeams?.[String(match.TRASFERTA_ID)],
+      match
+    );
   }
   
-  CacheManager.save(window.APP_CACHE);
-  
-  // 🔥 Aggiorna UI
-  renderEvents(window.APP_CACHE.eventsByMatch[matchId], match);
-  renderPlayersTab(
-    window.APP_CACHE.fullTeams?.[String(match.CASA_ID)],
-    window.APP_CACHE.fullTeams?.[String(match.TRASFERTA_ID)],
-    match
-  );
-  
-  // 🔥 Backend
+  // 🔥 6. Chiamata al Backend (Fire and forget)
   try {
-    await ApiClient.deleteEventAdmin(eventId);
+    await ApiClient.deleteEventAdmin(strEventId);
     refreshStandingsDebounced(500);
   } catch (error) {
-    console.error('Errore eliminazione:', error);
-    alert('Errore: ' + error.message);
-    location.reload();
+    console.error('Errore eliminazione backend:', error);
+    alert('Errore eliminazione: ' + error.message);
   }
 }
 
@@ -2287,9 +2322,12 @@ async function saveEvent(team) {
     if (matchIndex >= 0) {
       // 🔥 Aggiorna la partita nella cache globale con il nuovo punteggio
       window.APP_CACHE.matches[matchIndex] = {
-        ...window.APP_CACHE.matches[matchIndex],
+        ...window.APP_CACHE.matches[matchIndex], // 🔥 MANTIENI TUTTI I DATI ESISTENTI (Loghi, Nomi)
         GOL_CASA: match.GOL_CASA,
-        GOL_TRASFERTA: match.GOL_TRASFERTA
+        GOL_TRASFERTA: match.GOL_TRASFERTA,
+        MATCH_ID: match.MATCH_ID, // Assicurati che l'ID ci sia
+        CASA_ID: match.CASA_ID,
+        TRASFERTA_ID: match.TRASFERTA_ID
       };
       CacheManager.save(window.APP_CACHE);
       console.log('✅ Cache globale matches aggiornata:', window.APP_CACHE.matches[matchIndex]);
