@@ -5,7 +5,7 @@
 const CONFIG = {
   // 🔥 SOSTITUISCI CON IL TUO URL APPS SCRIPT WEB APP
 
-  BACKEND_URL: 'https://script.google.com/macros/s/AKfycbzJEgnP7KPzpsGg2fFx6wBbnjUbmAYeTHumKtfwb-50Mt6gS42VCsoAe0GeaKa27jE/exec',
+  BACKEND_URL: 'https://script.google.com/macros/s/AKfycbxWMaj-jOfFQv4lIECs55GAkngLQqYfdqiwYRd_69mv0S3BTPjF9JbpWTZToy86v3Qv/exec',
   
   API_TIMEOUT: 30000,
   CACHE_VERSION: 'v3.0',
@@ -2131,6 +2131,13 @@ function updateMatchUI(match) {
 }
 
 function updateMVPBanner(match) {
+  // 🔥 DEBUG LOG
+  console.log('🏆 MVP Banner debug:', {
+    stato: match.STATO_PARTITA,
+    mvp: match.MVP,
+    matchId: match.MATCH_ID
+  });
+  
   const mvpBox = document.getElementById("mvpBanner");
   if (!mvpBox) return;
   
@@ -2505,12 +2512,13 @@ async function toggleMatch() {
         // Serve per aggiornare il campo MVP nel match object
         setTimeout(async () => {
           const finalData = await ApiClient.getMatchFull(freshMatch.MATCH_ID);
+          console.log('📥 Dati dopo finalizeMVP:', finalData?.match?.MVP); 
           if (finalData?.match) {
             window.APP_STATE.lastMatch = finalData.match;
             renderMatchPage(finalData.match); // Ridisegna tutto (Banner + Corone)
             refreshStandingsDebounced(1000);
           }
-        }, 1500); // Aspetta 1.5s per dare tempo al server di calcolare
+        }, 2500); // Aspetta 1.5s per dare tempo al server di calcolare
       } else {
         refreshStandingsDebounced(500);
       }
