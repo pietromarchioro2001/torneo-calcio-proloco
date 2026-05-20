@@ -405,29 +405,30 @@ function renderToolbar(active) {
     </div>`;
 }
 
-/**
- * Trova la partita LIVE o la prossima partita e genera la card
- */
 function getNextMatchCard() {
+  // 🔥 LEGGI SUBITO DALLA CACHE (istantaneo)
   const matches = window.APP_CACHE.matches || [];
+  const eventsByMatch = window.APP_CACHE.eventsByMatch || {};
+  
   const now = new Date();
   const nowStr = formatLocalDate(now);
-  const nowTime = String(now.getHours()).padStart(2, '0') + ':' + String(now.getMinutes()).padStart(2, '0');
   
-  // 🔥 1. Cerca partita LIVE
+  // 🔥 1. Cerca partita LIVE nella cache
   const liveMatch = matches.find(m => m.STATO_PARTITA === "LIVE");
   if (liveMatch) {
-    return renderHomeMatchCard(liveMatch, true);
+    // 🔥 Aggiorna punteggio con eventi dalla cache
+    const liveEvents = eventsByMatch[liveMatch.MATCH_ID] || [];
+    const updatedMatch = updateMatchScoreFromEvents(liveMatch, liveEvents);
+    return renderHomeMatchCard(updatedMatch, true);
   }
   
-  // 🔥 2. Cerca prossima partita (data >= oggi)
+  // 🔥 2. Cerca prossima partita
   const todayMatches = matches
     .filter(m => {
       const matchDate = String(m.DATA || "").slice(0, 10);
       return matchDate >= nowStr && m.STATO_PARTITA !== "FINITA";
     })
     .sort((a, b) => {
-      // Ordina per data poi ora
       const dateA = String(a.DATA || "").slice(0, 10) + (a.ORA || "00:00");
       const dateB = String(b.DATA || "").slice(0, 10) + (b.ORA || "00:00");
       return dateA.localeCompare(dateB);
@@ -437,7 +438,7 @@ function getNextMatchCard() {
     return renderHomeMatchCard(todayMatches[0], false);
   }
   
-  // 🔥 3. Nessuna partita → placeholder
+  // 🔥 3. Placeholder
   return `
     <div class="home-next-match" style="opacity:0.5;pointer-events:none;cursor:default">
       <div class="home-match-label">NESSUNA PARTITA IN PROGRAMMA</div>
@@ -451,6 +452,27 @@ function getNextMatchCard() {
       </div>
     </div>
   `;
+}
+
+// 🔥 Helper: calcola punteggio dagli eventi cached
+function updateMatchScoreFromEvents(match, events) {
+  const goals = events.filter(e => e.TIPO === 'GOAL');
+  let golCasa = 0;
+  let golTrasferta = 0;
+  
+  goals.forEach(g => {
+    if (String(g.TEAM_ID) === String(match.CASA_ID)) {
+      golCasa++;
+    } else if (String(g.TEAM_ID) === String(match.TRASFERTA_ID)) {
+      golTrasferta++;
+    }
+  });
+  
+  return {
+    ...match,
+    GOL_CASA: golCasa,
+    GOL_TRASFERTA: golTrasferta
+  };
 }
 
 /**
@@ -1523,72 +1545,107 @@ function openMatch(id) {
   const myNonce = ++window.APP_STATE._matchRequestNonce;
   setCurrentMatch(id); 
   
-  // 🔥 1. Ottieni dati dalla cache PRIMA (completi)
-  const cached = window.APP_STATE.matchesById[id] || 
-                 window.APP_CACHE.matches?.find(m => String(m.MATCH_ID) === String(id));
+  console.log('🔍 Apertura match:', id);
   
-  if (cached) {
-    // 🔥 Forza tutti i campi a STRINGA per consistenza
-    const safeCached = {
-      ...cached,
-      MATCH_ID: String(cached.MATCH_ID),
-      CASA_ID: String(cached.CASA_ID),
-      TRASFERTA_ID: String(cached.TRASFERTA_ID),
-      GOL_CASA: Number(cached.GOL_CASA) || 0,
-      GOL_TRASFERTA: Number(cached.GOL_TRASFERTA) || 0
-    };
+  // 🔥 1. LEGGI SUBITO DALLA CACHE (istantaneo)
+  const cachedMatch = window.APP_STATE.matchesById[id] || 
+                      window.APP_CACHE.matches?.find(m => String(m.MATCH_ID) === String(id));
+  
+  const cachedEvents = window.APP_CACHE.eventsByMatch?.[id] || [];
+  
+  if (cachedMatch) {
+    console.log('✅ Match dalla cache:', cachedMatch);
+    console.log('✅ Eventi dalla cache:', cachedEvents.length);
     
-    renderMatchPage(safeCached); 
-    updateMatchUI(safeCached);
-    window.APP_STATE.lastMatch = safeCached; // 🔥 Salva SUBITO
+    // 🔥 Aggiorna punteggio dagli eventi cached
+    const matchWithScore = updateMatchScoreFromEvents(cachedMatch, cachedEvents);
+    
+    // 🔥 MOSTRA SUBITO UI
+    renderMatchPage(matchWithScore);
+    updateMatchUI(matchWithScore);
+    window.APP_STATE.lastMatch = matchWithScore;
+    
+    // 🔥 Renderizza eventi immediatamente
+    renderEvents(cachedEvents, matchWithScore);
+  } else {
+    // Fallback: mostra loading
+    document.getElementById("app").innerHTML = `
+      <div style="display:flex;align-items:center;justify-content:center;height:80vh;">
+        <div style="text-align:center;">
+          <div style="font-size:48px;margin-bottom:20px">⚽</div>
+          <div style="font-size:18px;letter-spacing:2px;">Caricamento partita...</div>
+        </div>
+      </div>
+    `;
   }
   
-  // 🔥 2. Carica dal backend per aggiornamenti
-  ApiClient.getMatchFull(id)
-    .then(res => {
-      if (myNonce !== window.APP_STATE._matchRequestNonce) return;
-      if (!res?.match || String(res.match.MATCH_ID) !== String(id)) return;
-      
-      // 🔥 3. MERGE: usa cached come base, aggiorna con backend
-      const match = {
-        ...cached, // Base dalla cache (ha tutti i campi)
-        ...res.match, // Sovrascrivi con dati freschi
-        // 🔥 Forza tipi corretti
-        MATCH_ID: String(res.match.MATCH_ID || id),
-        CASA_ID: String(res.match.CASA_ID || cached?.CASA_ID),
-        TRASFERTA_ID: String(res.match.TRASFERTA_ID || cached?.TRASFERTA_ID),
-        SQUADRA_CASA: res.match.SQUADRA_CASA || cached?.SQUADRA_CASA,
-        SQUADRA_TRASFERTA: res.match.SQUADRA_TRASFERTA || cached?.SQUADRA_TRASFERTA,
-        GOL_CASA: Number(res.match.GOL_CASA || cached?.GOL_CASA || 0),
-        GOL_TRASFERTA: Number(res.match.GOL_TRASFERTA || cached?.GOL_TRASFERTA || 0),
-        STATO_PARTITA: res.match.STATO_PARTITA || cached?.STATO_PARTITA || "PROGRAMMATA"
+  // 🔥 2. AGGIORNA DAL BACKEND (background, non blocca)
+  Promise.all([
+    ApiClient.getMatchFull(id).catch(err => {
+      console.error('❌ Errore caricamento match:', err);
+      return null;
+    }),
+    ApiClient.getEventsAdmin(id).catch(err => {
+      console.error('❌ Errore caricamento eventi:', err);
+      return [];
+    })
+  ])
+  .then(([matchRes, eventsRes]) => {
+    if (myNonce !== window.APP_STATE._matchRequestNonce) return;
+    
+    // 🔥 Aggiorna cache con dati freschi
+    if (matchRes?.match) {
+      const freshMatch = {
+        ...cachedMatch,
+        ...matchRes.match,
+        MATCH_ID: String(matchRes.match.MATCH_ID),
+        CASA_ID: String(matchRes.match.CASA_ID || cachedMatch?.CASA_ID),
+        TRASFERTA_ID: String(matchRes.match.TRASFERTA_ID || cachedMatch?.TRASFERTA_ID),
+        GOL_CASA: Number(matchRes.match.GOL_CASA || 0),
+        GOL_TRASFERTA: Number(matchRes.match.GOL_TRASFERTA || 0)
       };
       
-      console.log('✅ Match merge:', match);
+      // Aggiorna matchesById
+      window.APP_STATE.matchesById[freshMatch.MATCH_ID] = freshMatch;
       
-      // 🔥 Aggiorna UI solo se i dati sono cambiati significativamente
-      if (match.GOL_CASA !== window.APP_STATE.lastMatch?.GOL_CASA ||
-          match.GOL_TRASFERTA !== window.APP_STATE.lastMatch?.GOL_TRASFERTA ||
-          match.STATO_PARTITA !== window.APP_STATE.lastMatch?.STATO_PARTITA) {
+      // Aggiorna cache globale
+      if (!window.APP_CACHE.matches) window.APP_CACHE.matches = [];
+      const idx = window.APP_CACHE.matches.findIndex(m => String(m.MATCH_ID) === String(id));
+      if (idx >= 0) {
+        window.APP_CACHE.matches[idx] = freshMatch;
+      } else {
+        window.APP_CACHE.matches.push(freshMatch);
+      }
+      CacheManager.save(window.APP_CACHE);
+      
+      // 🔥 Aggiorna UI solo se ci sono cambiamenti significativi
+      const freshEvents = eventsRes || [];
+      const matchWithScore = updateMatchScoreFromEvents(freshMatch, freshEvents);
+      
+      if (matchWithScore.GOL_CASA !== window.APP_STATE.lastMatch?.GOL_CASA ||
+          matchWithScore.GOL_TRASFERTA !== window.APP_STATE.lastMatch?.GOL_TRASFERTA ||
+          matchWithScore.STATO_PARTITA !== window.APP_STATE.lastMatch?.STATO_PARTITA) {
         
-        updateMatchUI(match);
-        const score = document.querySelector(".score-big");
-        if (score) {
-          score.textContent = `${match.GOL_CASA} - ${match.GOL_TRASFERTA}`;
+        console.log('🔄 Aggiornamento UI da backend:', matchWithScore);
+        updateMatchUI(matchWithScore);
+        const scoreEl = document.querySelector(".score-big");
+        if (scoreEl) {
+          scoreEl.textContent = `${matchWithScore.GOL_CASA} - ${matchWithScore.GOL_TRASFERTA}`;
         }
+        
+        renderEvents(freshEvents, matchWithScore);
       }
       
-      // 🔥 Salva lastMatch COMPLETO e consistente
-      window.APP_STATE.lastMatch = match;
-      
-    })
-    .catch(err => {
-      console.error('❌ Errore caricamento match:', err);
-      // Fallback: usa comunque la cache se disponibile
-      if (cached) {
-        window.APP_STATE.lastMatch = cached;
-      }
-    });
+      window.APP_STATE.lastMatch = matchWithScore;
+    }
+  })
+  .catch(err => {
+    console.error('❌ Errore aggiornamento backend:', err);
+    // Fallback: usa comunque la cache
+    if (cachedMatch) {
+      window.APP_STATE.lastMatch = cachedMatch;
+    }
+  });
 }
 
 function renderMatchPage(match) {
@@ -1607,6 +1664,28 @@ function renderMatchPage(match) {
   const isFinished = match.STATO_PARTITA === "FINITA";
   const isGroupStage = !match.FASE || match.FASE === "GIRONI";
   const finalStageStarted = window.APP_CACHE.meta?.finalStageStarted;
+
+   // Carica eventi DALLA CACHE subito
+  const cachedEvents = window.APP_CACHE.eventsByMatch?.[match.MATCH_ID] || [];
+  console.log('📦 Eventi cached in renderMatchPage:', cachedEvents.length);
+  
+  // ... (resto del rendering) ...
+  
+  // 🔥 Renderizza eventi immediatamente dalla cache
+  renderEvents(cachedEvents, match);
+  
+  // Poi aggiorna dal backend (non blocca)
+  ApiClient.getEventsAdmin(match.MATCH_ID)
+    .then(freshEvents => {
+      window.APP_CACHE.eventsByMatch[match.MATCH_ID] = freshEvents;
+      CacheManager.save(window.APP_CACHE);
+      
+      // Aggiorna UI solo se ci sono nuovi eventi
+      if (freshEvents.length !== cachedEvents.length) {
+        renderEvents(freshEvents, match);
+      }
+    })
+    .catch(err => console.error('Errore refresh eventi:', err));
   
   // 🔥 TAB MVP
   let mvpTabHtml = "";
@@ -2883,7 +2962,7 @@ function bootAdminApp() {
   showHome();
   renderToolbar("home");
   
-  // 🔥 TIMEOUT MASSIMO 3 secondi (anche se i dati non sono pronti)
+  // 🔥 TIMEOUT MASSIMO 3 secondi
   let dataLoaded = false;
   const maxTimeout = setTimeout(() => {
     if (!dataLoaded) {
@@ -2898,13 +2977,13 @@ function bootAdminApp() {
     setTimeout(() => loader?.remove(), 300);
   }
   
-  // Carica dati
+  // 🔥 Carica dati iniziali
   ApiClient.getInitialData()
     .then(data => {
       dataLoaded = true;
       clearTimeout(maxTimeout);
       
-      console.log('✅ Dati caricati:', data);
+      console.log('✅ Dati iniziali caricati:', data);
       
       if (data) {
         window.APP_CACHE = {
@@ -2918,7 +2997,12 @@ function bootAdminApp() {
           meta: { ...window.APP_CACHE.meta, initialized: true }
         };
         
-        hydrateMatches(window.APP_CACHE.matches || []); 
+        // 🔥 Popola matchesById
+        hydrateMatches(window.APP_CACHE.matches || []);
+        
+        // 🔥 Precarica eventi per partite recenti/LIVE
+        preloadRecentEvents();
+        
         CacheManager.save(window.APP_CACHE);
         
         const currentPath = window.location.hash || "#home";
@@ -2927,10 +3011,9 @@ function bootAdminApp() {
         else if (currentPath.includes("standings")) renderStandings(window.APP_CACHE.standings || {});
       }
       
-      // Nascondi loader
       hideLoader();
       
-      // Carica flag fase finale (background, non blocca)
+      // Carica flag fase finale
       ApiClient.isFinalStageStarted()
         .then(started => {
           if (!window.APP_CACHE.meta) window.APP_CACHE.meta = {};
@@ -2941,7 +3024,7 @@ function bootAdminApp() {
     .catch(error => {
       console.error('❌ Errore caricamento:', error);
       dataLoaded = true;
-      hideLoader(); // Nascondi loader anche in errore
+      hideLoader();
     });
   
   window.addEventListener("error", e => console.error("Global error:", e.error||e.message));
@@ -2951,6 +3034,44 @@ function bootAdminApp() {
   });
   
   console.log("✅ App booted");
+}
+
+// 🔥 Nuova funzione: precarica eventi per partite recenti
+function preloadRecentEvents() {
+  const matches = window.APP_CACHE.matches || [];
+  
+  // Trova partite LIVE o finite nelle ultime 24 ore
+  const now = new Date();
+  const recentMatches = matches.filter(m => {
+    if (m.STATO_PARTITA === "LIVE") return true;
+    
+    if (m.DATA) {
+      const matchDate = parseLocalDate(m.DATA);
+      if (matchDate) {
+        const diffHours = (now - matchDate) / (1000 * 60 * 60);
+        return diffHours < 24; // Ultime 24 ore
+      }
+    }
+    return false;
+  });
+  
+  console.log('📥 Precaricamento eventi per', recentMatches.length, 'partite');
+  
+  // Carica eventi in background
+  recentMatches.forEach(m => {
+    if (!window.APP_CACHE.eventsByMatch) window.APP_CACHE.eventsByMatch = {};
+    
+    // Se non abbiamo già eventi, caricali
+    if (!window.APP_CACHE.eventsByMatch[m.MATCH_ID]) {
+      ApiClient.getEventsAdmin(m.MATCH_ID)
+        .then(events => {
+          window.APP_CACHE.eventsByMatch[m.MATCH_ID] = events;
+          CacheManager.save(window.APP_CACHE);
+          console.log(`✅ Eventi caricati per ${m.MATCH_ID}:`, events.length);
+        })
+        .catch(err => console.error(`❌ Errore eventi ${m.MATCH_ID}:`, err));
+    }
+  });
 }
 
 function preloadAssets() {
