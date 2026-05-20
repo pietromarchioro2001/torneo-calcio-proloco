@@ -568,15 +568,18 @@ body{
   margin-top: 2px;
 }
 
-/* ===== HOME CARD - LIVE IN LINEA ===== */
-/* ===== HOME CARD - LIVE SOTTO AL RISULTATO ===== */
 .home-live-badge {
   display: flex;
-  flex-direction: column;  /* 🔥 Verticale, non orizzontale */
+  flex-direction: column;  /* Risultato sopra, live+dot sotto */
   align-items: center;
-  gap: 2px;
-  justify-content: center;
-  margin-top: 2px;
+  gap: 4px;
+}
+
+/* 🔥 Wrapper per LIVE e punto sulla stessa riga */
+.home-live-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;  /* Spazio tra LIVE e il punto */
 }
 
 .home-live-text {
@@ -585,15 +588,16 @@ body{
   color: #dc2626;
   letter-spacing: 1px;
   animation: liveTextPulse 2s infinite;
+  margin: 0; /* Rimuovi margini extra */
 }
 
 .home-live-dot {
-  width: 5px;
-  height: 5px;
+  width: 6px;
+  height: 6px;
   background: #dc2626;
   border-radius: 50%;
   animation: liveDotPulse 1.5s infinite;
-  display: inline-block;
+  margin: 0; /* Rimuovi margini extra */
 }
 
 @keyframes liveTextPulse {
