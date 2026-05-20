@@ -5,7 +5,7 @@
 const CONFIG = {
   // 🔥 SOSTITUISCI CON IL TUO URL APPS SCRIPT WEB APP
 
-  BACKEND_URL: 'https://script.google.com/macros/s/AKfycbzO2kDZmuwLdyk5Jxj-RXpc5v_I9bPNs8y8uvXR3GlWLZSqaRI0xy6h0PYhqo-V7H6j/exec',
+  BACKEND_URL: 'https://script.google.com/macros/s/AKfycbzef6pzoQM5yAerp0EJTGdb9nv45F7Uh3OWWPvjeEP0HkOHgpkJ6gwlNAhJuondRCPa/exec',
   
   API_TIMEOUT: 30000,
   CACHE_VERSION: 'v3.0',
@@ -2532,17 +2532,47 @@ async function toggleMatch() {
         // Chiama il backend per calcolare il vincitore
         await ApiClient.finalizeMVP(freshMatch.MATCH_ID);
         
-        // 🔥 RILEGGI I DATI DOPO IL CALCOLO MVP
-        // Serve per aggiornare il campo MVP nel match object
-        setTimeout(async () => {
-          const finalData = await ApiClient.getMatchFull(freshMatch.MATCH_ID);
-          console.log('📥 Dati dopo finalizeMVP:', finalData?.match?.MVP); 
-          if (finalData?.match) {
-            window.APP_STATE.lastMatch = finalData.match;
-            renderMatchPage(finalData.match); // Ridisegna tutto (Banner + Corone)
-            refreshStandingsDebounced(1000);
-          }
-        }, 2500); // Aspetta 1.5s per dare tempo al server di calcolare
+        // 🔥 POLLING INTELLIGENTE: controlla se MVP è pronto
+let attempts = 0;
+const maxAttempts = 8; // Massimo 8 tentativi (circa 2 secondi totali)
+
+const pollForMVP = async () => {
+  attempts++;
+  
+  try {
+    const finalData = await ApiClient.getMatchFull(freshMatch.MATCH_ID);
+    console.log(`🔍 Tentativo ${attempts}/${maxAttempts} - MVP:`, finalData?.match?.MVP);
+    
+    // Se MVP è stato calcolato, aggiorna UI
+    if (finalData?.match?.MVP) {
+      console.log('✅ MVP trovato!', finalData.match.MVP);
+      window.APP_STATE.lastMatch = finalData.match;
+      renderMatchPage(finalData.match);
+      refreshStandingsDebounced(500);
+      return; // Esci dal polling
+    }
+    
+    // Se non è pronto e non abbiamo superato il max, riprova
+    if (attempts < maxAttempts) {
+      setTimeout(pollForMVP, 400); // Riprova dopo 400ms
+    } else {
+      // Timeout raggiunto, aggiorna comunque con i dati disponibili
+      console.warn('⚠️ MVP non trovato dopo', maxAttempts, 'tentativi');
+      if (finalData?.match) {
+        window.APP_STATE.lastMatch = finalData.match;
+        renderMatchPage(finalData.match);
+      }
+    }
+  } catch (error) {
+    console.error('❌ Errore nel polling MVP:', error);
+    if (attempts < maxAttempts) {
+      setTimeout(pollForMVP, 500);
+    }
+  }
+};
+
+// Avvia il polling subito
+pollForMVP();
       } else {
         refreshStandingsDebounced(500);
       }
