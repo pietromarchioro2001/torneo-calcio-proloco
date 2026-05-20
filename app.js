@@ -2719,9 +2719,7 @@ function renderMVPTab(casaData, trasfData, match) {
     </div>
   `;
 
-  setTimeout(() => {
-    loadExistingMVPVote(match.MATCH_ID);
-  }, 200);
+  setTimeout(() => loadExistingMVPVote(match.MATCH_ID), 50);
 }
 
 async function selectMVP(playerId, playerName) {
@@ -2756,14 +2754,14 @@ async function voteMVP(playerId, playerName, event) {
     return;
   }
   
-  // 🔥 Genera/recupera ID univoco dispositivo
+  // 🔥 1. GENERA/RECUPERA ID DISPOSITIVO
   let voterId = localStorage.getItem('mvp_voter_id');
   if (!voterId) {
     voterId = 'voter_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
     localStorage.setItem('mvp_voter_id', voterId);
   }
   
-  // 🔥 SALVA SU LOCALSTORAGE (persistenza)
+  // 🔥 2. SALVA LOCALSTORAGE (immediato, sincrono)
   const voteData = {
     matchId: match.MATCH_ID,
     playerId: playerId,
@@ -2771,35 +2769,27 @@ async function voteMVP(playerId, playerName, event) {
     voterId: voterId,
     timestamp: Date.now()
   };
-  
   localStorage.setItem(`mvp_vote_${match.MATCH_ID}`, JSON.stringify(voteData));
   
-  // 🔥 INVIA SUBITO AL BACKEND (MVP_VOTI sheet)
-  try {
-    await ApiClient.saveMVPVote(match.MATCH_ID, voterId, playerId);
-    console.log(`✅ Voto salvato: ${playerName}`);
-  } catch (error) {
-    console.error('❌ Errore salvataggio voto:', error);
-    // Non mostrare errore all'utente, tanto è su localStorage
-  }
-  
-  // 🔥 AGGIORNA UI - Mostra spunta
+  // 🔥 3. MOSTRA SPUNTA IMMEDIATA (nessuna attesa)
   updateMVPVoteUI(playerId);
+  
+  // 🔥 4. INVIA AL BACKEND (background, non bloccante)
+  ApiClient.saveMVPVote(match.MATCH_ID, voterId, playerId)
+    .then(() => console.log(`✅ Voto salvato backend: ${playerName}`))
+    .catch(err => console.warn('⚠️ Errore backend (voto locale ok):', err));
 }
 
 function updateMVPVoteUI(selectedPlayerId) {
-  // Rimuovi tutte le spunte
+  // Rimuovi spunte esistenti
   document.querySelectorAll('.mvp-vote-row').forEach(row => {
     row.style.background = '';
     row.style.opacity = '0.6';
     const check = row.querySelector('.vote-check');
-    if (check) {
-      check.style.opacity = '0';
-      check.textContent = '';
-    }
+    if (check) check.style.opacity = '0';
   });
   
-  // Aggiungi spunta al giocatore selezionato
+  // Mostra spunta immediata
   const selectedRow = document.querySelector(`.mvp-vote-row[onclick*="'${selectedPlayerId}'"]`);
   if (selectedRow) {
     selectedRow.style.background = '#fef3c7';
@@ -2814,25 +2804,17 @@ function updateMVPVoteUI(selectedPlayerId) {
   }
 }
 
-// 🔥 CARICA VOTO ESISTENTE DA LOCALSTORAGE
 function loadExistingMVPVote(matchId) {
   const savedVote = localStorage.getItem(`mvp_vote_${matchId}`);
   if (savedVote) {
     try {
       const voteData = JSON.parse(savedVote);
-      console.log('📥 Voto precedente trovato:', voteData.playerName);
-      
-      // Attendi che il DOM sia pronto
-      setTimeout(() => {
-        updateMVPVoteUI(voteData.playerId);
-      }, 100);
-      
-      return voteData;
+      console.log('📥 Voto precedente:', voteData.playerName);
+      updateMVPVoteUI(voteData.playerId);
     } catch (e) {
       console.error('Errore lettura voto:', e);
     }
   }
-  return null;
 }
 
 function updateLocalMVPCounter() {
