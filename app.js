@@ -1576,10 +1576,21 @@ function openMatch(id) {
                  window.APP_CACHE.matches?.find(m => String(m.MATCH_ID) === String(id));
   
   if (cached) {
-    console.log('✅ Match dalla cache:', cached);
+    console.log('✅ Match dalla cache:', {
+      id: cached.MATCH_ID,
+      casaId: cached.CASA_ID,
+      trasfertaId: cached.TRASFERTA_ID,
+      squadraCasa: cached.SQUADRA_CASA,
+      squadraTrasferta: cached.SQUADRA_TRASFERTA
+    });
+    
+    // 🔥 Assicurati che gli ID ci siano
+    if (!cached.CASA_ID || !cached.TRASFERTA_ID) {
+      console.error('❌ Match cached senza CASA_ID o TRASFERTA_ID!');
+    }
     
     // 🔥 Renderizza SUBITO con i dati cached
-    renderMatchPage(cached);  // ← Passa l'oggetto, non l'ID!
+    renderMatchPage(cached);
     updateMatchUI(cached);
     window.APP_STATE.lastMatch = cached;
     
@@ -2080,9 +2091,26 @@ function updateMVPBanner(match) {
 function addEvent(team) {
   const match = window.APP_STATE.lastMatch;
   
+  // 🔥 DEBUG COMPLETO
+  console.log('🔍 DEBUG addEvent:', {
+    matchExists: !!match,
+    matchId: match?.MATCH_ID,
+    casaId: match?.CASA_ID,
+    trasfertaId: match?.TRASFERTA_ID,
+    squadraCasa: match?.SQUADRA_CASA,
+    squadraTrasferta: match?.SQUADRA_TRASFERTA,
+    statoPartita: match?.STATO_PARTITA
+  });
+  
   // 🔥 Controllo stato partita
   if (!match) {
     alert("Partita non caricata");
+    return;
+  }
+  
+  if (!match.CASA_ID || !match.TRASFERTA_ID) {
+    console.error('❌ CASA_ID o TRASFERTA_ID mancanti!', match);
+    alert("Errore: dati squadra non completi. Ricarica la pagina.");
     return;
   }
   
