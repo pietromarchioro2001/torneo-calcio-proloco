@@ -3924,14 +3924,44 @@ body{
 }
 
 .bracket-score.live {
-  color: #dc2626;
+  color: #8c1d2c !important; /* Granata più scuro e intenso */
   font-weight: 900;
-  animation: scorePulse 2s infinite;
+  animation: scorePulseLive 1s infinite; /* Più veloce e visibile */
+  text-shadow: 0 0 10px rgba(140, 29, 44, 0.5);
 }
 
 @keyframes scorePulse {
   0%, 100% { opacity: 1; transform: scale(1); }
   50% { opacity: 0.7; transform: scale(1.05); }
+}
+
+@keyframes scorePulseLive {
+  0%, 100% { 
+    opacity: 1; 
+    transform: scale(1);
+    text-shadow: 0 0 10px rgba(140, 29, 44, 0.5);
+  }
+  50% { 
+    opacity: 0.6; 
+    transform: scale(1.15);
+    text-shadow: 0 0 20px rgba(140, 29, 44, 0.8);
+  }
+}
+
+/* Bordo granata pulsante per card in LIVE */
+.bracket-match.live-match {
+  border: 2px solid #8c1d2c !important;
+  box-shadow: 0 0 20px rgba(140, 29, 44, 0.4);
+  animation: borderPulseLive 2s infinite;
+}
+
+@keyframes borderPulseLive {
+  0%, 100% {
+    box-shadow: 0 0 20px rgba(140, 29, 44, 0.4);
+  }
+  50% {
+    box-shadow: 0 0 35px rgba(140, 29, 44, 0.7);
+  }
 }
 
 .bracket-score.scheduled {
