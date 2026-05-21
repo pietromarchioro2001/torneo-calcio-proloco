@@ -671,6 +671,44 @@ body{
   }
 }
 
+/* ============================================
+   🔥 STILE CARD LIVE SULLA HOME
+   ============================================ */
+
+/* Bordo Granata e Ombra quando è LIVE */
+.home-next-match.live-card {
+  border: 2px solid var(--granata) !important;
+  box-shadow: 0 0 15px rgba(122, 30, 44, 0.25) !important;
+  background: #fff;
+}
+
+/* Allineamento Risultato con i Nomi */
+/* Spostiamo il blocco centrale verso il BASSO (valore positivo)
+   così il Punteggio (che sta sopra) scende e si allinea ai Nomi.
+   Il LIVE finirà automaticamente sotto. */
+.home-next-match.live-card .home-match-center {
+  transform: translateY(4px); /* Regola questo valore se necessario */
+}
+
+/* Risultato in Granata e più evidente */
+.home-next-match.live-card .home-score {
+  color: var(--granata) !important;
+  font-weight: 900;
+  font-size: 18px; /* Leggermente più grande */
+}
+
+/* Scritta LIVE in Granata */
+.home-next-match.live-card .home-live-text {
+  color: var(--granata) !important;
+  font-weight: 800;
+  font-size: 10px;
+}
+
+/* Pallino LIVE in Granata */
+.home-next-match.live-card .home-live-dot {
+  background: var(--granata) !important;
+}
+
 /* =============================================================================================
                                            SQUADRE
 ===============================================================================================*/
