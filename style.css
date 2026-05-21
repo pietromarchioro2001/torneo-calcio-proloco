@@ -3836,7 +3836,7 @@ body{
 /* 🔥 FORZA BORDO ORO SULLA FINALE (Anche se placeholder) */
 .bracket-match.final-match,
 .bracket-placeholder.final-match {
-  border: 2px solid #d8ab2f !important;
+  border: 2px solid #d4af37 !important;  /* Oro scuro elegante */
 }
 
 .live-indicator {
