@@ -2512,36 +2512,47 @@ async function toggleMatch() {
   const match = window.APP_STATE.lastMatch;
   if (!match) return;
   
-  // Determina il nuovo stato
   const newStatus = match.STATO_PARTITA === "LIVE" ? "FINITA" : "LIVE";
   
-  // Aggiorna UI localmente subito (per reattività)
+  // 🔥 1. AGGIORNA STATO LOCALE E UI SUBITO (Istantaneo)
+  // Questo succede PRIMA di qualsiasi chiamata al server
   match.STATO_PARTITA = newStatus;
   window.APP_STATE.lastMatch = match;
+  
+  // Aggiorna il pulsante INIZIO/CONCLUDI e lo stato
   updateMatchUI(match);
   
-  const btn = document.querySelector(".start-btn");
-  if (btn) {
-    btn.textContent = newStatus === "LIVE" ? "CONCLUDI" : "INIZIA";
-    btn.classList.toggle("active", newStatus === "LIVE");
+  // 🔥 DISABILITA PULSANTI EVENTI SUBITO
+  // Cerchiamo i bottoni con il testo specifico e li disabilitiamo visivamente
+  document.querySelectorAll('.phase-btn').forEach(btn => {
+    if (btn.textContent.trim().includes('+ EVENTO')) {
+      btn.style.opacity = '0.5';
+      btn.style.pointerEvents = 'none';
+      btn.style.cursor = 'not-allowed';
+    }
+  });
+
+  const mainBtn = document.querySelector(".start-btn");
+  if (mainBtn) {
+    mainBtn.textContent = newStatus === "LIVE" ? "CONCLUDI" : "INIZIA";
+    mainBtn.classList.toggle("active", newStatus === "LIVE");
   }
-  
+
+  let freshMatch = null;
+
   try {
-    // 1. Invia stato al backend
+    // 2. Invia stato al backend
     await ApiClient.updateMatchStatus(match.MATCH_ID, newStatus);
     
-    // 2. 🔥 FONDAMENTALE: Riscarica i dati della partita DAL BACKEND
-    // Questo serve per riavere CASA_ID/TRASFERTA_ID puliti ed evitare che gli eventi vadano a destra
+    // 3. Aggiorna dati match dal backend
     const fullData = await ApiClient.getMatchFull(match.MATCH_ID);
     
     if (fullData?.match) {
-      const freshMatch = fullData.match;
-      
-      // Aggiorna lo stato globale con i dati freschi e completi
+      freshMatch = fullData.match;
       window.APP_STATE.lastMatch = freshMatch;
       window.APP_STATE.matchesById[freshMatch.MATCH_ID] = freshMatch;
       
-      // Aggiorna la cache locale
+      // Aggiorna cache locale
       if (window.APP_CACHE.matches) {
         const idx = window.APP_CACHE.matches.findIndex(m => m.MATCH_ID === freshMatch.MATCH_ID);
         if (idx >= 0) {
@@ -2550,70 +2561,80 @@ async function toggleMatch() {
         }
       }
       
-      // 3. Rendi la pagina con i dati SICURI (risolve il problema eventi a destra)
-      renderMatchPage(freshMatch);
+      // Aggiorna banner MVP se già disponibile
+      if (freshMatch.MVP) {
+         updateMVPBanner(freshMatch);
+      }
       
-      // 4. Se siamo in FINITA, attiva il calcolo MVP
-      if (newStatus === "FINITA") {
-        // Mostra un feedback visivo (opzionale)
-        console.log("🏆 Partita conclusa. Calcolo MVP in corso...");
-        
-        // Invia i voti locali (se la logica è quella discussa prima)
-        await submitAllMVPVotes(freshMatch.MATCH_ID);
-        
-        // Chiama il backend per calcolare il vincitore
-        await ApiClient.finalizeMVP(freshMatch.MATCH_ID);
-        
-        // 🔥 POLLING INTELLIGENTE: controlla se MVP è pronto
-let attempts = 0;
-const maxAttempts = 8; // Massimo 8 tentativi (circa 2 secondi totali)
-
-const pollForMVP = async () => {
-  attempts++;
-  
-  try {
-    const finalData = await ApiClient.getMatchFull(freshMatch.MATCH_ID);
-    console.log(`🔍 Tentativo ${attempts}/${maxAttempts} - MVP:`, finalData?.match?.MVP);
-    
-    // Se MVP è stato calcolato, aggiorna UI
-    if (finalData?.match?.MVP) {
-      console.log('✅ MVP trovato!', finalData.match.MVP);
-      window.APP_STATE.lastMatch = finalData.match;
-      renderMatchPage(finalData.match);
-      refreshStandingsDebounced(500);
-      return; // Esci dal polling
+      // Aggiorna giocatori (per mostrare eventuali corone MVP)
+      loadPlayersForMatch(freshMatch);
     }
     
-    // Se non è pronto e non abbiamo superato il max, riprova
-    if (attempts < maxAttempts) {
-      setTimeout(pollForMVP, 400); // Riprova dopo 400ms
+    // 4. Se FINITA, gestisci MVP in background (non bloccante)
+    if (newStatus === "FINITA") {
+      console.log("🏆 Partita conclusa. Gestione MVP in background...");
+      
+      // Eseguiamo tutto in un blocco separato per non bloccare la UI
+      (async () => {
+        try {
+          if (!freshMatch) return;
+          
+          // A. Invia tutti i voti locali
+          await submitAllMVPVotes(freshMatch.MATCH_ID);
+          
+          // B. Calcola MVP
+          await ApiClient.finalizeMVP(freshMatch.MATCH_ID);
+          
+          // C. Polling leggero per aggiornare l'UI quando l'MVP è pronto
+          pollForMVPUpdate(freshMatch.MATCH_ID);
+        } catch (err) {
+          console.error("Errore background MVP:", err);
+        }
+      })();
     } else {
-      // Timeout raggiunto, aggiorna comunque con i dati disponibili
-      console.warn('⚠️ MVP non trovato dopo', maxAttempts, 'tentativi');
-      if (finalData?.match) {
-        window.APP_STATE.lastMatch = finalData.match;
-        renderMatchPage(finalData.match);
-      }
-    }
-  } catch (error) {
-    console.error('❌ Errore nel polling MVP:', error);
-    if (attempts < maxAttempts) {
-      setTimeout(pollForMVP, 500);
-    }
-  }
-};
-
-// Avvia il polling subito
-pollForMVP();
-      } else {
-        refreshStandingsDebounced(500);
-      }
+      refreshStandingsDebounced(500);
     }
     
   } catch (error) {
     console.error('Errore toggle match:', error);
     alert("Errore durante l'aggiornamento: " + error.message);
+    
+    // Rollback UI se fallisce
+    match.STATO_PARTITA = newStatus === "FINITA" ? "LIVE" : "FINITA";
+    updateMatchUI(match);
   }
+}
+
+// Funzione helper per aggiornare l'UI quando l'MVP è pronto
+function pollForMVPUpdate(matchId) {
+  let attempts = 0;
+  const maxAttempts = 20; // Tenta per max 20 secondi
+  
+  const check = async () => {
+    attempts++;
+    try {
+      const data = await ApiClient.getMatchFull(matchId);
+      if (data?.match?.MVP) {
+        console.log('🏆 MVP trovato:', data.match.MVP);
+        window.APP_STATE.lastMatch = data.match;
+        
+        // Aggiorna Banner MVP
+        updateMVPBanner(data.match);
+        
+        // Aggiorna Tab Giocatori (per mostrare la coroncina)
+        loadPlayersForMatch(data.match);
+        
+        // Aggiorna Classifica
+        refreshStandingsDebounced(500);
+      } else if (attempts < maxAttempts) {
+        setTimeout(check, 1000); // Riprova ogni secondo
+      }
+    } catch (e) {
+      console.error('Errore polling MVP', e);
+    }
+  };
+  
+  setTimeout(check, 1000); // Primo controllo dopo 1 secondo
 }
 
 function loadPlayersForMatch(match) {
