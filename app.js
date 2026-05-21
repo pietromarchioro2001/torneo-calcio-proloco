@@ -3323,7 +3323,7 @@ function renderBracketMatch(match, cls="") {
   }
   
   return `
-    <div class="bracket-match ${cls} ${isFinished ? 'concluded' : ''}" onclick="openMatch('${match.matchId}')">
+   <div class="bracket-match ${cls} ${isFinished ? 'concluded' : ''} ${isLive ? 'live-match' : ''}" onclick="openMatch('${match.matchId}')">
       <div class="bracket-team ${casaClass}">
         ${logoCasa}
         <span>${(match.casa?.nome || "TBD").toUpperCase()}</span>
