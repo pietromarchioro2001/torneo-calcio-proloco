@@ -3075,6 +3075,9 @@ function renderStandings(data) {
 }
 
 function renderGironeTable(title, teams) {
+  // 🔥 CONTROLLA SE FASE FINALE È INIZIATA
+  const finalStageStarted = window.APP_CACHE.meta?.finalStageStarted || false;
+  
   let html = `<div class="girone-block"><div class="girone-title">${Sanitizer.html(title)}</div><table class="standings-table"><thead><tr>
     <th></th><th class="team-col">SQUADRA</th><th>PT</th><th>PG</th><th>V</th><th>P</th><th>S</th><th>GF</th><th>GS</th><th>DR</th></tr></thead><tbody>`;
   
@@ -3084,14 +3087,17 @@ function renderGironeTable(title, teams) {
       ? `<img src="${getCachedImage(t.logo, 48)}" class="standings-logo" alt="${t.nome}" onerror="this.style.display='none'">`
       : `<div style="font-size:1.2rem">⚽</div>`;
     
-    html += `<tr class="${idx<2?"qualified":""} ${t.live?"live-team-row":""}">
+    // 🔥 MOSTRA ANIMAZIONE LIVE SOLO SE FASE FINALE NON È INIZIATA
+    const showLive = t.live && !finalStageStarted;
+    
+    html += `<tr class="${idx<2?"qualified":""} ${showLive?"live-team-row":""}">
       <td class="pos-col">${idx+1}</td><td class="team-col">
         <div class="standings-team" onclick="openTeamEditor('${Sanitizer.attr(t.id)}')">
           <div class="standings-logo-wrap">${logoHtml}</div>
-          <div class="standings-team-name ${t.live?"live-team-name":""}">${Sanitizer.html(t.nome)}</div>
-          ${t.live?`<div class="live-dot"></div>`:""}
+          <div class="standings-team-name ${showLive?"live-team-name":""}">${Sanitizer.html(t.nome)}</div>
+          ${showLive?`<div class="live-dot"></div>`:""}
         </div></td>
-      <td class="pts ${t.live?"live-pts":""}">${t.pt}</td><td>${t.pg}</td><td>${t.v}</td><td>${t.p}</td><td>${t.s}</td><td>${t.gf}</td><td>${t.gs}</td><td>${t.dr}</td></tr>`;
+      <td class="pts ${showLive?"live-pts":""}">${t.pt}</td><td>${t.pg}</td><td>${t.v}</td><td>${t.p}</td><td>${t.s}</td><td>${t.gf}</td><td>${t.gs}</td><td>${t.dr}</td></tr>`;
   });
   
   html += `</tbody></table></div>`; 
