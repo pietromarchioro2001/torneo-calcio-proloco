@@ -1884,12 +1884,13 @@ function renderMatchPage(match) {
               </div>
             </div>
             
-            <div class="cronaca-title center"><span>CRONACA</span></div>
+            <div class="cronaca-title center"><span>CRONACA</span>
             
             <div id="mvpBanner" class="mvp-banner">
               <div class="mvp-title">🏆 MVP DEL MATCH</div>
               <div class="mvp-name"></div>
             </div>
+          </div>
             
             <div id="eventsTimeline" class="events-timeline">
               <div id="eventsContent"></div>
