@@ -652,8 +652,8 @@ function renderTeams() {
   let html = "<table class='teams-table'><tr><th></th><th>SQUADRA</th><th></th></tr>";
   
   teams.forEach(t => {
-    const logoHtml = t.LOGO_FILE_ID 
-      ? `<img src="${getCachedImage(t.LOGO_FILE_ID, 65)}" class="team-mini-logo" alt="${t.NOME_SQUADRA}" onerror="this.style.display='none';this.parentElement.innerHTML='⚽'">`
+    const logoHtml = t.LOGO_ID 
+      ? `<img src="${getCachedImage(t.LOGO_ID, 65)}" class="team-mini-logo" alt="${t.NOME_SQUADRA}" onerror="this.style.display='none';this.parentElement.innerHTML='⚽'">`
       : `<div style="font-size:1.2rem">⚽</div>`;
     
     html += `
@@ -726,7 +726,7 @@ async function saveTeam() {
     const res = await ApiClient.saveTeamAdmin(window.APP_STATE.currentTeamId, name, "", girone);
     // Aggiorna cache locale
     if (res?.id) {
-      const newTeam = { TEAM_ID: res.id, NOME_SQUADRA: name, GIRONE: girone, LOGO_FILE_ID: null };
+      const newTeam = { TEAM_ID: res.id, NOME_SQUADRA: name, GIRONE: girone, LOGO_ID: null };
       window.APP_CACHE.teams = [...(window.APP_CACHE.teams || []), newTeam];
       CacheManager.save(window.APP_CACHE);
     }
@@ -810,8 +810,8 @@ function renderTeamEditor(team, players = []) {
   // Logo
   const logoBox = document.getElementById("teamLogoBox");
   if (logoBox) {
-    if (team.LOGO_FILE_ID) {
-      logoBox.innerHTML = `<img src="${getCachedImage(team.LOGO_FILE_ID, 512)}" class="team-header-logo" alt="Logo" onclick="teamLogoAction()">`;
+    if (team.LOGO_ID) {
+      logoBox.innerHTML = `<img src="${getCachedImage(team.LOGO_ID, 512)}" class="team-header-logo" alt="Logo" onclick="teamLogoAction()">`;
     } else {
       logoBox.innerHTML = `<div class="empty-logo" onclick="uploadNewLogo()">⚽</div>`;
     }
@@ -894,7 +894,7 @@ function teamLogoAction() {
   const teamId = window.APP_STATE.currentTeamId;
   const team = window.APP_CACHE.fullTeams?.[teamId]?.team;
   
-  if (!team?.LOGO_FILE_ID) {
+  if (!team?.LOGO_ID) {
     uploadNewLogo();
     return;
   }
@@ -904,9 +904,9 @@ function teamLogoAction() {
   modal.innerHTML = `
     <div class="modalBox">
       <div class="modalTitle">LOGO SQUADRA</div>
-      <img src="${getCachedImage(team.LOGO_FILE_ID, 400)}" style="max-width:100%;border-radius:12px;margin:20px 0;">
+      <img src="${getCachedImage(team.LOGO_ID, 400)}" style="max-width:100%;border-radius:12px;margin:20px 0;">
       <div class="modalActions">
-        <div class="phase-btn secondary" onclick="window.open('https://drive.google.com/file/d/${team.LOGO_FILE_ID}/view', '_blank'); this.closest('.modalOverlay').remove()">APRI SU DRIVE</div>
+        <div class="phase-btn secondary" onclick="window.open('https://drive.google.com/file/d/${team.LOGO_ID}/view', '_blank'); this.closest('.modalOverlay').remove()">APRI SU DRIVE</div>
         <div class="phase-btn" onclick="this.closest('.modalOverlay').remove(); uploadNewLogo()">CAMBIA LOGO</div>
       </div>
     </div>
@@ -941,7 +941,7 @@ async function uploadNewLogo() {
       
       // Aggiorna cache
       if (window.APP_CACHE.fullTeams?.[teamId]?.team) {
-        window.APP_CACHE.fullTeams[teamId].team.LOGO_FILE_ID = newId?.fileId || newId;
+        window.APP_CACHE.fullTeams[teamId].team.LOGO_ID = newId?.fileId || newId;
         CacheManager.save(window.APP_CACHE);
       }
       
@@ -1728,7 +1728,7 @@ function getSafeMatchData(matchId) {
     const casaData = window.APP_CACHE.fullTeams?.[String(match.CASA_ID)];
     if (casaData?.team) {
       match.SQUADRA_CASA = casaData.team.NOME_SQUADRA || match.SQUADRA_CASA;
-      match.LOGO_CASA = casaData.team.LOGO_FILE_ID || match.LOGO_CASA;
+      match.LOGO_CASA = casaData.team.LOGO_ID || match.LOGO_CASA;
     }
   }
   
@@ -1736,7 +1736,7 @@ function getSafeMatchData(matchId) {
     const trasfData = window.APP_CACHE.fullTeams?.[String(match.TRASFERTA_ID)];
     if (trasfData?.team) {
       match.SQUADRA_TRASFERTA = trasfData.team.NOME_SQUADRA || match.SQUADRA_TRASFERTA;
-      match.LOGO_TRASFERTA = trasfData.team.LOGO_FILE_ID || match.LOGO_TRASFERTA;
+      match.LOGO_TRASFERTA = trasfData.team.LOGO_ID || match.LOGO_TRASFERTA;
     }
   }
   
@@ -1795,7 +1795,7 @@ function renderMatchPage(match) {
     const casaData = window.APP_CACHE.fullTeams?.[String(match.CASA_ID)];
     if (casaData?.team) {
       match.SQUADRA_CASA = casaData.team.NOME_SQUADRA || "CASA";
-      match.LOGO_CASA = casaData.team.LOGO_FILE_ID || "";
+      match.LOGO_CASA = casaData.team.LOGO_ID || "";
     }
   }
   
@@ -1803,7 +1803,7 @@ function renderMatchPage(match) {
     const trasfData = window.APP_CACHE.fullTeams?.[String(match.TRASFERTA_ID)];
     if (trasfData?.team) {
       match.SQUADRA_TRASFERTA = trasfData.team.NOME_SQUADRA || "TRASFERTA";
-      match.LOGO_TRASFERTA = trasfData.team.LOGO_FILE_ID || "";
+      match.LOGO_TRASFERTA = trasfData.team.LOGO_ID || "";
     }
   }
   
