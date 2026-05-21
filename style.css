@@ -3020,20 +3020,27 @@ body{
 }
 
 #mvpBanner {
-  position: relative; /* 🔥 Torna nel flusso normale */
-  left: auto;
-  top: auto;
-  transform: none;
-  width: 100%;
-  max-width: 400px;
-  margin: 16px auto 0; /* 🔥 16px (~1cm) dalla riga cronaca */
-  padding: 12px;
+  position: absolute;
+  top: 45px;       /* 🔥 Distanza fissa dal titolo CRONACA */
+  left: 50%;       /* 🔥 Centrato orizzontalmente */
+  transform: translateX(-50%);
+  z-index: 20;     /* Sopra alla linea della cronaca */
+  
+  display: none;   /* Nascosto di default */
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  
+  min-width: 240px;
+  max-width: 90%;
+  padding: 12px 20px;
+  
   background: #fffbeb;
   border: 2px solid #fbbf24;
   border-radius: 12px;
-  text-align: center;
-  display: none; /* Nascosto di default */
-  box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  
+  transition: opacity 0.3s ease;
 }
 
 #mvpBanner.show {
@@ -3041,6 +3048,7 @@ body{
   flex-direction: column;
   align-items: center;
   justify-content: center;
+  animation: mvpAppear 0.5s ease forwards;
 }
 
 /* Stile interno MVP */
@@ -3058,6 +3066,16 @@ body{
   color: #78350f;
   font-weight: 800;
   text-transform: uppercase;
+}
+
+.teams-events.has-mvp #eventsTimeline {
+  padding-top: 80px; /* Spazio per il banner */
+}
+
+/* Animazione */
+@keyframes mvpAppear {
+  from { opacity: 0; transform: translate(-50%, -20px); }
+  to { opacity: 1; transform: translate(-50%, 0); }
 }
 
 /* ============================================
