@@ -2189,9 +2189,7 @@ function updateMatchUI(match) {
 
 function updateMVPBanner(match) {
   const mvpBox = document.getElementById("mvpBanner");
-  const eventsContainer = document.querySelector(".teams-events"); // Prendiamo il contenitore padre
-  
-  if (!mvpBox || !eventsContainer) return;
+  if (!mvpBox) return;
   
   const isFinished = match.STATO_PARTITA === "FINITA";
   const mvpName = match.MVP;
@@ -2203,16 +2201,10 @@ function updateMVPBanner(match) {
     `;
     mvpBox.classList.add("show");
     mvpBox.style.display = "flex";
-    
-    // 🔥 Aggiungiamo la classe per spingere giù gli eventi
-    eventsContainer.classList.add("has-mvp");
   } else {
     mvpBox.innerHTML = "";
     mvpBox.classList.remove("show");
     mvpBox.style.display = "none";
-    
-    // 🔥 Rimuoviamo la classe: gli eventi tornano su
-    eventsContainer.classList.remove("has-mvp");
   }
 }
 
