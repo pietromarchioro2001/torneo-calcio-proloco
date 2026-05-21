@@ -2660,8 +2660,11 @@ function renderPlayersTab(casaData, trasfData, match) {
   const isFinished = match.STATO_PARTITA === "FINITA";
   const mvpName = match.MVP;
   
-  // Ottieni eventi per badge
-  const events = window.APP_CACHE.events?.filter(e => e.MATCH_ID === match.MATCH_ID) || [];
+  // 🔥 FIX: Usa la cache locale specifica della partita per aggiornamenti immediati
+  // Prima leggeva da window.APP_CACHE.events (lista globale) che non si aggiornava subito
+  // Ora legge da eventsByMatch che contiene gli eventi appena inseriti
+  const events = window.APP_CACHE.eventsByMatch?.[match.MATCH_ID] || [];
+  
   const eventMap = {};
   events.forEach(e => {
     if (e.PLAYER_ID) {
