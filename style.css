@@ -3928,11 +3928,7 @@ body{
   font-weight: 900;
   animation: scorePulseLive 1s infinite; /* Più veloce e visibile */
   text-shadow: 0 0 10px rgba(140, 29, 44, 0.5);
-}
-
-@keyframes scorePulse {
-  0%, 100% { opacity: 1; transform: scale(1); }
-  50% { opacity: 0.7; transform: scale(1.05); }
+  transform-origin: right center;
 }
 
 @keyframes scorePulseLive {
@@ -3943,8 +3939,8 @@ body{
   }
   50% { 
     opacity: 0.6; 
-    transform: scale(1.15);
-    text-shadow: 0 0 20px rgba(140, 29, 44, 0.8);
+    transform: scale(1.12);
+    text-shadow: 0 0 18px rgba(140, 29, 44, 0.7);
   }
 }
 
