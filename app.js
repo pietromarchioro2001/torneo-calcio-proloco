@@ -574,6 +574,7 @@ function renderHomeMatchCard(match, isLive) {
 }
 
 function showHome() {
+  window.location.hash = 'home';
   stopStandingsLiveRefresh();
   renderToolbar("home");
   const app = document.getElementById("app"); if (!app) return;
@@ -619,6 +620,7 @@ function showHome() {
 // ============================================================================
 
 function showTeams() {
+   window.location.hash = 'teams';
   stopStandingsLiveRefresh();
   renderToolbar("teams");
   document.getElementById("app").innerHTML = `
@@ -1318,6 +1320,7 @@ function openEventMenu(ev, eventId, matchId) {
 // ============================================================================
 
 function showMatches() {
+  window.location.hash = 'matches';
   stopStandingsLiveRefresh();
   window.APP_STATE.selectedDate = null; window.APP_STATE.userSelectedDate = false;
   renderToolbar("matches"); 
@@ -3049,6 +3052,7 @@ function startStandingsLiveRefresh() {
 }
 
 function showStandings() {
+   window.location.hash = 'standings';
   renderToolbar("standings"); 
   window.APP_STATE._activeStandingsTab = "gironi"; 
   window.APP_STATE._finalStageLoaded = false;
@@ -3397,6 +3401,7 @@ function createFinalStage() {
 // ============================================================================
 
 function bootAdminApp() {
+  // 🔒 Protegge lastMatch da valori incompleti
   Object.defineProperty(window.APP_STATE, 'lastMatch', {
     set(value) {
       if (value && (!value.CASA_ID || !value.TRASFERTA_ID)) {
@@ -3404,17 +3409,13 @@ function bootAdminApp() {
       }
       this._lastMatch = value;
     },
-    get() {
-      return this._lastMatch;
-    }
+    get() { return this._lastMatch; }
   });
 
   console.log("🚀 Booting Torneo Admin - PRODUCTION MODE");
-  
   window.APP_CACHE = CacheManager.load();
-  const loader = document.getElementById("startupLoader");
   
-  // Mostra solo il loader o una schermata bianca finché i dati non arrivano
+  const loader = document.getElementById("startupLoader");
   if (loader) loader.style.display = "flex";
 
   // 🔥 TIMEOUT MASSIMO 3 secondi
@@ -3440,10 +3441,10 @@ function bootAdminApp() {
     .then(data => {
       dataLoaded = true;
       clearTimeout(maxTimeout);
-      
       console.log('✅ Dati iniziali caricati:', data);
       
       if (data) {
+        // 🔥 Merge intelligente della cache
         window.APP_CACHE = {
           ...window.APP_CACHE,
           teams: data.teams || window.APP_CACHE.teams,
@@ -3459,23 +3460,23 @@ function bootAdminApp() {
         preloadRecentEvents();
         CacheManager.save(window.APP_CACHE);
         
-        // 🔥 DECIDI COSA MOSTRARE SOLO ORA CHE I DATI SONO PRONTI
-        const currentPath = window.location.hash || "#home";
+        // 🔥 LEGGI L'HASH E MOSTRA LA PAGINA GIUSTA
+        const currentHash = window.location.hash || "#home";
         
-        if (currentPath.includes("matches")) {
-          showMatches();
-        } else if (currentPath.includes("teams")) {
-          showTeams();
-        } else if (currentPath.includes("standings")) {
-          showStandings();
+        if (currentHash.includes("matches")) {
+          showMatches();  // ← Questa funzione DEVE avere: window.location.hash = 'matches';
+        } else if (currentHash.includes("teams")) {
+          showTeams();    // ← Questa funzione DEVE avere: window.location.hash = 'teams';
+        } else if (currentHash.includes("standings")) {
+          showStandings();// ← Questa funzione DEVE avere: window.location.hash = 'standings';
         } else {
-          // Default: Home
-          showHome();
+          showHome();     // ← Questa funzione DEVE avere: window.location.hash = 'home';
         }
       }
       
       hideLoader();
       
+      // Carica flag fase finale (background)
       ApiClient.isFinalStageStarted()
         .then(started => {
           if (!window.APP_CACHE.meta) window.APP_CACHE.meta = {};
@@ -3490,6 +3491,7 @@ function bootAdminApp() {
       showHome(); // Fallback in caso di errore
     });
   
+  // 🔥 Global error handling
   window.addEventListener("error", e => console.error("Global error:", e.error||e.message));
   window.addEventListener("beforeunload", () => { 
     Cleanup.releaseAll(); 
