@@ -2173,6 +2173,7 @@ body{
 ========================= */
 
 .teams-events{
+  position: relative;
   flex:1;                   /* 🔥 */
   display:flex;
   flex-direction:column;
@@ -3206,24 +3207,27 @@ body{
 
 /* MVP Banner - POSIZIONATO NEL CONTENITORE */
 .mvp-banner {
-  position: relative;  /* ← CAMBIATO: non più absolute */
-  left: auto;
-  top: auto;
-  transform: none;
-  z-index: 10;
-  display: none;
+  position: absolute; /* Togli il banner dal flusso del documento */
+  left: 50%;
+  top: 40px; /* Posizionato in alto, sotto i pulsanti evento */
+  transform: translateX(-50%); /* Centra orizzontalmente */
+  z-index: 20; /* Sopra agli eventi */
+  
+  display: none; /* Nascosto di default */
   flex-direction: column;
   align-items: center;
   justify-content: center;
+  
   min-width: 240px;
-  max-width: 400px;
-  margin: 20px auto;  /* ← CENTRATO orizzontalmente */
-  padding: 16px 24px;
-  background: linear-gradient(135deg, #ffffff 0%, #fffbeb 100%);
+  max-width: 90%;
+  padding: 12px 20px;
+  
+  background: #fffbeb;
   border: 2px solid #fbbf24;
   border-radius: 12px;
-  box-shadow: 0 4px 16px rgba(251, 191, 36, 0.25);
-  animation: mvpAppear 0.5s ease;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  
+  transition: opacity 0.3s ease;
 }
 
 @keyframes mvpAppear {
