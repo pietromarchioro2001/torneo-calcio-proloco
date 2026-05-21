@@ -3437,10 +3437,17 @@ function bootAdminApp() {
         
         CacheManager.save(window.APP_CACHE);
         
+        // 🔥 AGGIUNGI QUESTO: Aggiorna la home se siamo nella home
         const currentPath = window.location.hash || "#home";
-        if (currentPath.includes("matches")) renderMatches();
-        else if (currentPath.includes("teams")) renderTeams();
-        else if (currentPath.includes("standings")) renderStandings(window.APP_CACHE.standings || {});
+        if (currentPath.includes("home") || currentPath === "") {
+          showHome(); // ← RIGENERA LA HOME CON I DATI CARICATI
+        } else if (currentPath.includes("matches")) {
+          renderMatches();
+        } else if (currentPath.includes("teams")) {
+          renderTeams();
+        } else if (currentPath.includes("standings")) {
+          renderStandings(window.APP_CACHE.standings || {});
+        }
       }
       
       hideLoader();
