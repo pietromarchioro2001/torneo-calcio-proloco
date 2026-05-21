@@ -3377,39 +3377,41 @@ function createFinalStage() {
 
 function bootAdminApp() {
   Object.defineProperty(window.APP_STATE, 'lastMatch', {
-  set(value) {
-    if (value && (!value.CASA_ID || !value.TRASFERTA_ID)) {
-      console.error('🚨 TENTATIVO DI SALVARE lastMatch INCOMPLETO:', value);
-      // Non bloccare, ma logga
+    set(value) {
+      if (value && (!value.CASA_ID || !value.TRASFERTA_ID)) {
+        console.error('🚨 TENTATIVO DI SALVARE lastMatch INCOMPLETO:', value);
+      }
+      this._lastMatch = value;
+    },
+    get() {
+      return this._lastMatch;
     }
-    this._lastMatch = value;
-  },
-  get() {
-    return this._lastMatch;
-  }
-});
+  });
+
   console.log("🚀 Booting Torneo Admin - PRODUCTION MODE");
   
   window.APP_CACHE = CacheManager.load();
   const loader = document.getElementById("startupLoader");
   
-  // Mostra subito UI
-  showHome();
-  renderToolbar("home");
-  
+  // Mostra solo il loader o una schermata bianca finché i dati non arrivano
+  if (loader) loader.style.display = "flex";
+
   // 🔥 TIMEOUT MASSIMO 3 secondi
   let dataLoaded = false;
   const maxTimeout = setTimeout(() => {
     if (!dataLoaded) {
       console.warn('⏱️ Timeout caricamento dati - mostro UI comunque');
       hideLoader();
+      showHome(); // Fallback di sicurezza
     }
   }, 3000);
   
   function hideLoader() {
     clearTimeout(maxTimeout);
-    loader?.classList?.add("hide");
-    setTimeout(() => loader?.remove(), 300);
+    if (loader) {
+      loader.classList.add("hide");
+      setTimeout(() => loader.style.display = "none", 300);
+    }
   }
   
   // 🔥 Carica dati iniziali
@@ -3432,30 +3434,27 @@ function bootAdminApp() {
           meta: { ...window.APP_CACHE.meta, initialized: true }
         };
         
-        // 🔥 Popola matchesById
         hydrateMatches(window.APP_CACHE.matches || []);
-        
-        // 🔥 Precarica eventi per partite recenti/LIVE
         preloadRecentEvents();
-        
         CacheManager.save(window.APP_CACHE);
         
-        // 🔥 AGGIUNGI QUESTO: Aggiorna la home se siamo nella home
+        // 🔥 DECIDI COSA MOSTRARE SOLO ORA CHE I DATI SONO PRONTI
         const currentPath = window.location.hash || "#home";
-        if (currentPath.includes("home") || currentPath === "") {
-          showHome(); // ← RIGENERA LA HOME CON I DATI CARICATI
-        } else if (currentPath.includes("matches")) {
-          renderMatches();
+        
+        if (currentPath.includes("matches")) {
+          showMatches();
         } else if (currentPath.includes("teams")) {
-          renderTeams();
+          showTeams();
         } else if (currentPath.includes("standings")) {
-          renderStandings(window.APP_CACHE.standings || {});
+          showStandings();
+        } else {
+          // Default: Home
+          showHome();
         }
       }
       
       hideLoader();
       
-      // Carica flag fase finale
       ApiClient.isFinalStageStarted()
         .then(started => {
           if (!window.APP_CACHE.meta) window.APP_CACHE.meta = {};
@@ -3467,6 +3466,7 @@ function bootAdminApp() {
       console.error('❌ Errore caricamento:', error);
       dataLoaded = true;
       hideLoader();
+      showHome(); // Fallback in caso di errore
     });
   
   window.addEventListener("error", e => console.error("Global error:", e.error||e.message));
