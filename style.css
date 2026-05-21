@@ -2668,39 +2668,6 @@ body{
   font-size:35px;
 }
 
-.mvp-banner{
-  position:absolute;
-
-  left:50%;
-  top:380px;
-
-  transform:translateX(-50%);
-
-  z-index:20;
-
-  display:none;
-  flex-direction:column;
-  align-items:center;
-  justify-content:center;
-
-  min-width:240px;
-
-  padding:12px 22px;
-
-  background:rgba(255,255,255,0.96);
-
-  border:2px solid #d4af37;
-  border-radius:16px;
-
-  backdrop-filter:blur(4px);
-
-  animation:mvpPulse 2s infinite ease-in-out;
-}
-
-.mvp-banner.show{
-  display:flex;
-}
-
 .mvp-title{
   font-size:11px;
   letter-spacing:2px;
@@ -3022,40 +2989,33 @@ body{
 
 #mvpBanner {
   position: absolute;
-  
-  /* Centratura orizzontale perfetta */
   left: 50%;
+  top: 50px;  /* Distanza dal titolo CRONACA */
   transform: translateX(-50%);
-  
-  /* Distanza dal titolo (circa 1 cm = 45px) */
-  top: 45px; 
-  
   z-index: 20;
   
-  display: none; /* Nascosto di default */
+  display: none;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   
   min-width: 240px;
   max-width: 90%;
-  padding: 12px 20px;
+  padding: 14px 24px;
   
   background: #fffbeb;
   border: 2px solid #fbbf24;
   border-radius: 12px;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  box-shadow: 0 4px 16px rgba(251, 191, 36, 0.25);
+  
+  transition: opacity 0.3s ease;
 }
 
 #mvpBanner.show {
   display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
   animation: mvpAppear 0.5s ease forwards;
 }
 
-/* Stile interno MVP */
 #mvpBanner .mvp-title {
   font-size: 11px;
   color: #b45309;
@@ -3066,20 +3026,25 @@ body{
 }
 
 #mvpBanner .mvp-name {
-  font-size: 20px;
+  font-size: 22px;
   color: #78350f;
   font-weight: 800;
   text-transform: uppercase;
 }
 
-.teams-events.has-mvp #eventsTimeline {
-  padding-top: 80px; /* Spazio per il banner */
+.teams-events #eventsTimeline {
+  padding-top: 90px;  /* 🔥 SPAZIO RISERVATO PER IL BANNER */
 }
 
-/* Animazione */
 @keyframes mvpAppear {
-  from { opacity: 0; transform: translateX(-50%) translateY(-10px); }
-  to { opacity: 1; transform: translateX(-50%) translateY(0); }
+  from { 
+    opacity: 0; 
+    transform: translateX(-50%) translateY(-10px); 
+  }
+  to { 
+    opacity: 1; 
+    transform: translateX(-50%) translateY(0); 
+  }
 }
 
 /* ============================================
@@ -3225,46 +3190,6 @@ body{
 
 .mvp-vote-row:hover .vote-check {
   opacity: 1;
-}
-
-/* MVP Banner - POSIZIONATO NEL CONTENITORE */
-.mvp-banner {
-  position: absolute; /* Togli il banner dal flusso del documento */
-  left: 50%;
-  top: 40px; /* Posizionato in alto, sotto i pulsanti evento */
-  transform: translateX(-50%); /* Centra orizzontalmente */
-  z-index: 20; /* Sopra agli eventi */
-  
-  display: none; /* Nascosto di default */
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  
-  min-width: 240px;
-  max-width: 90%;
-  padding: 12px 20px;
-  
-  background: #fffbeb;
-  border: 2px solid #fbbf24;
-  border-radius: 12px;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-  
-  transition: opacity 0.3s ease;
-}
-
-@keyframes mvpAppear {
-  from {
-    opacity: 0;
-    transform: translateY(-10px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-.mvp-banner.show {
-  display: flex;
 }
 
 .mvp-title {
@@ -4126,79 +4051,6 @@ div.bracket-match.final-match {
     box-shadow: 0 4px 15px rgba(216, 179, 47, 0.2) !important;
 }
 
-/* =============================================================================================
-                                     RESPONSIVE MOBILE
-===============================================================================================*/
-
-@media (max-width: 768px) {
-  /* Toolbar più compatta */
-  #toolbar{ padding:6px 0; }
-  .toolbar-btn{ font-size:9px; gap:2px; }
-  .tb-icon{ width:18px; height:18px; }
-  
-  /* Titoli ridimensionati */
-  .page-title{ font-size:clamp(28px, 8vw, 42px); }
-  .main-title{ font-size:clamp(32px, 10vw, 64px); }
-  
-  /* Tabelle scrollabili */
-  .teams-table, .playersTable, .standings-table{
-    display:block;
-    overflow-x:auto;
-    -webkit-overflow-scrolling:touch;
-  }
-  
-  /* Match card verticale */
-  .match-card{
-    grid-template-columns:1fr !important;
-    text-align:center;
-    gap:8px;
-  }
-  .team-block.left, .team-block.right{
-    text-align:center !important;
-    justify-content:center !important;
-  }
-  
-  /* Form adattivi */
-  .form-row{ flex-direction:column; }
-  .form-group, .form-group.small{ width:100% !important; }
-  
-  /* Fase finale: bracket verticale */
-  .tournament-wrapper{
-    height:auto !important;
-    display:flex;
-    flex-direction:column;
-    gap:20px;
-    padding:20px;
-  }
-  .bracket-match, .bracket-placeholder{
-    position:static !important;
-    transform:none !important;
-    width:100% !important;
-    left:auto !important;
-    right:auto !important;
-    top:auto !important;
-  }
-  .tournament-wrapper::before,
-  .tournament-wrapper::after,
-  .bracket-match::before,
-  .bracket-match::after{
-    display:none !important; /* nascondi linee decorative su mobile */
-  }
-  
-  /* MVP banner posizionamento */
-  .mvp-banner{
-    position:static !important;
-    transform:none !important;
-    margin:20px auto;
-    width:90%;
-  }
-  
-  /* Eventi timeline semplificata */
-  .events-timeline::before{ display:none; }
-  .event-line{ justify-content:center !important; }
-  .event-content{ width:90% !important; text-align:center !important; }
-}
-
 @media (max-width: 480px) {
   /* Extra small: font ancora più piccoli */
   body{ font-size:14px; }
@@ -4208,54 +4060,4 @@ div.bracket-match.final-match {
   /* Nascondi elementi non essenziali */
   .home-sponsors{ display:none; }
   .sub-title::before, .sub-title::after{ display:none; }
-}
-
-/* ===== TABLET ===== */
-@media (max-width: 768px) {
-  .camp {
-    height: min(75vh, 550px); /* Più grandi su tablet */
-    opacity: 0.15;
-  }
-  
-  .camp-left {
-    left: 5%; /* Vicino al bordo su tablet */
-  }
-  
-  .camp-right {
-    right: 5%;
-  }
-  
-  .home-sponsors {
-    top: 25px;
-    gap: 40px;
-  }
-  
-  .home-sponsors img {
-    height: clamp(50px, 10vh, 100px);
-  }
-}
-
-/* ===== MOBILE ===== */
-@media (max-width: 480px) {
-  .camp {
-    height: min(50vh, 300px);
-    opacity: 0.1;
-  }
-  
-  .camp-left {
-    left: 0;
-  }
-  
-  .camp-right {
-    right: 0;
-  }
-  
-  .home-sponsors {
-    top: 15px;
-    gap: 20px;
-  }
-  
-  .home-sponsors img {
-    height: 40px;
-  }
 }
