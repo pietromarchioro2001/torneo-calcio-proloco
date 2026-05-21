@@ -552,7 +552,7 @@ function renderHomeMatchCard(match, isLive) {
   }
   
   return `
-    <div class="home-next-match" onclick="openMatch('${match.MATCH_ID}')">
+    <div class="home-next-match ${isLive ? 'live-card' : ''}" onclick="openMatch('${match.MATCH_ID}')">
       <!-- Squadra Casa (sinistra) -->
       <div class="home-team-block left">
         ${logoCasa}
