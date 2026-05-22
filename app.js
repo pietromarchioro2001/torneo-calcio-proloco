@@ -1672,20 +1672,36 @@ function openMatch(id) {
   
   console.log('🔍 [OPEN MATCH] ID:', id, 'Nonce:', myNonce);
   
-  // 🔥 BLOCCA eventuali refresh automatici per 10 secondi
+  // 🔥 BLOCCA redirect per 10 secondi
   window.APP_STATE._matchLoading = true;
   setTimeout(() => { window.APP_STATE._matchLoading = false; }, 10000);
   
-  // 🔥 PRIORITÀ: Cerca SEMPRE prima nella cache completa
   const cachedMatch = window.APP_CACHE.matches?.find(m => String(m.MATCH_ID) === String(id));
   
   if (cachedMatch && cachedMatch.CASA_ID && cachedMatch.TRASFERTA_ID) {
-    console.log('✅ Match COMPLETO dalla cache:', {
-      casaId: cachedMatch.CASA_ID,
-      trasfertaId: cachedMatch.TRASFERTA_ID,
-      squadraCasa: cachedMatch.SQUADRA_CASA,
-      squadraTrasferta: cachedMatch.SQUADRA_TRASFERTA
-    });
+    renderMatchPage(cachedMatch);
+    updateMatchUI(cachedMatch);
+    window.APP_STATE.lastMatch = { ...cachedMatch };
+    
+    // 🔥 SE È LIVE: FORZA REFRESH EVENTI DAL BACKEND (ignora cache)
+    if (cachedMatch.STATO_PARTITA === "LIVE") {
+      console.log('🔄 Partita LIVE: refresh eventi forzato...');
+      ApiClient.getEventsAdmin(id)
+        .then(freshEvents => {
+          console.log('✅ Eventi LIVE ricevuti:', freshEvents.length);
+          window.APP_CACHE.eventsByMatch[id] = freshEvents;
+          CacheManager.save(window.APP_CACHE);
+          renderEvents(freshEvents, cachedMatch);
+        })
+        .catch(err => console.error('❌ Errore refresh eventi LIVE:', err));
+    } else {
+      // Per partite non LIVE, usa cache normale
+      const events = window.APP_CACHE.eventsByMatch?.[id] || [];
+      renderEvents(events, cachedMatch);
+    }
+    
+    loadPlayersForMatch(cachedMatch);
+  }
     
     // Renderizza SUBITO con dati cache
     renderMatchPage(cachedMatch);
