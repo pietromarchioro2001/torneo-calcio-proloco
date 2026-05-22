@@ -684,7 +684,7 @@ body{
 }
 
 .home-next-match.live-card .home-match-center {
-  transform: none !important; 
+  transform: translateY(8px); /* Spostato a 8px (era 4px) */
   justify-content: center;
 }
 
@@ -706,6 +706,10 @@ body{
 /* Pallino LIVE in Granata */
 .home-next-match.live-card .home-live-dot {
   background: var(--granata) !important;
+}
+
+.home-next-match.live-card .home-live-row {
+  margin-top: 4px; /* Aggiunge un piccolo respiro sotto il risultato */
 }
 
 /* =============================================================================================
@@ -2089,17 +2093,16 @@ body{
 
 /* RISULTATO */
 
-.score-big{
-  width:30%;
-  text-align:center;
-  font-size: 60px;
-  letter-spacing: 2px; 
-  margin-bottom: 0;
+.score-big {
+  width: 100%;
+  text-align: center;
+  font-size: 64px;
+  font-weight: 800;
+  letter-spacing: 2px; /* Ridotto da 4px per compattezza */
   line-height: 1;
-  font-weight:800;
-  white-space:nowrap;
-  margin: 0 auto;
-  display: block;
+  margin: 0 auto 5px 0; /* Spazio preciso sotto il punteggio */
+  position: relative;
+  left: 0; /* Resetta eventuali margini che spostano il testo */
 }
 
 /* BODY (eventi dopo) */
