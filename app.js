@@ -3759,6 +3759,9 @@ function bootAdminApp() {
   const loader = document.getElementById("startupLoader");
   if (loader) loader.style.display = "flex";
 
+  // 🔥 AGGIUNGI QUESTA RIGA - DICHIARA dataLoaded PRIMA DEL TIMEOUT!
+  let dataLoaded = false;
+  
   const maxTimeout = setTimeout(() => {
     if (!dataLoaded) {
       console.warn('⏱️ Timeout caricamento dati');
