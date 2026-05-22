@@ -433,7 +433,7 @@ function getNextMatchCard() {
       matchWithScore = calculateMatchScore(liveMatch, liveEvents);
     }
     
-    return renderHomeMatchCard(matchWithScore, true);
+    return renderHomeMatchCard(matchWithScore, liveMatch.STATO_PARTITA);
   }
   
   // 🔥 2. Cerca prossima partita programmata
@@ -526,6 +526,10 @@ function updateMatchScoreFromEvents(match, events) {
 }
 
 function renderHomeMatchCard(match, isLive) {
+  // 🔥 GESTISCI STATO: può essere booleano o stringa ("LIVE"/"SUPP")
+  const statoDisplay = typeof isLive === 'string' ? isLive : (isLive ? "LIVE" : "");
+  const isAttiva = (statoDisplay === "LIVE" || statoDisplay === "SUPP");
+  
   // Loghi
   const logoCasa = match.LOGO_CASA
     ? `<img src="${getCachedImage(match.LOGO_CASA, 34)}" alt="${match.SQUADRA_CASA}" onerror="this.style.display='none'">`
@@ -534,14 +538,14 @@ function renderHomeMatchCard(match, isLive) {
     ? `<img src="${getCachedImage(match.LOGO_TRASFERTA, 34)}" alt="${match.SQUADRA_TRASFERTA}" onerror="this.style.display='none'">`
     : `<div class="home-team-logo">⚽</div>`;
 
-  // Centro: LIVE o Ora/Data
+  // Centro: LIVE/SUPP o Ora/Data
   let centerContent = "";
-  if (isLive) {
+  if (isAttiva) {
     centerContent = `
     <div class="home-live-badge">
       <div class="home-score">${match.GOL_CASA || 0} - ${match.GOL_TRASFERTA || 0}</div>
       <div class="home-live-row">
-        <div class="home-live-text">LIVE</div>
+        <div class="home-live-text">${statoDisplay}</div>
         <div class="home-live-dot"></div>
       </div>
     </div>
@@ -556,14 +560,14 @@ function renderHomeMatchCard(match, isLive) {
   }
 
   return `
-  <div class="home-next-match ${isLive ? 'live-card' : ''}" onclick="openMatch('${match.MATCH_ID}')">
+  <div class="home-next-match ${isAttiva ? 'live-card' : ''}" onclick="openMatch('${match.MATCH_ID}')">
     <!-- Squadra Casa (logo sinistra, nome dopo) -->
     <div class="home-team-block left">
       ${logoCasa}
       <span class="home-team">${(match.SQUADRA_CASA || "").toUpperCase()}</span>
     </div>
     
-    <!-- Centro (Ora o LIVE) -->
+    <!-- Centro (Ora o LIVE/SUPP) -->
     <div class="home-match-center">
       ${centerContent}
     </div>
@@ -1567,7 +1571,7 @@ else {
 }
     
     html += `
-      <div class="match-card ${m.STATO_PARTITA === "LIVE" ? "live-match" : ""}" 
+      <div class="match-card ${(m.STATO_PARTITA === "LIVE" || m.STATO_PARTITA === "SUPP") ? "live-match" : ""}"
            onclick="openMatch('${m.MATCH_ID}')">
         <div class="team-block left">
           ${logoCasa}
