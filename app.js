@@ -526,56 +526,55 @@ function updateMatchScoreFromEvents(match, events) {
 }
 
 function renderHomeMatchCard(match, isLive) {
-    // Loghi
-    const logoCasa = match.LOGO_CASA 
-        ? `<img src="${getCachedImage(match.LOGO_CASA, 38)}" alt="${match.SQUADRA_CASA}" onerror="this.style.display='none'">`
-        : `<div class="home-team-logo">⚽</div>`;
-    
-    const logoTrasf = match.LOGO_TRASFERTA 
-        ? `<img src="${getCachedImage(match.LOGO_TRASFERTA, 38)}" alt="${match.SQUADRA_TRASFERTA}" onerror="this.style.display='none'">`
-        : `<div class="home-team-logo">⚽</div>`;
-    
-    // Centro: LIVE o Ora/Data
-    let centerContent = "";
-    if (isLive) {
-        centerContent = `
-            <div class="home-live-badge">
-                <div class="home-score">${match.GOL_CASA || 0} - ${match.GOL_TRASFERTA || 0}</div>
-                <div class="home-live-row">
-                    <div class="home-live-text">LIVE</div>
-                    <div class="home-live-dot"></div>
-                </div>
-            </div>
-        `;
-    } else {
-        const dateObj = parseLocalDate(match.DATA);
-        const dateStr = dateObj ? `${dateObj.getDate()}/${dateObj.getMonth()+1}` : "";
-        centerContent = `
-            <div class="home-match-time">${match.ORA || "--:--"}</div>
-            <div class="home-match-date">${dateStr}</div>
-        `;
-    }
-    
-    return `
-        <div class="home-next-match ${isLive ? 'live-card' : ''}" onclick="openMatch('${match.MATCH_ID}')">
-            <!-- Squadra Casa (sinistra) -->
-            <div class="home-team-block left">
-                ${logoCasa}
-                <span class="home-team">${(match.SQUADRA_CASA || "").toUpperCase()}</span>
-            </div>
-            
-            <!-- Centro (Ora o LIVE) -->
-            <div class="home-match-center">
-                ${centerContent}
-            </div>
-            
-            <!-- Squadra Trasferta (destra allineata) -->
-            <div class="home-team-block right">
-                ${logoTrasf}
-                <span class="home-team">${(match.SQUADRA_TRASFERTA || "").toUpperCase()}</span>
-            </div>
-        </div>
+  // Loghi
+  const logoCasa = match.LOGO_CASA
+    ? `<img src="${getCachedImage(match.LOGO_CASA, 34)}" alt="${match.SQUADRA_CASA}" onerror="this.style.display='none'">`
+    : `<div class="home-team-logo">⚽</div>`;
+  const logoTrasf = match.LOGO_TRASFERTA
+    ? `<img src="${getCachedImage(match.LOGO_TRASFERTA, 34)}" alt="${match.SQUADRA_TRASFERTA}" onerror="this.style.display='none'">`
+    : `<div class="home-team-logo">⚽</div>`;
+
+  // Centro: LIVE o Ora/Data
+  let centerContent = "";
+  if (isLive) {
+    centerContent = `
+    <div class="home-live-badge">
+      <div class="home-score">${match.GOL_CASA || 0} - ${match.GOL_TRASFERTA || 0}</div>
+      <div class="home-live-row">
+        <div class="home-live-text">LIVE</div>
+        <div class="home-live-dot"></div>
+      </div>
+    </div>
     `;
+  } else {
+    const dateObj = parseLocalDate(match.DATA);
+    const dateStr = dateObj ? `${dateObj.getDate()}/${dateObj.getMonth()+1}` : "";
+    centerContent = `
+    <div class="home-match-time">${match.ORA || "--:--"}</div>
+    <div class="home-match-date">${dateStr}</div>
+    `;
+  }
+
+  return `
+  <div class="home-next-match ${isLive ? 'live-card' : ''}" onclick="openMatch('${match.MATCH_ID}')">
+    <!-- Squadra Casa (logo sinistra, nome dopo) -->
+    <div class="home-team-block left">
+      ${logoCasa}
+      <span class="home-team">${(match.SQUADRA_CASA || "").toUpperCase()}</span>
+    </div>
+    
+    <!-- Centro (Ora o LIVE) -->
+    <div class="home-match-center">
+      ${centerContent}
+    </div>
+    
+    <!-- Squadra Trasferta (nome prima, logo destra all'estremo) -->
+    <div class="home-team-block right">
+      <span class="home-team">${(match.SQUADRA_TRASFERTA || "").toUpperCase()}</span>
+      ${logoTrasf}
+    </div>
+  </div>
+  `;
 }
 
 function showHome() {
@@ -1673,54 +1672,39 @@ async function forceReloadEvents(matchId, match) {
 function openMatch(id) {
   const myNonce = ++window.APP_STATE._matchRequestNonce;
   setCurrentMatch(id);
-  
   console.log('🔍 [OPEN MATCH] ID:', id, 'Nonce:', myNonce);
   
-  // 🔥 BLOCCA redirect per 10 secondi
+  // 🔥 BLOCCA eventuali refresh automatici per 10 secondi
   window.APP_STATE._matchLoading = true;
   setTimeout(() => { window.APP_STATE._matchLoading = false; }, 10000);
   
+  // 🔥 PRIORITÀ: Cerca SEMPRE prima nella cache completa
   const cachedMatch = window.APP_CACHE.matches?.find(m => String(m.MATCH_ID) === String(id));
-  
   if (cachedMatch && cachedMatch.CASA_ID && cachedMatch.TRASFERTA_ID) {
-    renderMatchPage(cachedMatch);
-    updateMatchUI(cachedMatch);
-    window.APP_STATE.lastMatch = { ...cachedMatch };
+    console.log('✅ Match COMPLETO dalla cache:', {
+      casaId: cachedMatch.CASA_ID,
+      trasfertaId: cachedMatch.TRASFERTA_ID,
+      squadraCasa: cachedMatch.SQUADRA_CASA,
+      squadraTrasferta: cachedMatch.SQUADRA_TRASFERTA
+    });
     
-    // 🔥 SE È LIVE: FORZA REFRESH EVENTI DAL BACKEND (ignora cache)
-    if (cachedMatch.STATO_PARTITA === "LIVE") {
-      console.log('🔄 Partita LIVE: refresh eventi forzato...');
-      ApiClient.getEventsAdmin(id)
-        .then(freshEvents => {
-          console.log('✅ Eventi LIVE ricevuti:', freshEvents.length);
-          window.APP_CACHE.eventsByMatch[id] = freshEvents;
-          CacheManager.save(window.APP_CACHE);
-          renderEvents(freshEvents, cachedMatch);
-        })
-        .catch(err => console.error('❌ Errore refresh eventi LIVE:', err));
-    } else {
-      // Per partite non LIVE, usa cache normale
-      const events = window.APP_CACHE.eventsByMatch?.[id] || [];
-      renderEvents(events, cachedMatch);
-    }
+    // 🔥 CALCOLA PUNTEGGIO DAGLI EVENTI LOCALI (sempre aggiornato)
+    const localEvents = window.APP_CACHE.eventsByMatch?.[id] || [];
+    const calculatedScore = calculateMatchScore(cachedMatch, localEvents);
     
-    loadPlayersForMatch(cachedMatch);
-  }
-    
-    // Renderizza SUBITO con dati cache
-    renderMatchPage(cachedMatch);
+    // Renderizza SUBITO con dati cache + punteggio calcolato
+    renderMatchPage({...cachedMatch, ...calculatedScore});
     updateMatchUI(cachedMatch);
     
     // 🔥 SALVA lastMatch SOLO se ha gli ID
-    window.APP_STATE.lastMatch = { ...cachedMatch };
+    window.APP_STATE.lastMatch = { ...cachedMatch, ...calculatedScore };
     
     // Renderizza eventi
-    const events = window.APP_CACHE.eventsByMatch?.[id] || [];
-    renderEvents(events, cachedMatch);
+    renderEvents(localEvents, cachedMatch);
     
     // Carica giocatori
     loadPlayersForMatch(cachedMatch);
-
+    
     setTimeout(() => {
       const cachedEvents = window.APP_CACHE.eventsByMatch?.[id] || [];
       if (cachedEvents.length === 0) {
@@ -1728,52 +1712,65 @@ function openMatch(id) {
         forceReloadEvents(id, cachedMatch);
       }
     }, 500);
+  }
   
   // Aggiorna dal backend (background) - MA NON SOVRASCRIVERE SE ID VUOTI
   ApiClient.getMatchFull(id)
-    .then(res => {
-      if (myNonce !== window.APP_STATE._matchRequestNonce) return;
-      if (!res?.match) return;
+  .then(res => {
+    if (myNonce !== window.APP_STATE._matchRequestNonce) return;
+    if (!res?.match) return;
+    
+    const freshMatch = res.match;
+    
+    // 🔥 VALIDAZIONE STRICT: se il backend ritorna ID vuoti, IGNORALO COMPLETAMENTE
+    if (!freshMatch.CASA_ID || !freshMatch.TRASFERTA_ID ||
+        freshMatch.CASA_ID === "" || freshMatch.TRASFERTA_ID === "") {
+      console.warn('⚠️ Backend ha ritornato ID VUOTI, MANTENGO CACHE:', freshMatch);
+      return;
+    }
+    
+    // 🔥 CARICA GLI EVENTI AGGIORNATI DAL BACKEND
+    return ApiClient.getEventsAdmin(id).then(freshEvents => {
+      // Aggiorna cache eventi
+      window.APP_CACHE.eventsByMatch[id] = freshEvents;
+      CacheManager.save(window.APP_CACHE);
       
-      const freshMatch = res.match;
+      // 🔥 CALCOLA PUNTEGGIO DAGLI EVENTI FRESCI (non dal backend)
+      const calculatedScore = calculateMatchScore(freshMatch, freshEvents);
       
-      // 🔥 VALIDAZIONE STRICT: se il backend ritorna ID vuoti, IGNORALO COMPLETAMENTE
-      if (!freshMatch.CASA_ID || !freshMatch.TRASFERTA_ID || 
-          freshMatch.CASA_ID === "" || freshMatch.TRASFERTA_ID === "") {
-        console.warn('⚠️ Backend ha ritornato ID VUOTI, MANTENGO CACHE:', freshMatch);
-        console.warn('  - CASA_ID:', freshMatch.CASA_ID);
-        console.warn('  - TRASFERTA_ID:', freshMatch.TRASFERTA_ID);
-        return; // ESCI SENZA FARE NULLA
-      }
-      
-      // Solo se gli ID sono validi, aggiorna
-      console.log('✅ Backend dati validi, aggiorno cache');
-      window.APP_STATE.matchesById[freshMatch.MATCH_ID] = freshMatch;
-      window.APP_STATE.lastMatch = freshMatch;
+      // Solo se gli ID sono validi, aggiorna (MA USA PUNTEGGIO CALCOLATO)
+      console.log('✅ Backend dati validi, aggiorno cache con punteggio calcolato');
+      window.APP_STATE.matchesById[freshMatch.MATCH_ID] = {...freshMatch, ...calculatedScore};
+      window.APP_STATE.lastMatch = {...freshMatch, ...calculatedScore};
       
       // Aggiorna cache globale matches
       if (window.APP_CACHE.matches) {
         const idx = window.APP_CACHE.matches.findIndex(m => String(m.MATCH_ID) === String(freshMatch.MATCH_ID));
         if (idx >= 0) {
-          window.APP_CACHE.matches[idx] = { ...window.APP_CACHE.matches[idx], ...freshMatch };
+          window.APP_CACHE.matches[idx] = { 
+            ...window.APP_CACHE.matches[idx], 
+            ...freshMatch,
+            ...calculatedScore  // 🔥 USA PUNTEGGIO CALCOLATO
+          };
           CacheManager.save(window.APP_CACHE);
         }
       }
       
       // Aggiorna UI solo se cambia qualcosa
-      if (cachedMatch && (freshMatch.GOL_CASA !== cachedMatch.GOL_CASA || 
-          freshMatch.GOL_TRASFERTA !== cachedMatch.GOL_TRASFERTA ||
+      if (cachedMatch && (calculatedScore.GOL_CASA !== cachedMatch.GOL_CASA ||
+          calculatedScore.GOL_TRASFERTA !== cachedMatch.GOL_TRASFERTA ||
           freshMatch.STATO_PARTITA !== cachedMatch.STATO_PARTITA)) {
-        console.log('🔄 Aggiorno UI con nuovi dati backend');
-        renderMatchPage(freshMatch);
+        console.log('🔄 Aggiorno UI con nuovi dati backend + punteggio calcolato');
+        renderMatchPage({...freshMatch, ...calculatedScore});
         loadPlayersForMatch(freshMatch);
       }
-    })
-    .catch(err => {
-      console.error('❌ Errore backend getMatchFull:', err);
-      // Mantieni cache
     });
- }
+  })
+  .catch(err => {
+    console.error('❌ Errore backend getMatchFull:', err);
+    // Mantieni cache
+  });
+}
 
 function getSafeMatchData(matchId) {
   if (!matchId) return null;
@@ -2633,23 +2630,40 @@ async function toggleMatch() {
   const newStatus = match.STATO_PARTITA === "LIVE" ? "FINITA" : "LIVE";
   
   // 🔥 1. AGGIORNA STATO LOCALE E UI SUBITO (Istantaneo)
-  // Questo succede PRIMA di qualsiasi chiamata al server
   match.STATO_PARTITA = newStatus;
   window.APP_STATE.lastMatch = match;
   
   // Aggiorna il pulsante INIZIO/CONCLUDI e lo stato
   updateMatchUI(match);
   
-  // 🔥 DISABILITA PULSANTI EVENTI SUBITO
-  // Cerchiamo i bottoni con il testo specifico e li disabilitiamo visivamente
-  document.querySelectorAll('.phase-btn').forEach(btn => {
+  // 🔥 2. GESTIONE PULSANTI "+ EVENTO" - ABILITA/DISABILITA SUBITO
+  const canAddEvents = newStatus === "LIVE" && 
+    (match.FASE === "FINALI" || !window.APP_CACHE.meta?.finalStageStarted);
+  
+  document.querySelectorAll('.phase-btn.small').forEach(btn => {
     if (btn.textContent.trim().includes('+ EVENTO')) {
-      btn.style.opacity = '0.5';
-      btn.style.pointerEvents = 'none';
-      btn.style.cursor = 'not-allowed';
+      if (canAddEvents) {
+        // 🔥 ABILITA: ripristina stile e onclick
+        btn.style.opacity = '1';
+        btn.style.pointerEvents = 'auto';
+        btn.style.cursor = 'pointer';
+        // Ripristina la funzione onclick in base al testo del bottone
+        if (btn.textContent.includes('CASA')) {
+          btn.onclick = () => addEvent('casa');
+        } else if (btn.textContent.includes('TRASFERTA')) {
+          btn.onclick = () => addEvent('trasferta');
+        }
+      } else {
+        // 🔥 DISABILITA: stile disabilitato + rimuovi onclick
+        btn.style.opacity = '0.5';
+        btn.style.pointerEvents = 'none';
+        btn.style.cursor = 'not-allowed';
+        btn.onclick = null;
+      }
     }
   });
 
+  // Aggiorna testo bottone principale
   const mainBtn = document.querySelector(".start-btn");
   if (mainBtn) {
     mainBtn.textContent = newStatus === "LIVE" ? "CONCLUDI" : "INIZIA";
@@ -2659,10 +2673,10 @@ async function toggleMatch() {
   let freshMatch = null;
 
   try {
-    // 2. Invia stato al backend
+    // 3. Invia stato al backend
     await ApiClient.updateMatchStatus(match.MATCH_ID, newStatus);
     
-    // 3. Aggiorna dati match dal backend
+    // 4. Aggiorna dati match dal backend
     const fullData = await ApiClient.getMatchFull(match.MATCH_ID);
     
     if (fullData?.match) {
@@ -2688,22 +2702,15 @@ async function toggleMatch() {
       loadPlayersForMatch(freshMatch);
     }
     
-    // 4. Se FINITA, gestisci MVP in background (non bloccante)
+    // 5. Se FINITA, gestisci MVP in background (non bloccante)
     if (newStatus === "FINITA") {
       console.log("🏆 Partita conclusa. Gestione MVP in background...");
       
-      // Eseguiamo tutto in un blocco separato per non bloccare la UI
       (async () => {
         try {
           if (!freshMatch) return;
-          
-          // A. Invia tutti i voti locali
           await submitAllMVPVotes(freshMatch.MATCH_ID);
-          
-          // B. Calcola MVP
           await ApiClient.finalizeMVP(freshMatch.MATCH_ID);
-          
-          // C. Polling leggero per aggiornare l'UI quando l'MVP è pronto
           pollForMVPUpdate(freshMatch.MATCH_ID);
         } catch (err) {
           console.error("Errore background MVP:", err);
