@@ -2099,7 +2099,8 @@ body{
   white-space:nowrap;
   line-height:1;
 
-  margin:10px 0; /* 🔥 controlla respiro */
+  margin: 0 auto;
+  display: block;
 }
 
 /* BODY (eventi dopo) */
