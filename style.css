@@ -1950,9 +1950,10 @@ body{
 ========================= */
 
 .match-center{
-  flex:0 0 auto;   /* 🔥 NON si deforma */
-  text-align:center;
-  margin:0 40px;   /* 🔥 aria ai lati */
+  flex: 0 0 auto;
+  text-align: center;
+  z-index: 1;
+  padding: 0 20px;
 }
 
 .vs{
@@ -2038,38 +2039,37 @@ body{
 /* HEADER GRANDE */
 
 .match-header-big{
-  display:grid;
-  grid-template-columns: 1fr auto 1fr;
-
-  align-items:start;   /* 🔥 invece di center */
-
-  margin-top:30px;
-  margin-bottom:5px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  margin-top: 30px;
+  margin-bottom: 5px;
+  min-height: 120px;
 }
 
-/* TEAM */
-
+/* TEAM - Squadre posizionate in modo assoluto ai lati */
 .team-big{
-  position:relative;
-  flex:1;
-  display:flex;
-  align-items:center;
-  gap:25px;
-  padding-top:42px;
+  position: absolute;
+  width: 30%;
+  display: flex;
+  align-items: center;
+  gap: 25px;
+  padding-top: 42px;
 }
 
 /* sinistra */
 .team-big.left{
-  justify-content:flex-end;   /* 🔥 spinge verso il centro */
-  text-align:right;
-  transform:none;
+  left: 2%;
+  justify-content: flex-end;
+  text-align: right;
 }
 
 /* destra */
 .team-big.right{
-  justify-content:flex-start; /* 🔥 spinge verso il centro */
-  text-align:left;
-  transform:none;
+  right: 2%;
+  justify-content: flex-start;
+  text-align: left;
 }
 
 .team-big img{
