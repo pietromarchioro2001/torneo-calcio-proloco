@@ -409,54 +409,54 @@ function renderToolbar(active) {
 }
 
 function getNextMatchCard() {
-  const matches = window.APP_CACHE.matches || [];
-  const eventsByMatch = window.APP_CACHE.eventsByMatch || {};
-  
-  const now = new Date();
-  const nowStr = formatLocalDate(now);
-  
-  // 🔥 1. Priorità: cerca partita LIVE
-  const liveMatch = matches.find(m => m.STATO_PARTITA === "LIVE");
-  if (liveMatch) {
-    // Ricalcola punteggio dagli eventi cached (più accurato del backend)
-    const liveEvents = eventsByMatch[liveMatch.MATCH_ID] || [];
-    const matchWithScore = calculateMatchScore(liveMatch, liveEvents);
-    return renderHomeMatchCard(matchWithScore, true);
-  }
-  
-  // 🔥 2. Cerca prossima partita futura non finita
-  const todayMatches = matches
-    .filter(m => {
-      const matchDate = String(m.DATA || "").slice(0, 10);
-      return matchDate >= nowStr && m.STATO_PARTITA !== "FINITA";
-    })
-    .sort((a, b) => {
-      const dateA = String(a.DATA || "").slice(0, 10) + (a.ORA || "00:00");
-      const dateB = String(b.DATA || "").slice(0, 10) + (b.ORA || "00:00");
-      return dateA.localeCompare(dateB);
-    });
-  
-  if (todayMatches.length > 0) {
-    const nextMatch = todayMatches[0];
-    const nextEvents = eventsByMatch[nextMatch.MATCH_ID] || [];
-    const matchWithScore = calculateMatchScore(nextMatch, nextEvents);
-    return renderHomeMatchCard(matchWithScore, false);
-  }
-  
-  // 🔥 3. Placeholder se nessuna partita disponibile
-  return `
-    <div class="home-next-match" style="opacity:0.5;pointer-events:none;cursor:default">
-      <div class="home-match-label">NESSUNA PARTITA IN PROGRAMMA</div>
-      <div class="home-match-content">
-        <div class="home-match-teams">
-          <span class="home-team">-</span>
-          <span class="home-vs">VS</span>
-          <span class="home-team">-</span>
+    const matches = window.APP_CACHE.matches || [];
+    const eventsByMatch = window.APP_CACHE.eventsByMatch || {};
+    const now = new Date();
+    const nowStr = formatLocalDate(now);
+    
+    // 🔥 1. Cerca LIVE
+    const liveMatch = matches.find(m => m.STATO_PARTITA === "LIVE");
+    if (liveMatch) {
+        // 🔥 Ricalcola punteggio dagli eventi cached (più accurato)
+        const liveEvents = eventsByMatch[liveMatch.MATCH_ID] || [];
+        const matchWithScore = calculateMatchScore(liveMatch, liveEvents);
+        return renderHomeMatchCard(matchWithScore, true);
+    }
+    
+    // 🔥 2. Cerca prossima partita
+    const todayMatches = matches
+        .filter(m => {
+            const matchDate = String(m.DATA || "").slice(0, 10);
+            return matchDate >= nowStr && m.STATO_PARTITA !== "FINITA";
+        })
+        .sort((a, b) => {
+            const dateA = String(a.DATA || "").slice(0, 10) + (a.ORA || "00:00");
+            const dateB = String(b.DATA || "").slice(0, 10) + (b.ORA || "00:00");
+            return dateA.localeCompare(dateB);
+        });
+    
+    if (todayMatches.length > 0) {
+        // 🔥 Anche qui ricalcola punteggio
+        const nextMatch = todayMatches[0];
+        const nextEvents = eventsByMatch[nextMatch.MATCH_ID] || [];
+        const matchWithScore = calculateMatchScore(nextMatch, nextEvents);
+        return renderHomeMatchCard(matchWithScore, false);
+    }
+    
+    // 🔥 3. Placeholder
+    return `
+        <div class="home-next-match" style="opacity:0.5;pointer-events:none;cursor:default">
+            <div class="home-match-label">NESSUNA PARTITA IN PROGRAMMA</div>
+            <div class="home-match-content">
+                <div class="home-match-teams">
+                    <span class="home-team">-</span>
+                    <span class="home-vs">VS</span>
+                    <span class="home-team">-</span>
+                </div>
+                <div class="home-match-info">Prossima partita non disponibile</div>
+            </div>
         </div>
-        <div class="home-match-info">Prossima partita non disponibile</div>
-      </div>
-    </div>
-  `;
+    `;
 }
 
 // 🔥 Helper: calcola punteggio dagli eventi
@@ -501,86 +501,57 @@ function updateMatchScoreFromEvents(match, events) {
   };
 }
 
-/**
- * Genera HTML per la card partita nella home (Versione Compatta)
- */
 function renderHomeMatchCard(match, isLive) {
-  // 🔥 Loghi con fallback inline robusto
-  const logoCasa = match.LOGO_CASA 
-    ? `<div class="home-team-logo-wrap">
-        <img src="${getCachedImage(match.LOGO_CASA, 38)}" 
-             alt="${match.SQUADRA_CASA}" 
-             class="home-team-logo-img"
-             onerror="this.style.display='none'; this.parentElement.querySelector('.home-team-logo-fallback').style.display='flex'">
-        <div class="home-team-logo-fallback" style="display:none">⚽</div>
-      </div>`
-    : `<div class="home-team-logo-wrap">
-        <div class="home-team-logo-fallback">⚽</div>
-      </div>`;
-  
-  const logoTrasf = match.LOGO_TRASFERTA 
-    ? `<div class="home-team-logo-wrap">
-        <img src="${getCachedImage(match.LOGO_TRASFERTA, 38)}" 
-             alt="${match.SQUADRA_TRASFERTA}" 
-             class="home-team-logo-img"
-             onerror="this.style.display='none'; this.parentElement.querySelector('.home-team-logo-fallback').style.display='flex'">
-        <div class="home-team-logo-fallback" style="display:none">⚽</div>
-      </div>`
-    : `<div class="home-team-logo-wrap">
-        <div class="home-team-logo-fallback">⚽</div>
-      </div>`;
-  
-  // Centro: LIVE o Ora/Data
-  let centerContent = "";
-
-if (isLive || match.STATO_PARTITA === "SUPP" || match.STATO_PARTITA === "RIGORI") {
-  const statusText = match.STATO_PARTITA === "SUPP" ? "SUPP" : 
-                     match.STATO_PARTITA === "RIGORI" ? "RIGORI" : "LIVE";
-  
-  // Se siamo in RIGORI, mostra anche il punteggio rigori
-  const rigoriInfo = match.STATO_PARTITA === "RIGORI" && (match.RIGORI_CASA !== undefined)
-    ? `<div style="font-size:10px;color:#888;margin-top:2px">(${match.RIGORI_CASA||0}-${match.RIGORI_TRASFERTA||0} dcr)</div>`
-    : '';
-  
-  centerContent = `
-    <div class="home-live-badge">
-      <div class="home-score">${match.GOL_CASA || 0} - ${match.GOL_TRASFERTA || 0}</div>
-      <div class="home-live-row">
-        <div class="home-live-text">${statusText}</div>
-        <div class="home-live-dot"></div>
-      </div>
-      ${rigoriInfo}
-    </div>
-  `;
-}else {
-    const dateObj = parseLocalDate(match.DATA);
-    const dateStr = dateObj ? `${dateObj.getDate()}/${dateObj.getMonth()+1}` : "";
-    centerContent = `
-      <div class="home-match-time">${match.ORA || "--:--"}</div>
-      <div class="home-match-date">${dateStr}</div>
+    // Loghi
+    const logoCasa = match.LOGO_CASA 
+        ? `<img src="${getCachedImage(match.LOGO_CASA, 38)}" alt="${match.SQUADRA_CASA}" onerror="this.style.display='none'">`
+        : `<div class="home-team-logo">⚽</div>`;
+    
+    const logoTrasf = match.LOGO_TRASFERTA 
+        ? `<img src="${getCachedImage(match.LOGO_TRASFERTA, 38)}" alt="${match.SQUADRA_TRASFERTA}" onerror="this.style.display='none'">`
+        : `<div class="home-team-logo">⚽</div>`;
+    
+    // Centro: LIVE o Ora/Data
+    let centerContent = "";
+    if (isLive) {
+        centerContent = `
+            <div class="home-live-badge">
+                <div class="home-score">${match.GOL_CASA || 0} - ${match.GOL_TRASFERTA || 0}</div>
+                <div class="home-live-row">
+                    <div class="home-live-text">LIVE</div>
+                    <div class="home-live-dot"></div>
+                </div>
+            </div>
+        `;
+    } else {
+        const dateObj = parseLocalDate(match.DATA);
+        const dateStr = dateObj ? `${dateObj.getDate()}/${dateObj.getMonth()+1}` : "";
+        centerContent = `
+            <div class="home-match-time">${match.ORA || "--:--"}</div>
+            <div class="home-match-date">${dateStr}</div>
+        `;
+    }
+    
+    return `
+        <div class="home-next-match ${isLive ? 'live-card' : ''}" onclick="openMatch('${match.MATCH_ID}')">
+            <!-- Squadra Casa (sinistra) -->
+            <div class="home-team-block left">
+                ${logoCasa}
+                <span class="home-team">${(match.SQUADRA_CASA || "").toUpperCase()}</span>
+            </div>
+            
+            <!-- Centro (Ora o LIVE) -->
+            <div class="home-match-center">
+                ${centerContent}
+            </div>
+            
+            <!-- Squadra Trasferta (destra allineata) -->
+            <div class="home-team-block right">
+                ${logoTrasf}
+                <span class="home-team">${(match.SQUADRA_TRASFERTA || "").toUpperCase()}</span>
+            </div>
+        </div>
     `;
-  }
-  
-  return `
-    <div class="home-next-match ${isLive ? 'live-card' : ''}" onclick="openMatch('${match.MATCH_ID}')">
-      <!-- Squadra Casa (sinistra) -->
-      <div class="home-team-block left">
-        ${logoCasa}
-        <span class="home-team">${(match.SQUADRA_CASA || "").toUpperCase()}</span>
-      </div>
-      
-      <!-- Centro (Ora o LIVE) -->
-      <div class="home-match-center">
-        ${centerContent}
-      </div>
-      
-      <!-- Squadra Trasferta (destra allineata) -->
-      <div class="home-team-block right">
-        ${logoTrasf}
-        <span class="home-team">${(match.SQUADRA_TRASFERTA || "").toUpperCase()}</span>
-      </div>
-    </div>
-  `;
 }
 
 function showHome() {
@@ -1840,25 +1811,45 @@ function ensureMatchHasTeamIds(match) {
 
 function renderMatchPage(match) {
   if (!match || !match.MATCH_ID) {
-    console.error('Match non valido', match);
-    return;
-  }
-  
-  // 🔥 RECUPERA NOMI E LOGHI SE MANCANO
-  if (!match.SQUADRA_CASA || !match.LOGO_CASA) {
-    const casaData = window.APP_CACHE.fullTeams?.[String(match.CASA_ID)];
-    if (casaData?.team) {
-      match.SQUADRA_CASA = casaData.team.NOME_SQUADRA || "CASA";
-      match.LOGO_CASA = casaData.team.LOGO_FILE_ID || "";
+        console.error('Match non valido', match);
+        return;
     }
-  }
-  if (!match.SQUADRA_TRASFERTA || !match.LOGO_TRASFERTA) {
-    const trasfData = window.APP_CACHE.fullTeams?.[String(match.TRASFERTA_ID)];
-    if (trasfData?.team) {
-      match.SQUADRA_TRASFERTA = trasfData.team.NOME_SQUADRA || "TRASFERTA";
-      match.LOGO_TRASFERTA = trasfData.team.LOGO_FILE_ID || "";
+    
+    // 🔥 RECUPERA NOMI E LOGHI SE MANCANO
+    if (!match.SQUADRA_CASA || !match.LOGO_CASA) {
+        const casaData = window.APP_CACHE.fullTeams?.[String(match.CASA_ID)];
+        if (casaData?.team) {
+            match.SQUADRA_CASA = casaData.team.NOME_SQUADRA || "CASA";
+            match.LOGO_CASA = casaData.team.LOGO_ID || "";
+        }
     }
-  }
+    if (!match.SQUADRA_TRASFERTA || !match.LOGO_TRASFERTA) {
+        const trasfData = window.APP_CACHE.fullTeams?.[String(match.TRASFERTA_ID)];
+        if (trasfData?.team) {
+            match.SQUADRA_TRASFERTA = trasfData.team.NOME_SQUADRA || "TRASFERTA";
+            match.LOGO_TRASFERTA = trasfData.team.LOGO_ID || "";
+        }
+    }
+    
+    // ... resto del codice ...
+    
+    // 🔥 FORZA RICARICAMENTO EVENTI
+    const events = window.APP_CACHE.eventsByMatch?.[match.MATCH_ID] || [];
+    console.log(' Eventi caricati per match:', match.MATCH_ID, 'totale:', events.length);
+    
+    if (events.length === 0) {
+        // Se la cache è vuota, prova a ricaricare dal backend
+        ApiClient.getEventsAdmin(match.MATCH_ID).then(freshEvents => {
+            window.APP_CACHE.eventsByMatch[match.MATCH_ID] = freshEvents;
+            CacheManager.save(window.APP_CACHE);
+            renderEvents(freshEvents, match);
+        }).catch(err => {
+            console.error('❌ Errore caricamento eventi:', err);
+            renderEvents([], match);
+        });
+    } else {
+        renderEvents(events, match);
+    }
   
   // 🔥 ORA DEFINISCI ANCHE I LOGHI (mancavano!)
   const logoCasa = match.LOGO_CASA
