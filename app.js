@@ -5,7 +5,7 @@
 const CONFIG = {
   // 🔥 SOSTITUISCI CON IL TUO URL APPS SCRIPT WEB APP
 
-  BACKEND_URL: 'https://script.google.com/macros/s/AKfycby8iD9Wl413fw1w-7C0qJazW7lqiIeXXzubELl6CGhehea0juqfYweEr51fE5oVirOh/exec',
+  BACKEND_URL: 'https://script.google.com/macros/s/AKfycbywP_5FPPvmo85WTXJznHs52t5skOpG8G3qfLuopNBhnFTfGigbPPMWJZgacbwPDk2h/exec',
   
   API_TIMEOUT: 30000,
   CACHE_VERSION: 'v3.0',
@@ -263,6 +263,7 @@ const ApiClient = {
     ApiClient.call('uploadTeamPhotoReplace', [teamId, fileName, fileType, base64]),
   uploadPlayerPhotoReplace: (playerId, teamId, playerName, fileName, fileType, base64) => 
     ApiClient.call('uploadPlayerPhotoReplace', [playerId, teamId, playerName, fileName, fileType, base64]),
+  saveRigoriResults: (data) => ApiClient.call('saveRigoriResults', [data]),
   
   prepareFinalStage: () => ApiClient.call('prepareFinalStage'),
   createFinalStageMatches: (matches) => ApiClient.call('createFinalStageMatches', [matches]),
@@ -532,17 +533,27 @@ function renderHomeMatchCard(match, isLive) {
   
   // Centro: LIVE o Ora/Data
   let centerContent = "";
-  if (isLive) {
+
+if (isLive || match.STATO_PARTITA === "SUPP" || match.STATO_PARTITA === "RIGORI") {
+  const statusText = match.STATO_PARTITA === "SUPP" ? "SUPP" : 
+                     match.STATO_PARTITA === "RIGORI" ? "RIGORI" : "LIVE";
+  
+  // Se siamo in RIGORI, mostra anche il punteggio rigori
+  const rigoriInfo = match.STATO_PARTITA === "RIGORI" && (match.RIGORI_CASA !== undefined)
+    ? `<div style="font-size:10px;color:#888;margin-top:2px">(${match.RIGORI_CASA||0}-${match.RIGORI_TRASFERTA||0} dcr)</div>`
+    : '';
+  
   centerContent = `
     <div class="home-live-badge">
       <div class="home-score">${match.GOL_CASA || 0} - ${match.GOL_TRASFERTA || 0}</div>
       <div class="home-live-row">
-        <div class="home-live-text">LIVE</div>
+        <div class="home-live-text">${statusText}</div>
         <div class="home-live-dot"></div>
       </div>
+      ${rigoriInfo}
     </div>
   `;
-} else {
+}else {
     const dateObj = parseLocalDate(match.DATA);
     const dateStr = dateObj ? `${dateObj.getDate()}/${dateObj.getMonth()+1}` : "";
     centerContent = `
@@ -1498,24 +1509,60 @@ let matches = allMatches
     }
     
     let center = "";
-    if (m.STATO_PARTITA === "LIVE") {
-      center = `
-        <div class="score live">${m.GOL_CASA || 0} - ${m.GOL_TRASFERTA || 0}</div>
-        <div class="status live">LIVE</div>
-        ${faseBadge}
-      `;
-    } else if (m.STATO_PARTITA === "FINITA") {
-      center = `
-        <div class="score">${m.GOL_CASA || 0} - ${m.GOL_TRASFERTA || 0}</div>
-        <div class="status">TERMINATA</div>
-        ${faseBadge}
-      `;
-    } else {
-      center = `
-        <div class="time">${m.ORA || "--:--"}</div>
-        ${faseBadge}
-      `;
-    }
+
+// 🔥 GESTIONE STATI: LIVE → SUPP → RIGORI → FINITA
+if (m.STATO_PARTITA === "LIVE") {
+  center = `
+    <div class="score live">${m.GOL_CASA || 0} - ${m.GOL_TRASFERTA || 0}</div>
+    <div class="status live">LIVE</div>
+    ${faseBadge}
+  `;
+} 
+// 🔥 SUPPLEMENTARI: stessa UI di LIVE ma con scritta SUPP
+else if (m.STATO_PARTITA === "SUPP") {
+  center = `
+    <div class="score live">${m.GOL_CASA || 0} - ${m.GOL_TRASFERTA || 0}</div>
+    <div class="status live">SUPP</div>
+    ${faseBadge}
+  `;
+} 
+// 🔥 RIGORI IN CORSO: mostra punteggio rigori tra parentesi
+else if (m.STATO_PARTITA === "RIGORI") {
+  const rigoriCasa = m.RIGORI_CASA || 0;
+  const rigoriTrasf = m.RIGORI_TRASFERTA || 0;
+  center = `
+    <div class="score live">${m.GOL_CASA || 0} - ${m.GOL_TRASFERTA || 0} <span style="font-size:14px;color:#888">(${rigoriCasa}-${rigoriTrasf} dcr)</span></div>
+    <div class="status live">RIGORI</div>
+    ${faseBadge}
+  `;
+} 
+// 🔥 FINITA: se pareggio + rigori, mostra risultato dcr
+else if (m.STATO_PARTITA === "FINITA") {
+  // Se c'è pareggio e sono stati giocati i rigori, mostra il risultato finale con dcr
+  if (m.GOL_CASA === m.GOL_TRASFERTA && 
+      (m.RIGORI_CASA !== undefined || m.RIGORI_TRASFERTA !== undefined)) {
+    const rc = m.RIGORI_CASA || 0;
+    const rt = m.RIGORI_TRASFERTA || 0;
+    center = `
+      <div class="score">${m.GOL_CASA || 0} - ${m.GOL_TRASFERTA || 0} <span style="font-size:14px;color:#888">(${rc}-${rt} dcr)</span></div>
+      <div class="status">TERMINATA</div>
+      ${faseBadge}
+    `;
+  } else {
+    center = `
+      <div class="score">${m.GOL_CASA || 0} - ${m.GOL_TRASFERTA || 0}</div>
+      <div class="status">TERMINATA</div>
+      ${faseBadge}
+    `;
+  }
+} 
+// 🔥 PROGRAMMATA
+else {
+  center = `
+    <div class="time">${m.ORA || "--:--"}</div>
+    ${faseBadge}
+  `;
+}
     
     html += `
       <div class="match-card ${m.STATO_PARTITA === "LIVE" ? "live-match" : ""}" 
