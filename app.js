@@ -2075,16 +2075,17 @@ function renderEvents(events, match) {
     return;
   }
 
-  // 🔥 FILTRA e ordina eventi
+  // 🔥 FIX: Converti MINUTO a numero e controlla TEAM_ID
   events = [...events]
     .filter(e => {
-      const valido = e.MINUTO > 0 && e.TEAM_ID;
+      const minuto = Number(e.MINUTO) || 0;  // ← CONVERSIONE FORZATA
+      const valido = minuto > 0 && e.TEAM_ID;
       if (!valido) {
-        console.warn('⚠️ Evento scartato:', e);
+        console.warn('⚠️ Evento scartato:', { ...e, minuto });
       }
       return valido;
     })
-    .sort((a, b) => (a.MINUTO || 0) - (b.MINUTO || 0));
+    .sort((a, b) => (Number(a.MINUTO) || 0) - (Number(b.MINUTO) || 0));  // ← CONVERSIONE
 
   console.log('✅ [RENDER EVENTS] Eventi dopo filtro:', events.length);
 
