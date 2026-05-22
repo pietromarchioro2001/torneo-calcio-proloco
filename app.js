@@ -3874,6 +3874,9 @@ function renderBracketMatch(match, cls="") {
       trasfClass = "winner";
     }
   }
+
+  // 🔥 Aggiungi indicatore SUPP se necessario
+  const statusIndicator = isSupp ? '<span style="font-size:9px;color:#8c1d2c;font-weight:700;margin-left:4px"/span>' : '';
   
   return `
   <div class="bracket-match ${cls} ${isFinished ? 'concluded' : ''} ${isLive ? 'live-match' : ''}" onclick="openMatch('${match.matchId}')">
