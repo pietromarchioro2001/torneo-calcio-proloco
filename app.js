@@ -3840,20 +3840,21 @@ function renderBracketMatch(match, cls="") {
     return `<div class="bracket-placeholder ${cls}"><div class="bracket-placeholder-title"></div></div>`;
   }
   
-  const logoCasa = match.casa?.logo 
+  const logoCasa = match.casa?.logo
     ? `<img src="${getCachedImage(match.casa.logo, 24)}" alt="${match.casa.nome}" onerror="this.style.display='none'">`
     : `<div style="width:24px;height:24px;border-radius:50%;background:#f0f0f0"></div>`;
   
-  const logoTrasf = match.trasferta?.logo 
+  const logoTrasf = match.trasferta?.logo
     ? `<img src="${getCachedImage(match.trasferta.logo, 24)}" alt="${match.trasferta.nome}" onerror="this.style.display='none'">`
     : `<div style="width:24px;height:24px;border-radius:50%;background:#f0f0f0"></div>`;
   
-  const isLive = match.stato === "LIVE";
+  // 🔥 FIX: Controlla anche SUPP oltre a LIVE
+  const isLive = match.stato === "LIVE" || match.stato === "SUPP";
+  const isSupp = match.stato === "SUPP";
   const isFinished = match.stato === "FINITA";
   
   let scoreCasa = "0";
   let scoreTrasf = "0";
-  
   if (isLive || isFinished) {
     scoreCasa = match.golCasa || 0;
     scoreTrasf = match.golTrasferta || 0;
@@ -3874,19 +3875,22 @@ function renderBracketMatch(match, cls="") {
     }
   }
   
+  // 🔥 Aggiungi indicatore SUPP se necessario
+  const statusIndicator = isSupp ? '<span style="font-size:9px;color:#8c1d2c;font-weight:700;margin-left:4px">SUPP</span>' : '';
+  
   return `
-   <div class="bracket-match ${cls} ${isFinished ? 'concluded' : ''} ${isLive ? 'live-match' : ''}" onclick="openMatch('${match.matchId}')">
-      <div class="bracket-team ${casaClass}">
-        ${logoCasa}
-        <span>${(match.casa?.nome || "TBD").toUpperCase()}</span>
-        <span class="${scoreClass}">${scoreCasa}</span>
-      </div>
-      <div class="bracket-team ${trasfClass}">
-        ${logoTrasf}
-        <span>${(match.trasferta?.nome || "TBD").toUpperCase()}</span>
-        <span class="${scoreClass}">${scoreTrasf}</span>
-      </div>
+  <div class="bracket-match ${cls} ${isFinished ? 'concluded' : ''} ${isLive ? 'live-match' : ''}" onclick="openMatch('${match.matchId}')">
+    <div class="bracket-team ${casaClass}">
+      ${logoCasa}
+      <span>${(match.casa?.nome || "TBD").toUpperCase()}</span>
+      <span class="${scoreClass}">${scoreCasa}${statusIndicator}</span>
     </div>
+    <div class="bracket-team ${trasfClass}">
+      ${logoTrasf}
+      <span>${(match.trasferta?.nome || "TBD").toUpperCase()}</span>
+      <span class="${scoreClass}">${scoreTrasf}${statusIndicator}</span>
+    </div>
+  </div>
   `;
 }
 
