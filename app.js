@@ -1877,186 +1877,107 @@ function ensureMatchHasTeamIds(match) {
   return match;
 }
 
-function renderMatchPage(match) {
-  if (!match || !match.MATCH_ID) {
-        console.error('Match non valido', match);
-        return;
-    }
-    
-    // 🔥 RECUPERA NOMI E LOGHI SE MANCANO
-    if (!match.SQUADRA_CASA || !match.LOGO_CASA) {
-        const casaData = window.APP_CACHE.fullTeams?.[String(match.CASA_ID)];
-        if (casaData?.team) {
-            match.SQUADRA_CASA = casaData.team.NOME_SQUADRA || "CASA";
-            match.LOGO_CASA = casaData.team.LOGO_ID || "";
-        }
-    }
-    if (!match.SQUADRA_TRASFERTA || !match.LOGO_TRASFERTA) {
-        const trasfData = window.APP_CACHE.fullTeams?.[String(match.TRASFERTA_ID)];
-        if (trasfData?.team) {
-            match.SQUADRA_TRASFERTA = trasfData.team.NOME_SQUADRA || "TRASFERTA";
-            match.LOGO_TRASFERTA = trasfData.team.LOGO_ID || "";
-        }
-    }
-    
-    // ... resto del codice ...
-    
-    // 🔥 FORZA RICARICAMENTO EVENTI
-    const events = window.APP_CACHE.eventsByMatch?.[match.MATCH_ID] || [];
-    console.log(' Eventi caricati per match:', match.MATCH_ID, 'totale:', events.length);
-    
-    if (events.length === 0) {
-        // Se la cache è vuota, prova a ricaricare dal backend
-        ApiClient.getEventsAdmin(match.MATCH_ID).then(freshEvents => {
-            window.APP_CACHE.eventsByMatch[match.MATCH_ID] = freshEvents;
-            CacheManager.save(window.APP_CACHE);
-            renderEvents(freshEvents, match);
-        }).catch(err => {
-            console.error('❌ Errore caricamento eventi:', err);
-            renderEvents([], match);
-        });
-    } else {
-        renderEvents(events, match);
-    }
+async function toggleMatch() {
+  const match = window.APP_STATE.lastMatch;
+  if (!match) return;
   
-  // 🔥 ORA DEFINISCI ANCHE I LOGHI (mancavano!)
-  const logoCasa = match.LOGO_CASA
-    ? `<img src="${getCachedImage(match.LOGO_CASA, 120)}" alt="${match.SQUADRA_CASA}" onerror="this.style.display='none'">`
-    : `<div style="width:70px;height:70px;border-radius:50%;background:#f0f0f0;display:flex;align-items:center;justify-content:center;font-size:1.5rem">⚽</div>`;
+  const newStatus = match.STATO_PARTITA === "LIVE" ? "FINITA" : "LIVE";
   
-  const logoTrasf = match.LOGO_TRASFERTA
-    ? `<img src="${getCachedImage(match.LOGO_TRASFERTA, 120)}" alt="${match.SQUADRA_TRASFERTA}" onerror="this.style.display='none'">`
-    : `<div style="width:70px;height:70px;border-radius:50%;background:#f0f0f0;display:flex;align-items:center;justify-content:center;font-size:1.5rem">⚽</div>`;
+  // 🔥 1. AGGIORNA STATO LOCALE E UI SUBITO (Istantaneo)
+  match.STATO_PARTITA = newStatus;
+  window.APP_STATE.lastMatch = match;
   
-  // ORA USA I NOMI REALI
-  const nomeCasa = (match.SQUADRA_CASA).toUpperCase();
-  const nomeTrasf = (match.SQUADRA_TRASFERTA).toUpperCase();
-  
-  const isLive = match.STATO_PARTITA === "LIVE";
-  const isFinished = match.STATO_PARTITA === "FINITA";
-  const finalStageStarted = window.APP_CACHE.meta?.finalStageStarted;
-  
-  // Tab MVP
-  let mvpTabHtml = isLive
-    ? `<div class="mt-btn" data-tab="mvp">MVP</div>`
-    : `<div class="mt-btn disabled" data-tab="mvp">🏆 MVP</div>`;
-  
-  // Pulsanti evento
-  const canAddEvents = match.STATO_PARTITA === "LIVE" &&
-    (match.FASE === "FINALI" || !finalStageStarted);
-  const eventBtnDisabled = !canAddEvents ? "style=\"opacity:0.5;pointer-events:none;cursor:not-allowed\"" : "";
-  
-  // Pulsante inizia/concludi
-  const canToggleMatch = match.FASE === "FINALI" || !finalStageStarted || !isFinished;
-  const toggleBtnDisabled = !canToggleMatch ? "style=\"opacity:0.5;pointer-events:none;cursor:not-allowed\"" : "";
-  
-  document.getElementById("app").innerHTML = `
-    <div class="match-page">
-      <div class="match-header-big">
-        <div class="team-big left">
-          ${logoCasa}
-          <div class="team-big-name">${nomeCasa}</div>
-        </div>
-        <div class="match-center">
-          <div class="match-controls-top">
-            <div class="phase-btn start-btn ${isLive ? "active" : ""}"
-                 onclick="${canToggleMatch ? "toggleMatch()" : ""}"
-                 ${toggleBtnDisabled}>
-              ${isLive ? "CONCLUDI" : "INIZIA"}
-            </div>
-            ${match.FASE === "FINALI" && isLive ? `
-              <div class="phase-btn secondary-btn" onclick="toggleSupplementari()">
-                SUPPLEMENTARI
-              </div>
-              <div class="phase-btn secondary-btn" onclick="openRigoriPopup()">
-                RIGORI
-              </div>
-            ` : ''}
-          </div>
-          <div class="score-big">${match.GOL_CASA || 0} - ${match.GOL_TRASFERTA || 0}</div>
-          <div class="match-status" id="matchStatus"></div>
-        </div>
-        <div class="team-big right">
-          <div class="team-big-name">${nomeTrasf}</div>
-          ${logoTrasf}
-        </div>
-      </div>
-      <div class="match-toolbar">
-        <div class="mt-btn active" data-tab="diretta">DIRETTA</div>
-        <div class="mt-btn" data-tab="giocatori">GIOCATORI</div>
-        ${mvpTabHtml}
-      </div>
-      <div class="match-content">
-        <div class="tab-content active" id="tab-diretta">
-          <div class="teams-events">
-            <div class="events-actions">
-              <div class="left">
-                <div class="phase-btn small" onclick="${canAddEvents ? "addEvent('casa')" : ""}" ${eventBtnDisabled}>
-                  + EVENTO CASA
-                </div>
-              </div>
-              <div class="right">
-                <div class="phase-btn small" onclick="${canAddEvents ? "addEvent('trasferta')" : ""}" ${eventBtnDisabled}>
-                  + EVENTO TRASFERTA
-                </div>
-              </div>
-            </div>
-            <div class="cronaca-title center"><span>CRONACA</span></div>
-            <div id="mvpBanner" class="mvp-banner">
-              <div class="mvp-title">🏆 MVP DEL MATCH</div>
-              <div class="mvp-name"></div>
-            </div>
-            <div id="eventsTimeline" class="events-timeline">
-              <div id="eventsContent"></div>
-            </div>
-          </div>
-        </div>
-        <div class="tab-content" id="tab-giocatori">
-          <div class="players-columns" id="playersColumns">
-            <div style="text-align:center;padding:40px;color:#888;grid-column:1/-1">
-              Caricamento giocatori...
-            </div>
-          </div>
-        </div>
-        <div class="tab-content" id="tab-mvp">
-          <div class="players-columns" id="mvpColumns">
-            <div style="text-align:center;padding:40px;color:#888;grid-column:1/-1">
-              ${isLive ? "Vota il MVP" : isFinished ? "MVP della partita" : "Disponibile durante la partita"}
-            </div>
-          </div>
-        </div>
-        <div class="back-btn-wrapper">
-          <div class="phase-btn secondary" onclick="showMatches()">INDIETRO</div>
-        </div>
-      </div>
-    </div>
-  `;
-  
-  // Aggiorna UI
+  // Aggiorna il pulsante INIZIO/CONCLUDI e lo stato
   updateMatchUI(match);
-  if (match.STATO_PARTITA === "FINITA" && match.MVP) {
-    updateMVPBanner(match); // Mostra banner centrale con MVP
+  
+  // 🔥 2. GESTISCI PULSANTI EVENTI IN BASE ALLO STATO
+  const canAddEvents = (newStatus === "LIVE" || newStatus === "SUPP") && 
+    (match.FASE === "FINALI" || !window.APP_CACHE.meta?.finalStageStarted);
+  
+  document.querySelectorAll('.phase-btn.small').forEach(btn => {
+    if (btn.textContent.trim().includes('+ EVENTO')) {
+      if (canAddEvents) {
+        // 🔥 ABILITA PULSANTI
+        btn.style.opacity = '1';
+        btn.style.pointerEvents = 'auto';
+        btn.style.cursor = 'pointer';
+        // Ripristina gli onclick
+        if (btn.textContent.includes('CASA')) {
+          btn.onclick = () => addEvent('casa');
+        } else if (btn.textContent.includes('TRASFERTA')) {
+          btn.onclick = () => addEvent('trasferta');
+        }
+      } else {
+        // 🔥 DISABILITA PULSANTI
+        btn.style.opacity = '0.5';
+        btn.style.pointerEvents = 'none';
+        btn.style.cursor = 'not-allowed';
+        btn.onclick = null;
+      }
+    }
+  });
+  
+  const mainBtn = document.querySelector(".start-btn");
+  if (mainBtn) {
+    mainBtn.textContent = newStatus === "LIVE" ? "CONCLUDI" : "INIZIA";
+    mainBtn.classList.toggle("active", newStatus === "LIVE");
   }
   
-  // 🔥 Renderizza eventi dalla cache
-  const matchEvents = window.APP_CACHE.events?.filter(e => e.MATCH_ID === match.MATCH_ID) || [];
-  const eventMap = {};
-  matchEvents.forEach(e => {
-      if (e.PLAYER_ID) {
-          if (!eventMap[e.PLAYER_ID]) eventMap[e.PLAYER_ID] = [];
-          eventMap[e.PLAYER_ID].push(e.TIPO);
+  let freshMatch = null;
+  
+  try {
+    // 2. Invia stato al backend
+    await ApiClient.updateMatchStatus(match.MATCH_ID, newStatus);
+    
+    // 3. Aggiorna dati match dal backend
+    const fullData = await ApiClient.getMatchFull(match.MATCH_ID);
+    if (fullData?.match) {
+      freshMatch = fullData.match;
+      window.APP_STATE.lastMatch = freshMatch;
+      window.APP_STATE.matchesById[freshMatch.MATCH_ID] = freshMatch;
+      
+      // Aggiorna cache locale
+      if (window.APP_CACHE.matches) {
+        const idx = window.APP_CACHE.matches.findIndex(m => m.MATCH_ID === freshMatch.MATCH_ID);
+        if (idx >= 0) {
+          window.APP_CACHE.matches[idx] = { ...window.APP_CACHE.matches[idx], ...freshMatch };
+          CacheManager.save(window.APP_CACHE);
+        }
       }
-  });
-  renderEvents(events, match);
-  
-  // Carica giocatori
-  loadPlayersForMatch(match);
-  
-  // MVP banner
-  if (isFinished) updateMVPBanner(match);
-  
-  // Salva stato
-  window.APP_STATE.lastMatch = match;
+      
+      // Aggiorna banner MVP se già disponibile
+      if (freshMatch.MVP) {
+        updateMVPBanner(freshMatch);
+      }
+      
+      // Aggiorna giocatori
+      loadPlayersForMatch(freshMatch);
+    }
+    
+    // 4. Se FINITA, gestisci MVP in background
+    if (newStatus === "FINITA") {
+      console.log("🏆 Partita conclusa. Gestione MVP in background...");
+      (async () => {
+        try {
+          if (!freshMatch) return;
+          await submitAllMVPVotes(freshMatch.MATCH_ID);
+          await ApiClient.finalizeMVP(freshMatch.MATCH_ID);
+          pollForMVPUpdate(freshMatch.MATCH_ID);
+        } catch (err) {
+          console.error("Errore background MVP:", err);
+        }
+      })();
+    } else {
+      refreshStandingsDebounced(500);
+    }
+    
+  } catch (error) {
+    console.error('Errore toggle match:', error);
+    alert("Errore durante l'aggiornamento: " + error.message);
+    // Rollback UI se fallisce
+    match.STATO_PARTITA = newStatus === "FINITA" ? "LIVE" : "FINITA";
+    updateMatchUI(match);
+  }
 }
 
 // 🔥 MODIFICA renderEvents() - Debug completo
@@ -2298,17 +2219,32 @@ function updateScoreLocally(matchId, eventId) {
 }
 
 function updateMatchUI(match) {
-  const statusEl = document.getElementById("matchStatus"), btn = document.querySelector(".start-btn");
+  const statusEl = document.getElementById("matchStatus"), 
+        btn = document.querySelector(".start-btn");
   if (!statusEl || !btn) return;
-  if (match.STATO_PARTITA === "LIVE") { 
-    statusEl.innerHTML = "LIVE"; statusEl.classList.add("live"); 
-    btn.textContent = "CONCLUDI"; btn.classList.add("active"); 
-  } else if (match.STATO_PARTITA === "FINITA") { 
-    statusEl.textContent = "TERMINATA"; statusEl.classList.remove("live"); 
-    btn.textContent = "INIZIO"; btn.classList.remove("active"); 
-  } else { 
-    statusEl.textContent = ""; 
+  
+  // 🔥 GESTISCI SUPPLEMENTARI
+  if (match.IN_SUPPLEMENTARI) {
+    statusEl.innerHTML = "SUPP"; 
+    statusEl.classList.add("live");
+    btn.textContent = "CONCLUDI"; 
+    btn.classList.add("active");
+  }
+  else if (match.STATO_PARTITA === "LIVE") {
+    statusEl.innerHTML = "LIVE"; 
+    statusEl.classList.add("live");
+    btn.textContent = "CONCLUDI"; 
+    btn.classList.add("active");
+  } 
+  else if (match.STATO_PARTITA === "FINITA") {
+    statusEl.textContent = "TERMINATA"; 
+    statusEl.classList.remove("live");
     btn.textContent = "INIZIO"; 
+    btn.classList.remove("active");
+  } 
+  else {
+    statusEl.textContent = "";
+    btn.textContent = "INIZIO";
   }
 }
 
@@ -2636,25 +2572,25 @@ async function toggleMatch() {
   // Aggiorna il pulsante INIZIO/CONCLUDI e lo stato
   updateMatchUI(match);
   
-  // 🔥 2. GESTIONE PULSANTI "+ EVENTO" - ABILITA/DISABILITA SUBITO
-  const canAddEvents = newStatus === "LIVE" && 
+  // 🔥 2. GESTISCI PULSANTI EVENTI IN BASE ALLO STATO
+  const canAddEvents = (newStatus === "LIVE" || newStatus === "SUPP") && 
     (match.FASE === "FINALI" || !window.APP_CACHE.meta?.finalStageStarted);
   
   document.querySelectorAll('.phase-btn.small').forEach(btn => {
     if (btn.textContent.trim().includes('+ EVENTO')) {
       if (canAddEvents) {
-        // 🔥 ABILITA: ripristina stile e onclick
+        // 🔥 ABILITA PULSANTI
         btn.style.opacity = '1';
         btn.style.pointerEvents = 'auto';
         btn.style.cursor = 'pointer';
-        // Ripristina la funzione onclick in base al testo del bottone
+        // Ripristina gli onclick
         if (btn.textContent.includes('CASA')) {
           btn.onclick = () => addEvent('casa');
         } else if (btn.textContent.includes('TRASFERTA')) {
           btn.onclick = () => addEvent('trasferta');
         }
       } else {
-        // 🔥 DISABILITA: stile disabilitato + rimuovi onclick
+        // 🔥 DISABILITA PULSANTI
         btn.style.opacity = '0.5';
         btn.style.pointerEvents = 'none';
         btn.style.cursor = 'not-allowed';
@@ -2662,23 +2598,21 @@ async function toggleMatch() {
       }
     }
   });
-
-  // Aggiorna testo bottone principale
+  
   const mainBtn = document.querySelector(".start-btn");
   if (mainBtn) {
     mainBtn.textContent = newStatus === "LIVE" ? "CONCLUDI" : "INIZIA";
     mainBtn.classList.toggle("active", newStatus === "LIVE");
   }
-
+  
   let freshMatch = null;
-
+  
   try {
-    // 3. Invia stato al backend
+    // 2. Invia stato al backend
     await ApiClient.updateMatchStatus(match.MATCH_ID, newStatus);
     
-    // 4. Aggiorna dati match dal backend
+    // 3. Aggiorna dati match dal backend
     const fullData = await ApiClient.getMatchFull(match.MATCH_ID);
-    
     if (fullData?.match) {
       freshMatch = fullData.match;
       window.APP_STATE.lastMatch = freshMatch;
@@ -2695,17 +2629,16 @@ async function toggleMatch() {
       
       // Aggiorna banner MVP se già disponibile
       if (freshMatch.MVP) {
-         updateMVPBanner(freshMatch);
+        updateMVPBanner(freshMatch);
       }
       
-      // Aggiorna giocatori (per mostrare eventuali corone MVP)
+      // Aggiorna giocatori
       loadPlayersForMatch(freshMatch);
     }
     
-    // 5. Se FINITA, gestisci MVP in background (non bloccante)
+    // 4. Se FINITA, gestisci MVP in background
     if (newStatus === "FINITA") {
       console.log("🏆 Partita conclusa. Gestione MVP in background...");
-      
       (async () => {
         try {
           if (!freshMatch) return;
@@ -2723,7 +2656,6 @@ async function toggleMatch() {
   } catch (error) {
     console.error('Errore toggle match:', error);
     alert("Errore durante l'aggiornamento: " + error.message);
-    
     // Rollback UI se fallisce
     match.STATO_PARTITA = newStatus === "FINITA" ? "LIVE" : "FINITA";
     updateMatchUI(match);
@@ -2738,16 +2670,24 @@ function toggleSupplementari() {
   const match = window.APP_STATE.lastMatch;
   if (!match || match.STATO_PARTITA !== "LIVE") return;
   
-  // Cambia stato a SUPP (supplementari)
-  match.STATO_PARTITA = "SUPP";
+  // 🔥 AGGIUNGI FLAG LOCALE (non cambiare stato backend)
+  match.IN_SUPPLEMENTARI = true;
   window.APP_STATE.lastMatch = match;
   
-  // Aggiorna UI
+  // Aggiorna UI mostrando "SUPP" invece di "LIVE"
   updateMatchUI(match);
   
-  // Invia al backend
-  ApiClient.updateMatchStatus(match.MATCH_ID, "SUPP")
-    .catch(err => console.error('Errore update supplementari:', err));
+  // 🔥 MANTIENI attivi i pulsanti evento
+  document.querySelectorAll('.phase-btn.small').forEach(btn => {
+    if (btn.textContent.trim().includes('+ EVENTO')) {
+      btn.style.opacity = '1';
+      btn.style.pointerEvents = 'auto';
+      btn.style.cursor = 'pointer';
+    }
+  });
+  
+  // Opzionale: salva flag nel backend (ma mantieni stato LIVE)
+  // ApiClient.updateMatchSupplementari(match.MATCH_ID, true)
 }
 
 function openRigoriPopup() {
