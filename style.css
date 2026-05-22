@@ -2997,7 +2997,7 @@ body{
 #mvpBanner {
   position: absolute;
   left: 50%;
-  top: 50px;  /* Distanza dal titolo CRONACA */
+  top: 60px;  /* Distanza dal titolo CRONACA */
   transform: translateX(-50%);
   z-index: 20;
   
