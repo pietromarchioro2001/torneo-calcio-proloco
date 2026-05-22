@@ -3531,15 +3531,38 @@ function startStandingsLiveRefresh() {
   if (window.APP_STATE._standingsInterval) clearInterval(window.APP_STATE._standingsInterval);
   
   window.APP_STATE._standingsInterval = setInterval(() => {
-    const page = document.querySelector(".standings-page"); 
+    const page = document.querySelector(".standings-page");
     if (!page) { stopStandingsLiveRefresh(); return; }
     if (document.hidden) return;
     
-    ApiClient.getStandings().then(data => { 
-      if (data) { window.APP_CACHE.standings = data; CacheManager.save(window.APP_CACHE); }
-      if (window.APP_STATE._activeStandingsTab === "gironi") renderStandings(data);
-    }).catch(console.error);
-  }, 5000);
+    const activeTab = window.APP_STATE._activeStandingsTab;
+    
+    if (activeTab === "gironi") {
+      // Aggiorna classifiche gironi
+      ApiClient.getStandings().then(data => {
+        if (data) { 
+          window.APP_CACHE.standings = data; 
+          CacheManager.save(window.APP_CACHE); 
+        }
+        if (window.APP_STATE._activeStandingsTab === "gironi") {
+          renderStandings(data);
+        }
+      }).catch(console.error);
+    }
+    // 🔥 AGGIUNTO: Aggiorna anche la fase finale in tempo reale
+    else if (activeTab === "fasefinale") {
+      ApiClient.getFinalStageMatches().then(data => {
+        if (data) {
+          window.APP_CACHE.finalStage = data || [];
+          CacheManager.save(window.APP_CACHE);
+        }
+        // Renderizza solo se siamo ancora nella tab fase finale
+        if (window.APP_STATE._activeStandingsTab === "fasefinale") {
+          renderFinalStage(data || window.APP_CACHE.finalStage);
+        }
+      }).catch(console.error);
+    }
+  }, 5000); // Ogni 5 secondi
 }
 
 function showStandings() {
@@ -3562,17 +3585,27 @@ function showStandings() {
   }).catch(console.error);
   
   document.querySelectorAll(".standings-tab").forEach(tab => {
-    tab.onclick = () => {
-      document.querySelectorAll(".standings-tab").forEach(t => t.classList.remove("active")); 
-      tab.classList.add("active");
-      const type = tab.dataset.tab; window.APP_STATE._activeStandingsTab = type;
-      if (type === "gironi") renderStandings(window.APP_CACHE.standings || {});
-      if (type === "fasefinale") {
-        if (!window.APP_STATE._finalStageLoaded) { loadFinalStage(); window.APP_STATE._finalStageLoaded = true; }
-        else renderFinalStage(window.APP_CACHE.finalStage || []);
+  tab.onclick = () => {
+    document.querySelectorAll(".standings-tab").forEach(t => t.classList.remove("active"));
+    tab.classList.add("active");
+    const type = tab.dataset.tab; 
+    window.APP_STATE._activeStandingsTab = type;
+    
+    if (type === "gironi") {
+      renderStandings(window.APP_CACHE.standings || {});
+    }
+    if (type === "fasefinale") {
+      if (!window.APP_STATE._finalStageLoaded) { 
+        loadFinalStage(); 
+        window.APP_STATE._finalStageLoaded = true; 
+      } else {
+        renderFinalStage(window.APP_CACHE.finalStage || []);
       }
-    };
-  });
+      // 🔥 ASSICURA CHE IL POLLING SIA ATTIVO ANCHE PER FASE FINALE
+      startStandingsLiveRefresh();
+    }
+  };
+});
   
   startStandingsLiveRefresh();
 }
