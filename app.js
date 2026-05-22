@@ -1724,7 +1724,6 @@ function openMatch(id) {
         forceReloadEvents(id, cachedMatch);
       }
     }, 500);
-  }
   
   // Aggiorna dal backend (background) - MA NON SOVRASCRIVERE SE ID VUOTI
   ApiClient.getMatchFull(id)
@@ -1770,6 +1769,7 @@ function openMatch(id) {
       console.error('❌ Errore backend getMatchFull:', err);
       // Mantieni cache
     });
+ }
 
 function getSafeMatchData(matchId) {
   if (!matchId) return null;
