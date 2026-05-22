@@ -1770,7 +1770,6 @@ function openMatch(id) {
       console.error('❌ Errore backend getMatchFull:', err);
       // Mantieni cache
     });
-}
 
 function getSafeMatchData(matchId) {
   if (!matchId) return null;
