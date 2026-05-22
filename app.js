@@ -415,7 +415,7 @@ function getNextMatchCard() {
   const nowStr = formatLocalDate(now);
   
   // 🔥 1. Cerca partita LIVE
-  const liveMatch = matches.find(m => m.STATO_PARTITA === "LIVE");
+  const liveMatch = matches.find(m => m.STATO_PARTITA === "LIVE" || m.STATO_PARTITA === "SUPP");
   if (liveMatch) {
     // 🔥 PRIORITÀ: Usa GOL_CASA/GOL_TRASFERTA se esistono e sono validi
     // Altrimenti ricalcola dagli eventi cached
@@ -1836,8 +1836,8 @@ function renderMatchPage(match) {
     : `<div class="mt-btn disabled" data-tab="mvp">🏆 MVP</div>`;
 
   // Pulsanti evento
-  const canAddEvents = (match.STATO_PARTITA === "LIVE" || match.STATO_PARTITA === "SUPP") &&
-    (match.FASE === "FINALI" || !finalStageStarted);
+  const canAddEvents = (match.STATO_PARTITA === "LIVE" || match.STATO_PARTITA === "SUPP") && 
+                     (match.FASE === "FINALI" || !finalStageStarted);
 
   const eventBtnDisabled = !canAddEvents
     ? "style=\"opacity:0.5;pointer-events:none;cursor:not-allowed\""
@@ -2397,16 +2397,15 @@ function updateMatchUI(match) {
   const statusEl = document.getElementById("matchStatus"), 
         btn = document.querySelector(".start-btn");
   if (!statusEl || !btn) return;
-  
-  // 🔥 GESTISCI SUPPLEMENTARI
-  if (match.IN_SUPPLEMENTARI) {
-    statusEl.innerHTML = "SUPP"; 
+
+  if (match.STATO_PARTITA === "LIVE") {
+    statusEl.innerHTML = "LIVE"; 
     statusEl.classList.add("live");
     btn.textContent = "CONCLUDI"; 
     btn.classList.add("active");
-  }
-  else if (match.STATO_PARTITA === "LIVE") {
-    statusEl.innerHTML = "LIVE"; 
+  } 
+  else if (match.STATO_PARTITA === "SUPP") {
+    statusEl.innerHTML = "SUPP"; 
     statusEl.classList.add("live");
     btn.textContent = "CONCLUDI"; 
     btn.classList.add("active");
@@ -2420,6 +2419,7 @@ function updateMatchUI(match) {
   else {
     statusEl.textContent = "";
     btn.textContent = "INIZIO";
+    btn.classList.remove("active");
   }
 }
 
@@ -2844,25 +2844,30 @@ async function toggleMatch() {
 function toggleSupplementari() {
   const match = window.APP_STATE.lastMatch;
   if (!match || match.STATO_PARTITA !== "LIVE") return;
-  
-  // 🔥 AGGIUNGI FLAG LOCALE (non cambiare stato backend)
-  match.IN_SUPPLEMENTARI = true;
+
+  // 🔥 1. Aggiorna stato locale a SUPP
+  match.STATO_PARTITA = "SUPP";
   window.APP_STATE.lastMatch = match;
-  
-  // Aggiorna UI mostrando "SUPP" invece di "LIVE"
+
+  // 🔥 2. Aggiorna UI immediatamente
   updateMatchUI(match);
-  
-  // 🔥 MANTIENI attivi i pulsanti evento
+
+  // 🔥 3. Mantieni attivi i pulsanti + EVENTO
   document.querySelectorAll('.phase-btn.small').forEach(btn => {
     if (btn.textContent.trim().includes('+ EVENTO')) {
       btn.style.opacity = '1';
       btn.style.pointerEvents = 'auto';
       btn.style.cursor = 'pointer';
+      // Ripristina onclick se erano stati rimossi
+      if (btn.textContent.includes('CASA')) btn.onclick = () => addEvent('casa');
+      if (btn.textContent.includes('TRASFERTA')) btn.onclick = () => addEvent('trasferta');
     }
   });
-  
-  // Opzionale: salva flag nel backend (ma mantieni stato LIVE)
-  // ApiClient.updateMatchSupplementari(match.MATCH_ID, true)
+
+  // 🔥 4. Invia al backend (fire & forget)
+  ApiClient.updateMatchStatus(match.MATCH_ID, "SUPP")
+    .then(() => console.log('✅ Stato SUPP inviato al backend'))
+    .catch(err => console.error('❌ Errore update supplementari:', err));
 }
 
 function openRigoriPopup() {
