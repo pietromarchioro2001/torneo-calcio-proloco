@@ -1971,7 +1971,14 @@ function renderMatchPage(match) {
   }
   
   // 🔥 Renderizza eventi dalla cache
-  const events = window.APP_CACHE.eventsByMatch?.[match.MATCH_ID] || [];
+  const matchEvents = window.APP_CACHE.events?.filter(e => e.MATCH_ID === match.MATCH_ID) || [];
+  const eventMap = {};
+  matchEvents.forEach(e => {
+      if (e.PLAYER_ID) {
+          if (!eventMap[e.PLAYER_ID]) eventMap[e.PLAYER_ID] = [];
+          eventMap[e.PLAYER_ID].push(e.TIPO);
+      }
+  });
   renderEvents(events, match);
   
   // Carica giocatori
