@@ -3774,24 +3774,21 @@ function bootAdminApp() {
   const loader = document.getElementById("startupLoader");
   if (loader) loader.style.display = "flex";
 
-  // 🔥 AGGIUNGI QUESTA RIGA - DICHIARA dataLoaded PRIMA DEL TIMEOUT!
   let dataLoaded = false;
-  
+  let initialRouteHandled = false; // 🔥 FIX: Impedisce che la route venga eseguita due volte
+
+  // 🔥 TIMEOUT AUMENTATO A 5 SECONDI (era 3)
   const maxTimeout = setTimeout(() => {
     if (!dataLoaded) {
-      console.warn('⏱️ Timeout caricamento dati');
+      console.warn('⏱️ Timeout caricamento dati - mostro UI comunque');
       hideLoader();
-      
-      // 🔥 NON andare alla home se stiamo caricando un match
-      if (window.APP_STATE._matchLoading || window.location.hash.includes('match')) {
-        console.log('⚠️ Match in caricamento, skip showHome()');
-        return;
+      if (!initialRouteHandled) {
+        showHome();
+        initialRouteHandled = true;
       }
-      
-      showHome();
     }
-  }, 8000);
-  
+  }, 5000);
+
   function hideLoader() {
     clearTimeout(maxTimeout);
     if (loader) {
@@ -3799,12 +3796,13 @@ function bootAdminApp() {
       setTimeout(() => loader.style.display = "none", 300);
     }
   }
-  
+
   // 🔥 Carica dati iniziali dal backend
   ApiClient.getInitialData()
     .then(data => {
       dataLoaded = true;
       clearTimeout(maxTimeout);
+      hideLoader(); // 🔥 Assicura che il loader sparisca sempre
       console.log('✅ Dati iniziali caricati:', data);
       
       if (data) {
@@ -3821,24 +3819,26 @@ function bootAdminApp() {
         };
         
         hydrateMatches(window.APP_CACHE.matches || []);
-        preloadRecentEvents(); // Precarica eventi per partite recenti
+        preloadRecentEvents();
         CacheManager.save(window.APP_CACHE);
         
-        // 🔥 Navigazione basata sull'hash URL (deep linking)
-        const currentHash = window.location.hash || "#home";
-        
-        if (currentHash.includes("matches")) {
-          showMatches();
-        } else if (currentHash.includes("teams")) {
-          showTeams();
-        } else if (currentHash.includes("standings")) {
-          showStandings();
-        } else {
-          showHome(); // Default
+        // 🔥 FIX: Gestisci la navigazione SOLO AL PRIMO AVVIO
+        // Se l'utente ha già cliccato su una partita mentre i dati caricavano,
+        // questo blocco NON sovrascriverà la schermata aperta.
+        if (!initialRouteHandled) {
+          initialRouteHandled = true;
+          const currentHash = window.location.hash || "#home";
+          if (currentHash.includes("matches")) {
+            showMatches();
+          } else if (currentHash.includes("teams")) {
+            showTeams();
+          } else if (currentHash.includes("standings")) {
+            showStandings();
+          } else {
+            showHome();
+          }
         }
       }
-      
-      hideLoader();
       
       // Carica flag fase finale in background (non bloccante)
       ApiClient.isFinalStageStarted()
@@ -3852,7 +3852,10 @@ function bootAdminApp() {
       console.error('❌ Errore caricamento:', error);
       dataLoaded = true;
       hideLoader();
-      showHome(); // Fallback in caso di errore
+      if (!initialRouteHandled) {
+        initialRouteHandled = true;
+        showHome();
+      }
     });
   
   // 🔥 Global error handling
