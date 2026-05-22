@@ -1875,7 +1875,7 @@ function renderMatchPage(match) {
   
   // Tab MVP
   let mvpTabHtml = isLive
-    ? `<div class="mt-btn" data-tab="mvp">VOTA MVP</div>`
+    ? `<div class="mt-btn" data-tab="mvp">MVP</div>`
     : `<div class="mt-btn disabled" data-tab="mvp">🏆 MVP</div>`;
   
   // Pulsanti evento
@@ -2470,7 +2470,7 @@ async function saveEvent(team) {
   const assistPlayer = assistId ? players.find(p => String(p.PLAYER_ID) === String(assistId)) : null;
   const assistName = assistPlayer?.NOME || "";
   
-  // 🔥 1. AGGIUNGI EVENTO ALLA CACHE
+  // 🔥 1. AGGIUNGI EVENTO ALLA CACHE LOCALE (Immediato)
   const tempEvent = {
     EVENT_ID: 'temp_' + Date.now(),
     MATCH_ID: match.MATCH_ID,
@@ -2488,7 +2488,7 @@ async function saveEvent(team) {
   }
   window.APP_CACHE.eventsByMatch[match.MATCH_ID].push(tempEvent);
   
-  // 🔥 2. AGGIORNA UI IMMEDIATAMENTE
+  // 🔥 2. AGGIORNA UI IMMEDIATAMENTE (L'utente vede subito l'evento)
   renderEvents(window.APP_CACHE.eventsByMatch[match.MATCH_ID], match);
   renderPlayersTab(
     window.APP_CACHE.fullTeams?.[String(match.CASA_ID)],
@@ -2496,22 +2496,18 @@ async function saveEvent(team) {
     match
   );
   
-  // 🔥 3. CALCOLA PUNTEGGIO DAGLI EVENTI (NON modificare lastMatch!)
+  // 🔥 3. CALCOLA PUNTEGGIO DAGLI EVENTI LOCALI
   updateScoreFromEvents(match.MATCH_ID);
   
   // 🔥 4. CHIUDI POPUP SUBITO
   document.querySelector(".modalOverlay")?.remove();
   
-  // 🔥 5. SALVA SUL BACKEND (background)
+  // 🔥 5. SALVA SUL BACKEND (Background)
+  // 🔥 FIX: Rimossa la chiamata a getEventsAdmin subito dopo il salvataggio.
+  // Chiederla subito rischiava di sovrascrivere i dati locali con dati vecchi del server (latenza).
   ApiClient.addEventAdmin(match.MATCH_ID, teamId, type, minute, playerId, assistId)
     .then(() => {
-      return ApiClient.getEventsAdmin(match.MATCH_ID);
-    })
-    .then(events => {
-      window.APP_CACHE.eventsByMatch[match.MATCH_ID] = events;
-      CacheManager.save(window.APP_CACHE);
-      renderEvents(events, match);
-      updateScoreFromEvents(match.MATCH_ID);  // ← Ricalcola dal server
+      // Aggiorna solo la classifica globale, la lista eventi resta quella locale finché non ricarichi la pagina
       refreshStandingsDebounced(500);
     })
     .catch(error => {
