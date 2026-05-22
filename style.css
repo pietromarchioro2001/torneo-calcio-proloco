@@ -4059,5 +4059,229 @@ div.bracket-match.final-match {
   
   /* Nascondi elementi non essenziali */
   .home-sponsors{ display:none; }
+
+/* ============================================================================
+   RIGORI POPUP STYLES
+   ============================================================================ */
+
+.rigori-popup-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0,0,0,0.8);
+  z-index: 10000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  backdrop-filter: blur(4px);
+}
+
+.rigori-popup {
+  background: white;
+  border-radius: 20px;
+  padding: 30px;
+  max-width: 700px;
+  width: 90%;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+}
+
+.rigori-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 30px;
+  padding-bottom: 15px;
+  border-bottom: 2px solid #eee;
+}
+
+.rigori-title {
+  font-size: 24px;
+  font-weight: 800;
+  letter-spacing: 2px;
+  color: #7a1e2c;
+}
+
+.rigori-close {
+  background: none;
+  border: none;
+  font-size: 24px;
+  cursor: pointer;
+  color: #999;
+}
+
+.rigori-teams {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 30px;
+}
+
+.rigori-team {
+  text-align: center;
+  flex: 1;
+}
+
+.rigori-team img {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  object-fit: cover;
+  margin-bottom: 10px;
+}
+
+.rigori-team .team-name {
+  font-weight: 700;
+  font-size: 14px;
+  margin-bottom: 10px;
+}
+
+.rigori-score {
+  font-size: 36px;
+  font-weight: 900;
+  color: #7a1e2c;
+  margin-bottom: 10px;
+}
+
+.rigori-kicks {
+  display: flex;
+  gap: 6px;
+  justify-content: center;
+  flex-wrap: wrap;
+  min-height: 30px;
+}
+
+.kick-indicator {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  animation: kickAppear 0.3s ease;
+}
+
+.kick-indicator.goal {
+  background: #22c55e;
+  box-shadow: 0 0 10px rgba(34, 197, 94, 0.5);
+}
+
+.kick-indicator.miss {
+  background: #ef4444;
+  box-shadow: 0 0 10px rgba(239, 68, 68, 0.5);
+}
+
+.rigori-vs {
+  font-size: 20px;
+  font-weight: 800;
+  color: #999;
+  padding: 0 30px;
+}
+
+.rigori-center {
+  text-align: center;
+  margin-bottom: 30px;
+}
+
+.rigori-indicator {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  background: #e5e7eb;
+  margin: 0 auto 15px;
+  transition: all 0.3s ease;
+}
+
+.rigori-indicator.goal {
+  background: #22c55e;
+  box-shadow: 0 0 30px rgba(34, 197, 94, 0.6);
+}
+
+.rigori-indicator.miss {
+  background: #ef4444;
+  box-shadow: 0 0 30px rgba(239, 68, 68, 0.6);
+}
+
+.rigori-current {
+  font-size: 16px;
+  color: #666;
+  font-weight: 600;
+}
+
+.rigori-controls {
+  display: flex;
+  gap: 15px;
+  margin-bottom: 20px;
+}
+
+.rigori-btn {
+  flex: 1;
+  padding: 15px;
+  border: none;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.rigori-btn.miss {
+  background: #fee2e2;
+  color: #dc2626;
+}
+
+.rigori-btn.miss:hover {
+  background: #fecaca;
+  transform: translateY(-2px);
+}
+
+.rigori-btn.goal {
+  background: #dcfce7;
+  color: #16a34a;
+}
+
+.rigori-btn.goal:hover {
+  background: #bbf7d0;
+  transform: translateY(-2px);
+}
+
+.rigori-finish {
+  width: 100%;
+  padding: 15px;
+  background: #7a1e2c;
+  color: white;
+  border: none;
+  border-radius: 10px;
+  font-size: 16px;
+  font-weight: 700;
+  cursor: pointer;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.rigori-finish:hover {
+  background: #9f2c3d;
+}
+
+@keyframes kickAppear {
+  0% { transform: scale(0); opacity: 0; }
+  50% { transform: scale(1.2); }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+@keyframes pulseRigore {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.1); opacity: 0.8; }
+}
+
+/* Pulsanti supplementari/rigori nella pagina match */
+.match-controls-top .secondary-btn {
+  background: #f3f4f6;
+  color: #374151;
+  border: 2px solid #e5e7eb;
+  margin-left: 10px;
+}
+
+.match-controls-top .secondary-btn:hover {
+  background: #e5e7eb;
+}
   .sub-title::before, .sub-title::after{ display:none; }
 }
