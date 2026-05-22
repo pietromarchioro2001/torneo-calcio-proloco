@@ -510,7 +510,6 @@ body{
   justify-content: flex-end;
   margin-left: auto;
   text-align: right;
-  flex-direction: row-reverse;  /* 🔥 Inverte l'ordine: nome prima, logo dopo */
   gap: 10px;
 }
 
