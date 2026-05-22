@@ -3790,7 +3790,7 @@ function bootAdminApp() {
       
       showHome();
     }
-  }, 3000);
+  }, 8000);
   
   function hideLoader() {
     clearTimeout(maxTimeout);
