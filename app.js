@@ -1850,11 +1850,20 @@ function renderMatchPage(match) {
         </div>
         <div class="match-center">
           <div class="match-controls-top">
-            <div class="phase-btn start-btn ${isLive ? "active" : ""}" 
+            <div class="phase-btn start-btn ${isLive ? "active" : ""}"
                  onclick="${canToggleMatch ? "toggleMatch()" : ""}"
                  ${toggleBtnDisabled}>
               ${isLive ? "CONCLUDI" : "INIZIA"}
             </div>
+            
+            ${match.FASE === "FINALI" && isLive ? `
+              <div class="phase-btn secondary-btn" onclick="toggleSupplementari()">
+                SUPPLEMENTARI
+              </div>
+              <div class="phase-btn secondary-btn" onclick="openRigoriPopup()">
+                RIGORI
+              </div>
+            ` : ''}
           </div>
           <div class="score-big">${match.GOL_CASA || 0} - ${match.GOL_TRASFERTA || 0}</div>
           <div class="match-status" id="matchStatus"></div>
@@ -2599,6 +2608,245 @@ async function toggleMatch() {
     // Rollback UI se fallisce
     match.STATO_PARTITA = newStatus === "FINITA" ? "LIVE" : "FINITA";
     updateMatchUI(match);
+  }
+}
+
+// ============================================================================
+// 🎯 SUPPLEMENTARI E RIGORI - FASE FINALE
+// ============================================================================
+
+function toggleSupplementari() {
+  const match = window.APP_STATE.lastMatch;
+  if (!match || match.STATO_PARTITA !== "LIVE") return;
+  
+  // Cambia stato a SUPP (supplementari)
+  match.STATO_PARTITA = "SUPP";
+  window.APP_STATE.lastMatch = match;
+  
+  // Aggiorna UI
+  updateMatchUI(match);
+  
+  // Invia al backend
+  ApiClient.updateMatchStatus(match.MATCH_ID, "SUPP")
+    .catch(err => console.error('Errore update supplementari:', err));
+}
+
+function openRigoriPopup() {
+  const match = window.APP_STATE.lastMatch;
+  if (!match) return;
+  
+  // Recupera dati squadre
+  const casaData = window.APP_CACHE.fullTeams?.[String(match.CASA_ID)]?.team;
+  const trasfData = window.APP_CACHE.fullTeams?.[String(match.TRASFERTA_ID)]?.team;
+  
+  const casaNome = casaData?.NOME_SQUADRA || match.SQUADRA_CASA;
+  const trasfNome = trasfData?.NOME_SQUADRA || match.SQUADRA_TRASFERTA;
+  const casaLogo = casaData?.LOGO_FILE_ID;
+  const trasfLogo = trasfData?.LOGO_FILE_ID;
+  
+  // Stato locale del popup
+  let rigoriState = {
+    casaScore: 0,
+    trasfScore: 0,
+    currentKicker: 'casa', // 'casa' o 'trasferta'
+    history: [], // {team: 'casa'|'trasferta', result: 'goal'|'miss'}
+    finished: false
+  };
+  
+  // Crea popup
+  const popup = document.createElement('div');
+  popup.className = 'rigori-popup-overlay';
+  popup.innerHTML = `
+    <div class="rigori-popup">
+      <div class="rigori-header">
+        <div class="rigori-title">CALCIO DI RIGORE</div>
+        <button class="rigori-close" onclick="this.closest('.rigori-popup-overlay').remove()">✕</button>
+      </div>
+      
+      <div class="rigori-teams">
+        <div class="rigori-team" id="rigori-casa">
+          ${casaLogo ? `<img src="${getCachedImage(casaLogo, 60)}" alt="${casaNome}">` : '<div class="logo-placeholder">⚽</div>'}
+          <div class="team-name">${casaNome}</div>
+          <div class="rigori-score" id="score-casa">0</div>
+          <div class="rigori-kicks" id="kicks-casa"></div>
+        </div>
+        
+        <div class="rigori-vs">VS</div>
+        
+        <div class="rigori-team" id="rigori-trasferta">
+          ${trasfLogo ? `<img src="${getCachedImage(trasfLogo, 60)}" alt="${trasfNome}">` : '<div class="logo-placeholder">⚽</div>'}
+          <div class="team-name">${trasfNome}</div>
+          <div class="rigori-score" id="score-trasferta">0</div>
+          <div class="rigori-kicks" id="kicks-trasferta"></div>
+        </div>
+      </div>
+      
+      <div class="rigori-center">
+        <div class="rigori-indicator" id="rigori-indicator"></div>
+        <div class="rigori-current" id="rigori-current">Inizia ${casaNome}</div>
+      </div>
+      
+      <div class="rigori-controls">
+        <button class="rigori-btn miss" onclick="handleRigoreClick('miss')">❌ SBAGLIATO</button>
+        <button class="rigori-btn goal" onclick="handleRigoreClick('goal')">⚽ REALIZZATO</button>
+      </div>
+      
+      <button class="rigori-finish" id="rigori-finish" style="display:none" onclick="finishRigori('${match.MATCH_ID}')">
+        FINE RIGORI
+      </button>
+    </div>
+  `;
+  
+  document.body.appendChild(popup);
+  
+  // Esponi funzioni globali per il popup
+  window.handleRigoreClick = (result) => handleRigoreClick(result, rigoriState, match);
+  window.finishRigori = (matchId) => finishRigori(matchId, rigoriState, match);
+}
+
+function handleRigoreClick(result, state, match) {
+  if (state.finished) return;
+  
+  const currentTeam = state.currentKicker;
+  const isGoal = result === 'goal';
+  
+  // Aggiorna punteggio
+  if (isGoal) {
+    state[currentTeam + 'Score']++;
+  }
+  
+  // Aggiungi alla storia
+  state.history.push({
+    team: currentTeam,
+    result: result
+  });
+  
+  // Aggiorna UI
+  updateRigoriUI(state, match);
+  
+  // Cambia squadra
+  state.currentKicker = currentTeam === 'casa' ? 'trasferta' : 'casa';
+  
+  // Controlla se c'è un vincitore
+  if (checkRigoriWinner(state)) {
+    state.finished = true;
+    document.getElementById('rigori-finish').style.display = 'block';
+  }
+}
+
+function updateRigoriUI(state, match) {
+  // Aggiorna punteggi
+  document.getElementById('score-casa').textContent = state.casaScore;
+  document.getElementById('score-trasferta').textContent = state.trasfScore;
+  
+  // Aggiorna indicatori
+  const indicator = document.getElementById('rigori-indicator');
+  const current = document.getElementById('rigori-current');
+  const casaKicks = document.getElementById('kicks-casa');
+  const trasfKicks = document.getElementById('kicks-trasferta');
+  
+  // Aggiorna bollino centrale
+  const lastKick = state.history[state.history.length - 1];
+  if (lastKick) {
+    indicator.className = 'rigori-indicator ' + (lastKick.result === 'goal' ? 'goal' : 'miss');
+    indicator.style.animation = 'pulseRigore 3s ease';
+    
+    setTimeout(() => {
+      indicator.className = 'rigori-indicator';
+      indicator.style.animation = '';
+    }, 3000);
+  }
+  
+  // Aggiorna nome squadra corrente
+  const currentTeamName = state.currentKicker === 'casa' ? 
+    (window.APP_CACHE.fullTeams?.[String(match.CASA_ID)]?.team?.NOME_SQUADRA || match.SQUADRA_CASA) :
+    (window.APP_CACHE.fullTeams?.[String(match.TRASFERTA_ID)]?.team?.NOME_SQUADRA || match.SQUADRA_TRASFERTA);
+  
+  current.textContent = `Tocca a ${currentTeamName}`;
+  
+  // Aggiungi bollini sotto le squadre
+  const addKickIndicator = (elementId, result) => {
+    const el = document.getElementById(elementId);
+    const kick = document.createElement('div');
+    kick.className = 'kick-indicator ' + (result === 'goal' ? 'goal' : 'miss');
+    el.appendChild(kick);
+  };
+  
+  const last = state.history[state.history.length - 1];
+  if (last) {
+    addKickIndicator(last.team === 'casa' ? 'kicks-casa' : 'kicks-trasferta', last.result);
+  }
+}
+
+function checkRigoriWinner(state) {
+  // Regole semplici: dopo 5 rigori per squadra, vince chi ha più gol
+  // Oppure se una squadra ha già vinto matematicamente
+  const totalKicks = state.history.length;
+  const casaKicks = state.history.filter(h => h.team === 'casa').length;
+  const trasfKicks = state.history.filter(h => h.team === 'trasferta').length;
+  
+  // Dopo almeno 5 rigori per squadra
+  if (casaKicks >= 5 && trasfKicks >= 5) {
+    if (state.casaScore !== state.trasfScore) return true;
+  }
+  
+  // Vittoria matematica prima dei 5 rigori
+  const remainingKicks = 5 - Math.max(casaKicks, trasfKicks);
+  if (remainingKicks > 0) {
+    const diff = Math.abs(state.casaScore - state.trasfScore);
+    if (diff > remainingKicks) return true;
+  }
+  
+  // Morte improvvisa dopo il 5-5
+  if (casaKicks > 5 && trasfKicks === casaKicks) {
+    if (state.casaScore !== state.trasfScore) return true;
+  }
+  
+  return false;
+}
+
+async function finishRigori(matchId, state, match) {
+  // Chiudi popup
+  document.querySelector('.rigori-popup-overlay')?.remove();
+  
+  // Prepara dati
+  const rigoriData = {
+    matchId: matchId,
+    casaRigori: state.casaScore,
+    trasfRigori: state.trasfScore,
+    events: state.history.map((h, idx) => ({
+      teamId: h.team === 'casa' ? match.CASA_ID : match.TRASFERTA_ID,
+      type: h.result === 'goal' ? 'RIGORE_SEGNO' : 'RIGORE_SBAGLIO',
+      minute: 120 + idx + 1 // Dopo i supplementari
+    }))
+  };
+  
+  // Invia al backend
+  try {
+    await ApiClient.saveRigoriResults(rigoriData);
+    
+    // Aggiorna stato match
+    match.STATO_PARTITA = "RIGORI";
+    match.RIGORI_CASA = state.casaScore;
+    match.RIGORI_TRASFERTA = state.trasfScore;
+    window.APP_STATE.lastMatch = match;
+    
+    // Aggiorna UI
+    updateMatchUI(match);
+    
+    // Ricarica dati per sincronizzare
+    setTimeout(() => {
+      ApiClient.getMatchFull(matchId).then(data => {
+        if (data?.match) {
+          window.APP_STATE.lastMatch = data.match;
+          renderMatchPage(data.match);
+        }
+      });
+    }, 1000);
+    
+  } catch (error) {
+    console.error('Errore salvataggio rigori:', error);
+    alert('Errore nel salvataggio dei rigori');
   }
 }
 
