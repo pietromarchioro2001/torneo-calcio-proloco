@@ -1650,11 +1650,31 @@ async function saveMatch() {
 function setCurrentMatch(id) { window.APP_STATE.currentMatchId = id; }
 function getCurrentMatch() { return window.APP_STATE.matchesById[window.APP_STATE.currentMatchId]; }
 
+async function forceReloadEvents(matchId, match) {
+  console.log('🔄 [FORCE RELOAD] Eventi per match:', matchId);
+  
+  try {
+    const freshEvents = await ApiClient.getEventsAdmin(matchId);
+    console.log('✅ [FORCE RELOAD] Eventi ricevuti:', freshEvents.length);
+    
+    window.APP_CACHE.eventsByMatch[matchId] = freshEvents;
+    CacheManager.save(window.APP_CACHE);
+    
+    renderEvents(freshEvents, match);
+  } catch (error) {
+    console.error('❌ [FORCE RELOAD] Errore:', error);
+  }
+}
+
 function openMatch(id) {
   const myNonce = ++window.APP_STATE._matchRequestNonce;
-  setCurrentMatch(id); 
+  setCurrentMatch(id);
   
-  console.log('🔍 Apertura match:', id);
+  console.log('🔍 [OPEN MATCH] ID:', id, 'Nonce:', myNonce);
+  
+  // 🔥 BLOCCA eventuali refresh automatici per 10 secondi
+  window.APP_STATE._matchLoading = true;
+  setTimeout(() => { window.APP_STATE._matchLoading = false; }, 10000);
   
   // 🔥 PRIORITÀ: Cerca SEMPRE prima nella cache completa
   const cachedMatch = window.APP_CACHE.matches?.find(m => String(m.MATCH_ID) === String(id));
@@ -1680,6 +1700,14 @@ function openMatch(id) {
     
     // Carica giocatori
     loadPlayersForMatch(cachedMatch);
+
+    setTimeout(() => {
+      const cachedEvents = window.APP_CACHE.eventsByMatch?.[id] || [];
+      if (cachedEvents.length === 0) {
+        console.log('⚠️ Cache eventi vuota, forzo ricarica...');
+        forceReloadEvents(id, cachedMatch);
+      }
+    }, 500);
   }
   
   // Aggiorna dal backend (background) - MA NON SOVRASCRIVERE SE ID VUOTI
@@ -2015,17 +2043,24 @@ function renderMatchPage(match) {
   window.APP_STATE.lastMatch = match;
 }
 
+// 🔥 MODIFICA renderEvents() - Debug completo
 function renderEvents(events, match) {
   const container = document.getElementById("eventsContent");
-  if (!container) return;
+  if (!container) {
+    console.error('❌ [RENDER EVENTS] Container non trovato!');
+    return;
+  }
 
-  console.log('📊 DEBUG renderEvents:', {
+  console.log('📊 [RENDER EVENTS] Debug:', {
     matchId: match.MATCH_ID,
-    totalEvents: events.length,
-    events: events
+    totalEvents: events?.length || 0,
+    events: events,
+    casaId: match.CASA_ID,
+    trasfertaId: match.TRASFERTA_ID
   });
 
   if (!events?.length) {
+    console.warn('⚠️ [RENDER EVENTS] Nessun evento da mostrare');
     container.innerHTML = `
     <div class="empty-events-grid">
       <div class="empty-team-events">
@@ -2040,68 +2075,57 @@ function renderEvents(events, match) {
     return;
   }
 
-  // 🔥 FILTRA solo eventi con minuto valido (> 0)
+  // 🔥 FILTRA e ordina eventi
   events = [...events]
-    .filter(e => e.MINUTO > 0)
+    .filter(e => {
+      const valido = e.MINUTO > 0 && e.TEAM_ID;
+      if (!valido) {
+        console.warn('⚠️ Evento scartato:', e);
+      }
+      return valido;
+    })
     .sort((a, b) => (a.MINUTO || 0) - (b.MINUTO || 0));
-  
-  // 🔥 DEBUG: Controlla gli ID
-  console.log('✅ Eventi dopo filtro:', events.length);
-  console.log('🔍 DEBUG RENDER EVENTI:');
-  console.log('  Match ID:', match.MATCH_ID);
-  console.log('  CASA_ID:', match.CASA_ID, typeof match.CASA_ID);
-  console.log('  TRASFERTA_ID:', match.TRASFERTA_ID, typeof match.TRASFERTA_ID);
-  console.log('  Totale eventi:', events.length);
-  
-  events = [...events].filter(e => e.MINUTO > 0).sort((a, b) => (a.MINUTO || 0) - (b.MINUTO || 0));
-  
+
+  console.log('✅ [RENDER EVENTS] Eventi dopo filtro:', events.length);
+
   let html = "";
   let eventsLeft = 0;
   let eventsRight = 0;
-  
+
   events.forEach(e => {
-    // 🔥 Confronto robusto - NORMALIZZA gli ID
-  const teamId = String(e.TEAM_ID || "").trim();
-  const casaId = String(match.CASA_ID || "").trim();
-  const trasfertaId = String(match.TRASFERTA_ID || "").trim();
-  
-  // 🔥 Debug se non matcha
-  if (teamId !== casaId && teamId !== trasfertaId) {
-    console.warn(`⚠️ TEAM_ID "${teamId}" non corrisponde a CASA "${casaId}" o TRASFERTA "${trasfertaId}"`);
-  }
-  
-  const isCasa = teamId === casaId;
-  const isTrasferta = teamId === trasfertaId;
+    const teamId = String(e.TEAM_ID || "").trim();
+    const casaId = String(match.CASA_ID || "").trim();
+    const trasfertaId = String(match.TRASFERTA_ID || "").trim();
     
-    console.log(`  Evento ${e.MINUTO}' - TEAM_ID: "${teamId}", CASA: "${casaId}", Match: ${isCasa ? 'CASA' : (isTrasferta ? 'TRASFERTA' : '???')}`);
+    const isCasa = teamId === casaId;
+    const isTrasferta = teamId === trasfertaId;
     
     if (isCasa) eventsLeft++;
-    else eventsRight++;
-    
+    else if (isTrasferta) eventsRight++;
+    else {
+      console.warn('⚠️ Evento TEAM_ID non matcha:', { teamId, casaId, trasfertaId, e });
+    }
+
     const icon = e.TIPO === "GOAL" ? "⚽" : e.TIPO === "AMMONIZIONE" ? "🟨" : "🟥";
-    
-    const deleteBtn = e.EVENT_ID 
-      ? `<span class="event-options" onclick="openEventMenu(event, '${e.EVENT_ID}', '${match.MATCH_ID}')">⋮</span>` 
+    const deleteBtn = e.EVENT_ID
+      ? `<span class="event-options" onclick="openEventMenu(event, '${e.EVENT_ID}', '${match.MATCH_ID}')">⋮</span>`
       : '';
-    
+
     html += `
-      <div class="event-line ${isCasa ? "left" : "right"}" 
-           data-event-id="${e.EVENT_ID || ''}">
-        <div class="event-content">
-          <span class="event-minute">${e.MINUTO}'</span>
-          <span class="event-icon">${icon}</span>
-          <span class="event-player">
-            ${(e.PLAYER || "").toUpperCase()}
-            ${e.ASSIST ? `<span class="assist">(${(e.ASSIST).toUpperCase()})</span>` : ""}
-          </span>
-          ${deleteBtn}
-        </div>
+    <div class="event-line ${isCasa ? "left" : "right"}" data-event-id="${e.EVENT_ID || ''}">
+      <div class="event-content">
+        <span class="event-minute">${e.MINUTO}'</span>
+        <span class="event-icon">${icon}</span>
+        <span class="event-player">
+          ${(e.PLAYER || "").toUpperCase()}
+          ${e.ASSIST ? `<span class="assist">(${(e.ASSIST).toUpperCase()})</span>` : ""}
+        </span>
+        ${deleteBtn}
       </div>
-    `;
+    </div>`;
   });
-  
-  console.log(`✅ Eventi sinistra (casa): ${eventsLeft}, destra (trasferta): ${eventsRight}`);
-  
+
+  console.log(`✅ [RENDER EVENTS] Sinistra: ${eventsLeft}, Destra: ${eventsRight}`);
   container.innerHTML = html;
 }
 
@@ -3741,6 +3765,21 @@ function bootAdminApp() {
       console.warn('⏱️ Timeout caricamento dati - mostro UI comunque');
       hideLoader();
       showHome(); // Fallback di sicurezza
+    }
+  }, 3000);
+
+  const maxTimeout = setTimeout(() => {
+    if (!dataLoaded) {
+      console.warn('⏱️ Timeout caricamento dati');
+      hideLoader();
+      
+      // 🔥 NON andare alla home se stiamo caricando un match
+      if (window.APP_STATE._matchLoading || window.location.hash.includes('match')) {
+        console.log('⚠️ Match in caricamento, skip showHome()');
+        return;
+      }
+      
+      showHome();
     }
   }, 3000);
   
