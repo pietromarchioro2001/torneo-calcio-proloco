@@ -566,7 +566,7 @@ body{
 .home-match-date {
   font-size: 10px;
   color: #888;
-  margin-top: 2px;
+  margin-top: 5px;
 }
 
 .home-live-badge {
@@ -2997,7 +2997,7 @@ body{
 #mvpBanner {
   position: absolute;
   left: 50%;
-  top: 60px;  /* Distanza dal titolo CRONACA */
+  top: 75px;  /* Distanza dal titolo CRONACA */
   transform: translateX(-50%);
   z-index: 20;
   
