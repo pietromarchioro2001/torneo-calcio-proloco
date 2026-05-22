@@ -1845,43 +1845,42 @@ function renderMatchPage(match) {
     const casaData = window.APP_CACHE.fullTeams?.[String(match.CASA_ID)];
     if (casaData?.team) {
       match.SQUADRA_CASA = casaData.team.NOME_SQUADRA || "CASA";
-      match.LOGO_CASA = casaData.team.LOGO_ID || "";
+      match.LOGO_CASA = casaData.team.LOGO_FILE_ID || "";
     }
   }
-  
   if (!match.SQUADRA_TRASFERTA || !match.LOGO_TRASFERTA) {
     const trasfData = window.APP_CACHE.fullTeams?.[String(match.TRASFERTA_ID)];
     if (trasfData?.team) {
       match.SQUADRA_TRASFERTA = trasfData.team.NOME_SQUADRA || "TRASFERTA";
-      match.LOGO_TRASFERTA = trasfData.team.LOGO_ID || "";
+      match.LOGO_TRASFERTA = trasfData.team.LOGO_FILE_ID || "";
     }
   }
   
   // 🔥 ORA DEFINISCI ANCHE I LOGHI (mancavano!)
-  const logoCasa = match.LOGO_CASA 
+  const logoCasa = match.LOGO_CASA
     ? `<img src="${getCachedImage(match.LOGO_CASA, 120)}" alt="${match.SQUADRA_CASA}" onerror="this.style.display='none'">`
     : `<div style="width:70px;height:70px;border-radius:50%;background:#f0f0f0;display:flex;align-items:center;justify-content:center;font-size:1.5rem">⚽</div>`;
   
-  const logoTrasf = match.LOGO_TRASFERTA 
+  const logoTrasf = match.LOGO_TRASFERTA
     ? `<img src="${getCachedImage(match.LOGO_TRASFERTA, 120)}" alt="${match.SQUADRA_TRASFERTA}" onerror="this.style.display='none'">`
     : `<div style="width:70px;height:70px;border-radius:50%;background:#f0f0f0;display:flex;align-items:center;justify-content:center;font-size:1.5rem">⚽</div>`;
   
   // ORA USA I NOMI REALI
   const nomeCasa = (match.SQUADRA_CASA).toUpperCase();
   const nomeTrasf = (match.SQUADRA_TRASFERTA).toUpperCase();
-
+  
   const isLive = match.STATO_PARTITA === "LIVE";
   const isFinished = match.STATO_PARTITA === "FINITA";
   const finalStageStarted = window.APP_CACHE.meta?.finalStageStarted;
   
   // Tab MVP
-  let mvpTabHtml = isLive 
+  let mvpTabHtml = isLive
     ? `<div class="mt-btn" data-tab="mvp">VOTA MVP</div>`
     : `<div class="mt-btn disabled" data-tab="mvp">🏆 MVP</div>`;
   
   // Pulsanti evento
-  const canAddEvents = match.STATO_PARTITA === "LIVE" && 
-                       (match.FASE === "FINALI" || !finalStageStarted);
+  const canAddEvents = match.STATO_PARTITA === "LIVE" &&
+    (match.FASE === "FINALI" || !finalStageStarted);
   const eventBtnDisabled = !canAddEvents ? "style=\"opacity:0.5;pointer-events:none;cursor:not-allowed\"" : "";
   
   // Pulsante inizia/concludi
@@ -1902,7 +1901,6 @@ function renderMatchPage(match) {
                  ${toggleBtnDisabled}>
               ${isLive ? "CONCLUDI" : "INIZIA"}
             </div>
-            
             ${match.FASE === "FINALI" && isLive ? `
               <div class="phase-btn secondary-btn" onclick="toggleSupplementari()">
                 SUPPLEMENTARI
@@ -1920,13 +1918,11 @@ function renderMatchPage(match) {
           ${logoTrasf}
         </div>
       </div>
-      
       <div class="match-toolbar">
         <div class="mt-btn active" data-tab="diretta">DIRETTA</div>
         <div class="mt-btn" data-tab="giocatori">GIOCATORI</div>
         ${mvpTabHtml}
       </div>
-      
       <div class="match-content">
         <div class="tab-content active" id="tab-diretta">
           <div class="teams-events">
@@ -1942,21 +1938,16 @@ function renderMatchPage(match) {
                 </div>
               </div>
             </div>
-            
-            <div class="cronaca-title center"><span>CRONACA</span>
-            
+            <div class="cronaca-title center"><span>CRONACA</span></div>
             <div id="mvpBanner" class="mvp-banner">
               <div class="mvp-title">🏆 MVP DEL MATCH</div>
               <div class="mvp-name"></div>
             </div>
-          </div>
-            
             <div id="eventsTimeline" class="events-timeline">
               <div id="eventsContent"></div>
             </div>
           </div>
         </div>
-        
         <div class="tab-content" id="tab-giocatori">
           <div class="players-columns" id="playersColumns">
             <div style="text-align:center;padding:40px;color:#888;grid-column:1/-1">
@@ -1964,7 +1955,6 @@ function renderMatchPage(match) {
             </div>
           </div>
         </div>
-        
         <div class="tab-content" id="tab-mvp">
           <div class="players-columns" id="mvpColumns">
             <div style="text-align:center;padding:40px;color:#888;grid-column:1/-1">
@@ -1972,7 +1962,6 @@ function renderMatchPage(match) {
             </div>
           </div>
         </div>
-        
         <div class="back-btn-wrapper">
           <div class="phase-btn secondary" onclick="showMatches()">INDIETRO</div>
         </div>
@@ -1982,7 +1971,6 @@ function renderMatchPage(match) {
   
   // Aggiorna UI
   updateMatchUI(match);
-
   if (match.STATO_PARTITA === "FINITA" && match.MVP) {
     updateMVPBanner(match); // Mostra banner centrale con MVP
   }
