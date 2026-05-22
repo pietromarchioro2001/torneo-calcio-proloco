@@ -520,7 +520,8 @@ body{
 
 /* 🔥 Loghi e nomi più grandi */
 .home-team {
-  font-size: 14px; /* Aumentato */
+  font-size: 15px; 
+  line-height: 1.1;
   font-weight: 700;
   color: #333;
   white-space: nowrap;
@@ -682,12 +683,9 @@ body{
   background: #fff;
 }
 
-/* Allineamento Risultato con i Nomi */
-/* Spostiamo il blocco centrale verso il BASSO (valore positivo)
-   così il Punteggio (che sta sopra) scende e si allinea ai Nomi.
-   Il LIVE finirà automaticamente sotto. */
 .home-next-match.live-card .home-match-center {
-  transform: translateY(4px); /* Regola questo valore se necessario */
+  transform: none !important; 
+  justify-content: center;
 }
 
 /* Risultato in Granata e più evidente */
@@ -695,6 +693,7 @@ body{
   color: var(--granata) !important;
   font-weight: 900;
   font-size: 18px; /* Leggermente più grande */
+  transform: translateY(5px);
 }
 
 /* Scritta LIVE in Granata */
@@ -1954,6 +1953,7 @@ body{
   text-align: center;
   z-index: 1;
   padding: 0px;
+  width: 40%;
 }
 
 .vs{
@@ -2092,13 +2092,12 @@ body{
 .score-big{
   width:30%;
   text-align:center;
-
-  font-size:64px;
+  font-size: 60px;
+  letter-spacing: 2px; 
+  margin-bottom: 0;
+  line-height: 1;
   font-weight:800;
-  letter-spacing:4px;
   white-space:nowrap;
-  line-height:1;
-
   margin: 0 auto;
   display: block;
 }
@@ -2447,11 +2446,15 @@ body{
 }
 
 .match-status.live{
+  margin-top: 8px; /* Spazio sotto il punteggio */
+  font-size: 15px; /* Più grande */
+  font-weight: 800;
+  letter-spacing: 3px;
+  gap: 8px;
   color:#e53935;
   display:flex;
   align-items:center;
   justify-content:center;
-  gap:6px;
 }
 
 /* 🔴 pallino animato */
