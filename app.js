@@ -5,7 +5,7 @@
 const CONFIG = {
   // 🔥 SOSTITUISCI CON IL TUO URL APPS SCRIPT WEB APP
 
-  BACKEND_URL: 'https://script.google.com/macros/s/AKfycbywP_5FPPvmo85WTXJznHs52t5skOpG8G3qfLuopNBhnFTfGigbPPMWJZgacbwPDk2h/exec',
+  BACKEND_URL: 'https://script.google.com/macros/s/AKfycbzQOZ9wvlV3ZGfBkWQfToNzTtKn4wdoU4NlGbghZYRZ8C3Jcy8W-HSkFtTaePPldnl2/exec',
   
   API_TIMEOUT: 30000,
   CACHE_VERSION: 'v3.0',
@@ -409,54 +409,78 @@ function renderToolbar(active) {
 }
 
 function getNextMatchCard() {
-    const matches = window.APP_CACHE.matches || [];
-    const eventsByMatch = window.APP_CACHE.eventsByMatch || {};
-    const now = new Date();
-    const nowStr = formatLocalDate(now);
+  const matches = window.APP_CACHE.matches || [];
+  const eventsByMatch = window.APP_CACHE.eventsByMatch || {};
+  const now = new Date();
+  const nowStr = formatLocalDate(now);
+  
+  // 🔥 1. Cerca partita LIVE
+  const liveMatch = matches.find(m => m.STATO_PARTITA === "LIVE");
+  if (liveMatch) {
+    // 🔥 PRIORITÀ: Usa GOL_CASA/GOL_TRASFERTA se esistono e sono validi
+    // Altrimenti ricalcola dagli eventi cached
+    let matchWithScore = { ...liveMatch };
     
-    // 🔥 1. Cerca LIVE
-    const liveMatch = matches.find(m => m.STATO_PARTITA === "LIVE");
-    if (liveMatch) {
-        // 🔥 Ricalcola punteggio dagli eventi cached (più accurato)
-        const liveEvents = eventsByMatch[liveMatch.MATCH_ID] || [];
-        const matchWithScore = calculateMatchScore(liveMatch, liveEvents);
-        return renderHomeMatchCard(matchWithScore, true);
+    const hasValidScore = (
+      liveMatch.GOL_CASA !== undefined && 
+      liveMatch.GOL_TRASFERTA !== undefined &&
+      !isNaN(Number(liveMatch.GOL_CASA)) &&
+      !isNaN(Number(liveMatch.GOL_TRASFERTA))
+    );
+    
+    if (!hasValidScore) {
+      const liveEvents = eventsByMatch[liveMatch.MATCH_ID] || [];
+      matchWithScore = calculateMatchScore(liveMatch, liveEvents);
     }
     
-    // 🔥 2. Cerca prossima partita
-    const todayMatches = matches
-        .filter(m => {
-            const matchDate = String(m.DATA || "").slice(0, 10);
-            return matchDate >= nowStr && m.STATO_PARTITA !== "FINITA";
-        })
-        .sort((a, b) => {
-            const dateA = String(a.DATA || "").slice(0, 10) + (a.ORA || "00:00");
-            const dateB = String(b.DATA || "").slice(0, 10) + (b.ORA || "00:00");
-            return dateA.localeCompare(dateB);
-        });
+    return renderHomeMatchCard(matchWithScore, true);
+  }
+  
+  // 🔥 2. Cerca prossima partita programmata
+  const todayMatches = matches
+    .filter(m => {
+      const matchDate = String(m.DATA || "").slice(0, 10);
+      return matchDate >= nowStr && m.STATO_PARTITA !== "FINITA";
+    })
+    .sort((a, b) => {
+      const dateA = String(a.DATA || "").slice(0, 10) + (a.ORA || "00:00");
+      const dateB = String(b.DATA || "").slice(0, 10) + (b.ORA || "00:00");
+      return dateA.localeCompare(dateB);
+    });
     
-    if (todayMatches.length > 0) {
-        // 🔥 Anche qui ricalcola punteggio
-        const nextMatch = todayMatches[0];
-        const nextEvents = eventsByMatch[nextMatch.MATCH_ID] || [];
-        const matchWithScore = calculateMatchScore(nextMatch, nextEvents);
-        return renderHomeMatchCard(matchWithScore, false);
+  if (todayMatches.length > 0) {
+    let nextMatch = { ...todayMatches[0] };
+    
+    // 🔥 Stessa logica: usa punteggio diretto o ricalcola
+    const hasValidScore = (
+      nextMatch.GOL_CASA !== undefined && 
+      nextMatch.GOL_TRASFERTA !== undefined &&
+      !isNaN(Number(nextMatch.GOL_CASA)) &&
+      !isNaN(Number(nextMatch.GOL_TRASFERTA))
+    );
+    
+    if (!hasValidScore) {
+      const nextEvents = eventsByMatch[nextMatch.MATCH_ID] || [];
+      nextMatch = calculateMatchScore(nextMatch, nextEvents);
     }
     
-    // 🔥 3. Placeholder
-    return `
-        <div class="home-next-match" style="opacity:0.5;pointer-events:none;cursor:default">
-            <div class="home-match-label">NESSUNA PARTITA IN PROGRAMMA</div>
-            <div class="home-match-content">
-                <div class="home-match-teams">
-                    <span class="home-team">-</span>
-                    <span class="home-vs">VS</span>
-                    <span class="home-team">-</span>
-                </div>
-                <div class="home-match-info">Prossima partita non disponibile</div>
-            </div>
-        </div>
-    `;
+    return renderHomeMatchCard(nextMatch, false);
+  }
+  
+  // 🔥 3. Placeholder se nessuna partita
+  return `
+  <div class="home-next-match" style="opacity:0.5;pointer-events:none;cursor:default">
+    <div class="home-match-label">NESSUNA PARTITA IN PROGRAMMA</div>
+    <div class="home-match-content">
+      <div class="home-match-teams">
+        <span class="home-team">-</span>
+        <span class="home-vs">VS</span>
+        <span class="home-team">-</span>
+      </div>
+      <div class="home-match-info">Prossima partita non disponibile</div>
+    </div>
+  </div>
+  `;
 }
 
 // 🔥 Helper: calcola punteggio dagli eventi
@@ -1994,24 +2018,35 @@ function renderMatchPage(match) {
 function renderEvents(events, match) {
   const container = document.getElementById("eventsContent");
   if (!container) return;
-  
+
+  console.log('📊 DEBUG renderEvents:', {
+    matchId: match.MATCH_ID,
+    totalEvents: events.length,
+    events: events
+  });
+
   if (!events?.length) {
     container.innerHTML = `
-      <div class="empty-events-grid">
-        <div class="empty-team-events">
-          <div class="empty-events-text">Nessun evento</div>
-          <div class="empty-events-icon">📋</div>
-        </div>
-        <div class="empty-team-events">
-          <div class="empty-events-text">Nessun evento</div>
-          <div class="empty-events-icon">📋</div>
-        </div>
+    <div class="empty-events-grid">
+      <div class="empty-team-events">
+        <div class="empty-events-text">Nessun evento</div>
+        <div class="empty-events-icon">📋</div>
       </div>
-    `;
+      <div class="empty-team-events">
+        <div class="empty-events-text">Nessun evento</div>
+        <div class="empty-events-icon">📋</div>
+      </div>
+    </div>`;
     return;
   }
+
+  // 🔥 FILTRA solo eventi con minuto valido (> 0)
+  events = [...events]
+    .filter(e => e.MINUTO > 0)
+    .sort((a, b) => (a.MINUTO || 0) - (b.MINUTO || 0));
   
   // 🔥 DEBUG: Controlla gli ID
+  console.log('✅ Eventi dopo filtro:', events.length);
   console.log('🔍 DEBUG RENDER EVENTI:');
   console.log('  Match ID:', match.MATCH_ID);
   console.log('  CASA_ID:', match.CASA_ID, typeof match.CASA_ID);
