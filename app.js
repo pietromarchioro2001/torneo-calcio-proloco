@@ -2964,12 +2964,8 @@ function openRigoriPopup(directMode = false) {
                 </div>
                 <!-- Pulsanti SENZA SIMBOLI -->
                 <div class="rigori-controls" style="display: flex; justify-content: center; gap: 50px; margin: 40px 0;">
-                    <button class="rigori-btn miss" onclick="handleRigoreClick('miss')" style="width: 100px; height: 100px; border-radius: 50%; border: none; background: #ef4444; cursor: pointer; box-shadow: 0 6px 20px rgba(239, 68, 68, 0.4); transition: transform 0.2s; font-size: 16px; font-weight: 700; color: white;">
-                        SBAGLIATO
-                    </button>
-                    <button class="rigori-btn goal" onclick="handleRigoreClick('goal')" style="width: 100px; height: 100px; border-radius: 50%; border: none; background: #22c55e; cursor: pointer; box-shadow: 0 6px 20px rgba(34, 197, 94, 0.4); transition: transform 0.2s; font-size: 16px; font-weight: 700; color: white;">
-                        REALIZZATO
-                    </button>
+                    <button class="rigori-btn miss" onclick="handleRigoreClick('miss')" style="width: 100px; height: 100px; border-radius: 50%; border: none; background: #ef4444; cursor: pointer; box-shadow: 0 6px 20px rgba(239, 68, 68, 0.4); transition: transform 0.2s; font-size: 16px; font-weight: 700; color: white;"></button>
+                    <button class="rigori-btn goal" onclick="handleRigoreClick('goal')" style="width: 100px; height: 100px; border-radius: 50%; border: none; background: #22c55e; cursor: pointer; box-shadow: 0 6px 20px rgba(34, 197, 94, 0.4); transition: transform 0.2s; font-size: 16px; font-weight: 700; color: white;"></button>
                 </div>
                 <!-- PULSANTE FINE -->
                <button class="rigori-finish" id="rigori-finish" style="display: none; width: 100%; padding: 20px; background: #7a1e2c; color: white; border: none; border-radius: 12px; font-size: 20px; font-weight: 700; cursor: pointer; margin-top: 30px; letter-spacing: 2px; box-shadow: 0 4px 15px rgba(122, 30, 44, 0.3);" onclick="finishRigori(${JSON.stringify(match.MATCH_ID)})">
