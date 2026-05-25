@@ -1433,33 +1433,34 @@ function renderMatchesByDate(date) {
   const allMatches = window.APP_CACHE.matches || [];
   
   // 🔥 FILTRA: Mostra TUTTE le partite (gironi + finali)
-  // 🔥 FILTRA e ORDINA: LIVE sempre sopra
-let matches = allMatches
-  .filter(m => {
-    const matchDate = String(m.DATA || "").slice(0, 10);
-    return matchDate === date;
-  })
-  .sort((a, b) => {
-    // Priorità: LIVE > PROGRAMMATA > FINITA
-    const getPriority = (m) => {
-      if (m.STATO_PARTITA === "LIVE") return 0;
-      if (m.STATO_PARTITA === "PROGRAMMATA") return 1;
-      if (m.STATO_PARTITA === "FINITA") return 2;
-      return 3;
-    };
-    
-    const priorityA = getPriority(a);
-    const priorityB = getPriority(b);
-    
-    // Se stessa priorità, ordina per ora
-    if (priorityA === priorityB) {
-      const timeA = a.ORA || "00:00";
-      const timeB = b.ORA || "00:00";
-      return timeA.localeCompare(timeB);
-    }
-    
-    return priorityA - priorityB;
-  });
+  // 🔥 FILTRA e ORDINA: LIVE/SUPP/RIGORI sempre sopra
+  let matches = allMatches
+    .filter(m => {
+      const matchDate = String(m.DATA || "").slice(0, 10);
+      return matchDate === date;
+    })
+    .sort((a, b) => {
+      // 🔥 Priorità: LIVE/SUPP/RIGORI > PROGRAMMATA > FINITA
+      const getPriority = (m) => {
+        const status = m.STATO_PARTITA;
+        if (status === "LIVE" || status === "SUPP" || status === "RIGORI") return 0; // 🔥 PRIORITÀ MASSIMA
+        if (status === "PROGRAMMATA") return 1;
+        if (status === "FINITA") return 2;
+        return 3;
+      };
+      
+      const priorityA = getPriority(a);
+      const priorityB = getPriority(b);
+      
+      // Se stessa priorità, ordina per ora
+      if (priorityA === priorityB) {
+        const timeA = a.ORA || "00:00";
+        const timeB = b.ORA || "00:00";
+        return timeA.localeCompare(timeB);
+      }
+      
+      return priorityA - priorityB;
+    });
   
   if (matches.length === 0) {
     container.innerHTML = `
@@ -1475,36 +1476,36 @@ let matches = allMatches
   
   matches.forEach(m => {
     // 🔥 Loghi con fallback robusto
-  const logoCasa = m.LOGO_CASA 
-    ? `<div class="team-logo-placeholder-wrap">
-        <img src="${getCachedImage(m.LOGO_CASA, 50)}" 
-             alt="${m.SQUADRA_CASA}" 
-             class="team-logo-placeholder-img"
-             onerror="this.style.display='none'; this.parentElement.querySelector('.team-logo-placeholder-fallback').style.display='flex'">
-        <div class="team-logo-placeholder-fallback" style="display:none">⚽</div>
-      </div>`
-    : `<div class="team-logo-placeholder-wrap">
-        <div class="team-logo-placeholder-fallback">⚽</div>
-      </div>`;
-  
-  const logoTrasf = m.LOGO_TRASFERTA 
-    ? `<div class="team-logo-placeholder-wrap">
-        <img src="${getCachedImage(m.LOGO_TRASFERTA, 50)}" 
-             alt="${m.SQUADRA_TRASFERTA}" 
-             class="team-logo-placeholder-img"
-             onerror="this.style.display='none'; this.parentElement.querySelector('.team-logo-placeholder-fallback').style.display='flex'">
-        <div class="team-logo-placeholder-fallback" style="display:none">⚽</div>
-      </div>`
-    : `<div class="team-logo-placeholder-wrap">
-        <div class="team-logo-placeholder-fallback">⚽</div>
-      </div>`;
+    const logoCasa = m.LOGO_CASA 
+      ? `<div class="team-logo-placeholder-wrap">
+          <img src="${getCachedImage(m.LOGO_CASA, 50)}" 
+               alt="${m.SQUADRA_CASA}" 
+               class="team-logo-placeholder-img"
+               onerror="this.style.display='none'; this.parentElement.querySelector('.team-logo-placeholder-fallback').style.display='flex'">
+          <div class="team-logo-placeholder-fallback" style="display:none">⚽</div>
+        </div>`
+      : `<div class="team-logo-placeholder-wrap">
+          <div class="team-logo-placeholder-fallback">⚽</div>
+        </div>`;
     
-    // 🔥 FASE PARTITA - Nascondi se LIVE
+    const logoTrasf = m.LOGO_TRASFERTA 
+      ? `<div class="team-logo-placeholder-wrap">
+          <img src="${getCachedImage(m.LOGO_TRASFERTA, 50)}" 
+               alt="${m.SQUADRA_TRASFERTA}" 
+               class="team-logo-placeholder-img"
+               onerror="this.style.display='none'; this.parentElement.querySelector('.team-logo-placeholder-fallback').style.display='flex'">
+          <div class="team-logo-placeholder-fallback" style="display:none">⚽</div>
+        </div>`
+      : `<div class="team-logo-placeholder-wrap">
+          <div class="team-logo-placeholder-fallback">⚽</div>
+        </div>`;
+    
+    // 🔥 FASE PARTITA - Nascondi se LIVE/SUPP/RIGORI
     let faseBadge = "";
     const turnoVal = m.TURNO || m.turno || m.matchKey || "";
     
-    // Mostra badge SOLO se non è LIVE
-    if (turnoVal && m.STATO_PARTITA !== "LIVE") {
+    // Mostra badge SOLO se non è in uno stato attivo
+    if (turnoVal && !["LIVE", "SUPP", "RIGORI"].includes(m.STATO_PARTITA)) {
       const turnoMap = {
         "Q1": "QUARTI", "Q2": "QUARTI", "Q3": "QUARTI", "Q4": "QUARTI",
         "SF1": "SEMIFINALE", "SF2": "SEMIFINALE",
@@ -1516,62 +1517,64 @@ let matches = allMatches
     
     let center = "";
 
-// 🔥 GESTIONE STATI: LIVE → SUPP → RIGORI → FINITA
-if (m.STATO_PARTITA === "LIVE") {
-  center = `
-    <div class="score live">${m.GOL_CASA || 0} - ${m.GOL_TRASFERTA || 0}</div>
-    <div class="status live">LIVE</div>
-    ${faseBadge}
-  `;
-} 
-// 🔥 SUPPLEMENTARI: stessa UI di LIVE ma con scritta SUPP
-else if (m.STATO_PARTITA === "SUPP") {
-  center = `
-    <div class="score live">${m.GOL_CASA || 0} - ${m.GOL_TRASFERTA || 0}</div>
-    <div class="status live">SUPP</div>
-    ${faseBadge}
-  `;
-} 
-// 🔥 RIGORI IN CORSO: mostra punteggio rigori tra parentesi
-else if (m.STATO_PARTITA === "RIGORI") {
-  const rigoriCasa = m.RIGORI_CASA || 0;
-  const rigoriTrasf = m.RIGORI_TRASFERTA || 0;
-  center = `
-    <div class="score live">${m.GOL_CASA || 0} - ${m.GOL_TRASFERTA || 0} <span style="font-size:14px;color:#888">(${rigoriCasa}-${rigoriTrasf} dcr)</span></div>
-    <div class="status live">RIGORI</div>
-    ${faseBadge}
-  `;
-} 
-// 🔥 FINITA: se pareggio + rigori, mostra risultato dcr
-else if (m.STATO_PARTITA === "FINITA") {
-  // Se c'è pareggio e sono stati giocati i rigori, mostra il risultato finale con dcr
-  if (m.GOL_CASA === m.GOL_TRASFERTA && 
-      (m.RIGORI_CASA !== undefined || m.RIGORI_TRASFERTA !== undefined)) {
-    const rc = m.RIGORI_CASA || 0;
-    const rt = m.RIGORI_TRASFERTA || 0;
-    center = `
-      <div class="score">${m.GOL_CASA || 0} - ${m.GOL_TRASFERTA || 0} <span style="font-size:14px;color:#888">(${rc}-${rt} dcr)</span></div>
-      <div class="status">TERMINATA</div>
-      ${faseBadge}
-    `;
-  } else {
-    center = `
-      <div class="score">${m.GOL_CASA || 0} - ${m.GOL_TRASFERTA || 0}</div>
-      <div class="status">TERMINATA</div>
-      ${faseBadge}
-    `;
-  }
-} 
-// 🔥 PROGRAMMATA
-else {
-  center = `
-    <div class="time">${m.ORA || "--:--"}</div>
-    ${faseBadge}
-  `;
-}
+    // 🔥 GESTIONE STATI: LIVE → SUPP → RIGORI → FINITA
+    if (m.STATO_PARTITA === "LIVE") {
+      center = `
+        <div class="score live">${m.GOL_CASA || 0} - ${m.GOL_TRASFERTA || 0}</div>
+        <div class="status live">LIVE</div>
+        ${faseBadge}
+      `;
+    } 
+    // 🔥 SUPPLEMENTARI: stessa UI di LIVE ma con scritta SUPP
+    else if (m.STATO_PARTITA === "SUPP") {
+      center = `
+        <div class="score live">${m.GOL_CASA || 0} - ${m.GOL_TRASFERTA || 0}</div>
+        <div class="status live">SUPP</div>
+        ${faseBadge}
+      `;
+    } 
+    // 🔥 RIGORI IN CORSO: mostra punteggio rigori tra parentesi
+    else if (m.STATO_PARTITA === "RIGORI") {
+      const rigoriCasa = m.RIGORI_CASA || 0;
+      const rigoriTrasf = m.RIGORI_TRASFERTA || 0;
+      center = `
+        <div class="score live">${m.GOL_CASA || 0} - ${m.GOL_TRASFERTA || 0} <span style="font-size:14px;color:#888">(${rigoriCasa}-${rigoriTrasf} dcr)</span></div>
+        <div class="status live">RIGORI</div>
+        ${faseBadge}
+      `;
+    } 
+    // 🔥 FINITA: se pareggio + rigori, mostra risultato dcr
+    else if (m.STATO_PARTITA === "FINITA") {
+      if (m.GOL_CASA === m.GOL_TRASFERTA && 
+          (m.RIGORI_CASA !== undefined || m.RIGORI_TRASFERTA !== undefined)) {
+        const rc = m.RIGORI_CASA || 0;
+        const rt = m.RIGORI_TRASFERTA || 0;
+        center = `
+          <div class="score">${m.GOL_CASA || 0} - ${m.GOL_TRASFERTA || 0} <span style="font-size:14px;color:#888">(${rc}-${rt} dcr)</span></div>
+          <div class="status">TERMINATA</div>
+          ${faseBadge}
+        `;
+      } else {
+        center = `
+          <div class="score">${m.GOL_CASA || 0} - ${m.GOL_TRASFERTA || 0}</div>
+          <div class="status">TERMINATA</div>
+          ${faseBadge}
+        `;
+      }
+    } 
+    // 🔥 PROGRAMMATA
+    else {
+      center = `
+        <div class="time">${m.ORA || "--:--"}</div>
+        ${faseBadge}
+      `;
+    }
+    
+    // 🔥 Applica live-match a LIVE, SUPP e RIGORI (bordo granata + animazione)
+    const isActive = ["LIVE", "SUPP", "RIGORI"].includes(m.STATO_PARTITA);
     
     html += `
-      <div class="match-card ${(m.STATO_PARTITA === "LIVE" || m.STATO_PARTITA === "SUPP") ? "live-match" : ""}"
+      <div class="match-card ${isActive ? "live-match" : ""}"
            onclick="openMatch('${m.MATCH_ID}')">
         <div class="team-block left">
           ${logoCasa}
