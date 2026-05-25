@@ -3986,126 +3986,123 @@ function createFinalStage() {
 // ============================================================================
 
 function bootAdminApp() {
-  // 🔒 Protegge lastMatch da valori incompleti (debug safety)
-  Object.defineProperty(window.APP_STATE, 'lastMatch', {
-    set(value) {
-      if (value && (!value.CASA_ID || !value.TRASFERTA_ID)) {
-        console.error('🚨 TENTATIVO DI SALVARE lastMatch INCOMPLETO:', value);
-      }
-      this._lastMatch = value;
-    },
-    get() { return this._lastMatch; }
-  });
-
-  console.log("🚀 Booting Torneo Admin - PRODUCTION MODE");
-  window.APP_CACHE = CacheManager.load();
-  
-  const loader = document.getElementById("startupLoader");
-  if (loader) loader.style.display = "flex";
-
-  let dataLoaded = false;
-  let initialRouteHandled = false; // 🔥 FIX: Impedisce che la route venga eseguita due volte
-
-  // 🔥 TIMEOUT AUMENTATO A 5 SECONDI (era 3)
-  const maxTimeout = setTimeout(() => {
-    if (!dataLoaded) {
-      console.warn('⏱️ Timeout caricamento dati - mostro UI comunque');
-      hideLoader();
-      if (!initialRouteHandled) {
-        showHome();
-        initialRouteHandled = true;
-      }
-    }
-  }, 5000);
-
-  function hideLoader() {
-    clearTimeout(maxTimeout);
-    if (loader) {
-      loader.classList.add("hide");
-      setTimeout(() => loader.style.display = "none", 300);
-    }
-  }
-
-  // 🔥 Carica dati iniziali dal backend
-  ApiClient.getInitialData()
-    .then(data => {
-      dataLoaded = true;
-      clearTimeout(maxTimeout);
-      hideLoader(); // 🔥 Assicura che il loader sparisca sempre
-      console.log('✅ Dati iniziali caricati:', data);
-      
-      if (data) {
-        // 🔥 Merge intelligente: preserva cache esistente se il backend fallisce
-        window.APP_CACHE = {
-          ...window.APP_CACHE,
-          teams: data.teams || window.APP_CACHE.teams,
-          matches: data.matches || window.APP_CACHE.matches,
-          standings: data.standings || window.APP_CACHE.standings,
-          events: data.events || window.APP_CACHE.events,
-          fullTeams: data.fullTeams || window.APP_CACHE.fullTeams,
-          playersMap: data.playersMap || window.APP_CACHE.playersMap,
-          meta: { ...window.APP_CACHE.meta, initialized: true }
-        };
-        
-        hydrateMatches(window.APP_CACHE.matches || []);
-        preloadRecentEvents();
-        CacheManager.save(window.APP_CACHE);
-        
-        // 🔥 FIX: Gestisci la navigazione SOLO AL PRIMO AVVIO
-        // Se l'utente ha già cliccato su una partita mentre i dati caricavano,
-        // questo blocco NON sovrascriverà la schermata aperta.
-        if (!initialRouteHandled) {
-          initialRouteHandled = true;
-          const currentHash = window.location.hash || "#home";
-          if (currentHash.includes("matches")) {
-            showMatches();
-          } else if (currentHash.includes("teams")) {
-            showTeams();
-          } else if (currentHash.includes("standings")) {
-            showStandings();
-          } else {
-            showHome();
-          }
-        }
-      }
-      
-      // Carica flag fase finale in background (non bloccante)
-      ApiClient.isFinalStageStarted()
-        .then(started => {
-          if (!window.APP_CACHE.meta) window.APP_CACHE.meta = {};
-          window.APP_CACHE.meta.finalStageStarted = started;
-        })
-        .catch(() => {});
-    })
-    .catch(error => {
-      console.error('❌ Errore caricamento:', error);
-      dataLoaded = true;
-      hideLoader();
-      if (!initialRouteHandled) {
-        initialRouteHandled = true;
-        showHome();
-      }
+    // 🔒 Protegge lastMatch da valori incompleti
+    Object.defineProperty(window.APP_STATE, 'lastMatch', {
+        set(value) {
+            if (value && (!value.CASA_ID || !value.TRASFERTA_ID)) {
+                console.error('🚨 TENTATIVO DI SALVARE lastMatch INCOMPLETO:', value);
+            }
+            this._lastMatch = value;
+        },
+        get() { return this._lastMatch; }
     });
 
-// 🔥 CONTROLLA SE C'È UNA PARTITA IN RIGORI E APRI IL POPUP - IMMEDIATO
-const matches = window.APP_CACHE.matches || [];
-const rigoriMatch = matches.find(m => m.STATO_PARTITA === "RIGORI");
-if (rigoriMatch) {
-    console.log("🎯 Trovata partita in RIGORI all'avvio, apro popup IMMEDIATAMENTE...");
-    setTimeout(() => {
-        setCurrentMatch(rigoriMatch.MATCH_ID);
-        openRigoriPopup(true);
-    }, 100);  // Solo 100ms per permettere il rendering iniziale
-}
-  
-  // 🔥 Global error handling
-  window.addEventListener("error", e => console.error("Global error:", e.error||e.message));
-  window.addEventListener("beforeunload", () => { 
-    Cleanup.releaseAll(); 
-    CacheManager.save(window.APP_CACHE, 0); 
-  });
-  
-  console.log("✅ App booted");
+    console.log("🚀 Booting Torneo Admin - PRODUCTION MODE");
+    
+    // 1. Carica cache istantaneamente
+    window.APP_CACHE = CacheManager.load();
+    
+    const loader = document.getElementById("startupLoader");
+    if (loader) loader.style.display = "flex";
+
+    // 🔥 CHECK IMMEDIATO RIGORI (PRIMA DI TUTTO IL RESTO)
+    const cachedMatches = window.APP_CACHE.matches || [];
+    const rigoriMatch = cachedMatches.find(m => m.STATO_PARTITA === "RIGORI");
+    
+    if (rigoriMatch) {
+        console.log("⚡ [IMMEDIATO] Partita in RIGORI trovata in cache! Apro popup ORA...");
+        window.APP_STATE.lastMatch = rigoriMatch; // Imposta match corrente
+        if (loader) loader.style.display = "none"; // Nascondi loader per mostrare subito il popup
+        
+        setTimeout(() => {
+            setCurrentMatch(rigoriMatch.MATCH_ID);
+            openRigoriPopup(true);
+        }, 100);
+        
+        // Continua a caricare i dati freschi in background sotto il popup
+    }
+
+    let dataLoaded = false;
+    let initialRouteHandled = false;
+
+    // 🔥 Timeout di sicurezza (ridotto a 3s tanto se siamo in rigori il popup è già aperto)
+    const maxTimeout = setTimeout(() => {
+        if (!dataLoaded) {
+            console.warn('⏱️ Timeout caricamento dati - mostro UI comunque');
+            hideLoader();
+            if (!initialRouteHandled && !rigoriMatch) { // Non navigare se siamo già in rigori
+                showHome();
+                initialRouteHandled = true;
+            }
+        }
+    }, 3000);
+
+    function hideLoader() {
+        clearTimeout(maxTimeout);
+        if (loader) {
+            loader.classList.add("hide");
+            setTimeout(() => loader.style.display = "none", 300);
+        }
+    }
+
+    // 2. Caricamento dati in background (non blocca il popup)
+    ApiClient.getInitialData()
+        .then(data => {
+            dataLoaded = true;
+            clearTimeout(maxTimeout);
+            hideLoader(); 
+            console.log('✅ Dati iniziali caricati:', data);
+            
+            if (data) {
+                window.APP_CACHE = {
+                    ...window.APP_CACHE,
+                    teams: data.teams || window.APP_CACHE.teams,
+                    matches: data.matches || window.APP_CACHE.matches,
+                    standings: data.standings || window.APP_CACHE.standings,
+                    events: data.events || window.APP_CACHE.events,
+                    fullTeams: data.fullTeams || window.APP_CACHE.fullTeams,
+                    playersMap: data.playersMap || window.APP_CACHE.playersMap,
+                    meta: { ...window.APP_CACHE.meta, initialized: true }
+                };
+                
+                hydrateMatches(window.APP_CACHE.matches || []);
+                preloadRecentEvents();
+                CacheManager.save(window.APP_CACHE);
+                
+                if (!initialRouteHandled && !rigoriMatch) {
+                    initialRouteHandled = true;
+                    const currentHash = window.location.hash || "#home";
+                    if (currentHash.includes("matches")) showMatches();
+                    else if (currentHash.includes("teams")) showTeams();
+                    else if (currentHash.includes("standings")) showStandings();
+                    else showHome();
+                }
+            }
+            
+            ApiClient.isFinalStageStarted()
+                .then(started => {
+                    if (!window.APP_CACHE.meta) window.APP_CACHE.meta = {};
+                    window.APP_CACHE.meta.finalStageStarted = started;
+                })
+                .catch(() => {});
+        })
+        .catch(error => {
+            console.error('❌ Errore caricamento:', error);
+            dataLoaded = true;
+            hideLoader();
+            if (!initialRouteHandled && !rigoriMatch) {
+                initialRouteHandled = true;
+                showHome();
+            }
+        });
+
+    // 🔥 Global error handling
+    window.addEventListener("error", e => console.error("Global error:", e.error||e.message));
+    window.addEventListener("beforeunload", () => { 
+        Cleanup.releaseAll(); 
+        CacheManager.save(window.APP_CACHE, 0); 
+    });
+
 }
 
 function preloadRecentEvents() {
