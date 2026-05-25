@@ -3080,59 +3080,6 @@ function openRigoriPopup(directMode = false) {
     if (btnGoal) {
         btnGoal.onclick = () => handleRigoreClick('goal');
     }
-    
-    // 🔥 FUNZIONE PRINCIPALE CHE GESTISCE IL RIGORE
-    function handleRigoreClick(result) {
-        if (rigoriState.finished) return;
-        
-        const currentTeam = rigoriState.currentKicker;
-        const isGoal = result === 'goal';
-        
-        // Aggiorna punteggio
-        if (isGoal) {
-            rigoriState[currentTeam + 'Score']++;
-        }
-        
-        // Aggiungi alla storia
-        rigoriState.history.push({
-            team: currentTeam,
-            result: result
-        });
-        
-        // Salva stato
-        saveRigoriState();
-        
-        // Aggiorna UI punteggi
-        document.getElementById('score-casa').textContent = rigoriState.casaScore;
-        document.getElementById('score-trasferta').textContent = rigoriState.trasfScore;
-        
-        // 🔥 SEMAFORO: colora il cerchio centrale
-        const indicator = document.getElementById('rigori-indicator');
-        indicator.className = 'rigori-indicator ' + (isGoal ? 'goal' : 'miss');
-        indicator.style.background = isGoal ? '#22c55e' : '#ef4444';
-        
-        // 🔥 DOPO 3 SECONDI: torna grigio e aggiorna bollini
-        setTimeout(() => {
-            indicator.className = 'rigori-indicator';
-            indicator.style.background = '#555';
-            
-            // Aggiungi bollino sotto la squadra
-            renderKickIndicators();
-            
-            // Cambia squadra
-            rigoriState.currentKicker = currentTeam === 'casa' ? 'trasferta' : 'casa';
-            const nextTeam = rigoriState.currentKicker === 'casa' ? casaNome : trasfNome;
-            document.getElementById('rigori-current').textContent = nextTeam;
-            
-            saveRigoriState();
-            
-            // Controlla se c'è un vincitore
-            if (checkRigoriWinner()) {
-                rigoriState.finished = true;
-                saveRigoriState();
-            }
-        }, 3000);
-    }
 
   // 🔥 RENDERIZZA BOLLINI ESISTENTI
 function renderKickIndicators() {
