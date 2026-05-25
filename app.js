@@ -1692,6 +1692,7 @@ function openMatch(id) {
   
   // 🔥 PRIORITÀ: Cerca SEMPRE prima nella cache completa
   const cachedMatch = window.APP_CACHE.matches?.find(m => String(m.MATCH_ID) === String(id));
+
   if (cachedMatch && cachedMatch.CASA_ID && cachedMatch.TRASFERTA_ID) {
     console.log('✅ Match COMPLETO dalla cache:', {
       casaId: cachedMatch.CASA_ID,
@@ -1699,6 +1700,15 @@ function openMatch(id) {
       squadraCasa: cachedMatch.SQUADRA_CASA,
       squadraTrasferta: cachedMatch.SQUADRA_TRASFERTA
     });
+
+  
+      // 🔥 AGGIUNGI QUESTO DOPO renderMatchPage():
+    if (cachedMatch && cachedMatch.STATO_PARTITA === "RIGORI") {
+        setTimeout(() => {
+            console.log('🎯 Partita in RIGORI - Apro popup direttamente in modalità tiri');
+            openRigoriPopup(true);
+        }, 100);  // ✅ Ridotto da 500ms a 100ms
+    }
     
     // 🔥 CALCOLA PUNTEGGIO DAGLI EVENTI LOCALI (sempre aggiornato)
     const localEvents = window.APP_CACHE.eventsByMatch?.[id] || [];
@@ -1766,14 +1776,6 @@ function openMatch(id) {
           };
           CacheManager.save(window.APP_CACHE);
         }
-      }
-
-      // 🔥 AGGIUNGI QUESTO DOPO renderMatchPage():
-      if (cachedMatch && cachedMatch.STATO_PARTITA === "RIGORI") {
-          setTimeout(() => {
-              console.log('🎯 Partita in RIGORI - Apro popup direttamente in modalità tiri');
-              openRigoriPopup(true);
-          }, 100);  // ✅ Ridotto da 500ms a 100ms
       }
       
       // Aggiorna UI solo se cambia qualcosa
