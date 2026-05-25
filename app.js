@@ -4005,23 +4005,6 @@ function bootAdminApp() {
     const loader = document.getElementById("startupLoader");
     if (loader) loader.style.display = "flex";
 
-    // 🔥 CHECK IMMEDIATO RIGORI (PRIMA DI TUTTO IL RESTO)
-    const cachedMatches = window.APP_CACHE.matches || [];
-    const rigoriMatch = cachedMatches.find(m => m.STATO_PARTITA === "RIGORI");
-    
-    if (rigoriMatch) {
-        console.log("⚡ [IMMEDIATO] Partita in RIGORI trovata in cache! Apro popup ORA...");
-        window.APP_STATE.lastMatch = rigoriMatch; // Imposta match corrente
-        if (loader) loader.style.display = "none"; // Nascondi loader per mostrare subito il popup
-        
-        setTimeout(() => {
-            setCurrentMatch(rigoriMatch.MATCH_ID);
-            openRigoriPopup(true);
-        }, 100);
-        
-        // Continua a caricare i dati freschi in background sotto il popup
-    }
-
     let dataLoaded = false;
     let initialRouteHandled = false;
 
