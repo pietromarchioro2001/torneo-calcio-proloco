@@ -4094,7 +4094,10 @@ div.bracket-match.final-match {
   padding: 30px;
   max-width: 700px;
   width: 90%;
+  max-height: 90vh;
+  overflow-y: auto;
   box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+  position: relative;
 }
 
 .rigori-header {
@@ -4269,6 +4272,37 @@ div.bracket-match.final-match {
 
 .rigori-finish:hover {
   background: #9f2c3d;
+}
+
+.rigori-team-select:hover {
+  transform: scale(1.05);
+  transition: transform 0.2s;
+}
+
+.rigori-team-select img {
+  transition: transform 0.2s;
+}
+
+.rigori-team-select:hover img {
+  transform: scale(1.1);
+}
+
+/* Responsive per mobile */
+@media (max-width: 768px) {
+  .rigori-popup {
+    width: 95%;
+    padding: 20px;
+  }
+  
+  .rigori-teams {
+    flex-direction: column;
+    gap: 20px;
+  }
+  
+  .rigori-team-select img {
+    width: 60px !important;
+    height: 60px !important;
+  }
 }
 
 @keyframes kickAppear {
