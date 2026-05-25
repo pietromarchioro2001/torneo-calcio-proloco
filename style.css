@@ -4070,34 +4070,50 @@ div.bracket-match.final-match {
   /* Nascondi elementi non essenziali */
   .home-sponsors{ display:none; }
 
+  /* Pulsanti supplementari/rigori nella pagina match */
+.match-controls-top .secondary-btn {
+  background: #f3f4f6;
+  color: #374151;
+  border: 2px solid #e5e7eb;
+  margin-left: 10px;
+}
+
+.match-controls-top .secondary-btn:hover {
+  background: #e5e7eb;
+}
+  .sub-title::before, .sub-title::after{ display:none; }
+}
+
 /* ============================================================================
-   RIGORI POPUP STYLES
+   🔥 RIGORI POPUP STYLES - FIX PC/MOBILE
    ============================================================================ */
 
 .rigori-popup-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0,0,0,0.8);
-  z-index: 10000;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  backdrop-filter: blur(4px);
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  bottom: 0 !important;
+  background: rgba(0,0,0,0.85) !important;
+  z-index: 999999 !important; /* 🔥 Aumentato drasticamente */
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  backdrop-filter: blur(4px) !important;
+  overflow: hidden !important; /* 🔥 Evita che il popup venga tagliato */
 }
 
 .rigori-popup {
-  background: white;
-  border-radius: 20px;
-  padding: 30px;
-  max-width: 700px;
-  width: 90%;
-  max-height: 90vh;
-  overflow-y: auto;
-  box-shadow: 0 20px 60px rgba(0,0,0,0.3);
-  position: relative;
+  background: white !important;
+  border-radius: 20px !important;
+  padding: 30px !important;
+  max-width: 700px !important;
+  width: 90% !important;
+  max-height: 90vh !important;
+  overflow-y: auto !important;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.4) !important;
+  position: relative !important;
+  z-index: 1000000 !important; /* 🔥 Sopra l'overlay */
 }
 
 .rigori-header {
@@ -4122,6 +4138,12 @@ div.bracket-match.final-match {
   font-size: 24px;
   cursor: pointer;
   color: #999;
+  padding: 0;
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .rigori-teams {
@@ -4274,9 +4296,16 @@ div.bracket-match.final-match {
   background: #9f2c3d;
 }
 
+.rigori-team-select {
+  cursor: pointer;
+  transition: transform 0.2s;
+  padding: 10px;
+  border-radius: 12px;
+}
+
 .rigori-team-select:hover {
   transform: scale(1.05);
-  transition: transform 0.2s;
+  background: #f9f9f9;
 }
 
 .rigori-team-select img {
@@ -4290,8 +4319,8 @@ div.bracket-match.final-match {
 /* Responsive per mobile */
 @media (max-width: 768px) {
   .rigori-popup {
-    width: 95%;
-    padding: 20px;
+    width: 95% !important;
+    padding: 20px !important;
   }
   
   .rigori-teams {
@@ -4299,9 +4328,13 @@ div.bracket-match.final-match {
     gap: 20px;
   }
   
+  .rigori-vs {
+    padding: 10px 0;
+  }
+  
   .rigori-team-select img {
-    width: 60px !important;
-    height: 60px !important;
+    width: 50px !important;
+    height: 50px !important;
   }
 }
 
@@ -4316,16 +4349,4 @@ div.bracket-match.final-match {
   50% { transform: scale(1.1); opacity: 0.8; }
 }
 
-/* Pulsanti supplementari/rigori nella pagina match */
-.match-controls-top .secondary-btn {
-  background: #f3f4f6;
-  color: #374151;
-  border: 2px solid #e5e7eb;
-  margin-left: 10px;
-}
 
-.match-controls-top .secondary-btn:hover {
-  background: #e5e7eb;
-}
-  .sub-title::before, .sub-title::after{ display:none; }
-}
