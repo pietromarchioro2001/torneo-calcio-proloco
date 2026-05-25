@@ -414,11 +414,14 @@ function getNextMatchCard() {
   const now = new Date();
   const nowStr = formatLocalDate(now);
   
-  // 🔥 1. Cerca partita LIVE
-  const liveMatch = matches.find(m => m.STATO_PARTITA === "LIVE" || m.STATO_PARTITA === "SUPP");
+  // 🔥 1. Cerca partita LIVE/SUPP/RIGORI
+  const liveMatch = matches.find(m => 
+    m.STATO_PARTITA === "LIVE" || 
+    m.STATO_PARTITA === "SUPP" || 
+    m.STATO_PARTITA === "RIGORI"
+  );
+  
   if (liveMatch) {
-    // 🔥 PRIORITÀ: Usa GOL_CASA/GOL_TRASFERTA se esistono e sono validi
-    // Altrimenti ricalcola dagli eventi cached
     let matchWithScore = { ...liveMatch };
     
     const hasValidScore = (
@@ -451,7 +454,6 @@ function getNextMatchCard() {
   if (todayMatches.length > 0) {
     let nextMatch = { ...todayMatches[0] };
     
-    // 🔥 Stessa logica: usa punteggio diretto o ricalcola
     const hasValidScore = (
       nextMatch.GOL_CASA !== undefined && 
       nextMatch.GOL_TRASFERTA !== undefined &&
@@ -467,7 +469,7 @@ function getNextMatchCard() {
     return renderHomeMatchCard(nextMatch, false);
   }
   
-  // 🔥 3. Placeholder se nessuna partita
+  // 🔥 3. Placeholder
   return `
   <div class="home-next-match" style="opacity:0.5;pointer-events:none;cursor:default">
     <div class="home-match-label">NESSUNA PARTITA IN PROGRAMMA</div>
@@ -526,9 +528,11 @@ function updateMatchScoreFromEvents(match, events) {
 }
 
 function renderHomeMatchCard(match, isLive) {
-  // 🔥 GESTISCI STATO: può essere booleano o stringa ("LIVE"/"SUPP")
+  // 🔥 GESTISCI STATO: può essere booleano o stringa ("LIVE"/"SUPP"/"RIGORI")
   const statoDisplay = typeof isLive === 'string' ? isLive : (isLive ? "LIVE" : "");
-  const isAttiva = (statoDisplay === "LIVE" || statoDisplay === "SUPP");
+  
+  // 🔥 FIX: Includi anche RIGORI come stato attivo
+  const isAttiva = (statoDisplay === "LIVE" || statoDisplay === "SUPP" || statoDisplay === "RIGORI");
   
   // Loghi
   const logoCasa = match.LOGO_CASA
@@ -538,14 +542,14 @@ function renderHomeMatchCard(match, isLive) {
     ? `<img src="${getCachedImage(match.LOGO_TRASFERTA, 34)}" alt="${match.SQUADRA_TRASFERTA}" onerror="this.style.display='none'">`
     : `<div class="home-team-logo">⚽</div>`;
 
-  // Centro: LIVE/SUPP o Ora/Data
+  // Centro: LIVE/SUPP/RIGORI o Ora/Data
   let centerContent = "";
   if (isAttiva) {
     centerContent = `
     <div class="home-live-badge">
       <div class="home-score">${match.GOL_CASA || 0} - ${match.GOL_TRASFERTA || 0}</div>
       <div class="home-live-row">
-        <div class="home-live-text">${statoDisplay}</div>
+        <div class="home-live-text">${statoDisplay}</div> <!-- Mostra LIVE, SUPP o RIGORI -->
         <div class="home-live-dot"></div>
       </div>
     </div>
@@ -567,7 +571,7 @@ function renderHomeMatchCard(match, isLive) {
       <span class="home-team">${(match.SQUADRA_CASA || "").toUpperCase()}</span>
     </div>
     
-    <!-- Centro (Ora o LIVE/SUPP) -->
+    <!-- Centro (Ora o LIVE/SUPP/RIGORI) -->
     <div class="home-match-center">
       ${centerContent}
     </div>
@@ -1475,6 +1479,7 @@ function renderMatchesByDate(date) {
   let html = "";
   
   matches.forEach(m => {
+
     // 🔥 Loghi con fallback robusto
     const logoCasa = m.LOGO_CASA 
       ? `<div class="team-logo-placeholder-wrap">
@@ -1833,7 +1838,7 @@ function renderMatchPage(match) {
   const nomeTrasf = (match.SQUADRA_TRASFERTA || "TRASFERTA").toUpperCase();
 
   // 🔥 GESTIONE STATI
-  const isLive = match.STATO_PARTITA === "LIVE" || match.STATO_PARTITA === "SUPP";
+  const isLive = ["LIVE", "SUPP", "RIGORI"].includes(match.STATO_PARTITA);
   const isFinished = match.STATO_PARTITA === "FINITA";
   const finalStageStarted = window.APP_CACHE.meta?.finalStageStarted;
 
@@ -3884,7 +3889,7 @@ function renderBracketMatch(match, cls="") {
     : `<div style="width:24px;height:24px;border-radius:50%;background:#f0f0f0"></div>`;
   
   // 🔥 FIX: Controlla anche SUPP oltre a LIVE
-  const isLive = match.stato === "LIVE" || match.stato === "SUPP";
+  const isLive = ["LIVE", "SUPP", "RIGORI"].includes(match.stato);
   const isSupp = match.stato === "SUPP";
   const isFinished = match.stato === "FINITA";
   
