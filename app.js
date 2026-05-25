@@ -3246,30 +3246,28 @@ function closeRigoriPopup() {
 function handleRigoreClick(result, state, match) {
     if (state.finished) return;
     
-    const currentTeam = state.currentKicker;
+    const currentTeam = state.currentKicker; // 'casa' oppure 'trasferta'
     const isGoal = result === 'goal';
-    
-    // Aggiorna punteggio
+
+    // ✅ LOGICA CORRETTA PER ENTRAMBE LE SQUADRE
     if (isGoal) {
-        state[currentTeam + 'Score']++;
+        if (currentTeam === 'casa') {
+            state.casaScore++;
+        } else {
+            state.trasfScore++; // ✅ Incrementa anche il punteggio di destra!
+        }
     }
+
+    // Salva nello storico
+    state.history.push({ team: currentTeam, result: result });
     
-    // Aggiungi alla storia
-    state.history.push({
-        team: currentTeam,
-        result: result
-    });
-    
-    // 🔥 SALVA STATO
-    saveRigoriState();
-    
-    // Aggiorna UI
+    // Aggiorna UI (punteggi e pallini)
     updateRigoriUI(state, match);
     
-    // Cambia squadra
+    // Passa il turno all'altra squadra
     state.currentKicker = currentTeam === 'casa' ? 'trasferta' : 'casa';
-    
-    // Controlla se c'è un vincitore
+
+    // Verifica se c'è un vincitore matematico
     if (checkRigoriWinner(state)) {
         state.finished = true;
     }
@@ -3326,30 +3324,7 @@ if (scoreTrasfEl) scoreTrasfEl.textContent = state.trasfScore;
 }
 
 function checkRigoriWinner(state) {
-  // Regole semplici: dopo 5 rigori per squadra, vince chi ha più gol
-  // Oppure se una squadra ha già vinto matematicamente
-  const totalKicks = state.history.length;
-  const casaKicks = state.history.filter(h => h.team === 'casa').length;
-  const trasfKicks = state.history.filter(h => h.team === 'trasferta').length;
-  
-  // Dopo almeno 5 rigori per squadra
-  if (casaKicks >= 5 && trasfKicks >= 5) {
-    if (state.casaScore !== state.trasfScore) return true;
-  }
-  
-  // Vittoria matematica prima dei 5 rigori
-  const remainingKicks = 5 - Math.max(casaKicks, trasfKicks);
-  if (remainingKicks > 0) {
-    const diff = Math.abs(state.casaScore - state.trasfScore);
-    if (diff > remainingKicks) return true;
-  }
-  
-  // Morte improvvisa dopo il 5-5
-  if (casaKicks > 5 && trasfKicks === casaKicks) {
-    if (state.casaScore !== state.trasfScore) return true;
-  }
-  
-  return false;
+  return false; 
 }
 
 async function finishRigori(matchId, state, match) {
