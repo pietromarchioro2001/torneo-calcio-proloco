@@ -5,7 +5,7 @@
 const CONFIG = {
   // 🔥 SOSTITUISCI CON IL TUO URL APPS SCRIPT WEB APP
 
-  BACKEND_URL: 'https://script.google.com/macros/s/AKfycbzQOZ9wvlV3ZGfBkWQfToNzTtKn4wdoU4NlGbghZYRZ8C3Jcy8W-HSkFtTaePPldnl2/exec',
+  BACKEND_URL: 'https://script.google.com/macros/s/AKfycbzr3kVEVTguqyplqNz6cAgrQGnz9ILoXP6pdko3HR3rJVODMdDdqQCv313AD3ggYe8i/exec',
   
   API_TIMEOUT: 30000,
   CACHE_VERSION: 'v3.0',
@@ -2876,6 +2876,11 @@ function toggleSupplementari() {
 }
 
 function openRigoriPopup() {
+
+  if (document.getElementById('rigoriPopupOverlay')) {
+    console.log('⚠️ Popup rigori già aperto');
+    return;
+  }
   const match = window.APP_STATE.lastMatch;
   if (!match) return;
   
@@ -2988,10 +2993,15 @@ function openRigoriPopup() {
     const startingTeam = team === 'casa' ? casaNome : trasfNome;
     document.getElementById('rigori-current').textContent = startingTeam;
     
-    // 🔥 AGGIORNA STATO PARTITA A "RIGORI"
+    // 🔥 1. Aggiorna stato LOCALE
     match.STATO_PARTITA = "RIGORI";
     window.APP_STATE.lastMatch = match;
     updateMatchUI(match);
+    
+    // 🔥 2. SALVA SUBITO NEL BACKEND (questo mancava!)
+    ApiClient.updateMatchStatus(match.MATCH_ID, "RIGORI")
+      .then(() => console.log('✅ Stato RIGORI salvato nel backend'))
+      .catch(err => console.error('❌ Errore:', err));
   };
   
   // Esponi funzioni globali
@@ -3103,11 +3113,8 @@ function checkRigoriWinner(state) {
 async function finishRigori(matchId, state, match) {
   if (!confirm("Confermi la fine dei rigori?")) return;
   
-  // Chiudi popup
-  const popup = document.getElementById('rigoriPopupOverlay');
-  if (popup) popup.remove();
+  document.getElementById('rigoriPopupOverlay')?.remove();
   
-  // Prepara dati
   const rigoriData = {
     matchId: matchId,
     casaRigori: state.casaScore,
@@ -3119,20 +3126,18 @@ async function finishRigori(matchId, state, match) {
     }))
   };
   
-  // Invia al backend
   try {
+    // 🔥 Salva risultati rigori
     await ApiClient.saveRigoriResults(rigoriData);
     
-    // Aggiorna stato match
+    // 🔥 Aggiorna stato a FINITA con punteggi rigori
     match.STATO_PARTITA = "FINITA";
     match.RIGORI_CASA = state.casaScore;
     match.RIGORI_TRASFERTA = state.trasfScore;
     window.APP_STATE.lastMatch = match;
-    
-    // Aggiorna UI
     updateMatchUI(match);
     
-    // Ricarica dati per sincronizzare
+    // 🔥 Ricarica dati per sincronizzare tutto
     setTimeout(() => {
       ApiClient.getMatchFull(matchId).then(data => {
         if (data?.match) {
@@ -3140,12 +3145,13 @@ async function finishRigori(matchId, state, match) {
           renderMatchPage(data.match);
         }
       });
-    }, 1000);
+    }, 500);
     
-    alert("Rigori conclusi! Risultato salvato.");
+    alert("✅ Rigori conclusi! Risultato salvato.");
+    
   } catch (error) {
-    console.error('Errore salvataggio rigori:', error);
-    alert('Errore nel salvataggio dei rigori: ' + error.message);
+    console.error('Errore:', error);
+    alert('Errore: ' + error.message);
   }
 }
 
@@ -4085,6 +4091,21 @@ function bootAdminApp() {
         showHome();
       }
     });
+
+  // 🔥 CONTROLLA SE C'È UNA PARTITA IN RIGORI E APRI IL POPUP
+setTimeout(() => {
+  const matches = window.APP_CACHE.matches || [];
+  const rigoriMatch = matches.find(m => m.STATO_PARTITA === "RIGORI");
+  
+  if (rigoriMatch) {
+    console.log('🎯 Trovata partita in RIGORI, apro popup...');
+    setCurrentMatch(rigoriMatch.MATCH_ID);
+    // Aspetta che i dati siano caricati
+    setTimeout(() => {
+      openRigoriPopup();
+    }, 500);
+  }
+}, 1000);
   
   // 🔥 Global error handling
   window.addEventListener("error", e => console.error("Global error:", e.error||e.message));
