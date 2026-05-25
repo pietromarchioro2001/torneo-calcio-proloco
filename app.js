@@ -2972,7 +2972,7 @@ function openRigoriPopup(directMode = false) {
                     </button>
                 </div>
                 <!-- PULSANTE FINE -->
-                <button class="rigori-finish" id="rigori-finish" style="display: none; width: 100%; padding: 20px; background: #7a1e2c; color: white; border: none; border-radius: 12px; font-size: 20px; font-weight: 700; cursor: pointer; margin-top: 30px; letter-spacing: 2px; box-shadow: 0 4px 15px rgba(122, 30, 44, 0.3);" onclick="finishRigori('${match.MATCH_ID}')">
+                <button class="rigori-finish" id="rigori-finish" style="display: none; width: 100%; padding: 20px; background: #7a1e2c; color: white; border: none; border-radius: 12px; font-size: 20px; font-weight: 700; cursor: pointer; margin-top: 30px; letter-spacing: 2px; box-shadow: 0 4px 15px rgba(122, 30, 44, 0.3);" onclick="finishRigori(${JSON.stringify(match.MATCH_ID)})">
                     FINE RIGORI
                 </button>
             </div>
