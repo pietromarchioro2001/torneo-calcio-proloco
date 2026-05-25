@@ -1770,10 +1770,10 @@ function openMatch(id) {
 
       // 🔥 AGGIUNGI QUESTO DOPO renderMatchPage():
       if (cachedMatch && cachedMatch.STATO_PARTITA === "RIGORI") {
-        setTimeout(() => {
-          console.log('🎯 Partita in RIGORI - Apro popup automaticamente');
-          openRigoriPopup();
-        }, 500);
+          setTimeout(() => {
+              console.log('🎯 Partita in RIGORI - Apro popup direttamente in modalità tiri');
+              openRigoriPopup(true);  // 🔥 true = salta selezione, vai diretto ai tiri
+          }, 500);
       }
       
       // Aggiorna UI solo se cambia qualcosa
@@ -2883,132 +2883,122 @@ function toggleSupplementari() {
     .catch(err => console.error('❌ Errore update supplementari:', err));
 }
 
-function openRigoriPopup() {
-  const match = window.APP_STATE.lastMatch;
-  if (!match) return;
-
-  // Recupera dati squadre
-  const casaData = window.APP_CACHE.fullTeams?.[String(match.CASA_ID)]?.team;
-  const trasfData = window.APP_CACHE.fullTeams?.[String(match.TRASFERTA_ID)]?.team;
-  const casaNome = casaData?.NOME_SQUADRA || match.SQUADRA_CASA;
-  const trasfNome = trasfData?.NOME_SQUADRA || match.SQUADRA_TRASFERTA;
-  const casaLogo = casaData?.LOGO_FILE_ID || casaData?.LOGO_ID;
-  const trasfLogo = trasfData?.LOGO_FILE_ID || trasfData?.LOGO_ID;
-
-  // Stato locale del popup
-  let rigoriState = {
-    fase: 'selezione',
-    casaScore: 0,
-    trasfScore: 0,
-    currentKicker: 'casa',
-    history: [],
-    finished: false
-  };
-
-  // Crea popup
-  const popup = document.createElement('div');
-  popup.className = 'rigori-popup-overlay';
-  popup.id = 'rigoriPopupOverlay';
-  popup.innerHTML = `
-    <div class="rigori-popup" style="max-width: 700px;">
-      <!-- Header -->
-      <div class="rigori-header" style="text-align: center; margin-bottom: 30px;">
-        <div class="rigori-title" style="font-size: 32px; font-weight: 800; color: #7a1e2c; letter-spacing: 2px;">CALCI DI RIGORE</div>
-      </div>
-      
-      <!-- FASE 1: SELEZIONE CHI INIZIA -->
-      <div id="rigori-selezione" style="text-align: center; padding: 20px;">
-        <div style="font-size: 18px; margin-bottom: 30px; color: #666;">Chi calcia per primo?</div>
-        <div style="display: flex; justify-content: center; gap: 60px; margin: 30px 0; flex-wrap: wrap;">
-          <div class="rigori-team-select" onclick="startRigori('casa')" style="text-align: center; padding: 20px; cursor: pointer; transition: transform 0.2s;">
-            ${casaLogo ? `<img src="${getCachedImage(casaLogo, 80)}" style="width: 80px; height: 80px; margin-bottom: 15px;">` : '<div style="width: 80px; height: 80px; background: #f0f0f0; margin: 0 auto 15px;"></div>'}
-            <div style="font-weight: 700; font-size: 16px;">${casaNome}</div>
-            <div style="font-size: 12px; color: #888; margin-top: 8px;">Clicca per iniziare</div>
-          </div>
-          <div style="display: flex; align-items: center; font-size: 28px; font-weight: 700; color: #8c1d2c;">VS</div>
-          <div class="rigori-team-select" onclick="startRigori('trasferta')" style="text-align: center; padding: 20px; cursor: pointer; transition: transform 0.2s;">
-            ${trasfLogo ? `<img src="${getCachedImage(trasfLogo, 80)}" style="width: 80px; height: 80px; margin-bottom: 15px;">` : '<div style="width: 80px; height: 80px; background: #f0f0f0; margin: 0 auto 15px;"></div>'}
-            <div style="font-weight: 700; font-size: 16px;">${trasfNome}</div>
-            <div style="font-size: 12px; color: #888; margin-top: 8px;">Clicca per iniziare</div>
-          </div>
-        </div>
-      </div>
-      
-      <!-- FASE 2: TIRI DI RIGORE -->
-      <div id="rigori-tiri" style="display: none;">
-        <!-- Squadre con loghi ESTERNI -->
-        <div class="rigori-teams" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 40px; padding: 0 20px;">
-          <!-- Squadra Casa -->
-          <div class="rigori-team" id="rigori-casa" style="text-align: center; flex: 1;">
-            ${casaLogo ? `<img src="${getCachedImage(casaLogo, 70)}" alt="${casaNome}" style="width: 70px; height: 70px; margin-bottom: 10px;">` : '<div style="width: 70px; height: 70px; background: #f0f0f0; margin: 0 auto 10px;"></div>'}
-            <div class="team-name" style="font-weight: 700; font-size: 15px; margin-bottom: 15px;">${casaNome}</div>
-            <div class="rigori-kicks" id="kicks-casa" style="display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; min-height: 35px;"></div>
-          </div>
-          
-          <!-- Punteggio CENTRALE con trattino -->
-          <div class="rigori-score-center" style="text-align: center; flex: 0 0 150px;">
-            <div style="display: flex; align-items: center; justify-content: center; gap: 20px; margin-bottom: 10px;">
-              <div class="rigori-score" id="score-casa" style="font-size: 56px; font-weight: 900; color: #7a1e2c; line-height: 1;">0</div>
-              <div style="font-size: 32px; font-weight: 700; color: #999;">-</div>
-              <div class="rigori-score" id="score-trasferta" style="font-size: 56px; font-weight: 900; color: #7a1e2c; line-height: 1;">0</div>
+function openRigoriPopup(directMode = false) {
+    const match = window.APP_STATE.lastMatch;
+    if (!match) return;
+    
+    // Recupera dati squadre
+    const casaData = window.APP_CACHE.fullTeams?.[String(match.CASA_ID)]?.team;
+    const trasfData = window.APP_CACHE.fullTeams?.[String(match.TRASFERTA_ID)]?.team;
+    const casaNome = casaData?.NOME_SQUADRA || match.SQUADRA_CASA;
+    const trasfNome = trasfData?.NOME_SQUADRA || match.SQUADRA_TRASFERTA;
+    const casaLogo = casaData?.LOGO_FILE_ID || casaData?.LOGO_ID;
+    const trasfLogo = trasfData?.LOGO_FILE_ID || trasfData?.LOGO_ID;
+    
+    // Stato locale del popup
+    let rigoriState = {
+        fase: directMode ? 'tiri' : 'selezione',  // 🔥 Se directMode, salta selezione
+        casaScore: 0,
+        trasfScore: 0,
+        currentKicker: 'casa',
+        history: [],
+        finished: false
+    };
+    
+    // Crea popup
+    const popup = document.createElement('div');
+    popup.className = 'rigori-popup-overlay';
+    popup.id = 'rigoriPopupOverlay';
+    popup.innerHTML = `
+        <div class="rigori-popup" style="max-width: 700px;">
+            <!-- Header -->
+            <div class="rigori-header" style="text-align: center; margin-bottom: 30px;">
+                <div class="rigori-title" style="font-size: 32px; font-weight: 800; color: #7a1e2c; letter-spacing: 2px;">CALCI DI RIGORE</div>
             </div>
-          </div>
-          
-          <!-- Squadra Trasferta -->
-          <div class="rigori-team" id="rigori-trasferta" style="text-align: center; flex: 1;">
-            ${trasfLogo ? `<img src="${getCachedImage(trasfLogo, 70)}" alt="${trasfNome}" style="width: 70px; height: 70px; margin-bottom: 10px;">` : '<div style="width: 70px; height: 70px; background: #f0f0f0; margin: 0 auto 10px;"></div>'}
-            <div class="team-name" style="font-weight: 700; font-size: 15px; margin-bottom: 15px;">${trasfNome}</div>
-            <div class="rigori-kicks" id="kicks-trasferta" style="display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; min-height: 35px;"></div>
-          </div>
+            <!-- FASE 1: SELEZIONE CHI INIZIA -->
+            <div id="rigori-selezione" style="text-align: center; padding: 20px; ${directMode ? 'display:none;' : ''}">
+                <div style="font-size: 18px; margin-bottom: 30px; color: #666;">Chi calcia per primo?</div>
+                <div style="display: flex; justify-content: center; gap: 60px; margin: 30px 0; flex-wrap: wrap;">
+                    <div class="rigori-team-select" onclick="startRigori('casa')" style="text-align: center; padding: 20px; cursor: pointer; transition: transform 0.2s;">
+                        ${casaLogo ? `<img src="${getCachedImage(casaLogo, 80)}" style="width: 80px; height: 80px; margin-bottom: 15px;">` : '<div style="width: 80px; height: 80px; background: #f0f0f0; margin: 0 auto 15px;"></div>'}
+                        <div style="font-weight: 700; font-size: 16px;">${casaNome}</div>
+                        <div style="font-size: 12px; color: #888; margin-top: 8px;">Clicca per iniziare</div>
+                    </div>
+                    <div style="display: flex; align-items: center; font-size: 28px; font-weight: 700; color: #8c1d2c;">VS</div>
+                    <div class="rigori-team-select" onclick="startRigori('trasferta')" style="text-align: center; padding: 20px; cursor: pointer; transition: transform 0.2s;">
+                        ${trasfLogo ? `<img src="${getCachedImage(trasfLogo, 80)}" style="width: 80px; height: 80px; margin-bottom: 15px;">` : '<div style="width: 80px; height: 80px; background: #f0f0f0; margin: 0 auto 15px;"></div>'}
+                        <div style="font-weight: 700; font-size: 16px;">${trasfNome}</div>
+                        <div style="font-size: 12px; color: #888; margin-top: 8px;">Clicca per iniziare</div>
+                    </div>
+                </div>
+            </div>
+            <!-- FASE 2: TIRI DI RIGORE -->
+            <div id="rigori-tiri" style="display: ${directMode ? 'block' : 'none'};">
+                <!-- Squadre con loghi ESTERNI -->
+                <div class="rigori-teams" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 40px; padding: 0 20px;">
+                    <!-- Squadra Casa -->
+                    <div class="rigori-team" id="rigori-casa" style="text-align: center; flex: 1;">
+                        ${casaLogo ? `<img src="${getCachedImage(casaLogo, 70)}" alt="${casaNome}" style="width: 70px; height: 70px; margin-bottom: 10px;">` : '<div style="width: 70px; height: 70px; background: #f0f0f0; margin: 0 auto 10px;"></div>'}
+                        <div class="team-name" style="font-weight: 700; font-size: 15px; margin-bottom: 15px;">${casaNome}</div>
+                        <div class="rigori-kicks" id="kicks-casa" style="display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; min-height: 35px;"></div>
+                    </div>
+                    <!-- Punteggio CENTRALE con trattino -->
+                    <div class="rigori-score-center" style="text-align: center; flex: 0 0 150px;">
+                        <div style="display: flex; align-items: center; justify-content: center; gap: 20px; margin-bottom: 10px;">
+                            <div class="rigori-score" id="score-casa" style="font-size: 56px; font-weight: 900; color: #7a1e2c; line-height: 1;">0</div>
+                            <div style="font-size: 32px; font-weight: 700; color: #999;">-</div>
+                            <div class="rigori-score" id="score-trasferta" style="font-size: 56px; font-weight: 900; color: #7a1e2c; line-height: 1;">0</div>
+                        </div>
+                    </div>
+                    <!-- Squadra Trasferta -->
+                    <div class="rigori-team" id="rigori-trasferta" style="text-align: center; flex: 1;">
+                        ${trasfLogo ? `<img src="${getCachedImage(trasfLogo, 70)}" alt="${trasfNome}" style="width: 70px; height: 70px; margin-bottom: 10px;">` : '<div style="width: 70px; height: 70px; background: #f0f0f0; margin: 0 auto 10px;"></div>'}
+                        <div class="team-name" style="font-weight: 700; font-size: 15px; margin-bottom: 15px;">${trasfNome}</div>
+                        <div class="rigori-kicks" id="kicks-trasferta" style="display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; min-height: 35px;"></div>
+                    </div>
+                </div>
+                <!-- Semaforo centrale -->
+                <div class="rigori-center" style="text-align: center; margin: 40px 0;">
+                    <div class="rigori-indicator" id="rigori-indicator" style="width: 120px; height: 120px; border-radius: 50%; background: #555; margin: 0 auto 20px; box-shadow: inset 0 -15px 25px rgba(0,0,0,0.3), 0 8px 20px rgba(0,0,0,0.2); transition: all 0.3s ease;"></div>
+                    <div class="rigori-current" id="rigori-current" style="font-size: 20px; color: #333; font-weight: 700; letter-spacing: 1px;">${casaNome}</div>
+                </div>
+                <!-- Pulsanti SENZA SIMBOLI -->
+                <div class="rigori-controls" style="display: flex; justify-content: center; gap: 50px; margin: 40px 0;">
+                    <button class="rigori-btn miss" onclick="handleRigoreClick('miss')" style="width: 100px; height: 100px; border-radius: 50%; border: none; background: #ef4444; cursor: pointer; box-shadow: 0 6px 20px rgba(239, 68, 68, 0.4); transition: transform 0.2s; font-size: 16px; font-weight: 700; color: white;">
+                        SBAGLIATO
+                    </button>
+                    <button class="rigori-btn goal" onclick="handleRigoreClick('goal')" style="width: 100px; height: 100px; border-radius: 50%; border: none; background: #22c55e; cursor: pointer; box-shadow: 0 6px 20px rgba(34, 197, 94, 0.4); transition: transform 0.2s; font-size: 16px; font-weight: 700; color: white;">
+                        REALIZZATO
+                    </button>
+                </div>
+                <!-- PULSANTE FINE -->
+                <button class="rigori-finish" id="rigori-finish" style="display: none; width: 100%; padding: 20px; background: #7a1e2c; color: white; border: none; border-radius: 12px; font-size: 20px; font-weight: 700; cursor: pointer; margin-top: 30px; letter-spacing: 2px; box-shadow: 0 4px 15px rgba(122, 30, 44, 0.3);" onclick="finishRigori('${match.MATCH_ID}')">
+                    FINE RIGORI
+                </button>
+            </div>
         </div>
-        
-        <!-- Semaforo centrale -->
-        <div class="rigori-center" style="text-align: center; margin: 40px 0;">
-          <div class="rigori-indicator" id="rigori-indicator" style="width: 120px; height: 120px; border-radius: 50%; background: #555; margin: 0 auto 20px; box-shadow: inset 0 -15px 25px rgba(0,0,0,0.3), 0 8px 20px rgba(0,0,0,0.2); transition: all 0.3s ease;"></div>
-          <div class="rigori-current" id="rigori-current" style="font-size: 20px; color: #333; font-weight: 700; letter-spacing: 1px;">${casaNome}</div>
-        </div>
-        
-        <!-- Pulsanti SENZA SIMBOLI -->
-        <div class="rigori-controls" style="display: flex; justify-content: center; gap: 50px; margin: 40px 0;">
-          <button class="rigori-btn miss" onclick="handleRigoreClick('miss')" style="width: 100px; height: 100px; border-radius: 50%; border: none; background: #ef4444; cursor: pointer; box-shadow: 0 6px 20px rgba(239, 68, 68, 0.4); transition: transform 0.2s; font-size: 16px; font-weight: 700; color: white;">
-            SBAGLIATO
-          </button>
-          <button class="rigori-btn goal" onclick="handleRigoreClick('goal')" style="width: 100px; height: 100px; border-radius: 50%; border: none; background: #22c55e; cursor: pointer; box-shadow: 0 6px 20px rgba(34, 197, 94, 0.4); transition: transform 0.2s; font-size: 16px; font-weight: 700; color: white;">
-            REALIZZATO
-          </button>
-        </div>
-        
-        <!-- PULSANTE FINE -->
-        <button class="rigori-finish" id="rigori-finish" style="display: none; width: 100%; padding: 20px; background: #7a1e2c; color: white; border: none; border-radius: 12px; font-size: 20px; font-weight: 700; cursor: pointer; margin-top: 30px; letter-spacing: 2px; box-shadow: 0 4px 15px rgba(122, 30, 44, 0.3);" onclick="finishRigori('${match.MATCH_ID}')">
-          FINE RIGORI
-        </button>
-      </div>
-    </div>
-  `;
-  
-  document.body.appendChild(popup);
-  
-  // Funzione per iniziare i rigori
-  window.startRigori = (team) => {
-    rigoriState.fase = 'tiri';
-    rigoriState.currentKicker = team;
+    `;
     
-    // Nascondi selezione, mostra tiri
-    document.getElementById('rigori-selezione').style.display = 'none';
-    document.getElementById('rigori-tiri').style.display = 'block';
+    document.body.appendChild(popup);
     
-    const startingTeam = team === 'casa' ? casaNome : trasfNome;
-    document.getElementById('rigori-current').textContent = startingTeam;
+    // Funzione per iniziare i rigori
+    window.startRigori = (team) => {
+        rigoriState.fase = 'tiri';
+        rigoriState.currentKicker = team;
+        // Nascondi selezione, mostra tiri
+        document.getElementById('rigori-selezione').style.display = 'none';
+        document.getElementById('rigori-tiri').style.display = 'block';
+        const startingTeam = team === 'casa' ? casaNome : trasfNome;
+        document.getElementById('rigori-current').textContent = startingTeam;
+        // Aggiorna stato partita a "RIGORI"
+        match.STATO_PARTITA = "RIGORI";
+        window.APP_STATE.lastMatch = match;
+        updateMatchUI(match);
+    };
     
-    // Aggiorna stato partita a "RIGORI"
-    match.STATO_PARTITA = "RIGORI";
-    window.APP_STATE.lastMatch = match;
-    updateMatchUI(match);
-  };
-  
-  // Esponi funzioni globali
-  window.handleRigoreClick = (result) => handleRigoreClick(result, rigoriState, match);
-  window.finishRigori = (matchId) => finishRigori(matchId, rigoriState, match);
+    // Esponi funzioni globali
+    window.handleRigoreClick = (result) => handleRigoreClick(result, rigoriState, match);
+    window.finishRigori = (matchId) => finishRigori(matchId, rigoriState, match);
 }
 
 function handleRigoreClick(result, state, match) {
@@ -4094,19 +4084,18 @@ function bootAdminApp() {
       }
     });
 
-  // 🔥 CONTROLLA SE C'È UNA PARTITA IN RIGORI E APRI IL POPUP
+// 🔥 CONTROLLA SE C'È UNA PARTITA IN RIGORI E APRI IL POPUP
 setTimeout(() => {
-  const matches = window.APP_CACHE.matches || [];
-  const rigoriMatch = matches.find(m => m.STATO_PARTITA === "RIGORI");
-  
-  if (rigoriMatch) {
-    console.log('🎯 Trovata partita in RIGORI, apro popup...');
-    setCurrentMatch(rigoriMatch.MATCH_ID);
-    // Aspetta che i dati siano caricati
-    setTimeout(() => {
-      openRigoriPopup();
-    }, 500);
-  }
+    const matches = window.APP_CACHE.matches || [];
+    const rigoriMatch = matches.find(m => m.STATO_PARTITA === "RIGORI");
+    if (rigoriMatch) {
+        console.log('🎯 Trovata partita in RIGORI all'avvio, apro popup...');
+        setCurrentMatch(rigoriMatch.MATCH_ID);
+        // Aspetta che i dati siano caricati
+        setTimeout(() => {
+            openRigoriPopup(true);  // 🔥 true = modalità diretta
+        }, 500);
+    }
 }, 1000);
   
   // 🔥 Global error handling
