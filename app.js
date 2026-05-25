@@ -4092,7 +4092,7 @@ setTimeout(() => {
     const matches = window.APP_CACHE.matches || [];
     const rigoriMatch = matches.find(m => m.STATO_PARTITA === "RIGORI");
     if (rigoriMatch) {
-        console.log('🎯 Trovata partita in RIGORI all'avvio, apro popup...');
+        console.log("🎯 Trovata partita in RIGORI all'avvio, apro popup...");
         setCurrentMatch(rigoriMatch.MATCH_ID);
         openRigoriPopup(true);  // Rimosso il secondo setTimeout
     }
