@@ -2913,7 +2913,7 @@ function openRigoriPopup(directMode = false) {
         <div class="rigori-popup" style="max-width: 700px;">
             <!-- Header -->
             <div class="rigori-header" style="text-align: center; margin-bottom: 30px; position: relative;">
-                <div style="position: absolute; right: 25px; top: 20px; cursor: pointer; font-size: 36px; color: #999; line-height: 1; z-index: 10; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; border-radius: 50%; transition: all 0.2s;" onclick="closeRigoriPopup()" onmouseover="this.style.background='#f0f0f0';this.style.color='#333'" onmouseout="this.style.background='';this.style.color='#999'">×</div>
+                <div style="position: absolute; right: 20px; top: 15px; cursor: pointer; font-size: 42px; color: #7a1e2c; line-height: 1; z-index: 10; width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; border-radius: 8px; transition: all 0.2s ease; font-weight: 300;" onclick="closeRigoriPopup()" onmouseover="this.style.background='#7a1e2c';this.style.color='#fff';this.style.transform='rotate(90deg)'" onmouseout="this.style.background='';this.style.color='#7a1e2c';this.style.transform='rotate(0deg)'">×</div>
                 <div class="rigori-title" style="font-size: 32px; font-weight: 800; color: #7a1e2c; letter-spacing: 2px;">CALCI DI RIGORE</div>
             </div>
             <!-- FASE 1: SELEZIONE CHI INIZIA -->
@@ -4087,16 +4087,16 @@ function bootAdminApp() {
       }
     });
 
-// 🔥 CONTROLLA SE C'È UNA PARTITA IN RIGORI E APRI IL POPUP
-setTimeout(() => {
-    const matches = window.APP_CACHE.matches || [];
-    const rigoriMatch = matches.find(m => m.STATO_PARTITA === "RIGORI");
-    if (rigoriMatch) {
-        console.log("🎯 Trovata partita in RIGORI all'avvio, apro popup...");
+// 🔥 CONTROLLA SE C'È UNA PARTITA IN RIGORI E APRI IL POPUP - IMMEDIATO
+const matches = window.APP_CACHE.matches || [];
+const rigoriMatch = matches.find(m => m.STATO_PARTITA === "RIGORI");
+if (rigoriMatch) {
+    console.log("🎯 Trovata partita in RIGORI all'avvio, apro popup IMMEDIATAMENTE...");
+    setTimeout(() => {
         setCurrentMatch(rigoriMatch.MATCH_ID);
-        openRigoriPopup(true);  // Rimosso il secondo setTimeout
-    }
-}, 200);  // Ridotto da 1000ms a 300ms
+        openRigoriPopup(true);
+    }, 100);  // Solo 100ms per permettere il rendering iniziale
+}
   
   // 🔥 Global error handling
   window.addEventListener("error", e => console.error("Global error:", e.error||e.message));
