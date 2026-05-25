@@ -2989,6 +2989,23 @@ function openRigoriPopup(directMode = false) {
     
     document.body.appendChild(popup);
 
+  // 🔥 SE DIRECT MODE O STATO SALVATO, RENDERIZZA SUBITO I BOLLINI
+if (directMode || rigoriState.history.length > 0) {
+    // Aggiorna UI punteggi iniziali
+    updateRigoriUIIfExists(rigoriState);
+    
+    // Aggiorna nome squadra corrente
+    const currentEl = document.getElementById('rigori-current');
+    if (currentEl) {
+        currentEl.textContent = rigoriState.currentKicker === 'casa' ? casaNome : trasfNome;
+    }
+    
+    // 🔥 RENDERIZZA I BOLLINI ESISTENTI (questo era il pezzo mancante!)
+    setTimeout(() => {
+        renderKickIndicators(rigoriState, 'kicks-casa', 'kicks-trasferta');
+    }, 50);
+}
+
   // 🔥 AGGIUNGI STILI PER I BOLLINI
   const styleEl = document.createElement('style');
   styleEl.textContent = `
@@ -3173,7 +3190,7 @@ function closeRigoriPopup() {
 function handleRigoreClick(result, state, match) {
     if (state.finished) return;
     
-    const currentTeam = state.currentKicker; // 'casa' oppure 'trasferta'
+    const currentTeam = state.currentKicker;
     const isGoal = result === 'goal';
 
     // ✅ LOGICA CORRETTA PER ENTRAMBE LE SQUADRE
@@ -3188,8 +3205,11 @@ function handleRigoreClick(result, state, match) {
     // Salva nello storico
     state.history.push({ team: currentTeam, result: result });
     
-    // Aggiorna UI (punteggi e pallini)
-    updateRigoriUI(state, match);
+    // 🔥 SALVA STATO IN LOCALSTORAGE
+    saveRigoriState(match.MATCH_ID, state);
+    
+    // Aggiorna UI punteggi (se il popup è aperto)
+    updateRigoriUIIfExists(state);
     
     // Passa il turno all'altra squadra
     state.currentKicker = currentTeam === 'casa' ? 'trasferta' : 'casa';
@@ -3248,6 +3268,41 @@ if (scoreTrasfEl) scoreTrasfEl.textContent = state.trasfScore;
   if (last) {
     addKickIndicator(last.team === 'casa' ? 'kicks-casa' : 'kicks-trasferta', last.result);
   }
+}
+
+// 🔥 SALVA STATO RIGORI IN LOCALSTORAGE
+function saveRigoriState(matchId, state) {
+    localStorage.setItem(`rigori_${matchId}`, JSON.stringify(state));
+}
+
+// 🔥 RENDERIZZA BOLLINI DATO UNO STATO
+function renderKickIndicators(state, casaContainerId, trasfContainerId) {
+    const casaKicks = document.getElementById(casaContainerId);
+    const trasfKicks = document.getElementById(trasfContainerId);
+    
+    if (casaKicks) casaKicks.innerHTML = '';
+    if (trasfKicks) trasfKicks.innerHTML = '';
+    
+    state.history.forEach(kick => {
+        const kickEl = document.createElement('div');
+        kickEl.className = `kick-indicator ${kick.result}`;
+        kickEl.style.cssText = 'width: 22px; height: 22px; border-radius: 50%; margin: 2px; display: inline-block;';
+        kickEl.style.background = kick.result === 'goal' ? '#22c55e' : '#ef4444';
+        
+        if (kick.team === 'casa' && casaKicks) {
+            casaKicks.appendChild(kickEl);
+        } else if (kick.team === 'trasferta' && trasfKicks) {
+            trasfKicks.appendChild(kickEl);
+        }
+    });
+}
+
+// 🔥 AGGIORNA UI PUNTEGGI (solo se gli elementi esistono)
+function updateRigoriUIIfExists(state) {
+    const scoreCasaEl = document.getElementById('score-casa');
+    const scoreTrasfEl = document.getElementById('score-trasferta');
+    if (scoreCasaEl) scoreCasaEl.textContent = state.casaScore;
+    if (scoreTrasfEl) scoreTrasfEl.textContent = state.trasfScore;
 }
 
 async function finishRigori(matchId, state, match) {
