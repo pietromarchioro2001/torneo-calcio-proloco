@@ -4008,12 +4008,12 @@ function bootAdminApp() {
     let dataLoaded = false;
     let initialRouteHandled = false;
 
-    // 🔥 Timeout di sicurezza (ridotto a 3s tanto se siamo in rigori il popup è già aperto)
+    // 🔥 Timeout di sicurezza
     const maxTimeout = setTimeout(() => {
         if (!dataLoaded) {
             console.warn('⏱️ Timeout caricamento dati - mostro UI comunque');
             hideLoader();
-            if (!initialRouteHandled && !rigoriMatch) { // Non navigare se siamo già in rigori
+            if (!initialRouteHandled) {  // ✅ RIMOSSO: && !rigoriMatch
                 showHome();
                 initialRouteHandled = true;
             }
@@ -4028,7 +4028,7 @@ function bootAdminApp() {
         }
     }
 
-    // 2. Caricamento dati in background (non blocca il popup)
+    // 2. Caricamento dati in background
     ApiClient.getInitialData()
         .then(data => {
             dataLoaded = true;
@@ -4052,7 +4052,7 @@ function bootAdminApp() {
                 preloadRecentEvents();
                 CacheManager.save(window.APP_CACHE);
                 
-                if (!initialRouteHandled && !rigoriMatch) {
+                if (!initialRouteHandled) {  // ✅ RIMOSSO: && !rigoriMatch
                     initialRouteHandled = true;
                     const currentHash = window.location.hash || "#home";
                     if (currentHash.includes("matches")) showMatches();
@@ -4073,7 +4073,7 @@ function bootAdminApp() {
             console.error('❌ Errore caricamento:', error);
             dataLoaded = true;
             hideLoader();
-            if (!initialRouteHandled && !rigoriMatch) {
+            if (!initialRouteHandled) {  // ✅ RIMOSSO: && !rigoriMatch
                 initialRouteHandled = true;
                 showHome();
             }
@@ -4085,7 +4085,6 @@ function bootAdminApp() {
         Cleanup.releaseAll(); 
         CacheManager.save(window.APP_CACHE, 0); 
     });
-
 }
 
 function preloadRecentEvents() {
