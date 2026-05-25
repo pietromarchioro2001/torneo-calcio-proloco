@@ -2912,7 +2912,8 @@ function openRigoriPopup(directMode = false) {
     popup.innerHTML = `
         <div class="rigori-popup" style="max-width: 700px;">
             <!-- Header -->
-            <div class="rigori-header" style="text-align: center; margin-bottom: 30px;">
+            <div class="rigori-header" style="text-align: center; margin-bottom: 30px; position: relative;">
+                <div style="position: absolute; right: 20px; top: 0; cursor: pointer; font-size: 28px; color: #999; line-height: 1; z-index: 10;" onclick="closeRigoriPopup()">×</div>
                 <div class="rigori-title" style="font-size: 32px; font-weight: 800; color: #7a1e2c; letter-spacing: 2px;">CALCI DI RIGORE</div>
             </div>
             <!-- FASE 1: SELEZIONE CHI INIZIA -->
@@ -2968,9 +2969,9 @@ function openRigoriPopup(directMode = false) {
                     <button class="rigori-btn goal" onclick="handleRigoreClick('goal')" style="width: 100px; height: 100px; border-radius: 50%; border: none; background: #22c55e; cursor: pointer; box-shadow: 0 6px 20px rgba(34, 197, 94, 0.4); transition: transform 0.2s; font-size: 16px; font-weight: 700; color: white;"></button>
                 </div>
                 <!-- PULSANTE FINE -->
-               <button class="rigori-finish" id="rigori-finish" style="display: none; width: 100%; padding: 20px; background: #7a1e2c; color: white; border: none; border-radius: 12px; font-size: 20px; font-weight: 700; cursor: pointer; margin-top: 30px; letter-spacing: 2px; box-shadow: 0 4px 15px rgba(122, 30, 44, 0.3);" onclick="finishRigori(${JSON.stringify(match.MATCH_ID)})">
-                    FINE RIGORI
-                </button>
+               <button class="rigori-finish" id="rigori-finish" style="width: 100%; padding: 20px; background: #7a1e2c; color: white; border: none; border-radius: 12px; font-size: 20px; font-weight: 700; cursor: pointer; margin-top: 30px; letter-spacing: 2px; box-shadow: 0 4px 15px rgba(122, 30, 44, 0.3);" onclick="finishRigori('${match.MATCH_ID}')">
+                  FINE
+              </button>
             </div>
         </div>
     `;
@@ -2995,6 +2996,13 @@ function openRigoriPopup(directMode = false) {
     // Esponi funzioni globali
     window.handleRigoreClick = (result) => handleRigoreClick(result, rigoriState, match);
     window.finishRigori = (matchId) => finishRigori(matchId, rigoriState, match);
+}
+
+function closeRigoriPopup() {
+    const popup = document.getElementById('rigoriPopupOverlay');
+    if (popup) {
+        popup.remove();
+    }
 }
 
 function handleRigoreClick(result, state, match) {
@@ -3022,8 +3030,7 @@ function handleRigoreClick(result, state, match) {
   
   // Controlla se c'è un vincitore
   if (checkRigoriWinner(state)) {
-    state.finished = true;
-    document.getElementById('rigori-finish').style.display = 'block';
+      state.finished = true;
   }
 }
 
@@ -4085,14 +4092,11 @@ setTimeout(() => {
     const matches = window.APP_CACHE.matches || [];
     const rigoriMatch = matches.find(m => m.STATO_PARTITA === "RIGORI");
     if (rigoriMatch) {
-        console.log("🎯 Trovata partita in RIGORI all'avvio, apro popup...");
+        console.log('🎯 Trovata partita in RIGORI all'avvio, apro popup...');
         setCurrentMatch(rigoriMatch.MATCH_ID);
-        // Aspetta che i dati siano caricati
-        setTimeout(() => {
-            openRigoriPopup(true);  // 🔥 true = modalità diretta
-        }, 500);
+        openRigoriPopup(true);  // Rimosso il secondo setTimeout
     }
-}, 1000);
+}, 300);  // Ridotto da 1000ms a 300ms
   
   // 🔥 Global error handling
   window.addEventListener("error", e => console.error("Global error:", e.error||e.message));
