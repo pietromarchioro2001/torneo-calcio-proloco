@@ -1772,8 +1772,8 @@ function openMatch(id) {
       if (cachedMatch && cachedMatch.STATO_PARTITA === "RIGORI") {
           setTimeout(() => {
               console.log('🎯 Partita in RIGORI - Apro popup direttamente in modalità tiri');
-              openRigoriPopup(true);  // 🔥 true = salta selezione, vai diretto ai tiri
-          }, 500);
+              openRigoriPopup(true);
+          }, 100);  // ✅ Ridotto da 500ms a 100ms
       }
       
       // Aggiorna UI solo se cambia qualcosa
@@ -2913,7 +2913,7 @@ function openRigoriPopup(directMode = false) {
         <div class="rigori-popup" style="max-width: 700px;">
             <!-- Header -->
             <div class="rigori-header" style="text-align: center; margin-bottom: 30px; position: relative;">
-                <div style="position: absolute; right: 20px; top: 0; cursor: pointer; font-size: 28px; color: #999; line-height: 1; z-index: 10;" onclick="closeRigoriPopup()">×</div>
+                <div style="position: absolute; right: 25px; top: 20px; cursor: pointer; font-size: 36px; color: #999; line-height: 1; z-index: 10; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; border-radius: 50%; transition: all 0.2s;" onclick="closeRigoriPopup()" onmouseover="this.style.background='#f0f0f0';this.style.color='#333'" onmouseout="this.style.background='';this.style.color='#999'">×</div>
                 <div class="rigori-title" style="font-size: 32px; font-weight: 800; color: #7a1e2c; letter-spacing: 2px;">CALCI DI RIGORE</div>
             </div>
             <!-- FASE 1: SELEZIONE CHI INIZIA -->
@@ -2969,7 +2969,7 @@ function openRigoriPopup(directMode = false) {
                     <button class="rigori-btn goal" onclick="handleRigoreClick('goal')" style="width: 100px; height: 100px; border-radius: 50%; border: none; background: #22c55e; cursor: pointer; box-shadow: 0 6px 20px rgba(34, 197, 94, 0.4); transition: transform 0.2s; font-size: 16px; font-weight: 700; color: white;"></button>
                 </div>
                 <!-- PULSANTE FINE -->
-               <button class="rigori-finish" id="rigori-finish" style="width: 100%; padding: 20px; background: #7a1e2c; color: white; border: none; border-radius: 12px; font-size: 20px; font-weight: 700; cursor: pointer; margin-top: 30px; letter-spacing: 2px; box-shadow: 0 4px 15px rgba(122, 30, 44, 0.3);" onclick="finishRigori('${match.MATCH_ID}')">
+               <button class="rigori-finish" id="rigori-finish" style="width: 100%; max-width: 300px; margin: 20px auto 0; padding: 12px 20px; background: #7a1e2c; color: white; border: none; border-radius: 8px; font-size: 16px; font-weight: 700; cursor: pointer; letter-spacing: 1px; box-shadow: 0 2px 8px rgba(122, 30, 44, 0.3); display: block;" onclick="finishRigori(${JSON.stringify(match.MATCH_ID)})">
                   FINE
               </button>
             </div>
@@ -4096,7 +4096,7 @@ setTimeout(() => {
         setCurrentMatch(rigoriMatch.MATCH_ID);
         openRigoriPopup(true);  // Rimosso il secondo setTimeout
     }
-}, 300);  // Ridotto da 1000ms a 300ms
+}, 200);  // Ridotto da 1000ms a 300ms
   
   // 🔥 Global error handling
   window.addEventListener("error", e => console.error("Global error:", e.error||e.message));
