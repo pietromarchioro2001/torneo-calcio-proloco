@@ -1767,6 +1767,14 @@ function openMatch(id) {
           CacheManager.save(window.APP_CACHE);
         }
       }
+
+      // 🔥 AGGIUNGI QUESTO DOPO renderMatchPage():
+      if (cachedMatch && cachedMatch.STATO_PARTITA === "RIGORI") {
+        setTimeout(() => {
+          console.log('🎯 Partita in RIGORI - Apro popup automaticamente');
+          openRigoriPopup();
+        }, 500);
+      }
       
       // Aggiorna UI solo se cambia qualcosa
       if (cachedMatch && (calculatedScore.GOL_CASA !== cachedMatch.GOL_CASA ||
