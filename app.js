@@ -3157,26 +3157,6 @@ function renderKickIndicators() {
     
     // 🔥 FUNZIONE PER CONTROLLARE VINCITORE
     function checkRigoriWinner() {
-        const casaKicks = rigoriState.history.filter(h => h.team === 'casa').length;
-        const trasfKicks = rigoriState.history.filter(h => h.team === 'trasferta').length;
-        
-        // Dopo almeno 5 rigori per squadra
-        if (casaKicks >= 5 && trasfKicks >= 5) {
-            if (rigoriState.casaScore !== rigoriState.trasfScore) return true;
-        }
-        
-        // Vittoria matematica prima dei 5 rigori
-        const remainingKicks = 5 - Math.max(casaKicks, trasfKicks);
-        if (remainingKicks > 0) {
-            const diff = Math.abs(rigoriState.casaScore - rigoriState.trasfScore);
-            if (diff > remainingKicks) return true;
-        }
-        
-        // Morte improvvisa dopo il 5-5
-        if (casaKicks > 5 && trasfKicks === casaKicks) {
-            if (rigoriState.casaScore !== rigoriState.trasfScore) return true;
-        }
-        
         return false;
     }
     
@@ -3321,10 +3301,6 @@ if (scoreTrasfEl) scoreTrasfEl.textContent = state.trasfScore;
   if (last) {
     addKickIndicator(last.team === 'casa' ? 'kicks-casa' : 'kicks-trasferta', last.result);
   }
-}
-
-function checkRigoriWinner(state) {
-  return false; 
 }
 
 async function finishRigori(matchId, state, match) {
