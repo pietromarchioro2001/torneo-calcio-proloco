@@ -2166,17 +2166,8 @@ async function toggleMatch() {
 function renderEvents(events, match) {
   const container = document.getElementById("eventsContent");
   if (!container) {
-    console.error('❌ [RENDER EVENTS] Container non trovato!');
     return;
   }
-
-  console.log('📊 [RENDER EVENTS] Debug:', {
-    matchId: match.MATCH_ID,
-    totalEvents: events?.length || 0,
-    events: events,
-    casaId: match.CASA_ID,
-    trasfertaId: match.TRASFERTA_ID
-  });
 
   if (!events?.length) {
     console.warn('⚠️ [RENDER EVENTS] Nessun evento da mostrare');
@@ -2205,8 +2196,6 @@ function renderEvents(events, match) {
       return valido;
     })
     .sort((a, b) => (Number(a.MINUTO) || 0) - (Number(b.MINUTO) || 0));  // ← CONVERSIONE
-
-  console.log('✅ [RENDER EVENTS] Eventi dopo filtro:', events.length);
 
   let html = "";
   let eventsLeft = 0;
@@ -2245,7 +2234,6 @@ function renderEvents(events, match) {
     </div>`;
   });
 
-  console.log(`✅ [RENDER EVENTS] Sinistra: ${eventsLeft}, Destra: ${eventsRight}`);
   container.innerHTML = html;
 }
 
@@ -2404,29 +2392,34 @@ function updateMatchUI(match) {
   const statusEl = document.getElementById("matchStatus"), 
         btn = document.querySelector(".start-btn");
   if (!statusEl || !btn) return;
-
+  
   if (match.STATO_PARTITA === "LIVE") {
     statusEl.innerHTML = "LIVE"; 
     statusEl.classList.add("live");
     btn.textContent = "CONCLUDI"; 
     btn.classList.add("active");
-  } 
+  }
   else if (match.STATO_PARTITA === "SUPP") {
     statusEl.innerHTML = "SUPP"; 
     statusEl.classList.add("live");
     btn.textContent = "CONCLUDI"; 
     btn.classList.add("active");
-  } 
+  }
+  else if (match.STATO_PARTITA === "RIGORI") {  // 🔥 AGGIUNTO
+    statusEl.innerHTML = "RIGORI"; 
+    statusEl.classList.add("live");
+    btn.textContent = "CONCLUDI"; 
+    btn.classList.add("active");
+  }
   else if (match.STATO_PARTITA === "FINITA") {
     statusEl.textContent = "TERMINATA"; 
     statusEl.classList.remove("live");
     btn.textContent = "INIZIO"; 
     btn.classList.remove("active");
-  } 
+  }
   else {
     statusEl.textContent = "";
     btn.textContent = "INIZIO";
-    btn.classList.remove("active");
   }
 }
 
@@ -2904,15 +2897,13 @@ function openRigoriPopup() {
   popup.className = 'rigori-popup-overlay';
   popup.innerHTML = `
     <div class="rigori-popup">
-      <button class="rigori-close" onclick="this.closest('.rigori-popup-overlay').remove()">✕</button>
-      
       <!-- FASE 1: SELEZIONE CHI INIZIA -->
       <div id="rigori-selezione" style="text-align:center; padding:20px;">
-        <div class="rigori-title" style="margin-bottom:30px;">CALCIO DI RIGORE</div>
+        <div class="rigori-title" style="margin-bottom:30px; font-size:24px; font-weight:800; color:#7a1e2c;">CALCIO DI RIGORE</div>
         <div style="font-size:16px; margin-bottom:20px; color:#666;">Chi inizia la serie?</div>
         
-        <div style="display:flex; justify-content:center; gap:40px; margin:30px 0;">
-          <div class="rigori-team-select" onclick="startRigori('casa')" style="cursor:pointer; text-align:center;">
+        <div style="display:flex; justify-content:center; gap:40px; margin:30px 0; flex-wrap:wrap;">
+          <div class="rigori-team-select" onclick="startRigori('casa')" style="text-align:center; padding:20px;">
             ${casaLogo ? `<img src="${getCachedImage(casaLogo, 80)}" style="width:80px;height:80px;border-radius:50%;margin-bottom:10px;">` : '<div style="width:80px;height:80px;border-radius:50%;background:#f0f0f0;margin:0 auto 10px;"></div>'}
             <div style="font-weight:700; font-size:16px;">${casaNome}</div>
             <div style="font-size:12px; color:#888; margin-top:5px;">Clicca per iniziare</div>
@@ -2920,18 +2911,21 @@ function openRigoriPopup() {
           
           <div style="display:flex; align-items:center; font-size:24px; font-weight:700; color:#8c1d2c;">VS</div>
           
-          <div class="rigori-team-select" onclick="startRigori('trasferta')" style="cursor:pointer; text-align:center;">
+          <div class="rigori-team-select" onclick="startRigori('trasferta')" style="text-align:center; padding:20px;">
             ${trasfLogo ? `<img src="${getCachedImage(trasfLogo, 80)}" style="width:80px;height:80px;border-radius:50%;margin-bottom:10px;">` : '<div style="width:80px;height:80px;border-radius:50%;background:#f0f0f0;margin:0 auto 10px;"></div>'}
             <div style="font-weight:700; font-size:16px;">${trasfNome}</div>
             <div style="font-size:12px; color:#888; margin-top:5px;">Clicca per iniziare</div>
           </div>
         </div>
+        
+        <button class="phase-btn secondary" onclick="this.closest('.rigori-popup-overlay').remove()" style="margin-top:20px;">ANNULLA</button>
       </div>
       
       <!-- FASE 2: TIRI DI RIGORE -->
       <div id="rigori-tiri" style="display:none;">
         <div class="rigori-header">
           <div class="rigori-title">CALCIO DI RIGORE</div>
+          <button class="rigori-close" onclick="this.closest('.rigori-popup-overlay').remove()">✕</button>
         </div>
         <div class="rigori-teams">
           <div class="rigori-team" id="rigori-casa">
@@ -2976,6 +2970,11 @@ function openRigoriPopup() {
     
     const startingTeam = team === 'casa' ? casaNome : trasfNome;
     document.getElementById('rigori-current').textContent = `Inizia ${startingTeam}`;
+    
+    // 🔥 AGGIORNA STATO PARTITA A "RIGORI" (invece di SUPP)
+    match.STATO_PARTITA = "RIGORI";
+    window.APP_STATE.lastMatch = match;
+    updateMatchUI(match);
   };
   
   // Esponi funzioni globali
@@ -4093,8 +4092,6 @@ function preloadRecentEvents() {
     return false;
   });
   
-  console.log('📥 Precaricamento eventi per', recentMatches.length, 'partite');
-  
   recentMatches.forEach(m => {
     if (!window.APP_CACHE.eventsByMatch) window.APP_CACHE.eventsByMatch = {};
     
@@ -4103,7 +4100,6 @@ function preloadRecentEvents() {
         .then(events => {
           window.APP_CACHE.eventsByMatch[m.MATCH_ID] = events;
           CacheManager.save(window.APP_CACHE);
-          console.log(`✅ Eventi caricati per ${m.MATCH_ID}:`, events.length);
         })
         .catch(err => console.error(`❌ Errore eventi ${m.MATCH_ID}:`, err));
     }
@@ -4113,7 +4109,6 @@ function preloadRecentEvents() {
       .then(data => {
         if (data?.match && data.match.CASA_ID && data.match.TRASFERTA_ID) {
           window.APP_STATE.matchesById[m.MATCH_ID] = data.match;
-          console.log(`✅ Match precaricato: ${m.MATCH_ID}`);
         }
       })
       .catch(err => console.error(`❌ Errore precaricamento match ${m.MATCH_ID}:`, err));
