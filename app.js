@@ -2941,10 +2941,11 @@ function openRigoriPopup(directMode = false) {
                 <!-- Squadre con loghi ESTERNI -->
                 <div class="rigori-teams" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 40px; padding: 0 20px;">
                     <!-- Squadra Casa -->
-                    <div class="rigori-team" id="rigori-casa" style="text-align: center; flex: 1;">
+                    <!-- Squadra Casa -->
+                    <div class="rigori-team" id="rigori-casa" style="text-align: center; flex: 1; display: flex; flex-direction: column; align-items: center;">
                         ${casaLogo ? `<img src="${getCachedImage(casaLogo, 70)}" alt="${casaNome}" style="width: 70px; height: 70px; margin-bottom: 10px;">` : '<div style="width: 70px; height: 70px; background: #f0f0f0; margin: 0 auto 10px;"></div>'}
-                        <div class="team-name" style="font-weight: 700; font-size: 15px; margin-bottom: 15px;">${casaNome}</div>
-                        <div class="rigori-kicks" id="kicks-casa" style="display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; min-height: 35px;"></div>
+                        <div class="team-name" style="font-weight: 700; font-size: 15px; margin-bottom: 8px;">${casaNome}</div>
+                        <div class="rigori-kicks" id="kicks-casa" style="display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; width: 100%; max-width: 180px;"></div>
                     </div>
                     <!-- Punteggio CENTRALE con trattino -->
                     <div class="rigori-score-center" style="text-align: center; flex: 0 0 150px;">
@@ -2955,10 +2956,11 @@ function openRigoriPopup(directMode = false) {
                         </div>
                     </div>
                     <!-- Squadra Trasferta -->
-                    <div class="rigori-team" id="rigori-trasferta" style="text-align: center; flex: 1;">
+                    <!-- Squadra Trasferta -->
+                    <div class="rigori-team" id="rigori-trasferta" style="text-align: center; flex: 1; display: flex; flex-direction: column; align-items: center;">
                         ${trasfLogo ? `<img src="${getCachedImage(trasfLogo, 70)}" alt="${trasfNome}" style="width: 70px; height: 70px; margin-bottom: 10px;">` : '<div style="width: 70px; height: 70px; background: #f0f0f0; margin: 0 auto 10px;"></div>'}
-                        <div class="team-name" style="font-weight: 700; font-size: 15px; margin-bottom: 15px;">${trasfNome}</div>
-                        <div class="rigori-kicks" id="kicks-trasferta" style="display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; min-height: 35px;"></div>
+                        <div class="team-name" style="font-weight: 700; font-size: 15px; margin-bottom: 8px;">${trasfNome}</div>
+                        <div class="rigori-kicks" id="kicks-trasferta" style="display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; width: 100%; max-width: 180px;"></div>
                     </div>
                 </div>
                 <!-- Semaforo centrale -->
@@ -2980,6 +2982,37 @@ function openRigoriPopup(directMode = false) {
     `;
     
     document.body.appendChild(popup);
+
+  // 🔥 AGGIUNGI STILI PER I BOLLINI
+  const styleEl = document.createElement('style');
+  styleEl.textContent = `
+      .rigori-kicks {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 8px;
+          justify-content: center;
+          margin-top: 5px;
+      }
+      
+      .kick-indicator {
+          width: 22px;
+          height: 22px;
+          border-radius: 50%;
+          display: inline-block;
+          transition: all 0.3s ease;
+      }
+      
+      .kick-indicator.goal {
+          background: #22c55e;
+          box-shadow: 0 0 8px rgba(34, 197, 94, 0.4);
+      }
+      
+      .kick-indicator.miss {
+          background: #ef4444;
+          box-shadow: 0 0 8px rgba(239, 68, 68, 0.4);
+      }
+  `;
+  document.head.appendChild(styleEl);
     
     // 🔥 FUNZIONE PER INIZIARE I RIGORI
     window.startRigori = (team) => {
@@ -3213,8 +3246,12 @@ function handleRigoreClick(result, state, match) {
 
 function updateRigoriUI(state, match) {
   // Aggiorna punteggi
-  document.getElementById('score-casa').textContent = state.casaScore;
-  document.getElementById('score-trasferta').textContent = state.trasfScore;
+  // 🔥 AGGIORNA ENTRAMBI I PUNTEGGI CORRETTAMENTE
+const scoreCasaEl = document.getElementById('score-casa');
+const scoreTrasfEl = document.getElementById('score-trasferta');
+
+if (scoreCasaEl) scoreCasaEl.textContent = state.casaScore;
+if (scoreTrasfEl) scoreTrasfEl.textContent = state.trasfScore;
   
   // Aggiorna indicatori
   const indicator = document.getElementById('rigori-indicator');
@@ -3240,13 +3277,15 @@ function updateRigoriUI(state, match) {
     (window.APP_CACHE.fullTeams?.[String(match.TRASFERTA_ID)]?.team?.NOME_SQUADRA || match.SQUADRA_TRASFERTA);
   
   current.textContent = `Tocca a ${currentTeamName}`;
-  
+
   // Aggiungi bollini sotto le squadre
   const addKickIndicator = (elementId, result) => {
-    const el = document.getElementById(elementId);
-    const kick = document.createElement('div');
-    kick.className = 'kick-indicator ' + (result === 'goal' ? 'goal' : 'miss');
-    el.appendChild(kick);
+      const el = document.getElementById(elementId);
+      if (!el) return;
+      
+      const kick = document.createElement('div');
+      kick.className = `kick-indicator ${result === 'goal' ? 'goal' : 'miss'}`;
+      el.appendChild(kick);
   };
   
   const last = state.history[state.history.length - 1];
