@@ -1971,8 +1971,28 @@ if (match.STATO_PARTITA === "FINITA" &&
 
   // Carica giocatori
   loadPlayersForMatch(match);
-
   window.APP_STATE.lastMatch = match;
+  
+  // 🔥 FIX: LOGICA CARD DCR E RIGORI
+  // 1. Calcola i rigori dagli eventi se non sono nell'oggetto match
+  let rigoriCasa = match.RIGORI_CASA;
+  let rigoriTrasf = match.RIGORI_TRASFERTA;
+  
+  // Se sono undefined o null, proviamo a calcolarli dagli eventi (fallback)
+  if ((rigoriCasa === undefined || rigoriCasa === null) && events.length > 0) {
+      rigoriCasa = events.filter(e => e.TEAM_ID === match.CASA_ID && e.TIPO && e.TIPO.includes("RIGORE_SEGNO")).length;
+      rigoriTrasf = events.filter(e => e.TEAM_ID === match.TRASFERTA_ID && e.TIPO && e.TIPO.includes("RIGORE_SEGNO")).length;
+  }
+  
+  // 2. Mostra la card DCR se ci sono rigori o se lo stato è RIGORI
+  if ((rigoriCasa !== undefined && rigoriCasa !== null) || match.STATO_PARTITA === "RIGORI") {
+      // Forza l'aggiornamento dell'oggetto match locale per le funzioni successive
+      match.RIGORI_CASA = rigoriCasa || 0;
+      match.RIGORI_TRASFERTA = rigoriTrasf || 0;
+      
+      // Mostra l'indicatore DCR
+      showDCRIndicator(match.RIGORI_CASA, match.RIGORI_TRASFERTA);
+  }
 }
 
 function getSafeMatchData(matchId) {
@@ -2183,79 +2203,73 @@ async function toggleMatch() {
   }
 }
 
-// 🔥 MODIFICA renderEvents() - Debug completo
 function renderEvents(events, match) {
-  const container = document.getElementById("eventsContent");
-  if (!container) {
-    return;
-  }
-
-  if (!events?.length) {
-    console.warn('⚠️ [RENDER EVENTS] Nessun evento da mostrare');
-    container.innerHTML = `
-    <div class="empty-events-grid">
-      <div class="empty-team-events">
-        <div class="empty-events-text">Nessun evento</div>
-        <div class="empty-events-icon">📋</div>
-      </div>
-      <div class="empty-team-events">
-        <div class="empty-events-text">Nessun evento</div>
-        <div class="empty-events-icon">📋</div>
-      </div>
-    </div>`;
-    return;
-  }
-
-  // 🔥 FIX: Converti MINUTO a numero e controlla TEAM_ID
-  events = [...events]
-    .filter(e => {
-      const minuto = Number(e.MINUTO) || 0;  // ← CONVERSIONE FORZATA
-      const valido = minuto > 0 && e.TEAM_ID;
-      if (!valido) {
-        console.warn('⚠️ Evento scartato:', { ...e, minuto });
-      }
-      return valido;
-    })
-    .sort((a, b) => (Number(a.MINUTO) || 0) - (Number(b.MINUTO) || 0));  // ← CONVERSIONE
-
-  let html = "";
-  let eventsLeft = 0;
-  let eventsRight = 0;
-
-  events.forEach(e => {
-    const teamId = String(e.TEAM_ID || "").trim();
-    const casaId = String(match.CASA_ID || "").trim();
-    const trasfertaId = String(match.TRASFERTA_ID || "").trim();
-    
-    const isCasa = teamId === casaId;
-    const isTrasferta = teamId === trasfertaId;
-    
-    if (isCasa) eventsLeft++;
-    else if (isTrasferta) eventsRight++;
-    else {
-      console.warn('⚠️ Evento TEAM_ID non matcha:', { teamId, casaId, trasfertaId, e });
+    const container = document.getElementById("eventsContent");
+    if (!container) return;
+    if (!events?.length) {
+        container.innerHTML = `
+        <div class="empty-events-grid">
+            <div class="empty-team-events"><div class="empty-events-text">Nessun evento</div><div class="empty-events-icon">📋</div></div>
+            <div class="empty-team-events"><div class="empty-events-text">Nessun evento</div><div class="empty-events-icon">📋</div></div>
+        </div>`;
+        return;
     }
 
-    const icon = e.TIPO === "GOAL" ? "⚽" : e.TIPO === "AMMONIZIONE" ? "🟨" : "🟥";
-    const deleteBtn = e.EVENT_ID
-      ? `<span class="event-options" onclick="openEventMenu(event, '${e.EVENT_ID}', '${match.MATCH_ID}')">⋮</span>`
-      : '';
+    // 🔥 FIX: Filtra solo eventi validi (minuto > 0 e TEAM_ID presente)
+    // Accetta anche eventi RIGORE anche se il minuto è > 90 (es. 121, 122...)
+    events = [...events].filter(e => {
+        const minuto = Number(e.MINUTO) || 0;
+        // Accetta GOAL, AMMONIZIONE, ESPULSIONE e qualsiasi cosa contenga "RIGORE"
+        const isRigore = e.TIPO && e.TIPO.toString().includes("RIGORE");
+        const isStandard = ["GOAL", "AMMONIZIONE", "ESPULSIONE"].includes(e.TIPO);
+        
+        return minuto > 0 && e.TEAM_ID && (isStandard || isRigore);
+    }).sort((a, b) => (Number(a.MINUTO) || 0) - (Number(b.MINUTO) || 0));
 
-    html += `
-    <div class="event-line ${isCasa ? "left" : "right"}" data-event-id="${e.EVENT_ID || ''}">
-      <div class="event-content">
-        <span class="event-minute">${e.MINUTO}'</span>
-        <span class="event-icon">${icon}</span>
-        <span class="event-player">
-          ${(e.PLAYER || "").toUpperCase()}
-          ${e.ASSIST ? `<span class="assist">(${(e.ASSIST).toUpperCase()})</span>` : ""}
-        </span>
-        ${deleteBtn}
-      </div>
-    </div>`;
-  });
+    let html = "";
+    let eventsLeft = 0;
+    let eventsRight = 0;
 
-  container.innerHTML = html;
+    events.forEach(e => {
+        const teamId = String(e.TEAM_ID || "").trim();
+        const casaId = String(match.CASA_ID || "").trim();
+        const trasfertaId = String(match.TRASFERTA_ID || "").trim();
+        const isCasa = teamId === casaId;
+        const isTrasferta = teamId === trasfertaId;
+        
+        if (isCasa) eventsLeft++;
+        else if (isTrasferta) eventsRight++;
+
+        // 🔥 FIX: Icone corrette incluso RIGORE
+        let icon = "🟥"; // Default rosso
+        if (e.TIPO === "GOAL") icon = "";
+        else if (e.TIPO === "AMMONIZIONE") icon = "";
+        else if (e.TIPO === "ESPULSIONE") icon = "🟥";
+        else if (e.TIPO && e.TIPO.includes("RIGORE")) icon = ""; // Pallone per rigori
+
+        const deleteBtn = e.EVENT_ID ? `<span class="event-options" onclick="openEventMenu(event, '${e.EVENT_ID}', '${match.MATCH_ID}')">⋮</span>` : '';
+        
+        // Formatta il tipo evento per la visualizzazione (es. RIGORE_SEGNO -> RIGORE ✅)
+        let tipoDisplay = e.TIPO || "";
+        if (tipoDisplay.includes("RIGORE_SEGNO")) tipoDisplay = "RIGORE ✅";
+        else if (tipoDisplay.includes("RIGORE_SBAGLIO")) tipoDisplay = "RIGORE ❌";
+        else if (tipoDisplay === "RIGORE") tipoDisplay = "RIGORE";
+
+        html += `
+        <div class="event-line ${isCasa ? "left" : "right"}" data-event-id="${e.EVENT_ID || ''}">
+            <div class="event-content">
+                <span class="event-minute">${e.MINUTO}'</span>
+                <span class="event-icon">${icon}</span>
+                <span class="event-player">
+                    ${(e.PLAYER || "").toUpperCase()}
+                    ${tipoDisplay !== "RIGORE" && tipoDisplay !== "GOAL" && tipoDisplay !== "AMMONIZIONE" && tipoDisplay !== "ESPULSIONE" ? `<span class="assist">(${tipoDisplay})</span>` : ""}
+                    ${e.ASSIST ? `<span class="assist">(${(e.ASSIST).toUpperCase()})</span>` : ""}
+                </span>
+                ${deleteBtn}
+            </div>
+        </div>`;
+    });
+    container.innerHTML = html;
 }
 
 function openEventMenu(ev, eventId, matchId) {
@@ -3334,10 +3348,14 @@ async function finishRigori(matchId, state, match) {
 }
 
 function showDCRIndicator(casaScore, trasfScore) {
-    const mvpBanner = document.getElementById("mvpBanner");
-    if (!mvpBanner) return;
-    
-    // Crea indicatore DCR dopo il banner MVP
+    // Cerca il banner MVP o il container degli eventi
+    const target = document.getElementById("mvpBanner") || document.getElementById("eventsContent");
+    if (!target) return;
+
+    // Rimuovi eventuale card DCR precedente per evitare duplicati
+    const existing = document.getElementById("dcrIndicator");
+    if (existing) existing.remove();
+
     const dcrIndicator = document.createElement("div");
     dcrIndicator.id = "dcrIndicator";
     dcrIndicator.className = "dcr-indicator";
@@ -3356,28 +3374,29 @@ function showDCRIndicator(casaScore, trasfScore) {
         animation: slideIn 0.3s ease;
     `;
     
-    // Inserisci dopo il banner MVP
-    mvpBanner.parentNode.insertBefore(dcrIndicator, mvpBanner.nextSibling);
-    
-    // Aggiungi animazione CSS
-    const style = document.createElement('style');
-    style.textContent = `
-        @keyframes slideIn {
-            from { opacity: 0; transform: translateY(-10px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-        .dcr-title {
-            font-size: 14px;
-            font-weight: 700;
-            letter-spacing: 1px;
-            margin-bottom: 5px;
-        }
-        .dcr-score {
-            font-size: 28px;
-            font-weight: 900;
-        }
-    `;
-    document.head.appendChild(style);
+    // Inserisci dopo l'MVP banner o prima degli eventi
+    if (document.getElementById("mvpBanner")) {
+        target.parentNode.insertBefore(dcrIndicator, target.nextSibling);
+    } else {
+        // Fallback: mettilo in cima alla cronaca
+        const cronacaTitle = document.querySelector(".cronaca-title");
+        if(cronacaTitle) cronacaTitle.parentNode.insertBefore(dcrIndicator, cronacaTitle.nextSibling);
+    }
+
+    // Aggiungi animazione CSS se non esiste
+    if (!document.getElementById("dcr-style")) {
+        const style = document.createElement('style');
+        style.id = "dcr-style";
+        style.textContent = `
+            @keyframes slideIn {
+                from { opacity: 0; transform: translateY(-10px); }
+                to { opacity: 1; transform: translateY(0); }
+            }
+            .dcr-title { font-size: 14px; font-weight: 700; letter-spacing: 1px; margin-bottom: 5px; opacity: 0.9; }
+            .dcr-score { font-size: 28px; font-weight: 900; }
+        `;
+        document.head.appendChild(style);
+    }
 }
 
 // Funzione helper per aggiornare l'UI quando l'MVP è pronto
