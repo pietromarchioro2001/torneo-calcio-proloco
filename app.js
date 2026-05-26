@@ -2908,11 +2908,6 @@ function openRigoriPopup(directMode = false) {
         history: [],
         finished: false
     };
-
-    // 🔥 SALVA STATO IN LOCALSTORAGE
-    function saveRigoriState() {
-        localStorage.setItem(storageKey, JSON.stringify(rigoriState));
-    }
         
     // Crea popup
     const popup = document.createElement('div');
@@ -3063,28 +3058,6 @@ if (directMode || rigoriState.history.length > 0) {
     // 🔥 SALVA STATO IN LOCALSTORAGE
     function saveRigoriState() {
         localStorage.setItem(storageKey, JSON.stringify(rigoriState));
-    }
-    
-    // 🔥 RENDERIZZA BOLLINI ESISTENTI
-    function renderKickIndicators() {
-        const casaKicks = document.getElementById('kicks-casa');
-        const trasfKicks = document.getElementById('kicks-trasferta');
-        
-        if (casaKicks) casaKicks.innerHTML = '';
-        if (trasfKicks) trasfKicks.innerHTML = '';
-        
-        rigoriState.history.forEach(kick => {
-            const kickEl = document.createElement('div');
-            kickEl.className = `kick-indicator ${kick.result}`;
-            kickEl.style.cssText = 'width: 20px; height: 20px; border-radius: 50%; margin: 2px; display: inline-block;';
-            kickEl.style.background = kick.result === 'goal' ? '#22c55e' : '#ef4444';
-            
-            if (kick.team === 'casa' && casaKicks) {
-                casaKicks.appendChild(kickEl);
-            } else if (kick.team === 'trasferta' && trasfKicks) {
-                trasfKicks.appendChild(kickEl);
-            }
-        });
     }
     
     // 🔥 GESTIONE CLICK PULSANTI - SENZA RICORSIONE!
