@@ -592,7 +592,6 @@ function showHome() {
   // Ferma refresh live classifiche (risparmio risorse)
   stopStandingsLiveRefresh();
   
-  // Aggiorna toolbar con stato attivo
   renderToolbar("home");
   
   const app = document.getElementById("app"); 
