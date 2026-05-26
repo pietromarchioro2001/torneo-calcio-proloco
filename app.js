@@ -5,7 +5,7 @@
 const CONFIG = {
   // 🔥 SOSTITUISCI CON IL TUO URL APPS SCRIPT WEB APP
 
-  BACKEND_URL: 'https://script.google.com/macros/s/AKfycbzr3kVEVTguqyplqNz6cAgrQGnz9ILoXP6pdko3HR3rJVODMdDdqQCv313AD3ggYe8i/exec',
+  BACKEND_URL: 'https://script.google.com/macros/s/AKfycbyVnP0JB6iFLGZzpL6Oboj3sblikK9w2cqWDmAkl53oSIdup9FMdXWxmEnXWaY9oVdS/exec',
   
   API_TIMEOUT: 30000,
   CACHE_VERSION: 'v3.0',
@@ -1960,6 +1960,12 @@ function renderMatchPage(match) {
     updateMVPBanner(match);
   }
 
+  // Se la partita è finita con rigori, mostra indicatore DCR
+if (match.STATO_PARTITA === "FINITA" && 
+    (match.RIGORI_CASA !== undefined || match.RIGORI_TRASFERTA !== undefined)) {
+    showDCRIndicator(match.RIGORI_CASA || 0, match.RIGORI_TRASFERTA || 0);
+}
+
   // Renderizza eventi
   renderEvents(events, match);
 
@@ -3291,35 +3297,87 @@ async function finishRigori(matchId, state, match) {
     };
     
     try {
-        // 🔥 Salva risultati rigori
+        // Salva risultati rigori
         await ApiClient.saveRigoriResults(rigoriData);
         
-        // 🔥 Pulisci localStorage
-        localStorage.removeItem(storageKey);
-        
-        // 🔥 Aggiorna stato a FINITA con punteggi rigori
+        // Aggiorna stato a FINITA con punteggi rigori
         match.STATO_PARTITA = "FINITA";
         match.RIGORI_CASA = state.casaScore;
         match.RIGORI_TRASFERTA = state.trasfScore;
         window.APP_STATE.lastMatch = match;
         updateMatchUI(match);
         
-        // 🔥 Ricarica dati per sincronizzare tutto
-        setTimeout(() => {
-            ApiClient.getMatchFull(matchId).then(data => {
-                if (data?.match) {
-                    window.APP_STATE.lastMatch = data.match;
-                    renderMatchPage(data.match);
-                }
-            });
-        }, 500);
+        // 🔥 RICARICA GLI EVENTI AGGIORNATI DAL BACKEND
+        const freshEvents = await ApiClient.getEventsAdmin(matchId);
+        window.APP_CACHE.eventsByMatch[matchId] = freshEvents;
+        CacheManager.save(window.APP_CACHE);
         
-        alert("✅ Rigori conclusi! Risultato salvato.");
+        // Aggiorna la visualizzazione eventi
+        renderEvents(freshEvents, match);
+        
+        // Pulisci localStorage
+        localStorage.removeItem(`rigori_${matchId}`);
+        
+        // Chiudi popup
         document.getElementById('rigoriPopupOverlay')?.remove();
+        
+        // 🔥 Mostra indicatore DCR nella UI
+        showDCRIndicator(state.casaScore, state.trasfScore);
+        
+        // 🔥 Aggiorna classifica
+        refreshStandingsDebounced(500);
+        
     } catch (error) {
         console.error('Errore:', error);
         alert('Errore: ' + error.message);
     }
+}
+
+function showDCRIndicator(casaScore, trasfScore) {
+    const mvpBanner = document.getElementById("mvpBanner");
+    if (!mvpBanner) return;
+    
+    // Crea indicatore DCR dopo il banner MVP
+    const dcrIndicator = document.createElement("div");
+    dcrIndicator.id = "dcrIndicator";
+    dcrIndicator.className = "dcr-indicator";
+    dcrIndicator.innerHTML = `
+        <div class="dcr-title">⚽ DCR - CALCI DI RIGORE</div>
+        <div class="dcr-score">${casaScore} - ${trasfScore}</div>
+    `;
+    dcrIndicator.style.cssText = `
+        background: linear-gradient(135deg, #7a1e2c 0%, #8c1d2c 100%);
+        color: white;
+        padding: 15px 20px;
+        border-radius: 12px;
+        text-align: center;
+        margin: 15px 0;
+        box-shadow: 0 4px 15px rgba(122, 30, 44, 0.3);
+        animation: slideIn 0.3s ease;
+    `;
+    
+    // Inserisci dopo il banner MVP
+    mvpBanner.parentNode.insertBefore(dcrIndicator, mvpBanner.nextSibling);
+    
+    // Aggiungi animazione CSS
+    const style = document.createElement('style');
+    style.textContent = `
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .dcr-title {
+            font-size: 14px;
+            font-weight: 700;
+            letter-spacing: 1px;
+            margin-bottom: 5px;
+        }
+        .dcr-score {
+            font-size: 28px;
+            font-weight: 900;
+        }
+    `;
+    document.head.appendChild(style);
 }
 
 // Funzione helper per aggiornare l'UI quando l'MVP è pronto
@@ -4349,19 +4407,27 @@ console.log("✅ ADMIN JS LOADED - GitHub + Apps Script Ready v2.2");
 // Incolla questo blocco in FONDO a app.js
 
 function checkRigoriWinner(state) {
-    // 🔥 Se vuoi chiudere manualmente con il tasto FINE, lascia:
-    return false; 
-    
-    // 🔥 Se vuoi la chiusura automatica matematica, decommenta questa logica:
-    /*
     const casaKicks = state.history.filter(h => h.team === 'casa').length;
     const trasfKicks = state.history.filter(h => h.team === 'trasferta').length;
-    if (casaKicks >= 5 && trasfKicks >= 5 && state.casaScore !== state.trasfScore) return true;
-    const remaining = 5 - Math.max(casaKicks, trasfKicks);
-    if (remaining > 0 && Math.abs(state.casaScore - state.trasfScore) > remaining) return true;
-    if (casaKicks > 5 && trasfKicks === casaKicks && state.casaScore !== state.trasfScore) return true;
+    
+    // Dopo almeno 5 rigori per squadra
+    if (casaKicks >= 5 && trasfKicks >= 5) {
+        if (state.casaScore !== state.trasfScore) return true;
+    }
+    
+    // Vittoria matematica prima dei 5 rigori
+    const remainingKicks = 5 - Math.max(casaKicks, trasfKicks);
+    if (remainingKicks > 0) {
+        const diff = Math.abs(state.casaScore - state.trasfScore);
+        if (diff > remainingKicks) return true;
+    }
+    
+    // Morte improvvisa dopo il 5-5
+    if (casaKicks > 5 && trasfKicks === casaKicks) {
+        if (state.casaScore !== state.trasfScore) return true;
+    }
+    
     return false;
-    */
 }
 
 function saveRigoriState(matchId, state) {
