@@ -1600,6 +1600,78 @@ function renderMatchesByDate(date) {
   container.innerHTML = html;
 }
 
+// Aggiungi questa funzione nel tuo codice JS globale
+function renderPenaltiesUI(match, events) {
+    // 1. Trova il contenitore dove inserire i rigori (sotto il punteggio grande)
+    // Adatta il selettore '.match-score-big' alla tua classe HTML reale del punteggio
+    const scoreContainer = document.querySelector('.match-score-big') || document.querySelector('.score-big'); 
+    if (!scoreContainer) return;
+
+    // 2. Rimuovi vecchi rendering se presenti (per evitare duplicati)
+    const existing = document.querySelector('.penalty-ui-container');
+    if (existing) existing.remove();
+
+    // 3. Prendi solo gli eventi dei rigori
+    // Il filtro controlla se il tipo evento contiene "RIGORE"
+    const penaltyEvents = events.filter(e => e.TIPO && e.TIPO.toString().includes("RIGORE"));
+
+    // Se non ci sono eventi rigore E non ci sono valori salvati, esci
+    if (penaltyEvents.length === 0 && !match.RIGORI_CASA) return;
+
+    // 4. Organizza i tiri in sequenza (alternando Casa e Trasferta)
+    // Ordina per minuto crescente
+    penaltyEvents.sort((a, b) => a.MINUTO - b.MINUTO);
+
+    let kicksCasa = [];
+    let kicksTrasferta = [];
+    let turnoCasa = true; // Di solito inizia la casa
+
+    // Ricostruiamo la sequenza visiva dai dati salvati
+    penaltyEvents.forEach(ev => {
+        const isGoal = ev.TIPO === "RIGORE_SEGNO";
+        if (turnoCasa) {
+            kicksCasa.push(isGoal ? 'goal' : 'miss');
+        } else {
+            kicksTrasferta.push(isGoal ? 'goal' : 'miss');
+        }
+        turnoCasa = !turnoCasa;
+    });
+
+    // 5. Funzione per generare i pallini colorati
+    const createDots = (kicksArray) => {
+        return kicksArray.map(res => {
+            // Usa i colori del tuo tema (es. Verde per goal, Rosso/Arancio per errore)
+            const color = res === 'goal' ? '#4caf50' : '#f44336'; 
+            return `<div style="width: 20px; height: 20px; border-radius: 50%; background-color: ${color}; margin: 0 3px; border: 2px solid #fff; box-shadow: 0 2px 4px rgba(0,0,0,0.2);"></div>`;
+        }).join('');
+    };
+
+    // 6. Recupera i punteggi finali (o calcolali se non sono nel match object)
+    const scoreC = match.RIGORI_CASA !== undefined ? match.RIGORI_CASA : kicksCasa.filter(k => k === 'goal').length;
+    const scoreT = match.RIGORI_TRASFERTA !== undefined ? match.RIGORI_TRASFERTA : kicksTrasferta.filter(k => k === 'goal').length;
+
+    // 7. Crea l'HTML finale
+    const html = `
+        <div class="penalty-ui-container" style="margin-top: 30px; text-align: center; animation: fadeIn 0.5s;">
+            <!-- Riga dei pallini -->
+            <div style="display: flex; justify-content: center; align-items: center; margin-bottom: 20px;">
+                <div style="display: flex; flex-direction: row-reverse;">${createDots(kicksCasa)}</div>
+                <div style="width: 40px;"></div> <!-- Spazio -->
+                <div style="display: flex;">${createDots(kicksTrasferta)}</div>
+            </div>
+            
+            <!-- Scritta DCR e Risultato -->
+            <div style="font-size: 14px; font-weight: bold; color: #666; letter-spacing: 2px;">DCR</div>
+            <div style="font-size: 48px; font-weight: 900; color: #333; line-height: 1;">
+                ${scoreC} - ${scoreT}
+            </div>
+        </div>
+    `;
+
+    // 8. Inserisci sotto il punteggio
+    scoreContainer.insertAdjacentHTML('afterend', html);
+}
+
 function openMatchMenu(ev, matchId) {
   ev.stopPropagation(); ev.preventDefault();
   document.querySelectorAll(".event-popup-menu").forEach(e => e.remove());
@@ -1797,252 +1869,309 @@ function openMatch(id) {
 }
 
 function renderMatchPage(match) {
-if (!match || !match.MATCH_ID) {
-console.error('Match non valido', match);
-return;
+    if (!match || !match.MATCH_ID) {
+        console.error('Match non valido', match);
+        return;
+    }
+
+    // 🔥 RECUPERA NOMI E LOGHI SE MANCANO
+    if (!match.SQUADRA_CASA || !match.LOGO_CASA) {
+        const casaData = window.APP_CACHE.fullTeams?.[String(match.CASA_ID)];
+        if (casaData?.team) {
+            match.SQUADRA_CASA = casaData.team.NOME_SQUADRA || "CASA";
+            match.LOGO_CASA = casaData.team.LOGO_ID || "";
+        }
+    }
+    if (!match.SQUADRA_TRASFERTA || !match.LOGO_TRASFERTA) {
+        const trasfData = window.APP_CACHE.fullTeams?.[String(match.TRASFERTA_ID)];
+        if (trasfData?.team) {
+            match.SQUADRA_TRASFERTA = trasfData.team.NOME_SQUADRA || "TRASFERTA";
+            match.LOGO_TRASFERTA = trasfData.team.LOGO_ID || "";
+        }
+    }
+
+    // 🔥 LOGHI
+    const logoCasa = match.LOGO_CASA
+        ? `<img src="${getCachedImage(match.LOGO_CASA, 120)}" alt="${match.SQUADRA_CASA}" onerror="this.style.display='none'">`
+        : `<div style="width:70px;height:70px;border-radius:50%;background:#f0f0f0;display:flex;align-items:center;justify-content:center;font-size:1.5rem">⚽</div>`;
+
+    const logoTrasf = match.LOGO_TRASFERTA
+        ? `<img src="${getCachedImage(match.LOGO_TRASFERTA, 120)}" alt="${match.SQUADRA_TRASFERTA}" onerror="this.style.display='none'">`
+        : `<div style="width:70px;height:70px;border-radius:50%;background:#f0f0f0;display:flex;align-items:center;justify-content:center;font-size:1.5rem">⚽</div>`;
+
+    const nomeCasa = (match.SQUADRA_CASA || "CASA").toUpperCase();
+    const nomeTrasf = (match.SQUADRA_TRASFERTA || "TRASFERTA").toUpperCase();
+
+    // 🔥 GESTIONE STATI
+    const isLive = ["LIVE", "SUPP", "RIGORI"].includes(match.STATO_PARTITA);
+    const isFinished = match.STATO_PARTITA === "FINITA";
+    const finalStageStarted = window.APP_CACHE.meta?.finalStageStarted;
+
+    // Tab MVP
+    let mvpTabHtml = isLive
+        ? `<div class="mt-btn" data-tab="mvp">MVP</div>`
+        : `<div class="mt-btn disabled" data-tab="mvp">🏆 MVP</div>`;
+
+    // Pulsanti evento
+    const canAddEvents = (match.STATO_PARTITA === "LIVE" || match.STATO_PARTITA === "SUPP") &&
+        (match.FASE === "FINALI" || !finalStageStarted);
+
+    const eventBtnDisabled = !canAddEvents
+        ? "style=\"opacity:0.5;pointer-events:none;cursor:not-allowed\""
+        : "";
+
+    // Pulsante inizia/concludi
+    const canToggleMatch = match.FASE === "FINALI" || !finalStageStarted || !isFinished;
+    const toggleBtnDisabled = !canToggleMatch
+        ? "style=\"opacity:0.5;pointer-events:none;cursor:not-allowed\""
+        : "";
+
+    document.getElementById("app").innerHTML = `
+    <div class="match-page">
+        <div class="match-header-big">
+            <div class="team-big left">
+                ${logoCasa}
+                <div class="team-big-name">${nomeCasa}</div>
+            </div>
+            <div class="match-center">
+                <div class="match-controls-top">
+                    <div class="phase-btn start-btn ${isLive ? "active" : ""}"
+                        onclick="${canToggleMatch ? "toggleMatch()" : ""}"
+                        ${toggleBtnDisabled}>
+                        ${isLive ? "CONCLUDI" : "INIZIA"}
+                    </div>
+                    ${match.FASE === "FINALI" && isLive ? `
+                        <div class="phase-btn secondary-btn" onclick="toggleSupplementari()">SUPPLEMENTARI</div>
+                        <div class="phase-btn secondary-btn" onclick="openRigoriPopup()">RIGORI</div>
+                    ` : ''}
+                </div>
+
+                <!-- PUNTEGGIO PRINCIPALE -->
+                <div class="score-big">${match.GOL_CASA || 0} - ${match.GOL_TRASFERTA || 0}</div>
+
+                <!-- 🔥 CARD RISULTATO RIGORI (DCR) -->
+                ${ (match.RIGORE_CASA !== undefined && match.RIGORE_CASA !== "" && match.STATO_PARTITA === "FINITA") ? `
+                <div class="dcr-result-card" style="margin-top: 15px; background: #fff3cd; color: #856404; padding: 8px 15px; border-radius: 8px; font-size: 14px; font-weight: bold; display: inline-block;">
+                    ⚽ DCR: ${match.RIGORE_CASA} - ${match.RIGORE_TRASFERTA}
+                </div>
+                ` : '' }
+
+                <div class="match-status" id="matchStatus"></div>
+            </div>
+            <div class="team-big right">
+                <div class="team-big-name">${nomeTrasf}</div>
+                ${logoTrasf}
+            </div>
+        </div>
+
+        <div class="match-toolbar">
+            <div class="mt-btn active" data-tab="diretta">DIRETTA</div>
+            <div class="mt-btn" data-tab="giocatori">GIOCATORI</div>
+            ${mvpTabHtml}
+        </div>
+
+        <div class="match-content">
+            <div class="tab-content active" id="tab-diretta">
+                <div class="teams-events">
+                    <div class="events-actions">
+                        <div class="left">
+                            <div class="phase-btn small" onclick="${canAddEvents ? "addEvent('casa')" : ""}" ${eventBtnDisabled}>
+                                + EVENTO CASA
+                            </div>
+                        </div>
+                        <div class="right">
+                            <div class="phase-btn small" onclick="${canAddEvents ? "addEvent('trasferta')" : ""}" ${eventBtnDisabled}>
+                                + EVENTO TRASFERTA
+                            </div>
+                        </div>
+                    </div>
+                    <div class="cronaca-title center"><span>CRONACA</span></div>
+                    
+                    <!-- 🔥 CONTAINER RIGORI (inizialmente vuoto, si popola dopo) -->
+                    <div id="rigoriBannerContainer"></div>
+                    
+                    <div id="mvpBanner" class="mvp-banner">
+                        <div class="mvp-title">🏆 MVP DEL MATCH</div>
+                        <div class="mvp-name"></div>
+                    </div>
+                    <div id="eventsTimeline" class="events-timeline">
+                        <div id="eventsContent"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="tab-content" id="tab-giocatori">
+                <div class="players-columns" id="playersColumns">
+                    <div style="text-align:center;padding:40px;color:#888;grid-column:1/-1">
+                        Caricamento giocatori...
+                    </div>
+                </div>
+            </div>
+
+            <div class="tab-content" id="tab-mvp">
+                <div class="players-columns" id="mvpColumns">
+                    <div style="text-align:center;padding:40px;color:#888;grid-column:1/-1">
+                        ${isLive ? "Vota il MVP" : isFinished ? "MVP della partita" : "Disponibile durante la partita"}
+                    </div>
+                </div>
+            </div>
+
+            <div class="back-btn-wrapper">
+                <div class="phase-btn secondary" onclick="showMatches()">INDIETRO</div>
+            </div>
+        </div>
+    </div>
+    `;
+
+    // Aggiorna UI
+    updateMatchUI(match);
+
+    // 🔥 BANNER DCR (Appare solo se finita e ci sono dati rigori)
+    if (match.STATO_PARTITA === "FINITA" && match.RIGORI_CASA !== undefined) {
+        const header = document.querySelector('.match-header-big');
+        const existing = document.getElementById('dcr-banner');
+        if (existing) existing.remove();
+
+        const dcrBanner = document.createElement('div');
+        dcrBanner.id = 'dcr-banner';
+        dcrBanner.style.cssText = `
+            width: 100%;
+            text-align: center;
+            margin-top: 15px;
+            padding: 10px;
+            background: linear-gradient(90deg, #fff 0%, #f9f9f9 100%);
+            border: 2px solid #7a1e2c;
+            border-radius: 12px;
+            color: #7a1e2c;
+            font-weight: 800;
+            font-size: 1.2rem;
+            letter-spacing: 1px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        `;
+        dcrBanner.innerHTML = `⚽ CALCI DI RIGORE: ${match.RIGORI_CASA} - ${match.RIGORI_TRASFERTA}`;
+        header.appendChild(dcrBanner);
+    }
+
+    if (match.STATO_PARTITA === "FINITA" && match.MVP) {
+        updateMVPBanner(match);
+    }
+
+    // 🔥 CARICA EVENTI DAL BACKEND
+    const events = window.APP_CACHE.eventsByMatch?.[match.MATCH_ID] || [];
+    console.log('📥 Eventi caricati per match:', match.MATCH_ID, 'totale:', events.length);
+
+    if (events.length === 0) {
+        ApiClient.getEventsAdmin(match.MATCH_ID).then(freshEvents => {
+            window.APP_CACHE.eventsByMatch[match.MATCH_ID] = freshEvents;
+            CacheManager.save(window.APP_CACHE);
+            renderEvents(freshEvents, match);
+            
+            // 🔥 DOPO CARICAMENTO BACKEND: controlla se ci sono rigori e aggiorna UI
+            setTimeout(() => {
+                syncRigoriFromBackend(freshEvents, match);
+            }, 500);
+        }).catch(err => {
+            console.error('❌ Errore caricamento eventi:', err);
+            renderEvents([], match);
+        });
+    } else {
+        renderEvents(events, match);
+        
+        // 🔥 IMMEDIATO: mostra rigori da localStorage se esistono
+        showRigoriFromLocalStorage(match);
+        
+        // 🔥 DOPO 2-3 SECONDI: sincronizza con backend
+        setTimeout(() => {
+            syncRigoriFromBackend(events, match);
+        }, 2500);
+    }
+
+    // Carica giocatori
+    loadPlayersForMatch(match);
+
+    window.APP_STATE.lastMatch = match;
 }
 
-// 🔥 RECUPERA NOMI E LOGHI SE MANCANO
-if (!match.SQUADRA_CASA || !match.LOGO_CASA) {
-const casaData = window.APP_CACHE.fullTeams?.[String(match.CASA_ID)];
-if (casaData?.team) {
-match.SQUADRA_CASA = casaData.team.NOME_SQUADRA || "CASA";
-match.LOGO_CASA = casaData.team.LOGO_ID || "";
-}
-}
-if (!match.SQUADRA_TRASFERTA || !match.LOGO_TRASFERTA) {
-const trasfData = window.APP_CACHE.fullTeams?.[String(match.TRASFERTA_ID)];
-if (trasfData?.team) {
-match.SQUADRA_TRASFERTA = trasfData.team.NOME_SQUADRA || "TRASFERTA";
-match.LOGO_TRASFERTA = trasfData.team.LOGO_ID || "";
-}
-}
-
-// 🔥 FORZA RICARICAMENTO EVENTI
-const events = window.APP_CACHE.eventsByMatch?.[match.MATCH_ID] || [];
-console.log('📥 Eventi caricati per match:', match.MATCH_ID, 'totale:', events.length);
-
-// Se la cache è vuota, prova a ricaricare dal backend
-if (events.length === 0) {
-ApiClient.getEventsAdmin(match.MATCH_ID).then(freshEvents => {
-window.APP_CACHE.eventsByMatch[match.MATCH_ID] = freshEvents;
-CacheManager.save(window.APP_CACHE);
-renderEvents(freshEvents, match);
-}).catch(err => {
-console.error('❌ Errore caricamento eventi:', err);
-renderEvents([], match);
-});
-} else {
-renderEvents(events, match);
+// 🔥 FUNZIONE: Mostra rigori da localStorage immediatamente
+function showRigoriFromLocalStorage(match) {
+    const storageKey = `rigori_${match.MATCH_ID}`;
+    const savedState = localStorage.getItem(storageKey);
+    
+    if (!savedState) return;
+    
+    try {
+        const rigoriState = JSON.parse(savedState);
+        
+        // Se ci sono tiri registrati, mostra il banner
+        if (rigoriState.history && rigoriState.history.length > 0) {
+            renderRigoriBanner(rigoriState.casaScore || 0, rigoriState.trasfScore || 0, match);
+        }
+    } catch (e) {
+        console.error('❌ Errore lettura rigori da localStorage:', e);
+    }
 }
 
-// 🔥 DEFINISCI LOGHI
-const logoCasa = match.LOGO_CASA
-? `<img src="${getCachedImage(match.LOGO_CASA, 120)}" alt="${match.SQUADRA_CASA}" onerror="this.style.display='none'">`
-: `<div style="width:70px;height:70px;border-radius:50%;background:#f0f0f0;display:flex;align-items:center;justify-content:center;font-size:1.5rem">⚽</div>`;
-
-const logoTrasf = match.LOGO_TRASFERTA
-? `<img src="${getCachedImage(match.LOGO_TRASFERTA, 120)}" alt="${match.SQUADRA_TRASFERTA}" onerror="this.style.display='none'">`
-: `<div style="width:70px;height:70px;border-radius:50%;background:#f0f0f0;display:flex;align-items:center;justify-content:center;font-size:1.5rem">⚽</div>`;
-
-const nomeCasa = (match.SQUADRA_CASA || "CASA").toUpperCase();
-const nomeTrasf = (match.SQUADRA_TRASFERTA || "TRASFERTA").toUpperCase();
-
-// 🔥 GESTIONE STATI
-const isLive = ["LIVE", "SUPP", "RIGORI"].includes(match.STATO_PARTITA);
-const isFinished = match.STATO_PARTITA === "FINITA";
-const finalStageStarted = window.APP_CACHE.meta?.finalStageStarted;
-
-// Tab MVP
-let mvpTabHtml = isLive
-? `<div class="mt-btn" data-tab="mvp">MVP</div>`
-: `<div class="mt-btn disabled" data-tab="mvp">🏆 MVP</div>`;
-
-// Pulsanti evento
-const canAddEvents = (match.STATO_PARTITA === "LIVE" || match.STATO_PARTITA === "SUPP") &&
-(match.FASE === "FINALI" || !finalStageStarted);
-
-const eventBtnDisabled = !canAddEvents
-? "style=\"opacity:0.5;pointer-events:none;cursor:not-allowed\""
-: "";
-
-// Pulsante inizia/concludi
-const canToggleMatch = match.FASE === "FINALI" || !finalStageStarted || !isFinished;
-const toggleBtnDisabled = !canToggleMatch
-? "style=\"opacity:0.5;pointer-events:none;cursor:not-allowed\""
-: "";
-
-document.getElementById("app").innerHTML = `
-<div class="match-page">
-<div class="match-header-big">
-<div class="team-big left">
-${logoCasa}
-<div class="team-big-name">${nomeCasa}</div>
-</div>
-<div class="match-center">
-<div class="match-controls-top">
-<div class="phase-btn start-btn ${isLive ? "active" : ""}"
-onclick="${canToggleMatch ? "toggleMatch()" : ""}"
-${toggleBtnDisabled}>
-${isLive ? "CONCLUDI" : "INIZIA"}
-</div>
-${match.FASE === "FINALI" && isLive ? `
-<div class="phase-btn secondary-btn" onclick="toggleSupplementari()">
-SUPPLEMENTARI
-</div>
-<div class="phase-btn secondary-btn" onclick="openRigoriPopup()">
-RIGORI
-</div>
-` : ''}
-</div>
-
-<!-- PUNTEGGIO PRINCIPALE -->
-<div class="score-big">${match.GOL_CASA || 0} - ${match.GOL_TRASFERTA || 0}</div>
-
-<!-- 🔥 NUOVO: CARD RISULTATO RIGORI (DCR) -->
-${ (match.RIGORE_CASA !== undefined && match.RIGORE_CASA !== "" && match.STATO_PARTITA === "FINITA") ? `
-<div class="dcr-result-card" style="margin-top: 15px; background: #fff3cd; color: #856404; padding: 8px 15px; border-radius: 8px; font-size: 14px; font-weight: bold; display: inline-block;">
-⚽ DCR: ${match.RIGORE_CASA} - ${match.RIGORE_TRASFERTA}
-</div>
-` : '' }
-
-<div class="match-status" id="matchStatus"></div>
-</div>
-<div class="team-big right">
-<div class="team-big-name">${nomeTrasf}</div>
-${logoTrasf}
-</div>
-</div>
-
-<div class="match-toolbar">
-<div class="mt-btn active" data-tab="diretta">DIRETTA</div>
-<div class="mt-btn" data-tab="giocatori">GIOCATORI</div>
-${mvpTabHtml}
-</div>
-
-<div class="match-content">
-<div class="tab-content active" id="tab-diretta">
-<div class="teams-events">
-<div class="events-actions">
-<div class="left">
-<div class="phase-btn small" onclick="${canAddEvents ? "addEvent('casa')" : ""}" ${eventBtnDisabled}>
-+ EVENTO CASA
-</div>
-</div>
-<div class="right">
-<div class="phase-btn small" onclick="${canAddEvents ? "addEvent('trasferta')" : ""}" ${eventBtnDisabled}>
-+ EVENTO TRASFERTA
-</div>
-</div>
-</div>
-<div class="cronaca-title center"><span>CRONACA</span></div>
-<div id="mvpBanner" class="mvp-banner">
-<div class="mvp-title">🏆 MVP DEL MATCH</div>
-<div class="mvp-name"></div>
-</div>
-<div id="eventsTimeline" class="events-timeline">
-<div id="eventsContent"></div>
-</div>
-</div>
-</div>
-
-<div class="tab-content" id="tab-giocatori">
-<div class="players-columns" id="playersColumns">
-<div style="text-align:center;padding:40px;color:#888;grid-column:1/-1">
-Caricamento giocatori...
-</div>
-</div>
-</div>
-
-<div class="tab-content" id="tab-mvp">
-<div class="players-columns" id="mvpColumns">
-<div style="text-align:center;padding:40px;color:#888;grid-column:1/-1">
-${isLive ? "Vota il MVP" : isFinished ? "MVP della partita" : "Disponibile durante la partita"}
-</div>
-</div>
-</div>
-
-<div class="back-btn-wrapper">
-<div class="phase-btn secondary" onclick="showMatches()">INDIETRO</div>
-</div>
-</div>
-</div>
-`;
-
-// Aggiorna UI
-updateMatchUI(match);
-
-// 🔥 BANNER DCR (Appare solo se finita e ci sono dati rigori)
-if (match.STATO_PARTITA === "FINITA" && match.RIGORI_CASA !== undefined) {
-const header = document.querySelector('.match-header-big');
-// Rimuovi banner precedente se esiste (per evitare duplicati)
-const existing = document.getElementById('dcr-banner');
-if (existing) existing.remove();
-
-const dcrBanner = document.createElement('div');
-dcrBanner.id = 'dcr-banner';
-dcrBanner.style.cssText = `
-width: 100%;
-text-align: center;
-margin-top: 15px;
-padding: 10px;
-background: linear-gradient(90deg, #fff 0%, #f9f9f9 100%);
-border: 2px solid #7a1e2c;
-border-radius: 12px;
-color: #7a1e2c;
-font-weight: 800;
-font-size: 1.2rem;
-letter-spacing: 1px;
-box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-`;
-
-// Mostra il risultato
-dcrBanner.innerHTML = `⚽ CALCI DI RIGORE: ${match.RIGORI_CASA} - ${match.RIGORI_TRASFERTA}`;
-header.appendChild(dcrBanner);
+// 🔥 FUNZIONE: Sincronizza rigori dal backend dopo caricamento eventi
+function syncRigoriFromBackend(events, match) {
+    // Cerca eventi di rigore negli eventi caricati dal backend
+    const rigoreEvents = events.filter(e => 
+        e.TIPO && (e.TIPO.includes('RIGORE_SEGNO') || e.TIPO.includes('RIGORE_SBAGLIO'))
+    );
+    
+    if (rigoreEvents.length === 0) return;
+    
+    // Calcola punteggi dai eventi backend
+    let casaScore = 0;
+    let trasfScore = 0;
+    
+    rigoreEvents.forEach(e => {
+        const isGoal = e.TIPO === 'RIGORE_SEGNO';
+        const isCasa = String(e.TEAM_ID) === String(match.CASA_ID);
+        
+        if (isGoal) {
+            if (isCasa) casaScore++;
+            else trasfScore++;
+        }
+    });
+    
+    // Aggiorna UI con i dati del backend
+    renderRigoriBanner(casaScore, trasfScore, match);
+    
+    console.log(`✅ Rigori sincronizzati da backend: ${casaScore}-${trasfScore}`);
 }
 
-if (match.STATO_PARTITA === "FINITA" && match.MVP) {
-updateMVPBanner(match);
-}
-
-// Renderizza eventi
-renderEvents(events, match);
-
-// Carica giocatori
-loadPlayersForMatch(match);
-
-window.APP_STATE.lastMatch = match;
-
-// 🔥 AGGIUNTA: RISULTATO RIGORI MINIMAL SOTTO LA CRONACA
-// Controlla se ci sono dati di rigori salvati (sia nel vecchio che nel nuovo formato)
-const rigoreCasa = match.RIGORE_CASA || match.RIGORI_CASA;
-const rigoreTrasf = match.RIGORE_TRASFERTA || match.RIGORI_TRASFERTA;
-
-if (rigoreCasa !== undefined && rigoreTrasf !== undefined && (rigoreCasa > 0 || rigoreTrasf > 0)) {
-const dcrResultDiv = document.createElement('div');
-dcrResultDiv.className = 'dcr-result-minimal';
-dcrResultDiv.innerHTML = `
-<div class="dcr-text">
-Rigori: <b>${match.SQUADRA_CASA} ${rigoreCasa} - ${rigoreTrasf} ${match.SQUADRA_TRASFERTA}</b>
-</div>
-`;
-
-// Stile minimal
-dcrResultDiv.style.cssText = `
-text-align: center;
-padding: 10px;
-margin-top: 10px;
-font-size: 14px;
-color: #666;
-border-top: 1px solid #eee;
-`;
-
-// Inserisci dopo la timeline degli eventi
-const timeline = document.getElementById('eventsTimeline');
-if (timeline && timeline.parentNode) {
-timeline.parentNode.insertBefore(dcrResultDiv, timeline.nextSibling);
-}
-}
+// 🔥 FUNZIONE: Renderizza banner rigori
+function renderRigoriBanner(casaScore, trasfScore, match) {
+    const container = document.getElementById('rigoriBannerContainer');
+    if (!container) return;
+    
+    // Rimuovi banner precedente se esiste
+    const existing = container.querySelector('.rigori-sync-banner');
+    if (existing) existing.remove();
+    
+    const banner = document.createElement('div');
+    banner.className = 'rigori-sync-banner';
+    banner.style.cssText = `
+        background: linear-gradient(135deg, #7a1e2c 0%, #8c1d2c 100%);
+        color: white;
+        padding: 12px 20px;
+        border-radius: 10px;
+        text-align: center;
+        margin: 10px 0;
+        box-shadow: 0 4px 12px rgba(122, 30, 44, 0.3);
+        animation: slideIn 0.4s ease;
+    `;
+    
+    banner.innerHTML = `
+        <div style="font-size: 13px; font-weight: 600; letter-spacing: 1px; margin-bottom: 4px; opacity: 0.9;">
+            ⚽ CALCI DI RIGORE
+        </div>
+        <div style="font-size: 26px; font-weight: 900;">
+            ${match.SQUADRA_CASA} ${casaScore} - ${trasfScore} ${match.SQUADRA_TRASFERTA}
+        </div>
+    `;
+    
+    container.appendChild(banner);
 }
 function getSafeMatchData(matchId) {
   if (!matchId) return null;
