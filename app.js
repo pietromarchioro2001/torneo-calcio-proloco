@@ -4346,3 +4346,58 @@ if (document.readyState === "loading") {
 }
 
 console.log("✅ ADMIN JS LOADED - GitHub + Apps Script Ready v2.2");
+
+// 🔥 FIX DEFINITIVO: Funzioni globali per i rigori
+// Incolla questo blocco in FONDO a app.js
+
+function checkRigoriWinner(state) {
+    // 🔥 Se vuoi chiudere manualmente con il tasto FINE, lascia:
+    return false; 
+    
+    // 🔥 Se vuoi la chiusura automatica matematica, decommenta questa logica:
+    /*
+    const casaKicks = state.history.filter(h => h.team === 'casa').length;
+    const trasfKicks = state.history.filter(h => h.team === 'trasferta').length;
+    if (casaKicks >= 5 && trasfKicks >= 5 && state.casaScore !== state.trasfScore) return true;
+    const remaining = 5 - Math.max(casaKicks, trasfKicks);
+    if (remaining > 0 && Math.abs(state.casaScore - state.trasfScore) > remaining) return true;
+    if (casaKicks > 5 && trasfKicks === casaKicks && state.casaScore !== state.trasfScore) return true;
+    return false;
+    */
+}
+
+function saveRigoriState(matchId, state) {
+    localStorage.setItem(`rigori_${matchId}`, JSON.stringify(state));
+}
+
+function handleRigoreClick(result, state, match) {
+    if (state.finished) return;
+    const currentTeam = state.currentKicker;
+    const isGoal = result === 'goal';
+
+    // ✅ Aggiorna punteggio correttamente per ENTRAMBE le squadre
+    if (isGoal) {
+        if (currentTeam === 'casa') state.casaScore++;
+        else state.trasfScore++;
+    }
+
+    state.history.push({ team: currentTeam, result });
+    saveRigoriState(match.MATCH_ID, state);
+
+    // ✅ Aggiorna UI punteggi in tempo reale
+    const scoreCasa = document.getElementById('score-casa');
+    const scoreTrasf = document.getElementById('score-trasferta');
+    if (scoreCasa) scoreCasa.textContent = state.casaScore;
+    if (scoreTrasf) scoreTrasf.textContent = state.trasfScore;
+
+    // ✅ Cambia squadra e aggiorna nome sotto il semaforo
+    state.currentKicker = currentTeam === 'casa' ? 'trasferta' : 'casa';
+    const currentEl = document.getElementById('rigori-current');
+    if (currentEl) {
+        const nomeCasa = window.APP_CACHE.fullTeams?.[String(match.CASA_ID)]?.team?.NOME_SQUADRA || match.SQUADRA_CASA;
+        const nomeTrasf = window.APP_CACHE.fullTeams?.[String(match.TRASFERTA_ID)]?.team?.NOME_SQUADRA || match.SQUADRA_TRASFERTA;
+        currentEl.textContent = state.currentKicker === 'casa' ? nomeCasa : nomeTrasf;
+    }
+
+    if (checkRigoriWinner(state)) state.finished = true;
+}
