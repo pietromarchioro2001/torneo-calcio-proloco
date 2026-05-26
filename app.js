@@ -1549,24 +1549,26 @@ function renderMatchesByDate(date) {
       `;
     } 
     // 🔥 FINITA: se pareggio + rigori, mostra risultato dcr
+    //  FINITA: mostra risultato DCR se presente
     else if (m.STATO_PARTITA === "FINITA") {
-      if (m.GOL_CASA === m.GOL_TRASFERTA && 
-          (m.RIGORI_CASA !== undefined || m.RIGORI_TRASFERTA !== undefined)) {
-        const rc = m.RIGORI_CASA || 0;
-        const rt = m.RIGORI_TRASFERTA || 0;
-        center = `
-          <div class="score">${m.GOL_CASA || 0} - ${m.GOL_TRASFERTA || 0} <span style="font-size:14px;color:#888">(${rc}-${rt} dcr)</span></div>
-          <div class="status">TERMINATA</div>
-          ${faseBadge}
-        `;
-      } else {
-        center = `
-          <div class="score">${m.GOL_CASA || 0} - ${m.GOL_TRASFERTA || 0}</div>
-          <div class="status">TERMINATA</div>
-          ${faseBadge}
-        `;
-      }
-    } 
+        // Controlla sia RIGORI_CASA che RIGORE_CASA per compatibilità
+        const rc = m.RIGORE_CASA || m.RIGORI_CASA; 
+        const rt = m.RIGORE_TRASFERTA || m.RIGORI_TRASFERTA;
+    
+        if (rc !== undefined && rc !== "") {
+            center = `
+            <div class="score">${m.GOL_CASA || 0} - ${m.GOL_TRASFERTA || 0} <span style="font-size:12px;color:#666">(${rc}-${rt} dcr)</span></div>
+            <div class="status">TERMINATA</div>
+            ${faseBadge}
+            `;
+        } else {
+            center = `
+            <div class="score">${m.GOL_CASA || 0} - ${m.GOL_TRASFERTA || 0}</div>
+            <div class="status">TERMINATA</div>
+            ${faseBadge}
+            `;
+        }
+    }
     // 🔥 PROGRAMMATA
     else {
       center = `
@@ -1894,8 +1896,17 @@ function renderMatchPage(match) {
             </div>
           ` : ''}
         </div>
-        <div class="score-big">${match.GOL_CASA || 0} - ${match.GOL_TRASFERTA || 0}</div>
-        <div class="match-status" id="matchStatus"></div>
+          <!-- PUNTEGGIO PRINCIPALE -->
+          <div class="score-big">${match.GOL_CASA || 0} - ${match.GOL_TRASFERTA || 0}</div>
+          
+          <!-- 🔥 NUOVO: CARD RISULTATO RIGORI (DCR) -->
+          ${ (match.RIGORE_CASA !== undefined && match.RIGORE_CASA !== "" && match.STATO_PARTITA === "FINITA") ? `
+          <div class="dcr-result-card" style="margin-top: 15px; background: #fff3cd; color: #856404; padding: 8px 15px; border-radius: 8px; font-size: 14px; font-weight: bold; display: inline-block;">
+              ⚽ DCR: ${match.RIGORE_CASA} - ${match.RIGORE_TRASFERTA}
+          </div>
+          ` : '' }
+          
+          <div class="match-status" id="matchStatus"></div>
       </div>
       <div class="team-big right">
         <div class="team-big-name">${nomeTrasf}</div>
