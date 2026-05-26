@@ -3215,7 +3215,7 @@ if (scoreTrasfEl) scoreTrasfEl.textContent = state.trasfScore;
     setTimeout(() => {
       indicator.className = 'rigori-indicator';
       indicator.style.animation = '';
-    }, 3000);
+    }, 5000);
   }
   
   // Aggiorna nome squadra corrente
