@@ -5,7 +5,7 @@
 const CONFIG = {
   // 🔥 SOSTITUISCI CON IL TUO URL APPS SCRIPT WEB APP
 
-  BACKEND_URL: 'https://script.google.com/macros/s/AKfycbyVnP0JB6iFLGZzpL6Oboj3sblikK9w2cqWDmAkl53oSIdup9FMdXWxmEnXWaY9oVdS/exec',
+  BACKEND_URL: 'https://script.google.com/macros/s/AKfycbyfu_LKLQ4dm0gzS9dGpZi3PEBAqcLQ398cyzkQcdfFXIPZCcsVdCx6xHBGCVHZriKX/exec',
   
   API_TIMEOUT: 30000,
   CACHE_VERSION: 'v3.0',
@@ -1944,6 +1944,36 @@ function renderMatchPage(match) {
     `;
 
     updateMatchUI(match);
+
+    // 🔥 BANNER DCR (Appare solo se finita e ci sono dati rigori)
+  if (match.STATO_PARTITA === "FINITA" && match.RIGORI_CASA !== undefined) {
+      const header = document.querySelector('.match-header-big');
+      
+      // Rimuovi banner precedente se esiste (per evitare duplicati)
+      const existing = document.getElementById('dcr-banner');
+      if (existing) existing.remove();
+  
+      const dcrBanner = document.createElement('div');
+      dcrBanner.id = 'dcr-banner';
+      dcrBanner.style.cssText = `
+          width: 100%;
+          text-align: center;
+          margin-top: 15px;
+          padding: 10px;
+          background: linear-gradient(90deg, #fff 0%, #f9f9f9 100%);
+          border: 2px solid #7a1e2c;
+          border-radius: 12px;
+          color: #7a1e2c;
+          font-weight: 800;
+          font-size: 1.2rem;
+          letter-spacing: 1px;
+          box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+      `;
+      
+      // Mostra il risultato
+      dcrBanner.innerHTML = `⚽ CALCI DI RIGORE: ${match.RIGORI_CASA} - ${match.RIGORI_TRASFERTA}`;
+      header.appendChild(dcrBanner);
+  }
     
     if (match.STATO_PARTITA === "FINITA" && match.MVP) {
         updateMVPBanner(match);
