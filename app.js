@@ -1987,7 +1987,7 @@ function renderMatchPage(match) {
     // Controlla se ci sono dati di rigori salvati (sia nel vecchio che nel nuovo formato)
     const rigoreCasa = match.RIGORE_CASA || match.RIGORI_CASA;
     const rigoreTrasf = match.RIGORE_TRASFERTA || match.RIGORI_TRASFERTA;
-
+    
     if (rigoreCasa !== undefined && rigoreTrasf !== undefined && (rigoreCasa > 0 || rigoreTrasf > 0)) {
         const dcrResultDiv = document.createElement('div');
         dcrResultDiv.className = 'dcr-result-minimal';
@@ -2006,7 +2006,7 @@ function renderMatchPage(match) {
             color: #666;
             border-top: 1px solid #eee;
         `;
-
+        
         // Inserisci dopo la timeline degli eventi
         const timeline = document.getElementById('eventsTimeline');
         if (timeline && timeline.parentNode) {
@@ -2229,37 +2229,33 @@ function renderEvents(events, match) {
     
     if (!events?.length) {
         container.innerHTML = `
-            <div class="empty-events-grid">
-                <div class="empty-team-events"><div class="empty-events-text">Nessun evento</div><div class="empty-events-icon">📋</div></div>
-                <div class="empty-team-events"><div class="empty-events-text">Nessun evento</div><div class="empty-events-icon">📋</div></div>
-            </div>`;
+        <div class="empty-events-grid">
+            <div class="empty-team-events"><div class="empty-events-text">Nessun evento</div><div class="empty-events-icon">📋</div></div>
+            <div class="empty-team-events"><div class="empty-events-text">Nessun evento</div><div class="empty-events-icon">📋</div></div>
+        </div>`;
         return;
     }
-
-    // Filtra e ordina eventi
+    
+    // Filtra e ordina eventi - INCLUDI ANCHE I RIGORI
     events = [...events]
-        .filter(e => {
-            const minuto = Number(e.MINUTO) || 0;
-            // Accetta anche minuti > 90 per i rigori
-            return minuto > 0 && e.TEAM_ID;
-        })
-        .sort((a, b) => (Number(a.MINUTO) || 0) - (Number(b.MINUTO) || 0));
-
+    .filter(e => {
+        const minuto = Number(e.MINUTO) || 0;
+        // Accetta GOAL, AMMONIZIONE, ESPULSIONE e RIGORI
+        const isStandard = ["GOAL", "AMMONIZIONE", "ESPULSIONE"].includes(e.TIPO);
+        const isRigore = e.TIPO && e.TIPO.toString().includes("RIGORE");
+        return minuto > 0 && e.TEAM_ID && (isStandard || isRigore);
+    })
+    .sort((a, b) => (Number(a.MINUTO) || 0) - (Number(b.MINUTO) || 0));
+    
     let html = "";
-    let eventsLeft = 0;
-    let eventsRight = 0;
-
     events.forEach(e => {
         const teamId = String(e.TEAM_ID || "").trim();
         const casaId = String(match.CASA_ID || "").trim();
         const trasfertaId = String(match.TRASFERTA_ID || "").trim();
         const isCasa = teamId === casaId;
         const isTrasferta = teamId === trasfertaId;
-
-        if (isCasa) eventsLeft++;
-        else if (isTrasferta) eventsRight++;
-
-        // 🔥 ICONE AGGIORNATE PER RIGORI
+        
+        // 🔥 ICONE AGGIORNATE PER INCLUDERE I RIGORI
         let icon = "⚽";
         let tipoDisplay = "";
         
@@ -2276,27 +2272,31 @@ function renderEvents(events, match) {
             icon = "❌"; // X rossa per rigore sbagliato
             tipoDisplay = " (Rigore)";
         }
-
+        
         const deleteBtn = e.EVENT_ID 
             ? `<span class="event-options" onclick="openEventMenu(event, '${e.EVENT_ID}', '${match.MATCH_ID}')">⋮</span>` 
             : '';
-
+        
         // Formatta il testo dell'evento
         let playerText = (e.PLAYER || "").toUpperCase();
-        if (tipoDisplay) playerText += `<span style="font-size:0.85em; color:#888">${tipoDisplay}</span>`;
-        if (e.ASSIST) playerText += ` <span class="assist">(${(e.ASSIST).toUpperCase()})</span>`;
-
+        if (tipoDisplay) {
+            playerText += `<span style="font-size:0.85em; color:#888">${tipoDisplay}</span>`;
+        }
+        if (e.ASSIST) {
+            playerText += ` <span class="assist">(${(e.ASSIST).toUpperCase()})</span>`;
+        }
+        
         html += `
-            <div class="event-line ${isCasa ? "left" : "right"}" data-event-id="${e.EVENT_ID || ''}">
-                <div class="event-content">
-                    <span class="event-minute">${e.MINUTO}'</span>
-                    <span class="event-icon">${icon}</span>
-                    <span class="event-player">
-                        ${playerText}
-                    </span>
-                    ${deleteBtn}
-                </div>
-            </div>`;
+        <div class="event-line ${isCasa ? "left" : "right"}" data-event-id="${e.EVENT_ID || ''}">
+            <div class="event-content">
+                <span class="event-minute">${e.MINUTO}'</span>
+                <span class="event-icon">${icon}</span>
+                <span class="event-player">
+                    ${playerText}
+                </span>
+                ${deleteBtn}
+            </div>
+        </div>`;
     });
     
     container.innerHTML = html;
