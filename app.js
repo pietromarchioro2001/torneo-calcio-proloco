@@ -3092,10 +3092,10 @@ if (directMode || rigoriState.history.length > 0) {
     const btnGoal = document.getElementById('btn-goal');
     
     if (btnMiss) {
-        btnMiss.onclick = () => handleRigoreClick('miss');
+        btnMiss.onclick = () => handleRigoreClick('miss', rigoriState, match);
     }
     if (btnGoal) {
-        btnGoal.onclick = () => handleRigoreClick('goal');
+        btnGoal.onclick = () => handleRigoreClick('goal', rigoriState, match);
     }
 
   // 🔥 RENDERIZZA BOLLINI ESISTENTI
