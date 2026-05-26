@@ -693,10 +693,27 @@ function renderMatchesByDate(date) {
         if (m.STATO_PARTITA === "LIVE") { center = `<div class="score live">${m.GOL_CASA || 0} - ${m.GOL_TRASFERTA || 0}</div><div class="status live">LIVE</div>${faseBadge}`; }
         else if (m.STATO_PARTITA === "SUPP") { center = `<div class="score live">${m.GOL_CASA || 0} - ${m.GOL_TRASFERTA || 0}</div><div class="status live">SUPP</div>${faseBadge}`; }
         else if (m.STATO_PARTITA === "RIGORI") { const rigoriCasa = m.RIGORI_CASA || 0; const rigoriTrasf = m.RIGORI_TRASFERTA || 0; center = `<div class="score live">${m.GOL_CASA || 0} - ${m.GOL_TRASFERTA || 0} <span style="font-size:14px;color:#888">(${rigoriCasa}-${rigoriTrasf} dcr)</span></div><div class="status live">RIGORI</div>${faseBadge}`; }
+        // 🔥 FINITA: se pareggio + rigori, mostra risultato dcr
         else if (m.STATO_PARTITA === "FINITA") {
-            const rc = m.RIGORE_CASA || m.RIGORI_CASA; const rt = m.RIGORE_TRASFERTA || m.RIGORI_TRASFERTA;
-            if (rc !== undefined && rc !== "") { center = `<div class="score">${m.GOL_CASA || 0} - ${m.GOL_TRASFERTA || 0} <span style="font-size:12px;color:#666">(${rc}-${rt} dcr)</span></div><div class="status">TERMINATA</div>${faseBadge}`; }
-            else { center = `<div class="score">${m.GOL_CASA || 0} - ${m.GOL_TRASFERTA || 0}</div><div class="status">TERMINATA</div>${faseBadge}`; }
+            // Controlla sia RIGORI_CASA che RIGORE_CASA per compatibilità
+            const rc = m.RIGORE_CASA !== undefined ? m.RIGORE_CASA : m.RIGORI_CASA;
+            const rt = m.RIGORE_TRASFERTA !== undefined ? m.RIGORE_TRASFERTA : m.RIGORI_TRASFERTA;
+            
+            // Mostra DCR solo se i valori sono validi (non null, non undefined, non vuoti)
+            if (rc !== null && rc !== undefined && rc !== "" && 
+                rt !== null && rt !== undefined && rt !== "") {
+                center = `
+                <div class="score">${m.GOL_CASA || 0} - ${m.GOL_TRASFERTA || 0} <span style="font-size:12px;color:#666">(${rc}-${rt} dcr)</span></div>
+                <div class="status">TERMINATA</div>
+                ${faseBadge}
+                `;
+            } else {
+                center = `
+                <div class="score">${m.GOL_CASA || 0} - ${m.GOL_TRASFERTA || 0}</div>
+                <div class="status">TERMINATA</div>
+                ${faseBadge}
+                `;
+            }
         } else { center = `<div class="time">${m.ORA || "--:--"}</div>${faseBadge}`; }
         const isActive = ["LIVE", "SUPP", "RIGORI"].includes(m.STATO_PARTITA);
         html += `<div class="match-card ${isActive ? "live-match" : ""}" onclick="openMatch('${m.MATCH_ID}')"><div class="team-block left">${logoCasa}<div class="team-name">${(m.SQUADRA_CASA || "").toUpperCase()}</div></div><div class="match-center">${center}</div><div class="team-block right"><div class="team-name">${(m.SQUADRA_TRASFERTA || "").toUpperCase()}</div>${logoTrasf}</div><div class="match-options" onclick='event.stopPropagation(); openMatchMenu(event, "${m.MATCH_ID}")'>⋮</div></div>`;
@@ -797,6 +814,19 @@ function renderMatchPage(match) {
                     ${match.FASE === "FINALI" && isLive ? `<div class="phase-btn secondary-btn" onclick="toggleSupplementari()">SUPPLEMENTARI</div><div class="phase-btn secondary-btn" onclick="openRigoriPopup()">RIGORI</div>` : ''}
                 </div>
                 <div class="score-big">${match.GOL_CASA || 0} - ${match.GOL_TRASFERTA || 0}</div>
+                ${(() => {
+                    const rc = match.RIGORE_CASA !== undefined ? match.RIGORE_CASA : match.RIGORI_CASA;
+                    const rt = match.RIGORE_TRASFERTA !== undefined ? match.RIGORE_TRASFERTA : match.RIGORI_TRASFERTA;
+                    if (rc !== null && rc !== undefined && rc !== "" && 
+                        rt !== null && rt !== undefined && rt !== "") {
+                        return `
+                        <div class="dcr-result-card" style="margin-top: 10px; background: #fff3cd; color: #856404; padding: 8px 15px; border-radius: 8px; font-size: 14px; font-weight: bold; display: inline-block;">
+                            ⚽ DCR: ${rc} - ${rt}
+                        </div>
+                        `;
+                    }
+                    return '';
+                })()}
                 <div class="match-status" id="matchStatus"></div>
             </div>
             <div class="team-big right"><div class="team-big-name">${nomeTrasf}</div>${logoTrasf}</div>
@@ -1289,7 +1319,7 @@ function bootAdminApp() {
   window.APP_CACHE = CacheManager.load();
   
   const loader = document.getElementById("startupLoader");
-  const LOADER_MIN_TIME = 1500; // ⭐ Tempo minimo loader: 1.5 secondi
+  const LOADER_MIN_TIME = 2000; // ⭐ Tempo minimo loader: 1.5 secondi
   const loaderStartTime = Date.now(); // ⭐ Timestamp di inizio
   
   if (loader) loader.style.display = "flex";
