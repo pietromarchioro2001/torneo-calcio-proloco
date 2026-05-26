@@ -2242,7 +2242,7 @@ function renderEvents(events, match) {
         const minuto = Number(e.MINUTO) || 0;
         // Accetta GOAL, AMMONIZIONE, ESPULSIONE e RIGORI
         const isStandard = ["GOAL", "AMMONIZIONE", "ESPULSIONE"].includes(e.TIPO);
-        const isRigore = e.TIPO && e.TIPO.toString().includes("RIGORE");
+        const isRigore = e.TIPO && e.TIPO.toString().toUpperCase().includes("RIGORE");
         return minuto > 0 && e.TEAM_ID && (isStandard || isRigore);
     })
     .sort((a, b) => (Number(a.MINUTO) || 0) - (Number(b.MINUTO) || 0));
