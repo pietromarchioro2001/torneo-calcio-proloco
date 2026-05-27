@@ -1207,54 +1207,65 @@ function updateScoreFromEvents(matchId) {
 }
 
 function renderPenaltyIndicators(events, match) {
-    // 1. Trova il contenitore
-    const timeline = document.getElementById('eventsTimeline');
-    if (!timeline) return;
+    console.log("🔍 [DEBUG] Rendering Penalty Indicators...");
     
-    // Rimuovi indicatori vecchi
+    const timeline = document.getElementById('eventsTimeline');
+    if (!timeline) {
+        console.error("❌ eventsTimeline non trovato!");
+        return;
+    }
+    
+    // Rimuovi eventuali indicatori precedenti
     const existing = document.getElementById('penalty-indicators');
     if (existing) existing.remove();
-
-    // 2. Leggi i punteggi direttamente dal Match (Colonne J e K del foglio)
-    // Cerco sia RIGORE_ che RIGORI_ per sicurezza, ma col fix backend userà RIGORE_
-    let rc = match.RIGORE_CASA || match.RIGORI_CASA;
-    let rt = match.RIGORE_TRASFERTA || match.RIGORI_TRASFERTA;
-
-    // Se i dati non ci sono ancora (es.刚刚刚刚刚刚刚刚刚刚刚刚刚刚刚刚刚刚刚刚刚刚刚刚刚刚刚刚刚刚刚刚刚刚刚刚刚刚刚刚刚刚刚刚刚刚刚刚刚刚刚刚刚刚刚刚刚刚刚刚刚刚刚刚刚刚刚刚刚刚刚刚刚刚刚刚刚刚刚刚刚刚刚刚刚刚刚刚刚刚刚刚刚刚刚刚刚刚刚刚刚刚刚刚刚刚刚刚刚刚刚刚刚刚刚刚刚刚刚刚刚刚刚刚刚刚刚刚刚刚刚刚刚刚刚刚刚刚刚刚刚刚刚刚刚刚刚刚刚刚刚刚刚刚刚刚刚刚刚刚刚刚刚刚刚刚刚刚刚刚刚刚刚刚刚刚刚刚刚刚刚刚刚刚刚刚刚刚刚刚刚刚刚刚刚刚刚刚刚刚刚刚刚刚刚刚刚刚刚刚...... aspetta, se sono null non mostro nulla
-    if (rc === undefined || rc === null || rc === "" || 
-        rt === undefined || rt === null || rt === "") {
-        return; // Non mostrare nulla se i dati non sono stati salvati nel foglio
+    
+    // 🔥 FILTRA: Cerca eventi con TIPO_EVENTO = "RIGORE" (Colonna G)
+    // e RIGORE_RESULT impostato (Colonna E)
+    const penaltyEvents = events.filter(e => {
+        const tipoEvento = String(e.TIPO_EVENTO || e.TIPO || "").toUpperCase();
+        const rigoreResult = String(e.RIGORE_RESULT || "").toUpperCase();
+        
+        return (tipoEvento === 'RIGORE' || tipoEvento.includes('RIGORE')) &&
+               (rigoreResult === 'RIGORE_SEGNO' || rigoreResult === 'RIGORE_SBAGLIO');
+    });
+    
+    console.log(`✅ Eventi rigore trovati: ${penaltyEvents.length}`);
+    
+    if (penaltyEvents.length === 0) {
+        console.log("⚠️ Nessun evento rigore trovato nel foglio.");
+        return;
     }
-
-    // 3. Trova gli eventi di rigore per disegnare i pallini (solo visuali)
-    const penaltyEvents = events.filter(e => 
-        e.TIPO_EVENTO === 'RIGORE' || e.TIPO === 'RIGORE'
-    );
-
-    if (penaltyEvents.length === 0) return;
-
+    
     const casaId = String(match.CASA_ID || "").trim();
     const casaTiri = [];
     const trasfTiri = [];
-
-    // Organizza i pallini verdi/rossi
+    
+    // 🔥 PER OGNI RIGORE: Legge RIGORE_RESULT (Colonna E)
     penaltyEvents.forEach(e => {
-        const isGoal = (e.RIGORE_RESULT === 'RIGORE_SEGNO');
+        const rigoreResult = String(e.RIGORE_RESULT || "").toUpperCase();
+        const isGoal = (rigoreResult === 'RIGORE_SEGNO');
         const isCasa = String(e.TEAM_ID) === casaId;
+        
         if (isCasa) casaTiri.push(isGoal);
         else trasfTiri.push(isGoal);
     });
-
-    // Crea HTML pallini
+    
+    console.log(`🟢 ${match.SQUADRA_CASA}: ${casaTiri.filter(t=>t).length} segnati, ${casaTiri.filter(t=>!t).length} sbagliati`);
+    console.log(`🟢 ${match.SQUADRA_TRASFERTA}: ${trasfTiri.filter(t=>t).length} segnati, ${trasfTiri.filter(t=>!t).length} sbagliati`);
+    
+    // Crea HTML bollini
     const createDots = (tiri) => tiri.map(isGoal =>
         `<span class="penalty-dot ${isGoal ? 'goal' : 'miss'}"></span>`
     ).join('');
-
-    // 4. Crea la Card
+    
+    // Leggi punteggi finali dalle colonne J/K
+    const rc = match.RIGORE_CASA !== undefined ? match.RIGORE_CASA : match.RIGORI_CASA;
+    const rt = match.RIGORE_TRASFERTA !== undefined ? match.RIGORE_TRASFERTA : match.RIGORI_TRASFERTA;
+    const scoreText = (rc !== undefined && rt !== undefined) ? `${rc} - ${rt}` : '';
+    
     const indicatorsDiv = document.createElement('div');
     indicatorsDiv.id = 'penalty-indicators';
     indicatorsDiv.className = 'penalty-indicators-container';
-    
     indicatorsDiv.innerHTML = `
         <div class="penalty-header-label">SEQUENZA TIRI</div>
         <div class="penalty-dots-row">
@@ -1262,18 +1273,20 @@ function renderPenaltyIndicators(events, match) {
                 <div class="penalty-team-name">${match.SQUADRA_CASA}</div>
                 <div class="penalty-dots">${createDots(casaTiri)}</div>
             </div>
-            <div class="penalty-vs-score">${rc} - ${rt}</div>
+            <div class="penalty-vs-score">${scoreText}</div>
             <div class="penalty-team-block">
                 <div class="penalty-team-name">${match.SQUADRA_TRASFERTA}</div>
                 <div class="penalty-dots">${createDots(trasfTiri)}</div>
             </div>
         </div>
     `;
-
-    // 5. Inserisci nella pagina (Sotto la cronaca, sopra i dettagli)
+    
+    // Inserisci dopo CRONACA
     const cronacaTitle = document.querySelector('.cronaca-title');
     if (cronacaTitle && cronacaTitle.parentNode) {
         cronacaTitle.parentNode.insertBefore(indicatorsDiv, cronacaTitle.nextSibling);
+    } else {
+        timeline.insertBefore(indicatorsDiv, timeline.firstChild);
     }
 }
 // ============================================================================
