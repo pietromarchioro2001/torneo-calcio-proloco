@@ -956,79 +956,89 @@ function renderMatchPage(match) {
         : "";
 
     document.getElementById("app").innerHTML = `
-<div class="match-page">
-    <div class="match-header-big">
-        <div class="team-big left">
-            ${logoCasa}
-            <div class="team-big-name">${nomeCasa}</div>
-        </div>
-        <div class="match-center">
-            <div class="match-controls-top">
-                <div class="phase-btn start-btn ${isLive ? "active" : ""}"
-                    onclick="${canToggleMatch ? "toggleMatch()" : ""}"
-                    ${toggleBtnDisabled}>
-                    ${isLive ? "CONCLUDI" : "INIZIA"}
-                </div>
-                ${match.FASE === "FINALI" && isLive ? `
-                <div class="phase-btn secondary-btn" onclick="toggleSupplementari()">SUPPLEMENTARI</div>
-                <div class="phase-btn secondary-btn" onclick="openRigoriPopup()">RIGORI</div>
-                ` : ''}
+    <div class="match-page">
+        <div class="match-header-big">
+            <div class="team-big left">
+                ${logoCasa}
+                <div class="team-big-name">${nomeCasa}</div>
             </div>
-            <!-- PUNTEGGIO PRINCIPALE -->
-            <div class="score-big">${match.GOL_CASA || 0} - ${match.GOL_TRASFERTA || 0}</div>
-            <div class="match-status" id="matchStatus"></div>
+            <div class="match-center">
+                <div class="match-controls-top">
+                    <div class="phase-btn start-btn ${isLive ? "active" : ""}"
+                        onclick="${canToggleMatch ? "toggleMatch()" : ""}"
+                        ${toggleBtnDisabled}>
+                        ${isLive ? "CONCLUDI" : "INIZIA"}
+                    </div>
+                    ${match.FASE === "FINALI" && isLive ? `
+                    <div class="phase-btn secondary-btn" onclick="toggleSupplementari()">SUPPLEMENTARI</div>
+                    <div class="phase-btn secondary-btn" onclick="openRigoriPopup()">RIGORI</div>
+                    ` : ''}
+                </div>
+                <div class="score-big">${match.GOL_CASA || 0} - ${match.GOL_TRASFERTA || 0}</div>
+                <div class="match-status" id="matchStatus"></div>
+            </div>
+            <div class="team-big right">
+                <div class="team-big-name">${nomeTrasf}</div>
+                ${logoTrasf}
+            </div>
         </div>
-        <div class="team-big right">
-            <div class="team-big-name">${nomeTrasf}</div>
-            ${logoTrasf}
+    
+        <div class="match-toolbar">
+            <div class="mt-btn active" data-tab="diretta">DIRETTA</div>
+            <div class="mt-btn" data-tab="giocatori">GIOCATORI</div>
+            ${mvpTabHtml}
         </div>
-    </div>
-    <div class="match-toolbar">
-        <div class="mt-btn active" data-tab="diretta">DIRETTA</div>
-        <div class="mt-btn" data-tab="giocatori">GIOCATORI</div>
-        ${mvpTabHtml}
-    </div>
-    <div class="match-content">
-        <div class="tab-content active" id="tab-diretta">
-            <div class="teams-events">
-                <div class="events-actions">
-                    <div class="left">
-                        <div class="phase-btn small" onclick="${canAddEvents ? "addEvent('casa')" : ""}" ${eventBtnDisabled}>
-                            + EVENTO CASA
+    
+        <div class="match-content">
+            <div class="tab-content active" id="tab-diretta">
+                <div class="teams-events">
+                    <div class="events-actions">
+                        <div class="left">
+                            <div class="phase-btn small" onclick="${canAddEvents ? "addEvent('casa')" : ""}" ${eventBtnDisabled}>
+                                + EVENTO CASA
+                            </div>
+                        </div>
+                        <div class="right">
+                            <div class="phase-btn small" onclick="${canAddEvents ? "addEvent('trasferta')" : ""}" ${eventBtnDisabled}>
+                                + EVENTO TRASFERTA
+                            </div>
                         </div>
                     </div>
-                    <div class="right">
-                        <div class="phase-btn small" onclick="${canAddEvents ? "addEvent('trasferta')" : ""}" ${eventBtnDisabled}>
-                            + EVENTO TRASFERTA
-                        </div>
+    
+                    <!-- AREA BANNER MVP E DCR (Pulita) -->
+                    <div class="match-banners-area">
+                        <div id="mvpBanner" class="mvp-banner"></div>
+                        <div id="dcrBanner" class="dcr-banner"></div>
+                    </div>
+    
+                    <div class="cronaca-title center"><span>CRONACA</span></div>
+                    
+                    <div id="eventsTimeline" class="events-timeline">
+                        <div id="eventsContent"></div>
                     </div>
                 </div>
-                <div class="cronaca-title center"><span>CRONACA</span></div>
-                <div id="mvpBanner" class="mvp-banner"></div>
-                <div id="dcrBanner" class="dcr-banner"></div>
-                </div>
-                <div id="eventsTimeline" class="events-timeline">
-                    <div id="eventsContent"></div>
-                </div>
             </div>
-        </div>
-        <div class="tab-content" id="tab-giocatori">
-            <div class="players-columns" id="playersColumns">
-                <div style="text-align:center;padding:40px;color:#888;grid-column:1/-1">Caricamento giocatori...</div>
-            </div>
-        </div>
-        <div class="tab-content" id="tab-mvp">
-            <div class="players-columns" id="mvpColumns">
-                <div style="text-align:center;padding:40px;color:#888;grid-column:1/-1">
-                    ${isLive ? "Vota il MVP" : isFinished ? "MVP della partita" : "Disponibile durante la partita"}
+    
+            <div class="tab-content" id="tab-giocatori">
+                <div class="players-columns" id="playersColumns">
+                    <div style="text-align:center;padding:40px;color:#888;grid-column:1/-1">Caricamento giocatori...</div>
                 </div>
             </div>
-        </div>
-        <div class="back-btn-wrapper">
-            <div class="phase-btn secondary" onclick="showMatches()">INDIETRO</div>
+    
+            <div class="tab-content" id="tab-mvp">
+                <div class="players-columns" id="mvpColumns">
+                    <div style="text-align:center;padding:40px;color:#888;grid-column:1/-1">
+                        ${isLive ? "Vota il MVP" : isFinished ? "MVP della partita" : "Disponibile durante la partita"}
+                    </div>
+                </div>
+            </div>
+    
+            <div class="back-btn-wrapper">
+                <div class="phase-btn secondary" onclick="showMatches()">INDIETRO</div>
+            </div>
         </div>
     </div>
-</div>`;
+    `;
 
     // Aggiorna UI
     updateMatchUI(match);
@@ -1199,18 +1209,14 @@ function updateScoreFromEvents(matchId) {
 function renderPenaltyIndicators(events, match) {
     console.log("🔍 [DEBUG] Rendering Penalty Indicators...");
     
-    // 1. Trova il contenitore corretto
     const timeline = document.getElementById('eventsTimeline');
-    if (!timeline) {
-        console.error("❌ eventsTimeline element not found!");
-        return;
-    }
+    if (!timeline) return;
 
-    // Rimuovi eventuali indicatori vecchi
+    // Rimuovi eventuali indicatori precedenti
     const existing = document.getElementById('penalty-indicators');
     if (existing) existing.remove();
 
-    // 2. Filtra gli eventi basandosi SULLA STRUTTURA DEL TUO FOGLIO
+    //  FIX: Legge correttamente la struttura del tuo foglio
     // Colonna G (Tipo) = 'RIGORE' E Colonna E (Rigore Result) esiste
     const penaltyEvents = events.filter(e => 
         (e.TIPO_EVENTO === 'RIGORE' || e.TIPO === 'RIGORE') && 
@@ -1218,19 +1224,17 @@ function renderPenaltyIndicators(events, match) {
     );
 
     if (penaltyEvents.length === 0) {
-        console.log("⚠️ Nessun evento rigore trovato nel foglio.");
+        console.log("⚠️ Nessun evento rigore trovato.");
         return;
     }
-
-    console.log(`✅ Trovati ${penaltyEvents.length} eventi rigore.`);
 
     const casaId = String(match.CASA_ID || "").trim();
     const casaTiri = [];
     const trasfTiri = [];
 
-    // 3. Organizza i tiri
+    // Organizza i tiri
     penaltyEvents.forEach(e => {
-        // Controlla il risultato dalla Colonna E
+        // Controlla il risultato dalla Colonna E (RIGORE_RESULT)
         const isGoal = (e.RIGORE_RESULT === 'RIGORE_SEGNO' || e.RIGORE_RESULT === 'SEGNO');
         const isCasa = String(e.TEAM_ID) === casaId;
         
@@ -1238,7 +1242,7 @@ function renderPenaltyIndicators(events, match) {
         else trasfTiri.push(isGoal);
     });
 
-    // 4. Crea l'HTML dei pallini
+    // Crea l'HTML dei pallini
     const createDots = (tiri) => tiri.map(isGoal => 
         `<span class="penalty-dot ${isGoal ? 'goal' : 'miss'}"></span>`
     ).join('');
@@ -1267,17 +1271,14 @@ function renderPenaltyIndicators(events, match) {
         </div>
     `;
 
-    // 5. Inserisci nella pagina
+    // Inserisci nella pagina: subito DOPO la cronaca-title
     const cronacaTitle = document.querySelector('.cronaca-title');
     if (cronacaTitle && cronacaTitle.parentNode) {
-        // Inserisci subito dopo la scritta "CRONACA"
         cronacaTitle.parentNode.insertBefore(indicatorsDiv, cronacaTitle.nextSibling);
     } else {
-        // Se manca il titolo, mettilo in cima alla timeline
         timeline.insertBefore(indicatorsDiv, timeline.firstChild);
     }
 }
-
 // ============================================================================
 // 📊 RENDERING EVENTI E CRONACA
 // ============================================================================
