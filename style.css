@@ -646,32 +646,6 @@ body{
   display: flex !important;
 }
 
-/* Aggiungi temporaneamente per debug */
-.match-content, .tab-content, #eventsContent {
-  outline: 2px dashed #00f !important;
-  min-height: 200px !important;
-}
-
-/* DEBUG: Forza visibilità contenuti partita */
-.match-page .tab-content.active,
-#eventsContent,
-#playersColumns,
-#mvpColumns {
-  display: flex !important;
-  opacity: 1 !important;
-  visibility: visible !important;
-  min-height: 100px !important;
-}
-
-/* Mostra scrollbar temporaneamente */
-.match-content {
-  scrollbar-width: thin !important;
-}
-.match-content::-webkit-scrollbar {
-  display: block !important;
-  width: 8px !important;
-}
-
 @keyframes liveTextPulse {
   0%, 100% { opacity: 1; }
   50% { opacity: 0.7; }
@@ -2368,7 +2342,8 @@ body{
   width:100%;
   flex:0 0 auto;
   overflow:visible;
-  min-height:260px;
+  min-height:300px;
+  padding: 20px 0;
 }
 
 /* linea centrale */
