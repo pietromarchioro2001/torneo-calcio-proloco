@@ -1219,11 +1219,11 @@ function renderPenaltyIndicators(events, match) {
     const existing = document.getElementById('penalty-indicators');
     if (existing) existing.remove();
     
-    // 🔥 FILTRA: Cerca eventi con TIPO_EVENTO = "RIGORE" (Colonna G)
-    const penaltyEvents = events.filter(e =>
-      e.RIGORE_RESULT && 
-      (e.RIGORE_RESULT === 'RIGORE_SEGNO' || e.RIGORE_RESULT === 'RIGORE_SBAGLIO')
-    );
+    // Filtra eventi rigore: cerca RIGORE_RESULT (colonna E del foglio)
+    const penaltyEvents = events.filter(e => {
+        const rigoreResult = String(e.RIGORE_RESULT || "").toUpperCase();
+        return rigoreResult === 'RIGORE_SEGNO' || rigoreResult === 'RIGORE_SBAGLIO';
+    });
     
     console.log(`✅ Eventi rigore trovati: ${penaltyEvents.length}`);
     
@@ -1236,21 +1236,12 @@ function renderPenaltyIndicators(events, match) {
     const casaTiri = [];
     const trasfTiri = [];
     
-    // 🔥 PER OGNI RIGORE: Legge la colonna E (RIGORE_RESULT)
+    // Organizza i tiri per squadra
     penaltyEvents.forEach(e => {
-        // Controlla RIGORE_RESULT (Colonna E)
         const isGoal = (e.RIGORE_RESULT === 'RIGORE_SEGNO');
-        const isMiss = (e.RIGORE_RESULT === 'RIGORE_SBAGLIO');
-        
         const isCasa = String(e.TEAM_ID) === casaId;
-        
-        if (isGoal) {
-            if (isCasa) casaTiri.push(true);   // ✅ Verde
-            else trasfTiri.push(true);
-        } else if (isMiss) {
-            if (isCasa) casaTiri.push(false);  // ❌ Rosso
-            else trasfTiri.push(false);
-        }
+        if (isCasa) casaTiri.push(isGoal);
+        else trasfTiri.push(isGoal);
     });
     
     console.log(`🟢 ${match.SQUADRA_CASA}: ${casaTiri.filter(t=>t).length} segnati, ${casaTiri.filter(t=>!t).length} sbagliati`);
@@ -1261,7 +1252,7 @@ function renderPenaltyIndicators(events, match) {
         `<span class="penalty-dot ${isGoal ? 'goal' : 'miss'}"></span>`
     ).join('');
     
-    // Leggi punteggi finali (Colonne J/K)
+    // Leggi punteggi finali (colonne J/K)
     const rc = match.RIGORE_CASA !== undefined ? match.RIGORE_CASA : match.RIGORI_CASA;
     const rt = match.RIGORE_TRASFERTA !== undefined ? match.RIGORE_TRASFERTA : match.RIGORI_TRASFERTA;
     const scoreText = (rc !== undefined && rt !== undefined) ? `${rc} - ${rt}` : '';
@@ -1283,13 +1274,10 @@ function renderPenaltyIndicators(events, match) {
             </div>
         </div>
     `;
-
-    // Inserisci DOPO gli eventi (sotto la timeline)
-    const timeline = document.getElementById('eventsTimeline');
-    if (timeline && timeline.parentNode) {
+    
+    // 🔥 INSERISCI DOPO GLI EVENTI (sotto la timeline, non sopra)
+    if (timeline.parentNode) {
         timeline.parentNode.insertBefore(indicatorsDiv, timeline.nextSibling);
-    } else {
-        timeline.insertBefore(indicatorsDiv, timeline.firstChild);
     }
 }
 // ============================================================================
