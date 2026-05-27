@@ -4497,4 +4497,81 @@ div.bracket-match.final-match {
 .dcr-result-card { display: none !important; }
 .dcr-result-minimal { display: none !important; }
 
+/* ============================================
+   FIX BANNER E CRONACA - NO SPAZI BIANCHI
+============================================ */
+
+/* Area contenitore per i banner MVP e DCR */
+.match-banners-area {
+    position: relative;
+    width: 100%;
+    min-height: 20px; 
+    margin-bottom: 10px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+}
+
+/* Banner MVP */
+#mvpBanner {
+    position: relative !important; /* Togliamo absolute */
+    top: auto !important;
+    left: auto !important;
+    transform: none !important;
+    
+    display: none; 
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    
+    min-width: 240px;
+    max-width: 90%;
+    padding: 14px 24px;
+    
+    background: #fffbeb;
+    border: 2px solid #fbbf24;
+    border-radius: 12px;
+    box-shadow: 0 4px 16px rgba(251, 191, 36, 0.25);
+    transition: opacity 0.3s ease;
+}
+
+#mvpBanner.show {
+    display: flex !important;
+    animation: mvpAppear 0.5s ease forwards;
+}
+
+/* Banner DCR */
+#dcrBanner {
+    position: relative !important; /* Togliamo absolute */
+    top: auto !important;
+    left: auto !important;
+    transform: none !important;
+
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    
+    min-width: 220px;
+    max-width: 90%;
+    padding: 12px 20px;
+    
+    background: #fff5f5;
+    border: 2px solid var(--granata);
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(122, 30, 44, 0.15);
+    transition: opacity 0.3s ease;
+}
+
+#dcrBanner.show {
+    display: flex !important;
+    animation: dcrAppear 0.4s ease forwards;
+}
+
+/* Reset padding timeline per evitare spazi extra */
+.teams-events #eventsTimeline {
+    padding-top: 20px !important; 
+}
+
 
