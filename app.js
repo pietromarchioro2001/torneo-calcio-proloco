@@ -165,30 +165,51 @@ function createPreviewUrl(file) {
 // 🌐 API CLIENT
 // ============================================================================
 const ApiClient = {
-    async call(action, payload = null) {
-        const controller = new AbortController();
-        const timeout = setTimeout(() => controller.abort(), CONFIG.API_TIMEOUT);
-        try {
-            const response = await fetch(CONFIG.BACKEND_URL, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'text/plain',
-                    'Accept': 'application/json'
-                },
-                body: JSON.stringify({ action, payload }),
-                signal: controller.signal
-            });
-            clearTimeout(timeout);
-            if (!response.ok) throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-            const result = await response.json();
-            if (result?.error || result?.success === false) throw new Error(result.error || 'Backend error');
-            return result?.data ?? result;
-        } catch (error) {
-            clearTimeout(timeout);
-            console.error(`API Error [${action}]:`, error);
-            throw error;
-        }
-    },
+    async call(action, payload = null, retryCount = 0) {
+  const controller = new AbortController();
+  // ✅ Timeout più lungo per primo caricamento (10s invece di 30s)
+  const timeoutMs = retryCount === 0 ? 15000 : CONFIG.API_TIMEOUT;
+  const timeout = setTimeout(() => controller.abort(), timeoutMs);
+  
+  try {
+    const response = await fetch(CONFIG.BACKEND_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain', 'Accept': 'application/json' },
+      body: JSON.stringify({ action, payload }),
+      signal: controller.signal
+    });
+    clearTimeout(timeout);
+    
+    if (!response.ok) {
+      // ✅ Retry automatico per errori 429 (rate limit) o 5xx
+      if ((response.status === 429 || response.status >= 500) && retryCount < 2) {
+        const delay = Math.pow(2, retryCount) * 1000; // Backoff esponenziale
+        console.log(`🔄 Retry ${retryCount + 1} per ${action} tra ${delay}ms...`);
+        await new Promise(res => setTimeout(res, delay));
+        return this.call(action, payload, retryCount + 1);
+      }
+      throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+    }
+    
+    const result = await response.json();
+    if (result?.error || result?.success === false) {
+      throw new Error(result.error || 'Backend error');
+    }
+    return result?.data ?? result;
+    
+  } catch (error) {
+    clearTimeout(timeout);
+    // ✅ Gestione elegante degli abort (timeout)
+    if (error.name === 'AbortError') {
+      console.warn(`⏱️ Timeout per ${action}, retry ${retryCount < 2 ? 'possibile' : 'fallito'}`);
+      if (retryCount < 2) {
+        return this.call(action, payload, retryCount + 1);
+      }
+    }
+    console.error(`API Error [${action}]:`, error);
+    throw error;
+  }
+},
     getInitialData: () => ApiClient.call('getInitialAdminData'),
     getMatches: () => ApiClient.call('getMatchesAdmin'),
     getStandings: () => ApiClient.call('getStandingsGironiCached'),
@@ -254,6 +275,52 @@ window.APP_STATE = {
     _activeStandingsTab: "gironi", _finalStageLoaded: false, _standingsActive: false,
     _currentPlayerPreviewUrl: null, _matchRequestNonce: 0
 };
+
+// 🔥 AGGIUNGI in GLOBAL STATE (dopo window.APP_STATE)
+window.APP_STATE._initialLoadComplete = false;
+window.APP_STATE._apiCallQueue = [];
+
+// 🔥 AGGIUNGI questa funzione helper
+function queueApiCall(fn, priority = 0) {
+  if (window.APP_STATE._initialLoadComplete) {
+    return fn(); // Esegui subito se caricamento completato
+  }
+  // Altrimenti accoda
+  window.APP_STATE._apiCallQueue.push({ fn, priority, timestamp: Date.now() });
+  // Ordina per priorità (più alto = prima)
+  window.APP_STATE._apiCallQueue.sort((a, b) => b.priority - a.priority);
+}
+
+// 🔥 MODIFICA refreshStandingsDebounced per usare la coda
+function refreshStandingsDebounced(delay = 1200) {
+  // ✅ Se non abbiamo finito il caricamento iniziale, accoda
+  if (!window.APP_STATE._initialLoadComplete) {
+    queueApiCall(() => {
+      clearTimeout(standingsRefreshTimer);
+      standingsRefreshTimer = setTimeout(() => {
+        ApiClient.getStandings().then(data => {
+          if (data) { 
+            window.APP_CACHE.standings = data; 
+            CacheManager.save(window.APP_CACHE); 
+          }
+          if (document.querySelector(".standings-page")) {
+            renderStandings(data || window.APP_CACHE.standings);
+          }
+        }).catch(console.error);
+      }, delay);
+    }, 10); // Priorità alta
+    return;
+  }
+  
+  // Comportamento normale se caricamento completato
+  clearTimeout(standingsRefreshTimer);
+  standingsRefreshTimer = setTimeout(() => {
+    ApiClient.getStandings().then(data => {
+      if (data) { window.APP_CACHE.standings = data; CacheManager.save(window.APP_CACHE); }
+      if (document.querySelector(".standings-page")) renderStandings(data || window.APP_CACHE.standings);
+    }).catch(console.error);
+  }, delay);
+}
 
 function hydrateMatches(matches = []) {
     window.APP_STATE.matchesById = {};
@@ -1195,17 +1262,87 @@ function startStandingsLiveRefresh() {
 }
 
 function showStandings() {
-    window.location.hash = 'standings'; renderToolbar("standings"); window.APP_STATE._activeStandingsTab = "gironi"; window.APP_STATE._finalStageLoaded = false;
-    document.getElementById("app").innerHTML = `<div class="page-container standings-page"><div class="page-title">CLASSIFICHE</div><div class="standings-tabs"><div class="standings-tab active" data-tab="gironi">GIRONI</div><div class="standings-tab" data-tab="fasefinale">FASE FINALE</div></div><div id="standingsContent"></div></div>`;
-    renderStandings(window.APP_CACHE.standings || {});
-    ApiClient.getStandings().then(data => { if (data) { window.APP_CACHE.standings = data; CacheManager.save(window.APP_CACHE); } if (window.APP_STATE._activeStandingsTab==="gironi") renderStandings(data); }).catch(console.error);
+    window.location.hash = 'standings';
+    renderToolbar("standings");
+    
+    // ✅ CHECK IMMEDIATO: se fase finale attiva, imposta tab corretta SUBITO
+    const isFinalStage = window.APP_CACHE.meta?.finalStageStarted === true;
+    window.APP_STATE._activeStandingsTab = isFinalStage ? "fasefinale" : "gironi";
+    window.APP_STATE._finalStageLoaded = !isFinalStage; // Se è finale, forza reload
+    
+    // Renderizza struttura base con tab già evidenziati correttamente
+    document.getElementById("app").innerHTML = `
+    <div class="page-container standings-page">
+        <div class="page-title">CLASSIFICHE</div>
+        <div class="standings-tabs">
+            <div class="standings-tab ${!isFinalStage ? 'active' : ''}" data-tab="gironi">GIRONI</div>
+            <div class="standings-tab ${isFinalStage ? 'active' : ''}" data-tab="fasefinale">FASE FINALE</div>
+        </div>
+        <div id="standingsContent"></div>
+    </div>`;
+    
+    // ✅ RENDERIZZA SUBITO in base allo stato
+    if (isFinalStage) {
+        // Mostra placeholder mentre carica
+        document.getElementById("standingsContent").innerHTML = 
+            `<div style="text-align:center;padding:40px;color:#888">Caricamento fase finale...</div>`;
+        loadFinalStage(); // Carica da backend
+    } else {
+        // Mostra cache immediata
+        renderStandings(window.APP_CACHE.standings || {});
+        // Poi aggiorna dal backend
+        ApiClient.getStandings().then(data => {
+            if (data) { 
+                window.APP_CACHE.standings = data; 
+                CacheManager.save(window.APP_CACHE); 
+            }
+            if (window.APP_STATE._activeStandingsTab === "gironi") {
+                renderStandings(data);
+            }
+        }).catch(console.error);
+    }
+    
+    // ✅ GESTIONE CLICK TAB
     document.querySelectorAll(".standings-tab").forEach(tab => {
-        tab.onclick = () => { document.querySelectorAll(".standings-tab").forEach(t => t.classList.remove("active")); tab.classList.add("active"); const type = tab.dataset.tab; window.APP_STATE._activeStandingsTab = type;
-            if (type === "gironi") { renderStandings(window.APP_CACHE.standings || {}); }
-            if (type === "fasefinale") { if (!window.APP_STATE._finalStageLoaded) { loadFinalStage(); window.APP_STATE._finalStageLoaded = true; } else { renderFinalStage(window.APP_CACHE.finalStage || []); } startStandingsLiveRefresh(); }
+        tab.onclick = () => {
+            // Rimuovi active da tutti
+            document.querySelectorAll(".standings-tab").forEach(t => t.classList.remove("active"));
+            // Attiva il tab cliccato
+            tab.classList.add("active");
+            
+            const type = tab.dataset.tab;
+            window.APP_STATE._activeStandingsTab = type;
+            
+            if (type === "gironi") {
+                renderStandings(window.APP_CACHE.standings || {});
+                // Refresh dati
+                ApiClient.getStandings().then(data => {
+                    if (data) { 
+                        window.APP_CACHE.standings = data; 
+                        CacheManager.save(window.APP_CACHE); 
+                    }
+                    if (window.APP_STATE._activeStandingsTab === "gironi") {
+                        renderStandings(data);
+                    }
+                }).catch(console.error);
+            }
+            else if (type === "fasefinale") {
+                if (!window.APP_STATE._finalStageLoaded) {
+                    loadFinalStage();
+                    window.APP_STATE._finalStageLoaded = true;
+                } else {
+                    renderFinalStage(window.APP_CACHE.finalStage || []);
+                }
+                // ✅ ASSICURA CHE IL POLLING SIA ATTIVO ANCHE PER FASE FINALE
+                startStandingsLiveRefresh();
+            }
         };
     });
-    startStandingsLiveRefresh();
+    
+    // ✅ AVVIA REFRESH LIVE (solo se non siamo già in fase finale con polling attivo)
+    if (!isFinalStage) {
+        startStandingsLiveRefresh();
+    }
 }
 
 function renderStandings(data) {
@@ -1358,57 +1495,72 @@ function bootAdminApp() {
     }, remaining);
   }
   
-  // 2. Caricamento dati in background
-  ApiClient.getInitialData()
-    .then(data => {
+    Promise.all([
+      ApiClient.getInitialData(),
+      ApiClient.isFinalStageStarted().catch(() => false)
+    ])
+    .then(([initialData, finalStageStarted]) => {
       dataLoaded = true;
-      console.log('✅ Dati iniziali caricati:', data);
+      clearTimeout(maxTimeout);
+      hideLoader();
       
-      if (data) {
+      if (initialData) {
         window.APP_CACHE = {
           ...window.APP_CACHE,
-          teams: data.teams || window.APP_CACHE.teams,
-          matches: data.matches || window.APP_CACHE.matches,
-          standings: data.standings || window.APP_CACHE.standings,
-          events: data.events || window.APP_CACHE.events,
-          fullTeams: data.fullTeams || window.APP_CACHE.fullTeams,
-          playersMap: data.playersMap || window.APP_CACHE.playersMap,
-          meta: { ...window.APP_CACHE.meta, initialized: true }
+          teams: initialData.teams || window.APP_CACHE.teams,
+          matches: initialData.matches || window.APP_CACHE.matches,
+          standings: initialData.standings || window.APP_CACHE.standings,
+          fullTeams: initialData.fullTeams || window.APP_CACHE.fullTeams,
+          playersMap: initialData.playersMap || window.APP_CACHE.playersMap,
+          meta: { 
+            ...window.APP_CACHE.meta, 
+            initialized: true,
+            finalStageStarted: finalStageStarted // ✅ SALVA SUBITO
+          }
         };
         hydrateMatches(window.APP_CACHE.matches || []);
         preloadRecentEvents();
         CacheManager.save(window.APP_CACHE);
       }
       
-      // ⭐ Nascondi loader con delay minimo PRIMA di mostrare UI
-      hideLoader();
-      
+      // ✅ ROUTING INTELLIGENTE: se fase finale attiva, vai subito lì
       if (!initialRouteHandled) {
         initialRouteHandled = true;
         const currentHash = window.location.hash || "#home";
+        
+        if (finalStageStarted && !currentHash.includes("standings")) {
+          // Se siamo in fase finale, prepara la tab corretta
+          window.APP_STATE._activeStandingsTab = "fasefinale";
+          window.APP_STATE._finalStageLoaded = false;
+        }
+        
         if (currentHash.includes("matches")) showMatches();
         else if (currentHash.includes("teams")) showTeams();
         else if (currentHash.includes("standings")) showStandings();
         else showHome();
       }
-      
-      // Controllo fase finale (background)
-      ApiClient.isFinalStageStarted()
-        .then(started => {
-          if (!window.APP_CACHE.meta) window.APP_CACHE.meta = {};
-          window.APP_CACHE.meta.finalStageStarted = started;
-        })
-        .catch(() => {});
     })
     .catch(error => {
       console.error('❌ Errore caricamento:', error);
       dataLoaded = true;
-      hideLoader(); // ⭐ Anche in caso di errore, rispetta il delay minimo
+      hideLoader();
       if (!initialRouteHandled) {
         initialRouteHandled = true;
         showHome();
       }
     });
+
+    // ✅ Segnala che il caricamento iniziale è completo
+window.APP_STATE._initialLoadComplete = true;
+
+// ✅ Esegui eventuali chiamate accodate
+const queue = window.APP_STATE._apiCallQueue || [];
+queue.forEach(item => {
+  if (Date.now() - item.timestamp < 5000) { // Solo se accodate negli ultimi 5s
+    item.fn();
+  }
+});
+window.APP_STATE._apiCallQueue = [];
     
   // 🔥 Global error handling
   window.addEventListener("error", e => console.error("Global error:", e.error||e.message));
