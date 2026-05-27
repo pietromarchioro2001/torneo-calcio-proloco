@@ -1221,7 +1221,8 @@ function renderPenaltyIndicators(events, match) {
     
     // 🔥 FILTRA: Cerca eventi con TIPO_EVENTO = "RIGORE" (Colonna G)
     const penaltyEvents = events.filter(e =>
-        (e.TIPO_EVENTO === 'RIGORE' || e.TIPO === 'RIGORE')
+      e.RIGORE_RESULT && 
+      (e.RIGORE_RESULT === 'RIGORE_SEGNO' || e.RIGORE_RESULT === 'RIGORE_SBAGLIO')
     );
     
     console.log(`✅ Eventi rigore trovati: ${penaltyEvents.length}`);
