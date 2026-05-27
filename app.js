@@ -704,30 +704,6 @@ function updateMVPBanner(match) {
     else { mvpBox.innerHTML = ""; mvpBox.classList.remove("show"); mvpBox.style.display = "none"; }
 }
 
-function updateDCRBanner(match) {
-    const dcrBox = document.getElementById("dcrBanner");
-    if (!dcrBox) return;
-    
-    const isFinished = match.STATO_PARTITA === "FINITA";
-    const rc = match.RIGORE_CASA !== undefined ? match.RIGORE_CASA : match.RIGORI_CASA;
-    const rt = match.RIGORE_TRASFERTA !== undefined ? match.RIGORE_TRASFERTA : match.RIGORI_TRASFERTA;
-    
-    // Controllo rigoroso per evitare "null - null"
-    const hasValidScore = (rc !== null && rc !== undefined && rc !== "" && 
-                           rt !== null && rt !== undefined && rt !== "");
-                           
-    if (isFinished && hasValidScore) {
-        dcrBox.innerHTML = `
-            <div class="dcr-title">⚽ CALCI DI RIGORE</div>
-            <div class="dcr-score">${rc} - ${rt}</div>
-        `;
-        dcrBox.classList.add("show");
-    } else {
-        dcrBox.innerHTML = "";
-        dcrBox.classList.remove("show");
-    }
-}
-
 // ============================================================================
 // ⚽ MATCHES FUNCTIONS
 // ============================================================================
@@ -1008,7 +984,6 @@ function renderMatchPage(match) {
                     <!-- AREA BANNER MVP E DCR (Pulita) -->
                     <div class="match-banners-area">
                         <div id="mvpBanner" class="mvp-banner"></div>
-                        <div id="dcrBanner" class="dcr-banner"></div>
                     </div>
     
                     <div class="cronaca-title center"><span>CRONACA</span></div>
@@ -1053,35 +1028,10 @@ function renderMatchPage(match) {
     // Carica giocatori
     loadPlayersForMatch(match);
     renderPenaltyIndicators(events, match);
-    updateDCRBanner(match);
 
     // Salva riferimento
     window.APP_STATE.lastMatch = match;
 
-    // 🔥 AGGIUNTA: RISULTATO RIGORI MINIMAL SOTTO LA CRONACA
-    const rigoreCasa = match.RIGORE_CASA || match.RIGORI_CASA;
-    const rigoreTrasf = match.RIGORE_TRASFERTA || match.RIGORI_TRASFERTA;
-    if (rigoreCasa !== undefined && rigoreTrasf !== undefined && (rigoreCasa > 0 || rigoreTrasf > 0)) {
-        const dcrResultDiv = document.createElement('div');
-        dcrResultDiv.className = 'dcr-result-minimal';
-        dcrResultDiv.innerHTML = `
-            <div class="dcr-text">
-                Rigori: <b>${match.SQUADRA_CASA} ${rigoreCasa} - ${rigoreTrasf} ${match.SQUADRA_TRASFERTA}</b>
-            </div>
-        `;
-        dcrResultDiv.style.cssText = `
-            text-align: center;
-            padding: 10px;
-            margin-top: 10px;
-            font-size: 14px;
-            color: #666;
-            border-top: 1px solid #eee;
-        `;
-        const timeline = document.getElementById('eventsTimeline');
-        if (timeline && timeline.parentNode) {
-            timeline.parentNode.insertBefore(dcrResultDiv, timeline.nextSibling);
-        }
-    }
 }
 
 function getSafeMatchData(matchId) {
@@ -1137,7 +1087,6 @@ async function toggleMatch() {
         } else { refreshStandingsDebounced(500); }
         if (freshMatch) {
             renderPenaltyIndicators(window.APP_CACHE.eventsByMatch[freshMatch.MATCH_ID] || [], freshMatch);
-            updateDCRBanner(freshMatch);
         }
     } catch (error) { console.error('Errore toggle match:', error); alert("Errore durante l'aggiornamento: " + error.message); match.STATO_PARTITA = newStatus === "FINITA" ? "LIVE" : "FINITA"; updateMatchUI(match); }
 }
@@ -1473,7 +1422,6 @@ function openRigoriPopup(directMode = false) {
             match.STATO_PARTITA = "FINITA"; match.RIGORI_CASA = rigoriState.casaScore; match.RIGORI_TRASFERTA = rigoriState.trasfScore;
             window.APP_STATE.lastMatch = match; updateMatchUI(match);
             renderPenaltyIndicators(window.APP_CACHE.eventsByMatch[match.MATCH_ID] || [], match);
-            updateDCRBanner(match);
             localStorage.removeItem(storageKey);
             setTimeout(() => { ApiClient.getMatchFull(match.MATCH_ID).then(data => { if (data?.match) { window.APP_STATE.lastMatch = data.match; renderMatchPage(data.match); } }); }, 500);
             alert("✅ Rigori conclusi! Risultato salvato."); document.getElementById('rigoriPopupOverlay')?.remove();
