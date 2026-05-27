@@ -1006,8 +1006,6 @@ function renderMatchPage(match) {
                 <div class="cronaca-title center"><span>CRONACA</span></div>
                 <div id="mvpBanner" class="mvp-banner"></div>
                 <div id="dcrBanner" class="dcr-banner"></div>
-                    <div class="mvp-title">🏆 MVP DEL MATCH</div>
-                    <div class="mvp-name"></div>
                 </div>
                 <div id="eventsTimeline" class="events-timeline">
                     <div id="eventsContent"></div>
@@ -1198,37 +1196,41 @@ function updateScoreFromEvents(matchId) {
     const scoreEl = document.querySelector(".score-big"); if (scoreEl) { scoreEl.textContent = `${golCasa} - ${golTrasferta}`; }
 }
 
-// Versione ottimizzata per la cronaca
 function renderPenaltyIndicators(events, match) {
     const timeline = document.getElementById('eventsTimeline');
     if (!timeline) return;
-    
+
     // Rimuovi eventuali indicatori precedenti
     const existing = document.getElementById('penalty-indicators');
     if (existing) existing.remove();
-    
+
+    // 🔥 FIX: Legge correttamente il tipo 'RIGORE' e il risultato dalla colonna E
     const penaltyEvents = events.filter(e => 
-        e.TIPO && (e.TIPO === 'RIGORE_SEGNO' || e.TIPO === 'RIGORE_SBAGLIO')
+        (e.TIPO_EVENTO === 'RIGORE' || e.TIPO === 'RIGORE') && 
+        e.RIGORE_RESULT
     );
+
     if (penaltyEvents.length === 0) return;
-    
+
     const casaId = String(match.CASA_ID || "").trim();
     const casaTiri = [], trasfTiri = [];
-    
+
     penaltyEvents.forEach(e => {
-        const isGoal = e.TIPO === 'RIGORE_SEGNO';
+        // Determina se è goal in base alla colonna 'RIGORE_RESULT'
+        const isGoal = (e.RIGORE_RESULT === 'RIGORE_SEGNO' || e.RIGORE_RESULT === 'SEGNO');
         if (String(e.TEAM_ID) === casaId) casaTiri.push(isGoal);
         else trasfTiri.push(isGoal);
     });
-    
+
     const createDots = (tiri) => tiri.map(isGoal => 
         `<span class="penalty-dot ${isGoal ? 'goal' : 'miss'}"></span>`
     ).join('');
-    
+
+    // Recupera punteggio dalle colonne J e K (RIGORE_CASA / RIGORE_TRASFERTA)
     const rc = match.RIGORE_CASA !== undefined ? match.RIGORE_CASA : match.RIGORI_CASA;
     const rt = match.RIGORE_TRASFERTA !== undefined ? match.RIGORE_TRASFERTA : match.RIGORI_TRASFERTA;
     const scoreText = (rc !== undefined && rt !== undefined) ? `${rc} - ${rt}` : '';
-    
+
     const indicatorsDiv = document.createElement('div');
     indicatorsDiv.id = 'penalty-indicators';
     indicatorsDiv.className = 'penalty-indicators-container';
@@ -1246,7 +1248,7 @@ function renderPenaltyIndicators(events, match) {
             </div>
         </div>
     `;
-    
+
     const cronacaTitle = document.querySelector('.cronaca-title');
     if (cronacaTitle && cronacaTitle.parentNode) {
         cronacaTitle.parentNode.insertBefore(indicatorsDiv, cronacaTitle.nextSibling);
