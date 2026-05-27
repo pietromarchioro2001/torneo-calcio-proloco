@@ -763,7 +763,6 @@ body {
 
 .mvp-player-row { background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%) !important; border: 2px solid #fbbf24; border-radius: 12px; position: relative; padding: 10px; margin: 4px 0; }
 .mvp-player-avatar-wrapper { position: relative; }
-.mvp-player-photo, .mvp-player-avatar { border: 3px solid #fbbf24 !important; box-shadow: 0 0 8px rgba(251, 191, 36, 0.4); border-radius: 50%; }
 
 /* Fix MVP photo dimensions */
 .mvp-player-photo {
