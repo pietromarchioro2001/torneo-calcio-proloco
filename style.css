@@ -4356,4 +4356,145 @@ div.bracket-match.final-match {
   100% { transform: scale(1); opacity: 1; }
 }
 
+/* ============================================
+   DCR BANNER & PENALTY INDICATORS
+============================================ */
+
+/* Card DCR (simile a MVP ma con stile granata) */
+#dcrBanner {
+    position: absolute;
+    left: 50%;
+    top: 135px; /* Sotto il banner MVP */
+    transform: translateX(-50%);
+    z-index: 20;
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-width: 220px;
+    max-width: 90%;
+    padding: 12px 20px;
+    background: #fff5f5;
+    border: 2px solid var(--granata);
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(122, 30, 44, 0.15);
+    transition: opacity 0.3s ease;
+}
+
+#dcrBanner.show {
+    display: flex;
+    animation: dcrAppear 0.4s ease forwards;
+}
+
+#dcrBanner .dcr-title {
+    font-size: 10px;
+    color: var(--granata);
+    font-weight: 700;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin-bottom: 4px;
+    opacity: 0.8;
+}
+
+#dcrBanner .dcr-score {
+    font-size: 24px;
+    color: var(--granata);
+    font-weight: 900;
+    letter-spacing: 2px;
+}
+
+@keyframes dcrAppear {
+    from { opacity: 0; transform: translateX(-50%) translateY(-10px); }
+    to { opacity: 1; transform: translateX(-50%) translateY(0); }
+}
+
+/* Aumenta spazio nella cronaca per fare posto ai due banner */
+.teams-events #eventsTimeline {
+    padding-top: 140px !important;
+}
+
+/* Contenitore Indicatori Rigori */
+.penalty-indicators-container {
+    width: 100%;
+    max-width: 600px;
+    margin: 15px auto 25px;
+    text-align: center;
+    background: #fafafa;
+    padding: 16px;
+    border-radius: 12px;
+    border: 1px solid #eee;
+}
+
+.penalty-header-label {
+    font-size: 11px;
+    font-weight: 700;
+    color: #666;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    margin-bottom: 12px;
+}
+
+.penalty-dots-row {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 20px;
+    flex-wrap: wrap;
+}
+
+.penalty-team-block {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    flex: 1;
+    min-width: 120px;
+}
+
+.penalty-team-name {
+    font-size: 12px;
+    font-weight: 700;
+    color: #333;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.penalty-dots {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+    justify-content: center;
+}
+
+.penalty-dot {
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    display: inline-block;
+    transition: transform 0.2s;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.15);
+}
+
+.penalty-dot.goal {
+    background: #22c55e; /* Verde rigore segnato */
+}
+
+.penalty-dot.miss {
+    background: #ef4444; /* Rosso rigore sbagliato */
+}
+
+.penalty-vs-score {
+    font-size: 22px;
+    font-weight: 900;
+    color: var(--granata);
+    min-width: 60px;
+    text-align: center;
+    letter-spacing: 1px;
+}
+
+/* Rimuovi eventuali stili residui del vecchio banner bugato */
+#dcr-banner { display: none !important; }
+.dcr-result-card { display: none !important; }
+.dcr-result-minimal { display: none !important; }
+
 
