@@ -687,11 +687,27 @@ body {
 
 /* MVP & DCR Banners (Fixed Layout) */
 #mvpBanner {
-  position: relative !important; top: auto !important; left: auto !important; transform: none !important;
-  display: none; flex-direction: column; align-items: center; justify-content: center;
-  min-width: 240px; max-width: 90%; padding: 14px 24px;
-  background: #fffbeb; border: 2px solid #fbbf24; border-radius: 12px;
-  box-shadow: 0 4px 16px rgba(251, 191, 36, 0.25); transition: opacity 0.3s ease;
+    position: absolute;
+    left: 50%;
+    top: 75px;  /* Distanza dal titolo CRONACA */
+    transform: translateX(-50%);
+    z-index: 20;
+    
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    
+    min-width: 240px;
+    max-width: 90%;
+    padding: 14px 24px;
+    
+    background: #fffbeb;
+    border: 2px solid #fbbf24;
+    border-radius: 12px;
+    box-shadow: 0 4px 16px rgba(251, 191, 36, 0.25);
+    
+    transition: opacity 0.3s ease;
 }
 #mvpBanner.show { display: flex !important; animation: mvpAppear 0.5s ease forwards; }
 #mvpBanner .mvp-title { font-size: 11px; color: #b45309; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 4px; }
