@@ -704,6 +704,30 @@ function updateMVPBanner(match) {
     else { mvpBox.innerHTML = ""; mvpBox.classList.remove("show"); mvpBox.style.display = "none"; }
 }
 
+function updateDCRBanner(match) {
+    const dcrBox = document.getElementById("dcrBanner");
+    if (!dcrBox) return;
+    
+    const isFinished = match.STATO_PARTITA === "FINITA";
+    const rc = match.RIGORE_CASA !== undefined ? match.RIGORE_CASA : match.RIGORI_CASA;
+    const rt = match.RIGORE_TRASFERTA !== undefined ? match.RIGORE_TRASFERTA : match.RIGORI_TRASFERTA;
+    
+    // Controllo rigoroso per evitare "null - null"
+    const hasValidScore = (rc !== null && rc !== undefined && rc !== "" && 
+                           rt !== null && rt !== undefined && rt !== "");
+                           
+    if (isFinished && hasValidScore) {
+        dcrBox.innerHTML = `
+            <div class="dcr-title">⚽ CALCI DI RIGORE</div>
+            <div class="dcr-score">${rc} - ${rt}</div>
+        `;
+        dcrBox.classList.add("show");
+    } else {
+        dcrBox.innerHTML = "";
+        dcrBox.classList.remove("show");
+    }
+}
+
 // ============================================================================
 // ⚽ MATCHES FUNCTIONS
 // ============================================================================
@@ -952,20 +976,6 @@ function renderMatchPage(match) {
             </div>
             <!-- PUNTEGGIO PRINCIPALE -->
             <div class="score-big">${match.GOL_CASA || 0} - ${match.GOL_TRASFERTA || 0}</div>
-            <!-- 🔥 CARD RISULTATO RIGORI (DCR) -->
-            ${(() => {
-                const rc = match.RIGORE_CASA !== undefined ? match.RIGORE_CASA : match.RIGORI_CASA;
-                const rt = match.RIGORE_TRASFERTA !== undefined ? match.RIGORE_TRASFERTA : match.RIGORI_TRASFERTA;
-                if (rc !== null && rc !== undefined && rc !== "" &&
-                    rt !== null && rt !== undefined && rt !== "") {
-                    return `
-                    <div class="dcr-result-card" style="margin-top: 10px; background: #fff3cd; color: #856404; padding: 8px 15px; border-radius: 8px; font-size: 14px; font-weight: bold; display: inline-block;">
-                        ⚽ DCR: ${rc} - ${rt}
-                    </div>
-                    `;
-                }
-                return '';
-            })()}
             <div class="match-status" id="matchStatus"></div>
         </div>
         <div class="team-big right">
@@ -994,7 +1004,8 @@ function renderMatchPage(match) {
                     </div>
                 </div>
                 <div class="cronaca-title center"><span>CRONACA</span></div>
-                <div id="mvpBanner" class="mvp-banner">
+                <div id="mvpBanner" class="mvp-banner"></div>
+                <div id="dcrBanner" class="dcr-banner"></div>
                     <div class="mvp-title">🏆 MVP DEL MATCH</div>
                     <div class="mvp-name"></div>
                 </div>
@@ -1024,31 +1035,6 @@ function renderMatchPage(match) {
     // Aggiorna UI
     updateMatchUI(match);
 
-    // 🔥 BANNER DCR (Appare solo se finita e ci sono dati rigori)
-    if (match.STATO_PARTITA === "FINITA" && match.RIGORI_CASA !== undefined) {
-        const header = document.querySelector('.match-header-big');
-        const existing = document.getElementById('dcr-banner');
-        if (existing) existing.remove();
-        const dcrBanner = document.createElement('div');
-        dcrBanner.id = 'dcr-banner';
-        dcrBanner.style.cssText = `
-            width: 100%;
-            text-align: center;
-            margin-top: 15px;
-            padding: 10px;
-            background: linear-gradient(90deg, #fff 0%, #f9f9f9 100%);
-            border: 2px solid #7a1e2c;
-            border-radius: 12px;
-            color: #7a1e2c;
-            font-weight: 800;
-            font-size: 1.2rem;
-            letter-spacing: 1px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-        `;
-        dcrBanner.innerHTML = `⚽ CALCI DI RIGORE: ${match.RIGORI_CASA} - ${match.RIGORI_TRASFERTA}`;
-        header.appendChild(dcrBanner);
-    }
-
     if (match.STATO_PARTITA === "FINITA" && match.MVP) {
         updateMVPBanner(match);
     }
@@ -1058,6 +1044,8 @@ function renderMatchPage(match) {
 
     // Carica giocatori
     loadPlayersForMatch(match);
+    renderPenaltyIndicators(events, match);
+    updateDCRBanner(match);
 
     // Salva riferimento
     window.APP_STATE.lastMatch = match;
@@ -1139,6 +1127,10 @@ async function toggleMatch() {
             console.log("🏆 Partita conclusa. Gestione MVP in background...");
             (async () => { try { if (!freshMatch) return; await submitAllMVPVotes(freshMatch.MATCH_ID); await ApiClient.finalizeMVP(freshMatch.MATCH_ID); pollForMVPUpdate(freshMatch.MATCH_ID); } catch (err) { console.error("Errore background MVP:", err); } })();
         } else { refreshStandingsDebounced(500); }
+        if (freshMatch) {
+            renderPenaltyIndicators(window.APP_CACHE.eventsByMatch[freshMatch.MATCH_ID] || [], freshMatch);
+            updateDCRBanner(freshMatch);
+        }
     } catch (error) { console.error('Errore toggle match:', error); alert("Errore durante l'aggiornamento: " + error.message); match.STATO_PARTITA = newStatus === "FINITA" ? "LIVE" : "FINITA"; updateMatchUI(match); }
 }
 
@@ -1206,83 +1198,59 @@ function updateScoreFromEvents(matchId) {
     const scoreEl = document.querySelector(".score-big"); if (scoreEl) { scoreEl.textContent = `${golCasa} - ${golTrasferta}`; }
 }
 
+// Versione ottimizzata per la cronaca
 function renderPenaltyIndicators(events, match) {
-  const timeline = document.getElementById('eventsTimeline');
-  if (!timeline) return;
-  
-  // Filtra solo eventi rigore
-  const penaltyEvents = events.filter(e => 
-    e.TIPO && (e.TIPO.includes('RIGORE_SEGNO') || e.TIPO.includes('RIGORE_SBAGLIO'))
-  );
-  
-  if (penaltyEvents.length === 0) return;
-  
-  // Rimuovi eventuali indicatori precedenti
-  const existing = document.getElementById('penalty-indicators');
-  if (existing) existing.remove();
-  
-  // Crea container indicatori
-  const indicatorsDiv = document.createElement('div');
-  indicatorsDiv.id = 'penalty-indicators';
-  indicatorsDiv.style.cssText = `
-    margin: 20px 0;
-    padding: 15px;
-    background: #f8f8f8;
-    border-radius: 8px;
-    text-align: center;
-  `;
-  
-  // Organizza tiri per squadra
-  const casaId = String(match.CASA_ID || "").trim();
-  const casaTiri = [];
-  const trasfTiri = [];
-  
-  penaltyEvents.forEach(e => {
-    const isGoal = e.TIPO === 'RIGORE_SEGNO';
-    const isCasa = String(e.TEAM_ID) === casaId;
+    const timeline = document.getElementById('eventsTimeline');
+    if (!timeline) return;
     
-    if (isCasa) {
-      casaTiri.push(isGoal);
-    } else {
-      trasfTiri.push(isGoal);
-    }
-  });
-  
-  // Crea HTML bollini
-  const createDots = (tiri) => {
-    return tiri.map(isGoal => 
-      `<span style="display:inline-block;width:16px;height:16px;border-radius:50%;margin:0 3px;background:${isGoal ? '#22c55e' : '#ef4444'};box-shadow:0 2px 4px rgba(0,0,0,0.2);"></span>`
+    // Rimuovi eventuali indicatori precedenti
+    const existing = document.getElementById('penalty-indicators');
+    if (existing) existing.remove();
+    
+    const penaltyEvents = events.filter(e => 
+        e.TIPO && (e.TIPO === 'RIGORE_SEGNO' || e.TIPO === 'RIGORE_SBAGLIO')
+    );
+    if (penaltyEvents.length === 0) return;
+    
+    const casaId = String(match.CASA_ID || "").trim();
+    const casaTiri = [], trasfTiri = [];
+    
+    penaltyEvents.forEach(e => {
+        const isGoal = e.TIPO === 'RIGORE_SEGNO';
+        if (String(e.TEAM_ID) === casaId) casaTiri.push(isGoal);
+        else trasfTiri.push(isGoal);
+    });
+    
+    const createDots = (tiri) => tiri.map(isGoal => 
+        `<span class="penalty-dot ${isGoal ? 'goal' : 'miss'}"></span>`
     ).join('');
-  };
-  
-  // Recupera punteggi finali
-  const rigoriCasa = match.RIGORI_CASA !== undefined ? match.RIGORI_CASA : match.RIGORE_CASA;
-  const rigoriTrasf = match.RIGORI_TRASFERTA !== undefined ? match.RIGORI_TRASFERTA : match.RIGORE_TRASFERTA;
-  
-  indicatorsDiv.innerHTML = `
-    <div style="font-size:12px;font-weight:700;color:#666;margin-bottom:10px;text-transform:uppercase;letter-spacing:1px;">
-      Sequenza Calci di Rigore
-    </div>
-    <div style="display:flex;justify-content:center;align-items:center;gap:40px;margin-bottom:10px;">
-      <div style="text-align:center;">
-        <div style="font-size:11px;font-weight:600;color:#333;margin-bottom:5px;">${match.SQUADRA_CASA}</div>
-        <div>${createDots(casaTiri)}</div>
-      </div>
-      <div style="font-size:24px;font-weight:900;color:#7a1e2c;">
-        ${rigoriCasa || casaTiri.filter(t=>t).length} - ${rigoriTrasf || trasfTiri.filter(t=>t).length}
-      </div>
-      <div style="text-align:center;">
-        <div style="font-size:11px;font-weight:600;color:#333;margin-bottom:5px;">${match.SQUADRA_TRASFERTA}</div>
-        <div>${createDots(trasfTiri)}</div>
-      </div>
-    </div>
-  `;
-  
-  // Inserisci dopo la cronaca
-  const cronacaTitle = document.querySelector('.cronaca-title');
-  if (cronacaTitle && cronacaTitle.parentNode) {
-    cronacaTitle.parentNode.insertBefore(indicatorsDiv, cronacaTitle.nextSibling);
-  }
+    
+    const rc = match.RIGORE_CASA !== undefined ? match.RIGORE_CASA : match.RIGORI_CASA;
+    const rt = match.RIGORE_TRASFERTA !== undefined ? match.RIGORE_TRASFERTA : match.RIGORI_TRASFERTA;
+    const scoreText = (rc !== undefined && rt !== undefined) ? `${rc} - ${rt}` : '';
+    
+    const indicatorsDiv = document.createElement('div');
+    indicatorsDiv.id = 'penalty-indicators';
+    indicatorsDiv.className = 'penalty-indicators-container';
+    indicatorsDiv.innerHTML = `
+        <div class="penalty-header-label">SEQUENZA TIRI</div>
+        <div class="penalty-dots-row">
+            <div class="penalty-team-block">
+                <div class="penalty-team-name">${match.SQUADRA_CASA}</div>
+                <div class="penalty-dots">${createDots(casaTiri)}</div>
+            </div>
+            <div class="penalty-vs-score">${scoreText}</div>
+            <div class="penalty-team-block">
+                <div class="penalty-team-name">${match.SQUADRA_TRASFERTA}</div>
+                <div class="penalty-dots">${createDots(trasfTiri)}</div>
+            </div>
+        </div>
+    `;
+    
+    const cronacaTitle = document.querySelector('.cronaca-title');
+    if (cronacaTitle && cronacaTitle.parentNode) {
+        cronacaTitle.parentNode.insertBefore(indicatorsDiv, cronacaTitle.nextSibling);
+    }
 }
 
 // ============================================================================
@@ -1467,6 +1435,8 @@ function openRigoriPopup(directMode = false) {
             await ApiClient.saveRigoriResults(rigoriData);
             match.STATO_PARTITA = "FINITA"; match.RIGORI_CASA = rigoriState.casaScore; match.RIGORI_TRASFERTA = rigoriState.trasfScore;
             window.APP_STATE.lastMatch = match; updateMatchUI(match);
+            renderPenaltyIndicators(window.APP_CACHE.eventsByMatch[match.MATCH_ID] || [], match);
+            updateDCRBanner(match);
             localStorage.removeItem(storageKey);
             setTimeout(() => { ApiClient.getMatchFull(match.MATCH_ID).then(data => { if (data?.match) { window.APP_STATE.lastMatch = data.match; renderMatchPage(data.match); } }); }, 500);
             alert("✅ Rigori conclusi! Risultato salvato."); document.getElementById('rigoriPopupOverlay')?.remove();
