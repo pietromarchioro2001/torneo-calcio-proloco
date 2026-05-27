@@ -1197,36 +1197,53 @@ function updateScoreFromEvents(matchId) {
 }
 
 function renderPenaltyIndicators(events, match) {
+    console.log("🔍 [DEBUG] Rendering Penalty Indicators...");
+    
+    // 1. Trova il contenitore corretto
     const timeline = document.getElementById('eventsTimeline');
-    if (!timeline) return;
+    if (!timeline) {
+        console.error("❌ eventsTimeline element not found!");
+        return;
+    }
 
-    // Rimuovi eventuali indicatori precedenti
+    // Rimuovi eventuali indicatori vecchi
     const existing = document.getElementById('penalty-indicators');
     if (existing) existing.remove();
 
-    // 🔥 FIX: Legge correttamente il tipo 'RIGORE' e il risultato dalla colonna E
+    // 2. Filtra gli eventi basandosi SULLA STRUTTURA DEL TUO FOGLIO
+    // Colonna G (Tipo) = 'RIGORE' E Colonna E (Rigore Result) esiste
     const penaltyEvents = events.filter(e => 
         (e.TIPO_EVENTO === 'RIGORE' || e.TIPO === 'RIGORE') && 
         e.RIGORE_RESULT
     );
 
-    if (penaltyEvents.length === 0) return;
+    if (penaltyEvents.length === 0) {
+        console.log("⚠️ Nessun evento rigore trovato nel foglio.");
+        return;
+    }
+
+    console.log(`✅ Trovati ${penaltyEvents.length} eventi rigore.`);
 
     const casaId = String(match.CASA_ID || "").trim();
-    const casaTiri = [], trasfTiri = [];
+    const casaTiri = [];
+    const trasfTiri = [];
 
+    // 3. Organizza i tiri
     penaltyEvents.forEach(e => {
-        // Determina se è goal in base alla colonna 'RIGORE_RESULT'
+        // Controlla il risultato dalla Colonna E
         const isGoal = (e.RIGORE_RESULT === 'RIGORE_SEGNO' || e.RIGORE_RESULT === 'SEGNO');
-        if (String(e.TEAM_ID) === casaId) casaTiri.push(isGoal);
+        const isCasa = String(e.TEAM_ID) === casaId;
+        
+        if (isCasa) casaTiri.push(isGoal);
         else trasfTiri.push(isGoal);
     });
 
+    // 4. Crea l'HTML dei pallini
     const createDots = (tiri) => tiri.map(isGoal => 
         `<span class="penalty-dot ${isGoal ? 'goal' : 'miss'}"></span>`
     ).join('');
 
-    // Recupera punteggio dalle colonne J e K (RIGORE_CASA / RIGORE_TRASFERTA)
+    // Leggi i punteggi finali dalle colonne J/K
     const rc = match.RIGORE_CASA !== undefined ? match.RIGORE_CASA : match.RIGORI_CASA;
     const rt = match.RIGORE_TRASFERTA !== undefined ? match.RIGORE_TRASFERTA : match.RIGORI_TRASFERTA;
     const scoreText = (rc !== undefined && rt !== undefined) ? `${rc} - ${rt}` : '';
@@ -1234,6 +1251,7 @@ function renderPenaltyIndicators(events, match) {
     const indicatorsDiv = document.createElement('div');
     indicatorsDiv.id = 'penalty-indicators';
     indicatorsDiv.className = 'penalty-indicators-container';
+    
     indicatorsDiv.innerHTML = `
         <div class="penalty-header-label">SEQUENZA TIRI</div>
         <div class="penalty-dots-row">
@@ -1249,9 +1267,14 @@ function renderPenaltyIndicators(events, match) {
         </div>
     `;
 
+    // 5. Inserisci nella pagina
     const cronacaTitle = document.querySelector('.cronaca-title');
     if (cronacaTitle && cronacaTitle.parentNode) {
+        // Inserisci subito dopo la scritta "CRONACA"
         cronacaTitle.parentNode.insertBefore(indicatorsDiv, cronacaTitle.nextSibling);
+    } else {
+        // Se manca il titolo, mettilo in cima alla timeline
+        timeline.insertBefore(indicatorsDiv, timeline.firstChild);
     }
 }
 
