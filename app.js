@@ -1207,24 +1207,34 @@ function updateScoreFromEvents(matchId) {
 }
 
 function renderPenaltyIndicators(events, match) {
-    console.log("🔍 [DEBUG] Rendering Penalty Indicators...");
+    console.log("🔍 DEBUG RIGORI - Eventi totali:", events.length);
+    console.log("🔍 Match ID:", match.MATCH_ID);
     
     const timeline = document.getElementById('eventsTimeline');
-    if (!timeline) return;
-
+    if (!timeline) {
+        console.error("❌ eventsTimeline non trovato!");
+        return;
+    }
+    
     // Rimuovi eventuali indicatori precedenti
     const existing = document.getElementById('penalty-indicators');
     if (existing) existing.remove();
-
-    //  FIX: Legge correttamente la struttura del tuo foglio
-    // Colonna G (Tipo) = 'RIGORE' E Colonna E (Rigore Result) esiste
-    const penaltyEvents = events.filter(e => 
-        (e.TIPO_EVENTO === 'RIGORE' || e.TIPO === 'RIGORE') && 
-        e.RIGORE_RESULT
-    );
-
+    
+    // Filtra eventi rigore - PROVA ENTRAMBE LE COLONNE
+    const penaltyEvents = events.filter(e => {
+        const isRigoreTipo = e.TIPO && (e.TIPO === 'RIGORE_SEGNO' || e.TIPO === 'RIGORE_SBAGLIO');
+        const isRigoreTipoEvento = e.TIPO_EVENTO && (e.TIPO_EVENTO === 'RIGORE_SEGNO' || e.TIPO_EVENTO === 'RIGORE_SBAGLIO');
+        return isRigoreTipo || isRigoreTipoEvento;
+    });
+    
+    console.log("✅ Eventi rigore trovati:", penaltyEvents.length);
+    console.log("📊 Dati rigori match:", { 
+        casa: match.RIGORE_CASA || match.RIGORI_CASA, 
+        trasf: match.RIGORE_TRASFERTA || match.RIGORI_TRASFERTA 
+    });
+    
     if (penaltyEvents.length === 0) {
-        console.log("⚠️ Nessun evento rigore trovato.");
+        console.log("⚠️ Nessun evento rigore nel foglio EVENTI_PARTITA");
         return;
     }
 
