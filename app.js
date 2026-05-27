@@ -1283,11 +1283,11 @@ function renderPenaltyIndicators(events, match) {
             </div>
         </div>
     `;
-    
-    // Inserisci dopo CRONACA
-    const cronacaTitle = document.querySelector('.cronaca-title');
-    if (cronacaTitle && cronacaTitle.parentNode) {
-        cronacaTitle.parentNode.insertBefore(indicatorsDiv, cronacaTitle.nextSibling);
+
+    // Inserisci DOPO gli eventi (sotto la timeline)
+    const timeline = document.getElementById('eventsTimeline');
+    if (timeline && timeline.parentNode) {
+        timeline.parentNode.insertBefore(indicatorsDiv, timeline.nextSibling);
     } else {
         timeline.insertBefore(indicatorsDiv, timeline.firstChild);
     }
