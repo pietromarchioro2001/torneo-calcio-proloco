@@ -356,6 +356,7 @@ function getNextMatchCard() {
     const now = new Date();
     const nowStr = formatLocalDate(now);
 
+    // 1. Cerca partite LIVE
     const liveMatch = matches.find(m => m.STATO_PARTITA === "LIVE" || m.STATO_PARTITA === "SUPP" || m.STATO_PARTITA === "RIGORI");
     if (liveMatch) {
         let matchWithScore = { ...liveMatch };
@@ -367,6 +368,7 @@ function getNextMatchCard() {
         return renderHomeMatchCard(matchWithScore, liveMatch.STATO_PARTITA);
     }
 
+    // 2. Cerca partite future (oggi o domani)
     const todayMatches = matches.filter(m => {
         const matchDate = String(m.DATA || "").slice(0, 10);
         return matchDate >= nowStr && m.STATO_PARTITA !== "FINITA";
@@ -386,10 +388,12 @@ function getNextMatchCard() {
         return renderHomeMatchCard(nextMatch, false);
     }
 
-    return `<div class="home-next-match" style="opacity:0.5;pointer-events:none;cursor:default">
-        <div class="home-match-label">NESSUNA PARTITA IN PROGRAMMA</div>
-        <div class="home-match-content"><div class="home-match-teams"><span class="home-team">-</span><span class="home-vs">VS</span><span class="home-team">-</span></div>
-        <div class="home-match-info">Prossima partita non disponibile</div></div></div>`;
+    // 3. Nessun match -> Solo scritta semplice
+    return `<div class="home-next-match" style="opacity:0.7; pointer-events:none; cursor:default; justify-content: center; padding: 15px;">
+        <div style="text-align:center; color: #666; font-size: 14px; letter-spacing: 1px; font-weight: 600; text-transform: uppercase;">
+            Nessuna partita in programma
+        </div>
+    </div>`;
 }
 
 function calculateMatchScore(match, events) {
