@@ -273,7 +273,8 @@ window.APP_STATE = {
     isLoading: { matches: false, standings: false, team: null },
     _currentOpenTeam: null, _pendingFinalMatches: null, _standingsInterval: null,
     _activeStandingsTab: "gironi", _finalStageLoaded: false, _standingsActive: false,
-    _currentPlayerPreviewUrl: null, _matchRequestNonce: 0
+    _currentPlayerPreviewUrl: null, _matchRequestNonce: 0,
+    activeMatchTab: 'diretta'
 };
 
 // 🔥 AGGIUNGI in GLOBAL STATE (dopo window.APP_STATE)
@@ -1018,10 +1019,13 @@ function renderMatchPage(match) {
     const isFinished = match.STATO_PARTITA === "FINITA";
     const finalStageStarted = window.APP_CACHE.meta?.finalStageStarted;
 
-    // Tab MVP
-    let mvpTabHtml = isLive
-        ? `<div class="mt-btn" data-tab="mvp">MVP</div>`
-        : `<div class="mt-btn disabled" data-tab="mvp">🏆 MVP</div>`;
+    // 🔥 TAB ATTIVA DINAMICA
+    const currentTab = window.APP_STATE.activeMatchTab || 'diretta';
+
+    // Tab MVP con classe active dinamica
+    const isMVPDisabled = !isLive;
+    const mvpActiveClass = currentTab === 'mvp' ? 'active' : (isMVPDisabled ? 'disabled' : '');
+    const mvpTabHtml = `<div class="mt-btn ${mvpActiveClass}" data-tab="mvp">${isLive ? "MVP" : "🏆 MVP"}</div>`;
 
     // Pulsanti evento
     const canAddEvents = (match.STATO_PARTITA === "LIVE" || match.STATO_PARTITA === "SUPP") &&
@@ -1036,6 +1040,7 @@ function renderMatchPage(match) {
         ? "style=\"opacity:0.5;pointer-events:none;cursor:not-allowed\""
         : "";
 
+    // 🔥 TEMPLATE HTML CON CLASSI ACTIVE DINAMICHE
     document.getElementById("app").innerHTML = `
     <div class="match-page">
         <div class="match-header-big">
@@ -1065,13 +1070,13 @@ function renderMatchPage(match) {
         </div>
     
         <div class="match-toolbar">
-            <div class="mt-btn active" data-tab="diretta">DIRETTA</div>
-            <div class="mt-btn" data-tab="giocatori">GIOCATORI</div>
+            <div class="mt-btn ${currentTab === 'diretta' ? 'active' : ''}" data-tab="diretta">DIRETTA</div>
+            <div class="mt-btn ${currentTab === 'giocatori' ? 'active' : ''}" data-tab="giocatori">GIOCATORI</div>
             ${mvpTabHtml}
         </div>
     
         <div class="match-content">
-            <div class="tab-content active" id="tab-diretta">
+            <div class="tab-content ${currentTab === 'diretta' ? 'active' : ''}" id="tab-diretta">
                 <div class="teams-events">
                     <div class="events-actions">
                         <div class="left">
@@ -1086,7 +1091,6 @@ function renderMatchPage(match) {
                         </div>
                     </div>
     
-                    <!-- AREA BANNER MVP E DCR (Pulita) -->
                     <div class="match-banners-area">
                         <div id="mvpBanner" class="mvp-banner"></div>
                     </div>
@@ -1099,13 +1103,13 @@ function renderMatchPage(match) {
                 </div>
             </div>
     
-            <div class="tab-content" id="tab-giocatori">
+            <div class="tab-content ${currentTab === 'giocatori' ? 'active' : ''}" id="tab-giocatori">
                 <div class="players-columns" id="playersColumns">
                     <div style="text-align:center;padding:40px;color:#888;grid-column:1/-1">Caricamento giocatori...</div>
                 </div>
             </div>
     
-            <div class="tab-content" id="tab-mvp">
+            <div class="tab-content ${currentTab === 'mvp' ? 'active' : ''}" id="tab-mvp">
                 <div class="players-columns" id="mvpColumns">
                     <div style="text-align:center;padding:40px;color:#888;grid-column:1/-1">
                         ${isLive ? "Vota il MVP" : isFinished ? "MVP della partita" : "Disponibile durante la partita"}
@@ -1136,7 +1140,6 @@ function renderMatchPage(match) {
 
     // Salva riferimento
     window.APP_STATE.lastMatch = match;
-
 }
 
 function getSafeMatchData(matchId) {
@@ -1632,7 +1635,7 @@ function startMatchLiveRefresh() {
                 console.error(`❌ Errore refresh match ${match.MATCH_ID}:`, error);
             }
         }
-    }, 3000); // ✅ Refresh ogni 3 secondi
+    }, 5000); // ✅ Refresh ogni 3 secondi
 }
 
 function stopMatchLiveRefresh() {
@@ -2067,6 +2070,7 @@ document.addEventListener("click", function(e) {
     if (e.target.classList.contains("mt-btn")) { 
         if (e.target.classList.contains("disabled")) return; 
         const tab = e.target.dataset.tab; 
+        window.APP_STATE.activeMatchTab = tab;
         document.querySelectorAll(".mt-btn").forEach(b => b.classList.remove("active")); 
         e.target.classList.add("active"); 
         document.querySelectorAll(".tab-content").forEach(t => t.classList.remove("active")); 
