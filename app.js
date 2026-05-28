@@ -389,7 +389,7 @@ function getNextMatchCard() {
     }
 
     // 3. Nessun match -> Solo scritta semplice
-    return `<div class="home-next-match" style="opacity:0.7; pointer-events:none; cursor:default; justify-content: center; padding: 15px;">
+    return `<div class="home-next-match" style="opacity:0.7; pointer-events:none; cursor:default; border: 1px solid rgba(122, 30, 44, 0.12); background: rgba(255,255,255,0.98);">
         <div style="text-align:center; color: #666; font-size: 14px; letter-spacing: 1px; font-weight: 600; text-transform: uppercase;">
             Nessuna partita in programma
         </div>
