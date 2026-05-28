@@ -1182,42 +1182,37 @@ body {
   box-shadow: 0 8px 20px rgba(122,30,44,0.25);
 }
 
-/* Finali a riposo (prima del fischio) */
+.bracket-match.final-match, .bracket-placeholder.final-match {
+  left: 50%; margin-left: -100px; top: 300px; z-index: 10;
+  /* IL BORDO ORO È STATO RIMOSSO QUI */
+}
+
+/* 2. Sfondo ORO per la Finale 1-2 (stato normale) */
 .bracket-match.final-match {
-  background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%);
-  box-shadow: 0 4px 15px rgba(212, 175, 55, 0.15);
-  border: 1px solid rgba(0,0,0,0.06);
+  background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%) !important;
+  border: 1px solid rgba(0,0,0,0.08) !important;
 }
 
+/* 3. Sfondo BRONZO per la Finale 3-4 (stato normale) */
 .bracket-match.third-place {
-  background: linear-gradient(135deg, #fff8f0 0%, #fed7aa 100%);
-  box-shadow: 0 4px 15px rgba(180, 83, 9, 0.15);
-  border: 1px solid rgba(0,0,0,0.06);
+  background: linear-gradient(135deg, #fff8f0 0%, #fed7aa 100%) !important;
+  border: 1px solid rgba(0,0,0,0.08) !important;
 }
 
-/* 🔥 FINALI LIVE - ORO (1°-2°) */
+/* 4. Stili LIVE (quando la partita è in corso) */
 .bracket-match.live-gold {
   background: linear-gradient(135deg, #fffbeb 0%, #fde047 100%) !important;
   border: 2px solid #ca8a04 !important;
   animation: liveGoldGlow 1.5s infinite !important;
 }
-.bracket-match.live-gold .bracket-score.live {
-  color: #b8860b !important;
-  text-shadow: 0 0 8px rgba(212, 175, 55, 0.6);
-}
 
-/* 🔥 FINALI LIVE - BRONZO (3°-4°) */
 .bracket-match.live-bronze {
   background: linear-gradient(135deg, #fff8f0 0%, #fdba74 100%) !important;
   border: 2px solid #9a3412 !important;
   animation: liveBronzeGlow 1.5s infinite !important;
 }
-.bracket-match.live-bronze .bracket-score.live {
-  color: #a0522d !important;
-  text-shadow: 0 0 8px rgba(205, 127, 50, 0.6);
-}
 
-/*  Animazioni pulsazione (solo ombra, no transform per mantenere l'hover) */
+/* 5. Animazioni pulsazione */
 @keyframes liveGoldGlow {
   0%, 100% { box-shadow: 0 0 20px rgba(202, 138, 4, 0.4); }
   50% { box-shadow: 0 0 35px rgba(202, 138, 4, 0.75); }
