@@ -1228,6 +1228,40 @@ body {
     50% { box-shadow: 0 0 35px rgba(154, 52, 18, 0.7); transform: scale(1.02); }
 }
 
+/* Finale 1°-2° LIVE -> ORO */
+.bracket-match.live-gold {
+    border: 2px solid #d4af37 !important;
+    box-shadow: 0 0 15px rgba(212, 175, 55, 0.5) !important;
+    animation: borderPulseGold 2s infinite;
+}
+/* Punteggio Oro */
+.bracket-match.live-gold .bracket-score.live {
+    color: #b8860b !important; /* Oro scuro per leggibilità */
+    text-shadow: 0 0 8px rgba(212, 175, 55, 0.6);
+}
+
+/* Finale 3°-4° LIVE -> BRONZO */
+.bracket-match.live-bronze {
+    border: 2px solid #cd7f32 !important;
+    box-shadow: 0 0 15px rgba(205, 127, 50, 0.5) !important;
+    animation: borderPulseBronze 2s infinite;
+}
+/* Punteggio Bronzo */
+.bracket-match.live-bronze .bracket-score.live {
+    color: #a0522d !important; /* Bronzo scuro per leggibilità */
+    text-shadow: 0 0 8px rgba(205, 127, 50, 0.6);
+}
+
+/* Animazioni pulsazione */
+@keyframes borderPulseGold {
+    0%, 100% { box-shadow: 0 0 15px rgba(212, 175, 55, 0.4); }
+    50% { box-shadow: 0 0 25px rgba(212, 175, 55, 0.8); }
+}
+@keyframes borderPulseBronze {
+    0%, 100% { box-shadow: 0 0 15px rgba(205, 127, 50, 0.4); }
+    50% { box-shadow: 0 0 25px rgba(205, 127, 50, 0.8); }
+}
+
 /* =============================================================================================
    🎬 12. ANIMAZIONI & UTILITÀ
 =============================================================================================== */
