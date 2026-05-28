@@ -3,7 +3,7 @@
 // ============================================================================
 const CONFIG = {
     // 🔥 SOSTITUISCI CON IL TUO URL APPS SCRIPT WEB APP
-    BACKEND_URL: 'https://script.google.com/macros/s/AKfycbzJqGhnz_dMzFGiQR-ENMj_9ylXJg9FSNsSt-32yEkkhY9jNQsjxhXU3aPmVMlEpnFD/exec',
+    BACKEND_URL: 'https://script.google.com/macros/s/AKfycbyH1yksF3SkgpPhOTwItH7ouPoSdHxuSAf8hSuGCjjZ1Nsnb-PGx1SpWdgsS7hqI2o2/exec',
     API_TIMEOUT: 30000,
     CACHE_VERSION: 'v3.0',
     CACHE_MAX_AGE: 5 * 60 * 1000
@@ -1589,11 +1589,33 @@ function renderFinalStage(data) {
 }
 
 function renderFinalBracket(matches) {
-    const container = document.getElementById("finalBracketContainer"); if (!container) return;
-    const matchMap = {}; (matches || []).forEach(m => { if (m.matchKey) { matchMap[m.matchKey] = m; } });
-    container.innerHTML = `<div class="tournament-wrapper">${renderBracketMatch(matchMap["Q1"], "qf1")}${renderBracketMatch(matchMap["Q2"], "qf2")}${renderBracketMatch(matchMap["Q3"], "qf3")}${renderBracketMatch(matchMap["Q4"], "qf4")}${renderPlaceholderCard("SF1", "sf1")}${renderPlaceholderCard("SF2", "sf2")}${renderPlaceholderCard("FINALE 1°-2°", "final-match")}${renderPlaceholderCard("FINALE 3°-4°", "third-place")}</div>`;
+  const container = document.getElementById("finalBracketContainer"); 
+  if (!container) return;
+  
+  const matchMap = {}; 
+  (matches || []).forEach(m => { 
+    if (m.matchKey) { 
+      matchMap[m.matchKey] = m; 
+    } 
+  });
+  
+  // 🔥 MOSTRA SEMIFINALI SE ESISTONO
+  const sf1Match = matchMap["SF1"];
+  const sf2Match = matchMap["SF2"];
+  
+  container.innerHTML = `
+    <div class="tournament-wrapper">
+      ${renderBracketMatch(matchMap["Q1"], "qf1")}
+      ${renderBracketMatch(matchMap["Q2"], "qf2")}
+      ${renderBracketMatch(matchMap["Q3"], "qf3")}
+      ${renderBracketMatch(matchMap["Q4"], "qf4")}
+      ${sf1Match ? renderBracketMatch(sf1Match, "sf1") : renderPlaceholderCard("SF1", "sf1")}
+      ${sf2Match ? renderBracketMatch(sf2Match, "sf2") : renderPlaceholderCard("SF2", "sf2")}
+      ${renderPlaceholderCard("FINALE 1°-2°", "final-match")}
+      ${renderPlaceholderCard("FINALE 3°-4°", "third-place")}
+    </div>
+  `;
 }
-
 function renderNextPhaseButton() {
     const oldBtn = document.getElementById("next-phase-action-btn"); if (oldBtn) oldBtn.remove();
     const container = document.getElementById("finalBracketContainer"); if (!container) return;
@@ -1618,11 +1640,76 @@ function openNextPhasePopup(phase) {
 }
 
 async function saveNextPhase(phase) {
-    const date1 = document.getElementById("date1")?.value; const time1 = document.getElementById("time1")?.value; const date2 = document.getElementById("date2")?.value; const time2 = document.getElementById("time2")?.value;
-    if (!date1 || !time1 || !date2 || !time2) { alert("Compila tutte le date e gli orari"); return; }
-    try { if (phase === "SEMIFINALI") { await ApiClient.createSemiFinals(date1, time1, date2, time2); } else { await ApiClient.createFinals(date1, time1, date2, time2); }
-        document.querySelector(".modalOverlay")?.remove(); loadFinalStage(); alert("Partite create con successo!");
-    } catch (error) { console.error('Error creating next phase:', error); alert('Errore: ' + error.message); }
+  const date1 = document.getElementById("date1")?.value;
+  const time1 = document.getElementById("time1")?.value;
+  const date2 = document.getElementById("date2")?.value;
+  const time2 = document.getElementById("time2")?.value;
+  
+  if (!date1 || !time1 || !date2 || !time2) { 
+    alert("Compila tutte le date e gli orari"); 
+    return; 
+  }
+  
+  try { 
+    if (phase === "SEMIFINALI") { 
+      await ApiClient.createSemiFinals(date1, time1, date2, time2); 
+    } else { 
+      await ApiClient.createFinals(date1, time1, date2, time2); 
+    }
+    
+    document.querySelector(".modalOverlay")?.remove();
+    
+    // 🔥 AGGIORNAMENTO AUTOMATICO DATI
+    await refreshAllData();
+    
+    // Se siamo nella pagina CLASSIFICA, ricarica il tabellone
+    if (document.querySelector(".final-stage-page")) {
+      loadFinalStage();
+    }
+    
+    alert("Partite create con successo!");
+    
+  } catch (error) { 
+    console.error('Error creating next phase:', error); 
+    alert('Errore: ' + error.message); 
+  }
+}
+
+// 🔥 FUNZIONE PER AGGIORNARE TUTTI I DATI
+async function refreshAllData() {
+  try {
+    const [matches, standings] = await Promise.all([
+      ApiClient.getMatches(),
+      ApiClient.getStandings()
+    ]);
+    
+    if (matches) {
+      window.APP_CACHE.matches = matches;
+      hydrateMatches(matches);
+      CacheManager.save(window.APP_CACHE);
+    }
+    
+    if (standings) {
+      window.APP_CACHE.standings = standings;
+      CacheManager.save(window.APP_CACHE);
+    }
+    
+    // Aggiorna UI se siamo in home o matches
+    if (document.querySelector(".home-container")) {
+      const nextMatchCard = getNextMatchCard();
+      const existingCard = document.querySelector(".home-next-match");
+      if (existingCard) {
+        existingCard.replaceWith(nextMatchCard);
+      }
+    }
+    
+    if (document.querySelector(".matches-page")) {
+      renderMatches();
+    }
+    
+  } catch (error) {
+    console.error('Error refreshing data:', error);
+  }
 }
 
 function renderPlaceholderCard(label, cls="") { return `<div class="bracket-match bracket-placeholder ${cls}"><div style="text-align:center; width:100%; display:flex; align-items:center; justify-content:center; height:100%;"><div style="font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:1px; color:#666;">${Sanitizer.html(label)}</div></div></div>`; }
