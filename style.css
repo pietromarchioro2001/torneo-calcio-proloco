@@ -1162,7 +1162,10 @@ body {
 .rigori-team-select { cursor: pointer; transition: transform 0.2s; padding: 10px; border-radius: 12px; }
 .rigori-team-select:hover { transform: scale(1.05); background: #f9f9f9; }
 
-/* Card con sfumatura granata FISSA - PIÙ VISIBILE */
+/* =========================================
+   🏆 STILE CARD 
+   ========================================= */
+
 .home-next-match,
 .match-card,
 .bracket-match {
@@ -1182,6 +1185,47 @@ body {
   ) !important;
   transform: translateY(-2px);
   box-shadow: 0 8px 20px rgba(122,30,44,0.25);
+}
+
+/* 1. Card FINALE 1°-2° (Oro) */
+.bracket-match.final-match {
+    background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%) !important;
+    border: 2px solid #d4af37 !important; /* Bordo oro solido */
+    box-shadow: 0 4px 15px rgba(212, 175, 55, 0.2) !important;
+}
+
+/* 2. Card FINALE 3°-4° (Bronzo) */
+.bracket-match.third-place {
+    background: linear-gradient(135deg, #fff8f0 0%, #fed7aa 100%) !important;
+    border: 2px solid #b45309 !important; /* Bordo bronzo solido */
+    box-shadow: 0 4px 15px rgba(180, 83, 9, 0.2) !important;
+}
+
+/* 3. Effetto LIVE per la FINALE (Oro 3D)
+   Quando è LIVE, NON diventa granata, ma brilla d'oro */
+.bracket-match.final-match.live-match {
+    background: linear-gradient(135deg, #fffbeb 0%, #fde047 100%) !important;
+    border: 2px solid #ca8a04 !important;
+    animation: liveGoldGlow 1.5s infinite !important; /* Animazione pulsazione oro */
+}
+
+/* 4. Effetto LIVE per la FINALE 3° (Bronzo 3D)
+   Quando è LIVE, brilla di bronzo */
+.bracket-match.third-place.live-match {
+    background: linear-gradient(135deg, #fff8f0 0%, #fdba74 100%) !important;
+    border: 2px solid #9a3412 !important;
+    animation: liveBronzeGlow 1.5s infinite !important; /* Animazione pulsazione bronzo */
+}
+
+/* 5. Animazioni pulsazione */
+@keyframes liveGoldGlow {
+    0%, 100% { box-shadow: 0 0 20px rgba(202, 138, 4, 0.4); transform: scale(1); }
+    50% { box-shadow: 0 0 35px rgba(202, 138, 4, 0.7); transform: scale(1.02); }
+}
+
+@keyframes liveBronzeGlow {
+    0%, 100% { box-shadow: 0 0 20px rgba(154, 52, 18, 0.4); transform: scale(1); }
+    50% { box-shadow: 0 0 35px rgba(154, 52, 18, 0.7); transform: scale(1.02); }
 }
 
 /* =============================================================================================
