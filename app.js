@@ -454,6 +454,13 @@ function showHome() {
     window.location.hash = 'home';
     stopStandingsLiveRefresh();
     renderToolbar("home");
+     // 🔥 Controlla se ci sono partite LIVE e avvia polling
+    const hasLiveMatch = (window.APP_CACHE.matches || []).some(m => 
+        m.STATO_PARTITA === "LIVE" || m.STATO_PARTITA === "SUPP" || m.STATO_PARTITA === "RIGORI"
+    );
+    if (hasLiveMatch) {
+        startMatchLiveRefresh();
+    }
     const app = document.getElementById("app");
     if (!app) return;
     const currentYear = new Date().getFullYear();
@@ -733,6 +740,13 @@ function updateMVPBanner(match) {
 // ============================================================================
 function showMatches() {
     window.location.hash = 'matches'; stopStandingsLiveRefresh(); renderToolbar("matches");
+    // 🔥 Controlla se ci sono partite LIVE e avvia polling
+    const hasLiveMatch = (window.APP_CACHE.matches || []).some(m => 
+        m.STATO_PARTITA === "LIVE" || m.STATO_PARTITA === "SUPP" || m.STATO_PARTITA === "RIGORI"
+    );
+    if (hasLiveMatch) {
+        startMatchLiveRefresh();
+    }
     document.getElementById("app").innerHTML = `<div class="matches-page"><div class="page-title">PARTITE</div><div class="matches-actions"><div class="phase-btn" onclick="openNewMatchPage()">+ INSERISCI PARTITE</div></div><div class="dates-toolbar" id="datesToolbar"></div><div class="matches-scroll"><div id="matchesList"></div></div></div>`;
     renderMatches();
 }
@@ -856,30 +870,97 @@ async function forceReloadEvents(matchId, match) {
 }
 
 function openMatch(id) {
-    const myNonce = ++window.APP_STATE._matchRequestNonce; setCurrentMatch(id); console.log('🔍 [OPEN MATCH] ID:', id, 'Nonce:', myNonce);
-    window.APP_STATE._matchLoading = true; setTimeout(() => { window.APP_STATE._matchLoading = false; }, 10000);
+    const myNonce = ++window.APP_STATE._matchRequestNonce; 
+    setCurrentMatch(id); 
+    console.log('🔍 [OPEN MATCH] ID:', id, 'Nonce:', myNonce);
+    
+    window.APP_STATE._matchLoading = true; 
+    setTimeout(() => { window.APP_STATE._matchLoading = false; }, 10000);
+    
     const cachedMatch = window.APP_CACHE.matches?.find(m => String(m.MATCH_ID) === String(id));
+    
+    // ✅ PARTE 1: Render immediato dalla cache (se disponibile)
     if (cachedMatch && cachedMatch.CASA_ID && cachedMatch.TRASFERTA_ID) {
-        console.log('✅ Match COMPLETO dalla cache:', { casaId: cachedMatch.CASA_ID, trasfertaId: cachedMatch.TRASFERTA_ID });
-        if (cachedMatch && cachedMatch.STATO_PARTITA === "RIGORI") { setTimeout(() => { console.log('🎯 Partita in RIGORI - Apro popup direttamente in modalità tiri'); openRigoriPopup(true); }, 100); }
-        const localEvents = window.APP_CACHE.eventsByMatch?.[id] || []; const calculatedScore = calculateMatchScore(cachedMatch, localEvents);
-        renderMatchPage({...cachedMatch, ...calculatedScore}); updateMatchUI(cachedMatch);
-        window.APP_STATE.lastMatch = { ...cachedMatch, ...calculatedScore }; renderEvents(localEvents, cachedMatch); loadPlayersForMatch(cachedMatch);
-        setTimeout(() => { const cachedEvents = window.APP_CACHE.eventsByMatch?.[id] || []; if (cachedEvents.length === 0) { console.log('⚠️ Cache eventi vuota, forzo ricarica...'); forceReloadEvents(id, cachedMatch); } }, 500);
+        console.log('✅ Match COMPLETO dalla cache:', { 
+            casaId: cachedMatch.CASA_ID, 
+            trasfertaId: cachedMatch.TRASFERTA_ID 
+        });
+        
+        if (cachedMatch && cachedMatch.STATO_PARTITA === "RIGORI") { 
+            setTimeout(() => { 
+                console.log('🎯 Partita in RIGORI - Apro popup direttamente in modalità tiri'); 
+                openRigoriPopup(true); 
+            }, 100); 
+        }
+        
+        const localEvents = window.APP_CACHE.eventsByMatch?.[id] || []; 
+        const calculatedScore = calculateMatchScore(cachedMatch, localEvents);
+        
+        // 🔥 RENDER IMMEDIATO
+        renderMatchPage({...cachedMatch, ...calculatedScore}); 
+        updateMatchUI(cachedMatch);
+        window.APP_STATE.lastMatch = { ...cachedMatch, ...calculatedScore }; 
+        renderEvents(localEvents, cachedMatch); 
+        loadPlayersForMatch(cachedMatch);
+        
+        // Controllo eventi vuoti
+        setTimeout(() => { 
+            const cachedEvents = window.APP_CACHE.eventsByMatch?.[id] || []; 
+            if (cachedEvents.length === 0) { 
+                console.log('⚠️ Cache eventi vuota, forzo ricarica...'); 
+                forceReloadEvents(id, cachedMatch); 
+            } 
+        }, 500);
     }
+    
+    // ✅ PARTE 2: Fetch dal backend (in background)
     ApiClient.getMatchFull(id).then(res => {
-        if (myNonce !== window.APP_STATE._matchRequestNonce) return; if (!res?.match) return;
+        if (myNonce !== window.APP_STATE._matchRequestNonce) return; 
+        if (!res?.match) return;
+        
         const freshMatch = res.match;
-        if (!freshMatch.CASA_ID || !freshMatch.TRASFERTA_ID || freshMatch.CASA_ID === "" || freshMatch.TRASFERTA_ID === "") { console.warn('⚠️ Backend ha ritornato ID VUOTI, MANTENGO CACHE:', freshMatch); return; }
+        
+        if (!freshMatch.CASA_ID || !freshMatch.TRASFERTA_ID || freshMatch.CASA_ID === "" || freshMatch.TRASFERTA_ID === "") { 
+            console.warn('⚠️ Backend ha ritornato ID VUOTI, MANTENGO CACHE:', freshMatch); 
+            return; 
+        }
+        
         return ApiClient.getEventsAdmin(id).then(freshEvents => {
-            window.APP_CACHE.eventsByMatch[id] = freshEvents; CacheManager.save(window.APP_CACHE);
+            window.APP_CACHE.eventsByMatch[id] = freshEvents; 
+            CacheManager.save(window.APP_CACHE);
+            
             const calculatedScore = calculateMatchScore(freshMatch, freshEvents);
             console.log('✅ Backend dati validi, aggiorno cache con punteggio calcolato');
-            window.APP_STATE.matchesById[freshMatch.MATCH_ID] = {...freshMatch, ...calculatedScore}; window.APP_STATE.lastMatch = {...freshMatch, ...calculatedScore};
-            if (window.APP_CACHE.matches) { const idx = window.APP_CACHE.matches.findIndex(m => String(m.MATCH_ID) === String(freshMatch.MATCH_ID)); if (idx >= 0) { window.APP_CACHE.matches[idx] = { ...window.APP_CACHE.matches[idx], ...freshMatch, ...calculatedScore }; CacheManager.save(window.APP_CACHE); } }
-            if (cachedMatch && (calculatedScore.GOL_CASA !== cachedMatch.GOL_CASA || calculatedScore.GOL_TRASFERTA !== cachedMatch.GOL_TRASFERTA || freshMatch.STATO_PARTITA !== cachedMatch.STATO_PARTITA)) { console.log('🔄 Aggiorno UI con nuovi dati backend + punteggio calcolato'); renderMatchPage({...freshMatch, ...calculatedScore}); loadPlayersForMatch(freshMatch); }
+            
+            window.APP_STATE.matchesById[freshMatch.MATCH_ID] = {...freshMatch, ...calculatedScore}; 
+            window.APP_STATE.lastMatch = {...freshMatch, ...calculatedScore};
+            
+            if (window.APP_CACHE.matches) { 
+                const idx = window.APP_CACHE.matches.findIndex(m => String(m.MATCH_ID) === String(freshMatch.MATCH_ID)); 
+                if (idx >= 0) { 
+                    window.APP_CACHE.matches[idx] = { 
+                        ...window.APP_CACHE.matches[idx], 
+                        ...freshMatch, 
+                        ...calculatedScore 
+                    }; 
+                    CacheManager.save(window.APP_CACHE); 
+                } 
+            }
+            
+            // 🔥 AGGIORNA UI SOLO SE I DATI SONO CAMBIATI
+            if (cachedMatch && (
+                calculatedScore.GOL_CASA !== cachedMatch.GOL_CASA || 
+                calculatedScore.GOL_TRASFERTA !== cachedMatch.GOL_TRASFERTA || 
+                freshMatch.STATO_PARTITA !== cachedMatch.STATO_PARTITA
+            )) { 
+                console.log('🔄 Aggiorno UI con nuovi dati backend + punteggio calcolato'); 
+                renderMatchPage({...freshMatch, ...calculatedScore}); 
+                loadPlayersForMatch(freshMatch); 
+            }
         });
-    }).catch(err => { console.error('❌ Errore backend getMatchFull:', err); });
+    }).catch(err => { 
+        console.error('❌ Errore backend getMatchFull:', err); 
+    });
 }
 
 function renderMatchPage(match) {
@@ -1099,6 +1180,12 @@ async function toggleMatch() {
     let freshMatch = null;
     try {
         await ApiClient.updateMatchStatus(match.MATCH_ID, newStatus);
+        // 🔥 AVVIA POLLING SE LA PARTITA È LIVE
+        if (newStatus === "LIVE") {
+            startMatchLiveRefresh();
+        } else {
+            stopMatchLiveRefresh();
+        }
         const fullData = await ApiClient.getMatchFull(match.MATCH_ID);
         if (fullData?.match) {
             freshMatch = fullData.match; window.APP_STATE.lastMatch = freshMatch; window.APP_STATE.matchesById[freshMatch.MATCH_ID] = freshMatch;
@@ -1474,6 +1561,85 @@ function startStandingsLiveRefresh() {
         if (activeTab === "gironi") { ApiClient.getStandings().then(data => { if (data) { window.APP_CACHE.standings = data; CacheManager.save(window.APP_CACHE); } if (window.APP_STATE._activeStandingsTab === "gironi") { renderStandings(data); } }).catch(console.error); }
         else if (activeTab === "fasefinale") { ApiClient.getFinalStageMatches().then(data => { if (data) { window.APP_CACHE.finalStage = data || []; CacheManager.save(window.APP_CACHE); } if (window.APP_STATE._activeStandingsTab === "fasefinale") { renderFinalStage(data || window.APP_CACHE.finalStage); } }).catch(console.error); }
     }, 5000);
+}
+
+// 🔥 POLLING PER PARTITE LIVE - Aggiorna risultati in tempo reale
+let matchLiveRefreshInterval = null;
+
+function startMatchLiveRefresh() {
+    if (matchLiveRefreshInterval) {
+        clearInterval(matchLiveRefreshInterval);
+    }
+    
+    console.log('🔴 Avvio polling partite LIVE...');
+    
+    matchLiveRefreshInterval = setInterval(async () => {
+        const liveMatches = (window.APP_CACHE.matches || []).filter(m => 
+            m.STATO_PARTITA === "LIVE" || m.STATO_PARTITA === "SUPP" || m.STATO_PARTITA === "RIGORI"
+        );
+        
+        if (liveMatches.length === 0) {
+            console.log('⏹️ Nessuna partita LIVE, stop polling');
+            stopMatchLiveRefresh();
+            return;
+        }
+        
+        console.log(`🔄 Refresh ${liveMatches.length} partita/e LIVE...`);
+        
+        // Aggiorna ogni partita LIVE
+        for (const match of liveMatches) {
+            try {
+                // Fetch dati aggiornati
+                const freshData = await ApiClient.getMatchFull(match.MATCH_ID);
+                const freshEvents = await ApiClient.getEventsAdmin(match.MATCH_ID);
+                
+                if (freshData?.match) {
+                    // Aggiorna cache
+                    const calculatedScore = calculateMatchScore(freshData.match, freshEvents);
+                    const updatedMatch = { ...freshData.match, ...calculatedScore };
+                    
+                    // Aggiorna matches in cache
+                    const idx = window.APP_CACHE.matches.findIndex(m => m.MATCH_ID === match.MATCH_ID);
+                    if (idx >= 0) {
+                        window.APP_CACHE.matches[idx] = updatedMatch;
+                    }
+                    
+                    // Aggiorna eventi
+                    window.APP_CACHE.eventsByMatch[match.MATCH_ID] = freshEvents;
+                    
+                    CacheManager.save(window.APP_CACHE);
+                    
+                    // 🔥 AGGIORNA UI SE VISIBILE
+                    // Se siamo nella pagina della partita
+                    if (window.APP_STATE.currentMatchId === match.MATCH_ID) {
+                        renderMatchPage(updatedMatch);
+                        loadPlayersForMatch(updatedMatch);
+                    }
+                    
+                    // Se siamo in HOME
+                    if (document.querySelector('.home-container')) {
+                        const nextCard = getNextMatchCard();
+                        const existing = document.querySelector('.home-next-match');
+                        if (existing) existing.replaceWith(nextCard);
+                    }
+                    
+                    // Se siamo in PARTITE
+                    if (document.querySelector('.matches-page')) {
+                        renderMatches();
+                    }
+                }
+            } catch (error) {
+                console.error(`❌ Errore refresh match ${match.MATCH_ID}:`, error);
+            }
+        }
+    }, 3000); // ✅ Refresh ogni 3 secondi
+}
+
+function stopMatchLiveRefresh() {
+    if (matchLiveRefreshInterval) {
+        clearInterval(matchLiveRefreshInterval);
+        matchLiveRefreshInterval = null;
+    }
 }
 
 function showStandings() {
