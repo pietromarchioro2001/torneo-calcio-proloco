@@ -819,6 +819,7 @@ body {
 .player-row.mvp-player-row .player-avatar {
   border: 3px solid #fbbf24;
   box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.5) inset;
+  overflow: visible !important; /* 🔥 CORREZIONE: permette alla corona di uscire */
 }
 
 /* Corona MVP */
@@ -827,7 +828,7 @@ body {
   top: -8px;
   right: -8px;
   font-size: 18px;
-  z-index: 9999 !important; /* Massima priorità */
+  z-index: 10; /* z-index sufficiente, 9999 è eccessivo */
   background: white;
   border-radius: 50%;
   padding: 2px;
