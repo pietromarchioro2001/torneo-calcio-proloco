@@ -740,7 +740,7 @@ function updateMVPBanner(match) {
 // ⚽ MATCHES FUNCTIONS
 // ============================================================================
 function showMatches() {
-    window.location.hash = 'matches'; stopStandingsLiveRefresh(); renderToolbar("matches");
+    window.location.hash = 'matches'; stopMatchLiveRefresh(); stopStandingsLiveRefresh(); renderToolbar("matches");
     // 🔥 Controlla se ci sono partite LIVE e avvia polling
     const hasLiveMatch = (window.APP_CACHE.matches || []).some(m => 
         m.STATO_PARTITA === "LIVE" || m.STATO_PARTITA === "SUPP" || m.STATO_PARTITA === "RIGORI"
@@ -782,48 +782,149 @@ function centerActiveDate() {
 }
 
 function renderMatchesByDate(date) {
-    const container = document.getElementById("matchesList"); if (!container) return;
+    const container = document.getElementById("matchesList");
+    if (!container) return;
+
     const allMatches = window.APP_CACHE.matches || [];
-    let matches = allMatches.filter(m => { const matchDate = String(m.DATA || "").slice(0, 10); return matchDate === date; }).sort((a, b) => {
-        const getPriority = (m) => { const status = m.STATO_PARTITA; if (status === "LIVE" || status === "SUPP" || status === "RIGORI") return 0; if (status === "PROGRAMMATA") return 1; if (status === "FINITA") return 2; return 3; };
-        const priorityA = getPriority(a); const priorityB = getPriority(b); if (priorityA === priorityB) { const timeA = a.ORA || "00:00"; const timeB = b.ORA || "00:00"; return timeA.localeCompare(timeB); } return priorityA - priorityB;
-    });
-    if (matches.length === 0) { container.innerHTML = `<div style="text-align:center;padding:40px;color:#888"><div style="font-size:3rem;margin-bottom:16px">📅</div><div>Nessuna partita per questa data</div></div>`; return; }
-    let html = "";
-    matches.forEach(m => {
-        const logoCasa = m.LOGO_CASA ? `<div class="team-logo-placeholder-wrap"><img src="${getCachedImage(m.LOGO_CASA, 50)}" alt="${m.SQUADRA_CASA}" class="team-logo-placeholder-img" onerror="this.style.display='none'; this.parentElement.querySelector('.team-logo-placeholder-fallback').style.display='flex'"><div class="team-logo-placeholder-fallback" style="display:none">⚽</div></div>` : `<div class="team-logo-placeholder-wrap"><div class="team-logo-placeholder-fallback">⚽</div></div>`;
-        const logoTrasf = m.LOGO_TRASFERTA ? `<div class="team-logo-placeholder-wrap"><img src="${getCachedImage(m.LOGO_TRASFERTA, 50)}" alt="${m.SQUADRA_TRASFERTA}" class="team-logo-placeholder-img" onerror="this.style.display='none'; this.parentElement.querySelector('.team-logo-placeholder-fallback').style.display='flex'"><div class="team-logo-placeholder-fallback" style="display:none">⚽</div></div>` : `<div class="team-logo-placeholder-wrap"><div class="team-logo-placeholder-fallback">⚽</div></div>`;
-        let faseBadge = ""; const turnoVal = m.TURNO || m.turno || m.matchKey || "";
-        if (turnoVal && !["LIVE", "SUPP", "RIGORI"].includes(m.STATO_PARTITA)) { const turnoMap = { "Q1": "QUARTI", "Q2": "QUARTI", "Q3": "QUARTI", "Q4": "QUARTI", "SF1": "SEMIFINALE", "SF2": "SEMIFINALE", "F": "FINALE", "TP": "FINALE 3°-4°" }; const turno = turnoMap[turnoVal] || turnoVal; faseBadge = `<div style="font-size:10px;color:#888;text-transform:uppercase;letter-spacing:1px;margin-top:4px">${turno}</div>`; }
-        let center = "";
-        if (m.STATO_PARTITA === "LIVE") { center = `<div class="score live">${m.GOL_CASA || 0} - ${m.GOL_TRASFERTA || 0}</div><div class="status live">LIVE</div>${faseBadge}`; }
-        else if (m.STATO_PARTITA === "SUPP") { center = `<div class="score live">${m.GOL_CASA || 0} - ${m.GOL_TRASFERTA || 0}</div><div class="status live">SUPP</div>${faseBadge}`; }
-        else if (m.STATO_PARTITA === "RIGORI") { const rigoriCasa = m.RIGORI_CASA || 0; const rigoriTrasf = m.RIGORI_TRASFERTA || 0; center = `<div class="score live">${m.GOL_CASA || 0} - ${m.GOL_TRASFERTA || 0} <span style="font-size:14px;color:#888">(${rigoriCasa}-${rigoriTrasf} dcr)</span></div><div class="status live">RIGORI</div>${faseBadge}`; }
-        // 🔥 FINITA: se pareggio + rigori, mostra risultato dcr
-        else if (m.STATO_PARTITA === "FINITA") {
-            // Controlla sia RIGORI_CASA che RIGORE_CASA per compatibilità
-            const rc = m.RIGORE_CASA !== undefined ? m.RIGORE_CASA : m.RIGORI_CASA;
-            const rt = m.RIGORE_TRASFERTA !== undefined ? m.RIGORE_TRASFERTA : m.RIGORI_TRASFERTA;
-            
-            // Mostra DCR solo se i valori sono validi (non null, non undefined, non vuoti)
-            if (rc !== null && rc !== undefined && rc !== "" && 
-                rt !== null && rt !== undefined && rt !== "") {
-                center = `
-                <div class="score">${m.GOL_CASA || 0} - ${m.GOL_TRASFERTA || 0} <span style="font-size:12px;color:#666">(${rc}-${rt} dcr)</span></div>
-                <div class="status">TERMINATA</div>
-                ${faseBadge}
-                `;
-            } else {
-                center = `
-                <div class="score">${m.GOL_CASA || 0} - ${m.GOL_TRASFERTA || 0}</div>
-                <div class="status">TERMINATA</div>
-                ${faseBadge}
-                `;
+    
+    // Filtra e ordina le partite per la data selezionata
+    let matches = allMatches
+        .filter(m => {
+            const matchDate = String(m.DATA || "").slice(0, 10);
+            return matchDate === date && m?.MATCH_ID;
+        })
+        .sort((a, b) => {
+            const getPriority = (m) => {
+                const status = String(m.STATO_PARTITA || "").trim().toUpperCase();
+                if (["LIVE", "SUPP", "RIGORI"].includes(status)) return 0;
+                if (status === "PROGRAMMATA") return 1;
+                if (status === "FINITA") return 2;
+                return 3;
+            };
+            const priorityA = getPriority(a);
+            const priorityB = getPriority(b);
+            if (priorityA === priorityB) {
+                const timeA = a.ORA || "00:00";
+                const timeB = b.ORA || "00:00";
+                return timeA.localeCompare(timeB);
             }
-        } else { center = `<div class="time">${m.ORA || "--:--"}</div>${faseBadge}`; }
-        const isActive = ["LIVE", "SUPP", "RIGORI"].includes(m.STATO_PARTITA);
-        html += `<div class="match-card ${isActive ? "live-match" : ""}" onclick="openMatch('${m.MATCH_ID}')"><div class="team-block left">${logoCasa}<div class="team-name">${(m.SQUADRA_CASA || "").toUpperCase()}</div></div><div class="match-center">${center}</div><div class="team-block right"><div class="team-name">${(m.SQUADRA_TRASFERTA || "").toUpperCase()}</div>${logoTrasf}</div><div class="match-options" onclick='event.stopPropagation(); openMatchMenu(event, "${m.MATCH_ID}")'>⋮</div></div>`;
+            return priorityA - priorityB;
+        });
+
+    // Messaggio se nessuna partita trovata
+    if (matches.length === 0) {
+        container.innerHTML = `
+            <div style="text-align:center;padding:40px;color:#888">
+                <div style="font-size:3rem;margin-bottom:16px">📅</div>
+                <div>Nessuna partita per questa data</div>
+            </div>`;
+        return;
+    }
+
+    let html = "";
+
+    matches.forEach(m => {
+        // 🔥 LOGO SQUADRA CASA con fallback
+        const logoCasa = m.LOGO_CASA 
+            ? `<div class="team-logo-placeholder-wrap">
+                <img src="${getCachedImage(m.LOGO_CASA, 50)}" 
+                     alt="${Sanitizer.attr(m.SQUADRA_CASA || '')}" 
+                     class="team-logo-placeholder-img" 
+                     onerror="this.style.display='none'; this.parentElement.querySelector('.team-logo-placeholder-fallback').style.display='flex'">
+                <div class="team-logo-placeholder-fallback" style="display:none">⚽</div>
+               </div>`
+            : `<div class="team-logo-placeholder-wrap"><div class="team-logo-placeholder-fallback">⚽</div></div>`;
+
+        // 🔥 LOGO SQUADRA TRASFERTA con fallback
+        const logoTrasf = m.LOGO_TRASFERTA 
+            ? `<div class="team-logo-placeholder-wrap">
+                <img src="${getCachedImage(m.LOGO_TRASFERTA, 50)}" 
+                     alt="${Sanitizer.attr(m.SQUADRA_TRASFERTA || '')}" 
+                     class="team-logo-placeholder-img" 
+                     onerror="this.style.display='none'; this.parentElement.querySelector('.team-logo-placeholder-fallback').style.display='flex'">
+                <div class="team-logo-placeholder-fallback" style="display:none">⚽</div>
+               </div>`
+            : `<div class="team-logo-placeholder-wrap"><div class="team-logo-placeholder-fallback">⚽</div></div>`;
+
+        // 🔥 BADGE FASE (Quarti, Semifinali, Finale)
+        let faseBadge = "";
+        const turnoVal = m.TURNO || m.turno || m.matchKey || "";
+        if (turnoVal && !["LIVE", "SUPP", "RIGORI"].includes(m.STATO_PARTITA)) {
+            const turnoMap = { 
+                "Q1": "QUARTI", "Q2": "QUARTI", "Q3": "QUARTI", "Q4": "QUARTI", 
+                "SF1": "SEMIFINALE", "SF2": "SEMIFINALE", 
+                "F": "FINALE", "TP": "FINALE 3°-4°" 
+            };
+            const turno = turnoMap[turnoVal] || turnoVal;
+            faseBadge = `<div style="font-size:10px;color:#888;text-transform:uppercase;letter-spacing:1px;margin-top:4px">${Sanitizer.html(turno)}</div>`;
+        }
+
+        // 🔥 CENTRO CARD: punteggio, stato, badge fase
+        let center = "";
+        const status = String(m.STATO_PARTITA || "").trim().toUpperCase();
+        
+        if (status === "LIVE") {
+            center = `<div class="score live">${m.GOL_CASA ?? 0} - ${m.GOL_TRASFERTA ?? 0}</div>
+                      <div class="status live">LIVE</div>${faseBadge}`;
+        }
+        else if (status === "SUPP") {
+            center = `<div class="score live">${m.GOL_CASA ?? 0} - ${m.GOL_TRASFERTA ?? 0}</div>
+                      <div class="status live">SUPP</div>${faseBadge}`;
+        }
+        else if (status === "RIGORI") {
+            const rigoriCasa = m.RIGORI_CASA ?? m.RIGORE_CASA ?? 0;
+            const rigoriTrasf = m.RIGORI_TRASFERTA ?? m.RIGORE_TRASFERTA ?? 0;
+            center = `<div class="score live">${m.GOL_CASA ?? 0} - ${m.GOL_TRASFERTA ?? 0} 
+                      <span style="font-size:14px;color:#888">(${rigoriCasa}-${rigoriTrasf} dcr)</span></div>
+                      <div class="status live">RIGORI</div>${faseBadge}`;
+        }
+        else if (status === "FINITA") {
+            // 🔥 Gestione compatibile rigori: controlla entrambe le varianti di campo
+            const rc = m.RIGORE_CASA ?? m.RIGORI_CASA;
+            const rt = m.RIGORE_TRASFERTA ?? m.RIGORI_TRASFERTA;
+            
+            // Mostra DCR solo se entrambi i valori sono validi
+            const hasValidRigori = (rc !== null && rc !== undefined && rc !== "" && 
+                                   rt !== null && rt !== undefined && rt !== "");
+            
+            if (hasValidRigori) {
+                center = `<div class="score">${m.GOL_CASA ?? 0} - ${m.GOL_TRASFERTA ?? 0} 
+                          <span style="font-size:12px;color:#666">(${rc}-${rt} dcr)</span></div>
+                          <div class="status">TERMINATA</div>${faseBadge}`;
+            } else {
+                center = `<div class="score">${m.GOL_CASA ?? 0} - ${m.GOL_TRASFERTA ?? 0}</div>
+                          <div class="status">TERMINATA</div>${faseBadge}`;
+            }
+        }
+        else {
+            // Partita programmata
+            center = `<div class="time">${m.ORA || "--:--"}</div>${faseBadge}`;
+        }
+
+        // 🔥 Classe per highlight partite LIVE
+        const isActive = ["LIVE", "SUPP", "RIGORI"].includes(status);
+        const matchClass = isActive ? "match-card live-match" : "match-card";
+        
+        // 🔥 Nomi squadre sanitizzati per sicurezza
+        const nomeCasa = Sanitizer.html((m.SQUADRA_CASA || "").toUpperCase());
+        const nomeTrasf = Sanitizer.html((m.SQUADRA_TRASFERTA || "").toUpperCase());
+        const matchId = Sanitizer.attr(m.MATCH_ID);
+
+        html += `
+            <div class="${matchClass}" onclick="openMatch('${matchId}')">
+                <div class="team-block left">
+                    ${logoCasa}
+                    <div class="team-name">${nomeCasa}</div>
+                </div>
+                <div class="match-center">${center}</div>
+                <div class="team-block right">
+                    <div class="team-name">${nomeTrasf}</div>
+                    ${logoTrasf}
+                </div>
+                <div class="match-options" onclick='event.stopPropagation(); openMatchMenu(event, "${matchId}")'>⋮</div>
+            </div>`;
     });
+
     container.innerHTML = html;
 }
 
@@ -1568,74 +1669,59 @@ function startStandingsLiveRefresh() {
 
 // 🔥 POLLING PER PARTITE LIVE - Aggiorna risultati in tempo reale
 let matchLiveRefreshInterval = null;
+let currentPollingMatchId = null; // 🔥 Tracciamo quale partita stiamo monitorando
 
-function startMatchLiveRefresh() {
-    if (matchLiveRefreshInterval) {
-        clearInterval(matchLiveRefreshInterval);
-    }
+function startMatchLiveRefresh(matchId) {
+    // Se già attivo per questa partita, non fare nulla
+    if (matchLiveRefreshInterval && currentPollingMatchId === matchId) return;
     
-    console.log('🔴 Avvio polling partite LIVE...');
+    // Ferma eventuali timer precedenti
+    stopMatchLiveRefresh();
+    
+    currentPollingMatchId = matchId;
+    console.log('🔴 Avvio polling per partita:', matchId);
     
     matchLiveRefreshInterval = setInterval(async () => {
-        const liveMatches = (window.APP_CACHE.matches || []).filter(m => 
-            m.STATO_PARTITA === "LIVE" || m.STATO_PARTITA === "SUPP" || m.STATO_PARTITA === "RIGORI"
-        );
+        // 🔥 CONTROLLA SE L'UTENTE È ANCORA IN QUESTA PARTITA
+        // Se l'utente ha premuto "Indietro", window.APP_STATE.currentMatchId sarà diverso
+        const activeMatchId = window.APP_STATE.currentMatchId;
         
-        if (liveMatches.length === 0) {
-            console.log('⏹️ Nessuna partita LIVE, stop polling');
+        if (!activeMatchId || activeMatchId !== matchId) {
+            console.log('⏹️ Utente ha lasciato la partita, stop polling.');
             stopMatchLiveRefresh();
             return;
         }
-        
-        console.log(`🔄 Refresh ${liveMatches.length} partita/e LIVE...`);
-        
-        // Aggiorna ogni partita LIVE
-        for (const match of liveMatches) {
-            try {
-                // Fetch dati aggiornati
-                const freshData = await ApiClient.getMatchFull(match.MATCH_ID);
-                const freshEvents = await ApiClient.getEventsAdmin(match.MATCH_ID);
+
+        try {
+            // Fetch dati aggiornati
+            const freshData = await ApiClient.getMatchFull(matchId);
+            const freshEvents = await ApiClient.getEventsAdmin(matchId);
+            
+            if (freshData?.match) {
+                // Aggiorna cache
+                const calculatedScore = calculateMatchScore(freshData.match, freshEvents);
+                const updatedMatch = { ...freshData.match, ...calculatedScore };
                 
-                if (freshData?.match) {
-                    // Aggiorna cache
-                    const calculatedScore = calculateMatchScore(freshData.match, freshEvents);
-                    const updatedMatch = { ...freshData.match, ...calculatedScore };
-                    
-                    // Aggiorna matches in cache
-                    const idx = window.APP_CACHE.matches.findIndex(m => m.MATCH_ID === match.MATCH_ID);
-                    if (idx >= 0) {
-                        window.APP_CACHE.matches[idx] = updatedMatch;
-                    }
-                    
-                    // Aggiorna eventi
-                    window.APP_CACHE.eventsByMatch[match.MATCH_ID] = freshEvents;
-                    
-                    CacheManager.save(window.APP_CACHE);
-                    
-                    // 🔥 AGGIORNA UI SE VISIBILE
-                    // Se siamo nella pagina della partita
-                    if (window.APP_STATE.currentMatchId === match.MATCH_ID) {
-                        renderMatchPage(updatedMatch);
-                        loadPlayersForMatch(updatedMatch);
-                    }
-                    
-                    // Se siamo in HOME
-                    if (document.querySelector('.home-container')) {
-                        const nextCard = getNextMatchCard();
-                        const existing = document.querySelector('.home-next-match');
-                        if (existing) existing.replaceWith(nextCard);
-                    }
-                    
-                    // Se siamo in PARTITE
-                    if (document.querySelector('.matches-page')) {
-                        renderMatches();
-                    }
+                // Aggiorna matches in cache
+                const idx = window.APP_CACHE.matches.findIndex(m => m.MATCH_ID === matchId);
+                if (idx >= 0) {
+                    window.APP_CACHE.matches[idx] = updatedMatch;
                 }
-            } catch (error) {
-                console.error(`❌ Errore refresh match ${match.MATCH_ID}:`, error);
+                
+                // Aggiorna eventi
+                window.APP_CACHE.eventsByMatch[matchId] = freshEvents;
+                CacheManager.save(window.APP_CACHE);
+                
+                // 🔥 AGGIORNA UI SOLO SE È ANCORA LA PARTITA ATTIVA
+                if (window.APP_STATE.currentMatchId === matchId) {
+                    renderMatchPage(updatedMatch);
+                    loadPlayersForMatch(updatedMatch);
+                }
             }
+        } catch (error) {
+            console.error(`❌ Errore refresh match ${matchId}:`, error);
         }
-    }, 5000); // ✅ Refresh ogni 3 secondi
+    }, 5000);
 }
 
 function stopMatchLiveRefresh() {
@@ -1643,6 +1729,7 @@ function stopMatchLiveRefresh() {
         clearInterval(matchLiveRefreshInterval);
         matchLiveRefreshInterval = null;
     }
+    currentPollingMatchId = null;
 }
 
 function showStandings() {
