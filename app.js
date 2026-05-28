@@ -2028,17 +2028,17 @@ function renderBracketMatch(match, cls="") {
     let casaClass = "", trasfClass = "";
     if (isFinished) { if (scoreCasa > scoreTrasf) { casaClass = "winner"; trasfClass = "loser"; } else { casaClass = "loser"; trasfClass = "winner"; } }
     
-    const statusIndicator = isSupp ? '<span style="font-size:9px;color:#8c1d2c;font-weight:700;margin-left:4px">SUPP</span>' : '';
-
-    // 🔥 NUOVA LOGICA: Assegna classe speciale solo se LIVE
-    let liveSpecialClass = "";
+    const statusIndicator = isSupp ? '<span style="font-size:9px;color:#8c1d2c;font-weight:700;margin-left:4px">/span>' : '';
+    
+    // 🔥 LOGICA LIVE CORRETTA: Assegna live-gold o live-bronze se siamo nelle finali
+    let liveClass = "";
     if (isLive) {
-        if (cls.includes("final-match")) liveSpecialClass = "live-gold";     // Finale 1°-2°
-        else if (cls.includes("third-place")) liveSpecialClass = "live-bronze"; // Finale 3°-4°
+        if (cls === 'final-match') liveClass = "live-gold";
+        else if (cls === 'third-place') liveClass = "live-bronze";
+        else liveClass = "live-match"; // Granata per quarti/semifinali
     }
 
-    // 🔥 Aggiungi liveSpecialClass nel div principale
-    return `<div class="bracket-match ${cls} ${isFinished ? 'concluded' : ''} ${isLive ? 'live-match' : ''} ${liveSpecialClass}" onclick="openMatch('${match.matchId}')">
+    return `<div class="bracket-match ${cls} ${isFinished ? 'concluded' : ''} ${liveClass}" onclick="openMatch('${match.matchId}')">
         <div class="bracket-team ${casaClass}">${logoCasa}<span>${(match.casa?.nome || "TBD").toUpperCase()}</span><span class="${scoreClass}">${scoreCasa}${statusIndicator}</span></div>
         <div class="bracket-team ${trasfClass}">${logoTrasf}<span>${(match.trasferta?.nome || "TBD").toUpperCase()}</span><span class="${scoreClass}">${scoreTrasf}${statusIndicator}</span></div>
     </div>`;
