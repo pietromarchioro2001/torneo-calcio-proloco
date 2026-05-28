@@ -388,9 +388,29 @@ function getNextMatchCard() {
         return renderHomeMatchCard(nextMatch, false);
     }
 
-    // 3. Nessun match -> Solo scritta semplice
-    return `<div class="home-next-match" style="opacity:0.7; pointer-events:none; cursor:default; border: 1px solid rgba(122, 30, 44, 0.12); background: rgba(255,255,255,0.98);">
-        <div style="text-align:center; color: #666; font-size: 14px; letter-spacing: 1px; font-weight: 600; text-transform: uppercase;">
+   // 3. Nessun match -> Solo scritta semplice
+    return `<div class="home-next-match" style="
+        opacity:0.7; 
+        pointer-events:none; 
+        cursor:default; 
+        border: 1px solid rgba(122, 30, 44, 0.12); 
+        background: rgba(255,255,255,0.98);
+        padding: 20px 15px;
+        text-align: center;
+        min-height: 60px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 12px;
+    ">
+        <div style="
+            color: #666; 
+            font-size: 14px; 
+            letter-spacing: 1px; 
+            font-weight: 600; 
+            text-transform: uppercase;
+            width: 100%;
+        ">
             Nessuna partita in programma
         </div>
     </div>`;
