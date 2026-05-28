@@ -2057,8 +2057,21 @@ function renderAppFromCache() { renderToolbar("home"); const path = window.locat
 // ============================================================================
 // 🎯 GLOBAL EVENT LISTENERS
 // ============================================================================
+// SOSTITUISCI il global event listener con questo:
 document.addEventListener("click", function(e) {
-    if (e.target.classList.contains("mt-btn")) { if (e.target.classList.contains("disabled")) return; const tab = e.target.dataset.tab; document.querySelectorAll(".mt-btn").forEach(b => b.classList.remove("active")); e.target.classList.add("active"); document.querySelectorAll(".tab-content").forEach(t => t.classList.remove("active")); document.getElementById("tab-" + tab)?.classList.add("active"); }
+    // Ignora click su elementi con stopPropagation
+    if (e.target.closest('.player-row') || e.target.closest('.mvp-vote-row')) {
+        return;
+    }
+    
+    if (e.target.classList.contains("mt-btn")) { 
+        if (e.target.classList.contains("disabled")) return; 
+        const tab = e.target.dataset.tab; 
+        document.querySelectorAll(".mt-btn").forEach(b => b.classList.remove("active")); 
+        e.target.classList.add("active"); 
+        document.querySelectorAll(".tab-content").forEach(t => t.classList.remove("active")); 
+        document.getElementById("tab-" + tab)?.classList.add("active"); 
+    }
 });
 
 // ============================================================================
@@ -2092,7 +2105,7 @@ function renderPlayersTab(casaData, trasfData, match) {
             const badges = playerEvents.map(t => t === "GOAL" ? "⚽" : t === "AMMONIZIONE" ? "🟨" : "🟥").join(" ");
             const isMVP = isFinished && p.NOME === mvpName; const mvpClass = isMVP ? "mvp-player-row" : ""; const crownHtml = isMVP ? '<div class="mvp-crown">👑</div>' : '';
             const photoHtml = p.FOTO_ID ? `<img src="${getCachedImage(p.FOTO_ID, 40)}" alt="${p.NOME}" class="${isMVP ? 'mvp-player-photo' : ''}" onerror="this.style.display='none'">` : `<div class="player-avatar-fallback ${isMVP ? 'mvp-player-avatar' : ''}">👤</div>`;
-            html += `<div class="player-row ${mvpClass}"><div class="player-avatar ${isMVP ? 'mvp-player-avatar-wrapper' : ''}">${photoHtml}${crownHtml}</div><div class="player-name">${(p.NOME || "").toUpperCase()}${badges ? `<span class="player-badges">${badges}</span>` : ""}</div></div>`;
+            html += `<div class="player-row ${mvpClass}" onclick="event.stopPropagation()"><div class="player-avatar ${isMVP ? 'mvp-player-avatar-wrapper' : ''}">${photoHtml}${crownHtml}</div><div class="player-name">${(p.NOME || "").toUpperCase()}${badges ? `<span class="player-badges">${badges}</span>` : ""}</div></div>`;
         });
         html += "</div>"; return html;
     };
@@ -2119,7 +2132,7 @@ function renderMVPTab(casaData, trasfData, match) {
         players.forEach(p => {
             const photoHtml = p.FOTO_ID ? `<img src="${getCachedImage(p.FOTO_ID, 40)}" alt="${p.NOME}">` : `<div class="player-avatar-fallback">👤</div>`;
             const isSelected = String(p.PLAYER_ID) === String(selectedPlayerId); const bgStyle = isSelected ? 'background:#fef3c7;opacity:1;' : ''; const checkOpacity = isSelected ? 'opacity:1' : 'opacity:0';
-            html += `<div class="player-row mvp-vote-row" onclick="voteMVP('${p.PLAYER_ID}', '${p.NOME.replace(/'/g, "\\'")}', event)" style="cursor:pointer;transition:all 0.3s;${bgStyle}"><div class="player-avatar">${photoHtml}</div><div class="player-name">${(p.NOME || "").toUpperCase()}</div><div class="vote-check" style="${checkOpacity};font-size:1.2rem;color:#059669;font-weight:bold;">✓</div></div>`;
+            html += `<div class="player-row mvp-vote-row" onclick="voteMVP('${p.PLAYER_ID}', '${p.NOME.replace(/'/g, "\\'")}', event); event.stopPropagation();" style="cursor:pointer;transition:all 0.3s;${bgStyle}"><div class="player-avatar">${photoHtml}</div><div class="player-name">${(p.NOME || "").toUpperCase()}</div><div class="vote-check" style="${checkOpacity};font-size:1.2rem;color:#059669;font-weight:bold;">✓</div></div>`;
         });
         html += "</div>"; return html;
     };
