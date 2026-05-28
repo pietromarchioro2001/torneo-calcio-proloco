@@ -728,156 +728,79 @@ body {
 .penalty-vs-score { font-size: 22px; font-weight: 900; color: var(--granata); min-width: 60px; text-align: center; letter-spacing: 1px; }
 
 /* =============================================================================================
-    9. TAB GIOCATORI & MVP
+   9. TAB GIOCATORI & MVP - VERSIONE SEMPLIFICATA
 =============================================================================================== */
 .players-columns { display: flex; gap: 40px; margin-top: 20px; position: relative; width: 100%; box-sizing: border-box; }
 .players-columns::before { content: ""; position: absolute; left: 50%; top: 0; transform: translateX(-50%); width: 1px; height: 100%; background: #ddd; opacity: 0.6; }
 .players-col { width: 50%; box-sizing: border-box; padding: 0 12px; }
 .players-team { text-align: center; font-weight: 700; letter-spacing: 2px; margin-bottom: 15px; }
 
-.player-item { display: flex; align-items: center; gap: 12px; padding: 8px; cursor: pointer; border-radius: 8px; transition: 0.2s; }
-.player-item:hover { background: #f3f3f3; }
-.player-item img { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; }
-.player-preview { text-align: center; }
-.player-preview-name { font-size: 18px; font-weight: 700; margin-bottom: 15px; }
-.player-preview img { width: 120px; border-radius: 12px; margin-top: 10px; }
-
-/* MVP Styles */
-.mvp-title { font-size: 11px; letter-spacing: 3px; color: #b45309; font-weight: 700; text-transform: uppercase; }
-.mvp-name { margin-top: 6px; font-size: 24px; font-weight: 900; color: #92400e; letter-spacing: 2px; }
-.mvp-crown { margin-left: 6px; font-size: 14px; }
-.mvp-player { background: rgba(255, 215, 0, 0.08); border-radius: 10px; }
-
-/* 🔥 CORREZIONE ALLINEAMENTO MVP */
-.player-row.mvp-player-row {
-  display: flex;
-  align-items: center;
-  background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%);
-  border: 1px solid #fbbf24;
-  border-radius: 10px;
-  padding: 8px 12px;
+.player-row { 
+  display: flex; 
+  align-items: center; 
+  gap: 12px; 
+  padding: 8px 12px; 
   margin-bottom: 6px;
-  box-shadow: 0 2px 8px rgba(251, 191, 36, 0.15);
+  border-radius: 10px;
+  transition: 0.2s;
 }
 
-/* Contenitore avatar MVP: fondamentale position: relative per la corona */
-.player-row.mvp-player-row .player-avatar,
-.player-row.mvp-player-row .mvp-player-avatar-wrapper {
+/* 🔥 MVP PLAYER ROW - SEMPLIFICATO */
+.player-row.mvp-player-row {
+  background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%);
+  border: 1px solid #fbbf24;
+  box-shadow: 0 2px 8px rgba(251, 191, 36, 0.15);
+  position: relative; /* Necessario per la corona assoluta */
+}
+
+/* 🔥 AVATAR MVP - CORONA VISIBILE */
+.player-row.mvp-player-row .player-avatar {
   width: 40px !important;
   height: 40px !important;
   min-width: 40px !important;
-  min-height: 40px !important;
-  flex-shrink: 0 !important; /* Fondamentale: impedisce alla riga di schiacciare l'avatar */
+  flex-shrink: 0 !important;
   border-radius: 50% !important;
-  overflow: hidden !important; /* Tutto ciò che esce dal cerchio viene tagliato */
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
-  position: relative !important; /* Necessario per posizionare la corona */
-  background: #f0f0f0;
+  position: relative !important; /* FONDAMENTALE per la corona */
+  overflow: visible !important; /* 🔥 CAMBIATO: permette alla corona di uscire */
+  background: transparent !important;
 }
 
-.player-row.mvp-player-row .mvp-player-photo,
-.player-row.mvp-player-row .mvp-player-avatar {
-  width: 100% !important;
-  height: 100% !important;
-  border-radius: 50% !important;
-  object-fit: cover !important;
-  border: 3px solid #fbbf24;
-  box-shadow: 0 0 8px rgba(251, 191, 36, 0.4);
-}
-
-.mvp-player-row .mvp-player-avatar {
-  background: #e5e7eb;
-  font-size: 20px;
-  color: #4b5563;
-}
-
-/* Riga MVP evidenziata */
-.mvp-player-row {
-  background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%) !important;
-  border: 1px solid #fbbf24 !important;
-  border-radius: 12px;
-  padding: 10px 12px;
-  margin-bottom: 8px;
-  box-shadow: 0 2px 8px rgba(251, 191, 36, 0.15);
-}
-
-/* Wrapper avatar MVP */
-.mvp-player-avatar-wrapper {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  position: relative !important; /* 🔥 Doppia sicurezza */
-}
-
-/* Fix MVP photo dimensions */
-.mvp-player-photo {
-  width: 40px;
-  height: 40px;
-  object-fit: cover;
-  border-radius: 50%;
-  border: 3px solid #fbbf24;
-  box-shadow: 0 0 8px rgba(251, 191, 36, 0.4);
-  background: #f0f0f0;
-}
-
-.mvp-player-avatar {
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: #e5e7eb;
-  border: 3px solid #fbbf24;
-  box-shadow: 0 0 8px rgba(251, 191, 36, 0.4);
-  font-size: 20px;
-  color: #4b5563;
-}
-
-/* 🔥 CORONA MVP: ora sarà allineata correttamente */
-.mvp-crown-icon {
-  position: absolute;
-  top: -8px; /* Leggermente più alta per compensare il bordo */
-  right: -8px;
-  font-size: 14px;
-  z-index: 2;
-  background: white;
-  border-radius: 50%;
-  padding: 2px;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.2);
-  line-height: 1; /* Evita spazi extra */
-}
-
-/* Immagine o Fallback dentro l'avatar MVP */
+/* Immagine o fallback avatar */
 .player-row.mvp-player-row .player-avatar img,
 .player-row.mvp-player-row .player-avatar-fallback {
   width: 100% !important;
   height: 100% !important;
-  object-fit: cover !important; /* L'immagine copre tutto il cerchio senza deformarsi */
   border-radius: 50% !important;
+  object-fit: cover !important;
+  border: 3px solid #fbbf24 !important; /* Bordo oro visibile */
+  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.5) inset;
   display: block !important;
 }
 
-.player-row.mvp-player-row img.mvp-player-photo {
-  border: 3px solid #fbbf24 !important;
-  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.5) inset; /* Effetto riflesso interno */
-}
-
-/* Corona MVP: Posizionamento Assoluto Perfetto */
+/* 🔥 CORONA MVP - PRIMO PIANO ASSOLUTO */
 .player-row.mvp-player-row .mvp-crown {
   position: absolute !important;
-  top: -8px !important;
-  right: -8px !important;
-  font-size: 16px !important;
-  z-index: 10 !important;
+  top: -10px !important; /* Più in alto per essere visibile */
+  right: -10px !important; /* Più a destra */
+  font-size: 18px !important; /* Più grande */
+  z-index: 9999 !important; /* 🔥 MASSIMA PRIORITÀ */
   line-height: 1 !important;
-  filter: drop-shadow(0 1px 2px rgba(0,0,0,0.2));
-  transform: rotate(10deg); /* Leggera inclinazione per stile */
+  filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3)); /* Ombra per staccare */
+  transform: rotate(10deg);
+  background: white; /* Sfondo bianco per contrasto */
+  border-radius: 50%;
+  padding: 2px;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
-/* Nome Giocatore MVP */
+/* Nome giocatore MVP */
 .player-row.mvp-player-row .player-name {
   font-weight: 800 !important;
   color: #92400e !important;
@@ -887,27 +810,29 @@ body {
   gap: 8px;
 }
 
-/* Badges (pallini gol ecc) */
 .player-row.mvp-player-row .player-badges {
   margin-left: 8px;
   opacity: 0.8;
 }
 
-/* Card MVP Winner */
-.mvp-winner-card { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 30px 20px; background: linear-gradient(135deg, #ffffff 0%, #fffbeb 50%, #fef3c7 100%); border: 3px solid #fbbf24; border-radius: 16px; box-shadow: 0 4px 16px rgba(251, 191, 36, 0.2); animation: winnerGlow 3s infinite; }
+/* Player normali */
+.player-item { display: flex; align-items: center; gap: 12px; padding: 8px; cursor: pointer; border-radius: 8px; transition: 0.2s; }
+.player-item:hover { background: #f3f3f3; }
+.player-item img { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; }
+
+/* Altri stili MVP (card winner, votazione, ecc) */
+.mvp-winner-card { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 30px 20px; background: linear-gradient(135deg, #ffffff 0%, #fffbeb 50%, #fef3c7 100%); border: 3px solid #fbbf24; border-radius: 16px; box-shadow: 0 4px 16px rgba(251, 191, 36, 0.2); }
 .mvp-winner-badge { font-size: 14px; font-weight: 700; color: #b45309; letter-spacing: 2px; margin-bottom: 12px; text-transform: uppercase; }
 .mvp-winner-photo { width: 80px; height: 80px; border-radius: 50%; object-fit: cover; border: 4px solid #fbbf24; box-shadow: 0 4px 12px rgba(0,0,0,0.15); margin-bottom: 12px; }
 .mvp-winner-avatar { width: 80px; height: 80px; border-radius: 50%; background: #fef3c7; display: flex; align-items: center; justify-content: center; font-size: 40px; border: 4px solid #fbbf24; margin-bottom: 12px; }
 .mvp-winner-name { font-size: 20px; font-weight: 800; color: #92400e; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 4px; }
 .mvp-winner-team { font-size: 12px; color: #b45309; font-weight: 600; letter-spacing: 1px; }
 
-/* Votazione MVP */
 .mvp-vote-row { box-sizing: border-box; overflow: hidden; position: relative; margin: 8px 0; border-radius: 8px; }
 .mvp-vote-row[style*="background"], .mvp-vote-row:hover { box-sizing: border-box; overflow: hidden; }
 .mvp-vote-row .vote-check { position: absolute; right: 16px; top: 50%; transform: translateY(-50%); z-index: 2; pointer-events: none; }
 .vote-check { opacity: 0; color: #f59e0b; font-weight: 700; font-size: 18px; transition: opacity 0.2s; }
 .mvp-vote-row:hover .vote-check { opacity: 1; }
-
 /* =============================================================================================
    🏆 10. CLASSIFICHE & FASE FINALE
 =============================================================================================== */
