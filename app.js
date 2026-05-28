@@ -2012,16 +2012,36 @@ function renderPlaceholderCard(label, cls="") { return `<div class="bracket-matc
 
 function renderBracketMatch(match, cls="") {
     if (!match || !match.casa?.nome) { return `<div class="bracket-placeholder ${cls}"><div class="bracket-placeholder-title"></div></div>`; }
+    
     const logoCasa = match.casa?.logo ? `<img src="${getCachedImage(match.casa.logo, 24)}" alt="${match.casa.nome}" onerror="this.style.display='none'">` : `<div style="width:24px;height:24px;border-radius:50%;background:#f0f0f0"></div>`;
     const logoTrasf = match.trasferta?.logo ? `<img src="${getCachedImage(match.trasferta.logo, 24)}" alt="${match.trasferta.nome}" onerror="this.style.display='none'">` : `<div style="width:24px;height:24px;border-radius:50%;background:#f0f0f0"></div>`;
-    const isLive = ["LIVE", "SUPP", "RIGORI"].includes(match.stato); const isSupp = match.stato === "SUPP"; const isFinished = match.stato === "FINITA";
+    
+    const isLive = ["LIVE", "SUPP", "RIGORI"].includes(match.stato); 
+    const isSupp = match.stato === "SUPP"; 
+    const isFinished = match.stato === "FINITA";
+    
     let scoreCasa = "0"; let scoreTrasf = "0";
     if (isLive || isFinished) { scoreCasa = match.golCasa || 0; scoreTrasf = match.golTrasferta || 0; }
+    
     const scoreClass = isLive ? "bracket-score live" : "bracket-score scheduled";
+    
     let casaClass = "", trasfClass = "";
     if (isFinished) { if (scoreCasa > scoreTrasf) { casaClass = "winner"; trasfClass = "loser"; } else { casaClass = "loser"; trasfClass = "winner"; } }
-    const statusIndicator = isSupp ? '<span style="font-size:9px;color:#8c1d2c;font-weight:700;margin-left:4px"/span>' : '';
-    return `<div class="bracket-match ${cls} ${isFinished ? 'concluded' : ''} ${isLive ? 'live-match' : ''}" onclick="openMatch('${match.matchId}')"><div class="bracket-team ${casaClass}">${logoCasa}<span>${(match.casa?.nome || "TBD").toUpperCase()}</span><span class="${scoreClass}">${scoreCasa}${statusIndicator}</span></div><div class="bracket-team ${trasfClass}">${logoTrasf}<span>${(match.trasferta?.nome || "TBD").toUpperCase()}</span><span class="${scoreClass}">${scoreTrasf}${statusIndicator}</span></div></div>`;
+    
+    const statusIndicator = isSupp ? '<span style="font-size:9px;color:#8c1d2c;font-weight:700;margin-left:4px">SUPP</span>' : '';
+
+    // 🔥 NUOVA LOGICA: Assegna classe speciale solo se LIVE
+    let liveSpecialClass = "";
+    if (isLive) {
+        if (cls.includes("final-match")) liveSpecialClass = "live-gold";     // Finale 1°-2°
+        else if (cls.includes("third-place")) liveSpecialClass = "live-bronze"; // Finale 3°-4°
+    }
+
+    // 🔥 Aggiungi liveSpecialClass nel div principale
+    return `<div class="bracket-match ${cls} ${isFinished ? 'concluded' : ''} ${isLive ? 'live-match' : ''} ${liveSpecialClass}" onclick="openMatch('${match.matchId}')">
+        <div class="bracket-team ${casaClass}">${logoCasa}<span>${(match.casa?.nome || "TBD").toUpperCase()}</span><span class="${scoreClass}">${scoreCasa}${statusIndicator}</span></div>
+        <div class="bracket-team ${trasfClass}">${logoTrasf}<span>${(match.trasferta?.nome || "TBD").toUpperCase()}</span><span class="${scoreClass}">${scoreTrasf}${statusIndicator}</span></div>
+    </div>`;
 }
 
 function recoverMatchFromCache(matchId) {
