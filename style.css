@@ -728,13 +728,40 @@ body {
 .penalty-vs-score { font-size: 22px; font-weight: 900; color: var(--granata); min-width: 60px; text-align: center; letter-spacing: 1px; }
 
 /* =============================================================================================
-   9. TAB GIOCATORI & MVP - VERSIONE SEMPLIFICATA
+   9. TAB GIOCATORI & MVP
 =============================================================================================== */
-.players-columns { display: flex; gap: 40px; margin-top: 20px; position: relative; width: 100%; box-sizing: border-box; }
-.players-columns::before { content: ""; position: absolute; left: 50%; top: 0; transform: translateX(-50%); width: 1px; height: 100%; background: #ddd; opacity: 0.6; }
-.players-col { width: 50%; box-sizing: border-box; padding: 0 12px; }
-.players-team { text-align: center; font-weight: 700; letter-spacing: 2px; margin-bottom: 15px; }
+.players-columns { 
+  display: flex; 
+  gap: 40px; 
+  margin-top: 20px; 
+  position: relative; 
+  width: 100%; 
+  box-sizing: border-box; 
+}
+.players-columns::before { 
+  content: ""; 
+  position: absolute; 
+  left: 50%; 
+  top: 0; 
+  transform: translateX(-50%); 
+  width: 1px; 
+  height: 100%; 
+  background: #ddd; 
+  opacity: 0.6; 
+}
+.players-col { 
+  width: 50%; 
+  box-sizing: border-box; 
+  padding: 0 12px; 
+}
+.players-team { 
+  text-align: center; 
+  font-weight: 700; 
+  letter-spacing: 2px; 
+  margin-bottom: 15px; 
+}
 
+/* Player normali */
 .player-row { 
   display: flex; 
   align-items: center; 
@@ -745,52 +772,63 @@ body {
   transition: 0.2s;
 }
 
-/* 🔥 MVP PLAYER ROW - SEMPLIFICATO */
+/* Player MVP evidenziato */
 .player-row.mvp-player-row {
   background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%);
   border: 1px solid #fbbf24;
   box-shadow: 0 2px 8px rgba(251, 191, 36, 0.15);
-  position: relative; /* Necessario per la corona assoluta */
+  position: relative;
 }
 
-/* 🔥 AVATAR MVP - CORONA VISIBILE */
+/* Avatar giocatore (tutti) */
+.player-avatar {
+  width: 40px;
+  height: 40px;
+  min-width: 40px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+/* Immagine avatar */
+.player-avatar img {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  object-fit: cover;
+  display: block;
+}
+
+/* Fallback avatar (icona) */
+.player-avatar-fallback {
+  width: 100%;
+  height: 100%;
+  background: #e5e7eb;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+}
+
+/* Avatar MVP con bordo oro */
 .player-row.mvp-player-row .player-avatar {
-  width: 40px !important;
-  height: 40px !important;
-  min-width: 40px !important;
-  flex-shrink: 0 !important;
-  border-radius: 50% !important;
-  display: flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-  position: relative !important; /* FONDAMENTALE per la corona */
-  overflow: visible !important; /* 🔥 CAMBIATO: permette alla corona di uscire */
-  background: transparent !important;
-}
-
-/* Immagine o fallback avatar */
-.player-row.mvp-player-row .player-avatar img,
-.player-row.mvp-player-row .player-avatar-fallback {
-  width: 100% !important;
-  height: 100% !important;
-  border-radius: 50% !important;
-  object-fit: cover !important;
-  border: 3px solid #fbbf24 !important; /* Bordo oro visibile */
+  border: 3px solid #fbbf24;
   box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.5) inset;
-  display: block !important;
 }
 
-/* 🔥 CORONA MVP - PRIMO PIANO ASSOLUTO */
+/* Corona MVP */
 .player-row.mvp-player-row .mvp-crown {
-  position: absolute !important;
-  top: -10px !important; /* Più in alto per essere visibile */
-  right: -10px !important; /* Più a destra */
-  font-size: 18px !important; /* Più grande */
-  z-index: 9999 !important; /* 🔥 MASSIMA PRIORITÀ */
-  line-height: 1 !important;
-  filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3)); /* Ombra per staccare */
-  transform: rotate(10deg);
-  background: white; /* Sfondo bianco per contrasto */
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  font-size: 18px;
+  z-index: 10;
+  background: white;
   border-radius: 50%;
   padding: 2px;
   width: 24px;
@@ -798,41 +836,117 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
+  filter: drop-shadow(0 2px 4px rgba(0,0,0,0.2));
 }
 
-/* Nome giocatore MVP */
-.player-row.mvp-player-row .player-name {
-  font-weight: 800 !important;
-  color: #92400e !important;
-  margin-left: 12px;
+/* Nome giocatore */
+.player-name {
+  font-weight: 700;
+  letter-spacing: 1px;
   display: flex;
   align-items: center;
   gap: 8px;
 }
 
-.player-row.mvp-player-row .player-badges {
-  margin-left: 8px;
-  opacity: 0.8;
+/* Nome MVP */
+.player-row.mvp-player-row .player-name {
+  font-weight: 800;
+  color: #92400e;
 }
 
-/* Player normali */
-.player-item { display: flex; align-items: center; gap: 12px; padding: 8px; cursor: pointer; border-radius: 8px; transition: 0.2s; }
-.player-item:hover { background: #f3f3f3; }
-.player-item img { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; }
+/* Badge (gol, ammonizioni, ecc) */
+.player-badges {
+  margin-left: auto;
+  opacity: 0.8;
+  font-size: 14px;
+}
 
-/* Altri stili MVP (card winner, votazione, ecc) */
-.mvp-winner-card { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 30px 20px; background: linear-gradient(135deg, #ffffff 0%, #fffbeb 50%, #fef3c7 100%); border: 3px solid #fbbf24; border-radius: 16px; box-shadow: 0 4px 16px rgba(251, 191, 36, 0.2); }
-.mvp-winner-badge { font-size: 14px; font-weight: 700; color: #b45309; letter-spacing: 2px; margin-bottom: 12px; text-transform: uppercase; }
-.mvp-winner-photo { width: 80px; height: 80px; border-radius: 50%; object-fit: cover; border: 4px solid #fbbf24; box-shadow: 0 4px 12px rgba(0,0,0,0.15); margin-bottom: 12px; }
-.mvp-winner-avatar { width: 80px; height: 80px; border-radius: 50%; background: #fef3c7; display: flex; align-items: center; justify-content: center; font-size: 40px; border: 4px solid #fbbf24; margin-bottom: 12px; }
-.mvp-winner-name { font-size: 20px; font-weight: 800; color: #92400e; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 4px; }
-.mvp-winner-team { font-size: 12px; color: #b45309; font-weight: 600; letter-spacing: 1px; }
+/* Altri stili MVP */
+.mvp-winner-card { 
+  display: flex; 
+  flex-direction: column; 
+  align-items: center; 
+  justify-content: center; 
+  padding: 30px 20px; 
+  background: linear-gradient(135deg, #ffffff 0%, #fffbeb 50%, #fef3c7 100%); 
+  border: 3px solid #fbbf24; 
+  border-radius: 16px; 
+  box-shadow: 0 4px 16px rgba(251, 191, 36, 0.2); 
+}
+.mvp-winner-badge { 
+  font-size: 14px; 
+  font-weight: 700; 
+  color: #b45309; 
+  letter-spacing: 2px; 
+  margin-bottom: 12px; 
+  text-transform: uppercase; 
+}
+.mvp-winner-photo { 
+  width: 80px; 
+  height: 80px; 
+  border-radius: 50%; 
+  object-fit: cover; 
+  border: 4px solid #fbbf24; 
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15); 
+  margin-bottom: 12px; 
+}
+.mvp-winner-avatar { 
+  width: 80px; 
+  height: 80px; 
+  border-radius: 50%; 
+  background: #fef3c7; 
+  display: flex; 
+  align-items: center; 
+  justify-content: center; 
+  font-size: 40px; 
+  border: 4px solid #fbbf24; 
+  margin-bottom: 12px; 
+}
+.mvp-winner-name { 
+  font-size: 20px; 
+  font-weight: 800; 
+  color: #92400e; 
+  letter-spacing: 2px; 
+  text-transform: uppercase; 
+  margin-bottom: 4px; 
+}
+.mvp-winner-team { 
+  font-size: 12px; 
+  color: #b45309; 
+  font-weight: 600; 
+  letter-spacing: 1px; 
+}
 
-.mvp-vote-row { box-sizing: border-box; overflow: hidden; position: relative; margin: 8px 0; border-radius: 8px; }
-.mvp-vote-row[style*="background"], .mvp-vote-row:hover { box-sizing: border-box; overflow: hidden; }
-.mvp-vote-row .vote-check { position: absolute; right: 16px; top: 50%; transform: translateY(-50%); z-index: 2; pointer-events: none; }
-.vote-check { opacity: 0; color: #f59e0b; font-weight: 700; font-size: 18px; transition: opacity 0.2s; }
-.mvp-vote-row:hover .vote-check { opacity: 1; }
+/* Votazione MVP */
+.mvp-vote-row { 
+  box-sizing: border-box; 
+  overflow: hidden; 
+  position: relative; 
+  margin: 8px 0; 
+  border-radius: 8px; 
+}
+.mvp-vote-row[style*="background"], .mvp-vote-row:hover { 
+  box-sizing: border-box; 
+  overflow: hidden; 
+}
+.mvp-vote-row .vote-check { 
+  position: absolute; 
+  right: 16px; 
+  top: 50%; 
+  transform: translateY(-50%); 
+  z-index: 2; 
+  pointer-events: none; 
+}
+.vote-check { 
+  opacity: 0; 
+  color: #f59e0b; 
+  font-weight: 700; 
+  font-size: 18px; 
+  transition: opacity 0.2s; 
+}
+.mvp-vote-row:hover .vote-check { 
+  opacity: 1; 
+}
 /* =============================================================================================
    🏆 10. CLASSIFICHE & FASE FINALE
 =============================================================================================== */
