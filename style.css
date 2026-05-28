@@ -1190,18 +1190,15 @@ body {
 /* 1. Card FINALE 1°-2° (Oro) */
 .bracket-match.final-match {
     background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%) !important;
-    border: 2px solid #d4af37 !important; /* Bordo oro solido */
     box-shadow: 0 4px 15px rgba(212, 175, 55, 0.2) !important;
 }
 
 /* 2. Card FINALE 3°-4° (Bronzo) */
 .bracket-match.third-place {
     background: linear-gradient(135deg, #fff8f0 0%, #fed7aa 100%) !important;
-    border: 2px solid #b45309 !important; /* Bordo bronzo solido */
     box-shadow: 0 4px 15px rgba(180, 83, 9, 0.2) !important;
 }
 
-/* 3. Effetto LIVE per la FINALE (Oro 3D)
    Quando è LIVE, NON diventa granata, ma brilla d'oro */
 .bracket-match.final-match.live-match {
     background: linear-gradient(135deg, #fffbeb 0%, #fde047 100%) !important;
