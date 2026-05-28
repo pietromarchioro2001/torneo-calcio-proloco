@@ -646,27 +646,27 @@ body {
 /* Back Button */
 .match-page .back-btn-wrapper { margin-top: auto; padding: 20px 0 10px; display: flex; justify-content: flex-end; }
 
-/* Card con sfumatura granata FISSA e leggermente più evidente */
+/* Card con sfumatura granata FISSA - PIÙ VISIBILE */
 .home-next-match,
 .match-card,
 .bracket-match {
   background: linear-gradient(135deg, 
     rgba(255,255,255,1) 0%, 
-    rgba(122,30,44,0.08) 100%
+    rgba(122,30,44,0.15) 100%  /* Aumentato da 0.08 a 0.15 */
   );
   transition: all 0.3s ease;
 }
 
-/* Hover leggermente più accentuato */
+/* Hover più accentuato */
 .home-next-match:hover,
 .match-card:hover,
 .bracket-match:hover {
   background: linear-gradient(135deg, 
     rgba(255,255,255,1) 0%, 
-    rgba(122,30,44,0.12) 100%
+    rgba(122,30,44,0.25) 100%  /* Aumentato da 0.12 a 0.25 */
   );
   transform: translateY(-2px);
-  box-shadow: 0 8px 20px rgba(122,30,44,0.15);
+  box-shadow: 0 8px 20px rgba(122,30,44,0.25);
 }
 
 /* =============================================================================================
@@ -1105,7 +1105,7 @@ body {
 }
 
 .bracket-match.live-match {
-  border: 2px solid var(--granata) !important; /* #7a1e2c */
+  border: 2px solid var(--granata) !important;
   box-shadow: 0 0 20px rgba(122, 30, 44, 0.4) !important;
   animation: borderPulseLive 2s infinite;
 }
