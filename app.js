@@ -2060,22 +2060,31 @@ function renderAppFromCache() { renderToolbar("home"); const path = window.locat
 // ============================================================================
 // 🎯 GLOBAL EVENT LISTENERS
 // ============================================================================
-// SOSTITUISCI il global event listener con questo:
+
 document.addEventListener("click", function(e) {
-    // Ignora click su elementi con stopPropagation
-    if (e.target.closest('.player-row') || e.target.closest('.mvp-vote-row')) {
-        return;
-    }
+  // Ignora click su elementi con stopPropagation
+  if (e.target.closest('.player-row') || e.target.closest('.mvp-vote-row')) {
+    return;
+  }
+  
+  // ✅ USA closest() per gestire click su elementi figli del pulsante
+  const tabBtn = e.target.closest('.mt-btn');
+  if (tabBtn) {
+    if (tabBtn.classList.contains("disabled")) return;
     
-    if (e.target.classList.contains("mt-btn")) { 
-        if (e.target.classList.contains("disabled")) return; 
-        const tab = e.target.dataset.tab; 
-        window.APP_STATE.activeMatchTab = tab;
-        document.querySelectorAll(".mt-btn").forEach(b => b.classList.remove("active")); 
-        e.target.classList.add("active"); 
-        document.querySelectorAll(".tab-content").forEach(t => t.classList.remove("active")); 
-        document.getElementById("tab-" + tab)?.classList.add("active"); 
-    }
+    const tab = tabBtn.dataset.tab;
+    
+    // Salva lo stato del tab attivo
+    window.APP_STATE.activeMatchTab = tab;
+    
+    // Aggiorna classi active
+    document.querySelectorAll(".mt-btn").forEach(b => b.classList.remove("active"));
+    tabBtn.classList.add("active");
+    
+    // Mostra il tab selezionato
+    document.querySelectorAll(".tab-content").forEach(t => t.classList.remove("active"));
+    document.getElementById("tab-" + tab)?.classList.add("active");
+  }
 });
 
 // ============================================================================
