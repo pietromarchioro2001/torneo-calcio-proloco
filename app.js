@@ -452,7 +452,7 @@ function renderHomeMatchCard(match, isLive) {
 }
 
 function showHome() {
-    window.location.hash = 'home';
+    window.location.hash = '#home';
     stopStandingsLiveRefresh();
     renderToolbar("home");
      // 🔥 Controlla se ci sono partite LIVE e avvia polling
@@ -478,7 +478,7 @@ function showHome() {
 // 👥 TEAMS FUNCTIONS
 // ============================================================================
 function showTeams() {
-    window.location.hash = 'teams'; stopStandingsLiveRefresh(); renderToolbar("teams");
+    window.location.hash = '#teams'; stopStandingsLiveRefresh(); renderToolbar("teams");
     document.getElementById("app").innerHTML = `<div class="teams-page"><div class="teams-header"><div class="page-title">SQUADRE</div><div class="phase-btn" onclick="openNewTeamPage()">+ NUOVA SQUADRA</div></div><div class="teams-scroll"><div id="teamsList"></div></div></div>`;
     renderTeams();
 }
@@ -740,7 +740,7 @@ function updateMVPBanner(match) {
 // ⚽ MATCHES FUNCTIONS
 // ============================================================================
 function showMatches() {
-    window.location.hash = 'matches'; stopMatchLiveRefresh(); stopStandingsLiveRefresh(); renderToolbar("matches");
+    window.location.hash = '#matches'; stopMatchLiveRefresh(); stopStandingsLiveRefresh(); renderToolbar("matches");
     // 🔥 Controlla se ci sono partite LIVE e avvia polling
     const hasLiveMatch = (window.APP_CACHE.matches || []).some(m => 
         m.STATO_PARTITA === "LIVE" || m.STATO_PARTITA === "SUPP" || m.STATO_PARTITA === "RIGORI"
@@ -1733,7 +1733,7 @@ function stopMatchLiveRefresh() {
 }
 
 function showStandings() {
-    window.location.hash = 'standings';
+    window.location.hash = '#standings';
     renderToolbar("standings");
     
     // ✅ CHECK IMMEDIATO: se fase finale attiva, imposta tab corretta SUBITO
