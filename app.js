@@ -1873,17 +1873,57 @@ function renderFinalBracket(matches) {
   `;
 }
 function renderNextPhaseButton() {
-    const oldBtn = document.getElementById("next-phase-action-btn"); if (oldBtn) oldBtn.remove();
-    const container = document.getElementById("finalBracketContainer"); if (!container) return;
+    const oldBtn = document.getElementById("next-phase-action-btn"); 
+    if (oldBtn) oldBtn.remove();
+    const container = document.getElementById("finalBracketContainer"); 
+    if (!container) return;
     const finalStageData = window.APP_CACHE.finalStage || [];
-    const quarti = finalStageData.filter(m => m.turno === "QUARTI"); const quartiFiniti = quarti.filter(m => m.stato === "FINITA").length;
-    const semi = finalStageData.filter(m => m.turno === "SEMIFINALE"); const semiFiniti = semi.filter(m => m.stato === "FINITA").length;
-    let isReady = false; let action = null;
-    if (quartiFiniti === 4) { isReady = true; action = "SEMIFINALI"; }
-    else if (quartiFiniti === 4 && semiFiniti === 2) { isReady = true; action = "FINALI"; }
-    const btnWrapper = document.createElement("div"); btnWrapper.className = "next-phase-button"; btnWrapper.id = "next-phase-action-btn";
-    const btn = document.createElement("button"); btn.className = `next-phase-btn ${isReady ? '' : 'disabled'}`; btn.textContent = "PROSSIMA FASE"; if (isReady) { btn.onclick = () => openNextPhasePopup(action); }
-    btnWrapper.appendChild(btn); const pageContainer = document.querySelector('.final-stage-page'); if(pageContainer) { pageContainer.appendChild(btnWrapper); }
+    
+    const quarti = finalStageData.filter(m => m.turno === "QUARTI"); 
+    const quartiFiniti = quarti.filter(m => m.stato === "FINITA").length;
+    const semi = finalStageData.filter(m => m.turno === "SEMIFINALE"); 
+    const semiFiniti = semi.filter(m => m.stato === "FINITA").length;
+    const finali = finalStageData.filter(m => m.turno === "FINALE" || m.turno === "FINALE 3-4"); 
+    const finaliFiniti = finali.filter(m => m.stato === "FINITA").length;
+    
+    // Verifica se le semifinali sono già state create
+    const sf1Exists = finalStageData.some(m => m.matchKey === "SF1");
+    const sf2Exists = finalStageData.some(m => m.matchKey === "SF2");
+    const semiCreate = sf1Exists && sf2Exists;
+    
+    // Verifica se le finali sono già state create
+    const final1Exists = finalStageData.some(m => m.matchKey === "F");
+    const final3Exists = finalStageData.some(m => m.matchKey === "TP");
+    const finaliCreate = final1Exists && final3Exists;
+    
+    let isReady = false; 
+    let action = null;
+    
+    // Logica per SEMIFINALI: quarti finiti E semifinali non ancora create
+    if (quartiFiniti === 4 && !semiCreate) { 
+        isReady = true; 
+        action = "SEMIFINALI"; 
+    }
+    // Logica per FINALI: semifinali finite E finali non ancora create
+    else if (quartiFiniti === 4 && semiFiniti === 2 && !finaliCreate) { 
+        isReady = true; 
+        action = "FINALI"; 
+    }
+    
+    const btnWrapper = document.createElement("div"); 
+    btnWrapper.className = "next-phase-button"; 
+    btnWrapper.id = "next-phase-action-btn";
+    const btn = document.createElement("button"); 
+    btn.className = `next-phase-btn ${isReady ? '' : 'disabled'}`; 
+    btn.textContent = "PROSSIMA FASE"; 
+    if (isReady) { 
+        btn.onclick = () => openNextPhasePopup(action); 
+    }
+    btnWrapper.appendChild(btn); 
+    const pageContainer = document.querySelector('.final-stage-page'); 
+    if(pageContainer) { 
+        pageContainer.appendChild(btnWrapper); 
+    }
 }
 
 function openNextPhasePopup(phase) {
@@ -2192,23 +2232,41 @@ function loadPlayersForMatch(match) {
 }
 
 function renderPlayersTab(casaData, trasfData, match) {
-    const container = document.getElementById("playersColumns"); if (!container) return;
-    const casaPlayers = casaData?.players || []; const trasfPlayers = trasfData?.players || [];
-    const isFinished = match.STATO_PARTITA === "FINITA"; const mvpName = match.MVP;
+    const container = document.getElementById("playersColumns"); 
+    if (!container) return;
+    const casaPlayers = casaData?.players || []; 
+    const trasfPlayers = trasfData?.players || [];
+    const isFinished = match.STATO_PARTITA === "FINITA"; 
+    const mvpName = match.MVP;
     const events = window.APP_CACHE.eventsByMatch?.[match.MATCH_ID] || [];
-    const eventMap = {}; events.forEach(e => { if (e.PLAYER_ID) { if (!eventMap[e.PLAYER_ID]) eventMap[e.PLAYER_ID] = []; eventMap[e.PLAYER_ID].push(e.TIPO); } });
+    const eventMap = {}; 
+    events.forEach(e => { 
+        if (e.PLAYER_ID) { 
+            if (!eventMap[e.PLAYER_ID]) eventMap[e.PLAYER_ID] = []; 
+            eventMap[e.PLAYER_ID].push(e.TIPO); 
+        } 
+    });
+    
     const renderPlayerList = (players, teamName) => {
         if (!players.length) return `<div style="text-align:center;padding:20px;color:#888">Nessun giocatore</div>`;
         let html = "<div class='players-list'>";
         players.forEach(p => {
             const playerEvents = eventMap[p.PLAYER_ID] || [];
             const badges = playerEvents.map(t => t === "GOAL" ? "⚽" : t === "AMMONIZIONE" ? "🟨" : "🟥").join(" ");
-            const isMVP = isFinished && p.NOME === mvpName; const mvpClass = isMVP ? "mvp-player-row" : ""; const crownHtml = isMVP ? '<div class="mvp-crown">👑</div>' : '';
+            const isMVP = isFinished && p.NOME === mvpName; 
+            const mvpClass = isMVP ? "mvp-player-row" : ""; 
+            const crownHtml = isMVP ? '<div class="mvp-crown">👑</div>' : '';
             const photoHtml = p.FOTO_ID ? `<img src="${getCachedImage(p.FOTO_ID, 40)}" alt="${p.NOME}" class="${isMVP ? 'mvp-player-photo' : ''}" onerror="this.style.display='none'">` : `<div class="player-avatar-fallback ${isMVP ? 'mvp-player-avatar' : ''}">👤</div>`;
-            html += `<div class="player-row ${mvpClass}" onclick="event.stopPropagation()"><div class="player-avatar ${isMVP ? 'mvp-player-avatar-wrapper' : ''}">${photoHtml}${crownHtml}</div><div class="player-name">${(p.NOME || "").toUpperCase()}${badges ? `<span class="player-badges">${badges}</span>` : ""}</div></div>`;
+            // ✅ AGGIUNTO: onclick per aprire il popup del giocatore
+            html += `<div class="player-row ${mvpClass}" onclick="openPlayerPopup('${p.PLAYER_ID}'); event.stopPropagation();" style="cursor:pointer;">
+                <div class="player-avatar ${isMVP ? 'mvp-player-avatar-wrapper' : ''}">${photoHtml}${crownHtml}</div>
+                <div class="player-name">${(p.NOME || "").toUpperCase()}${badges ? `<span class="player-badges">${badges}</span>` : ""}</div>
+            </div>`;
         });
-        html += "</div>"; return html;
+        html += "</div>"; 
+        return html;
     };
+    
     container.innerHTML = `<div class="players-col"><div class="players-team">${(casaData?.team?.NOME_SQUADRA || match.SQUADRA_CASA || "").toUpperCase()}</div>${renderPlayerList(casaPlayers, match.SQUADRA_CASA)}</div><div class="players-col"><div class="players-team">${(trasfData?.team?.NOME_SQUADRA || match.SQUADRA_TRASFERTA || "").toUpperCase()}</div>${renderPlayerList(trasfPlayers, match.SQUADRA_TRASFERTA)}</div>`;
 }
 
