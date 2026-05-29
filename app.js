@@ -1853,17 +1853,16 @@ function startMatchLiveRefresh() {
           String(m.MATCH_ID) === String(match.MATCH_ID)
         );
         
-        if (idx >= 0) {
+        if (idx < 0) continue;
+
+        const updatedMatch = {
+          ...window.APP_CACHE.matches[idx],
+          ...freshData.match,
+          ...calculatedScore,
+          DATA: safeData
+        };
         
-          const updatedMatch = {
-            ...window.APP_CACHE.matches[idx],
-            ...freshData.match,
-            ...calculatedScore,
-            DATA: safeData
-          };
-        
-          window.APP_CACHE.matches[idx] = updatedMatch;
-        }
+        window.APP_CACHE.matches[idx] = updatedMatch;
           
           // ✅ Aggiorna eventi in cache
           window.APP_CACHE.eventsByMatch[match.MATCH_ID] = freshEvents;
