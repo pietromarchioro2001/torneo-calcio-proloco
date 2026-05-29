@@ -431,19 +431,26 @@ function renderHomeMatchCard(match, isLive) {
     const statoDisplay = typeof isLive === 'string' ? isLive : (isLive ? "LIVE" : "");
     const isAttiva = (statoDisplay === "LIVE" || statoDisplay === "SUPP" || statoDisplay === "RIGORI");
     
-    const logoCasa = match.LOGO_CASA ? `<img src="${getCachedImage(match.LOGO_CASA, 34)}" alt="${match.SQUADRA_CASA}" onerror="this.style.display='none'">` : `<div class="home-team-logo">⚽</div>`;
-    const logoTrasf = match.LOGO_TRASFERTA ? `<img src="${getCachedImage(match.LOGO_TRASFERTA, 34)}" alt="${match.SQUADRA_TRASFERTA}" onerror="this.style.display='none'">` : `<div class="home-team-logo">⚽</div>`;
-    
+    const logoCasa = match.LOGO_CASA 
+        ? `<img src="${getCachedImage(match.LOGO_CASA, 34)}" alt="${match.SQUADRA_CASA}" onerror="this.style.display='none'">` 
+        : `<div class="home-team-logo">⚽</div>`;
+        
+    const logoTrasf = match.LOGO_TRASFERTA 
+        ? `<img src="${getCachedImage(match.LOGO_TRASFERTA, 34)}" alt="${match.SQUADRA_TRASFERTA}" onerror="this.style.display='none'">` 
+        : `<div class="home-team-logo">⚽</div>`;
+        
     let centerContent = "";
     if (isAttiva) {
-        centerContent = `<div class="home-live-badge"><div class="home-score">${match.GOL_CASA || 0} - ${match.GOL_TRASFERTA || 0}</div>
-        <div class="home-live-row"><div class="home-live-text">${statoDisplay}</div><div class="home-live-dot"></div></div></div>`;
+        centerContent = `<div class="home-live-badge">
+            <div class="home-score">${match.GOL_CASA || 0} - ${match.GOL_TRASFERTA || 0}</div>
+            <div class="home-live-row"><div class="home-live-text">${statoDisplay}</div><div class="home-live-dot"></div></div>
+        </div>`;
     } else {
         const dateObj = parseLocalDate(match.DATA);
         const dateStr = dateObj ? `${dateObj.getDate()}/${dateObj.getMonth()+1}` : "";
         centerContent = `<div class="home-match-time">${match.ORA || "--:--"}</div><div class="home-match-date">${dateStr}</div>`;
     }
-
+    
     return `<div class="home-next-match ${isAttiva ? 'live-card' : ''}" onclick="openMatch('${match.MATCH_ID}')">
         <div class="home-team-block left">${logoCasa}<span class="home-team">${(match.SQUADRA_CASA || "").toUpperCase()}</span></div>
         <div class="home-match-center">${centerContent}</div>
@@ -1882,32 +1889,31 @@ function renderFinalStage(data) {
 }
 
 function renderFinalBracket(matches) {
-  const container = document.getElementById("finalBracketContainer"); 
-  if (!container) return;
-  
-  const matchMap = {}; 
-  (matches || []).forEach(m => { 
-    if (m.matchKey) { 
-      matchMap[m.matchKey] = m; 
-    } 
-  });
-  
-  // 🔥 MOSTRA SEMIFINALI SE ESISTONO
-  const sf1Match = matchMap["SF1"];
-  const sf2Match = matchMap["SF2"];
-  
-  container.innerHTML = `
+    const container = document.getElementById("finalBracketContainer");
+    if (!container) return;
+    
+    const matchMap = {};
+    (matches || []).forEach(m => {
+        if (m.matchKey) {
+            matchMap[m.matchKey] = m;
+        }
+    });
+    
+    const sf1Match = matchMap["SF1"];
+    const sf2Match = matchMap["SF2"];
+    
+    container.innerHTML = `
     <div class="tournament-wrapper">
-      ${renderBracketMatch(matchMap["Q1"], "qf1")}
-      ${renderBracketMatch(matchMap["Q2"], "qf2")}
-      ${renderBracketMatch(matchMap["Q3"], "qf3")}
-      ${renderBracketMatch(matchMap["Q4"], "qf4")}
-      ${sf1Match ? renderBracketMatch(sf1Match, "sf1") : renderPlaceholderCard("SF1", "sf1")}
-      ${sf2Match ? renderBracketMatch(sf2Match, "sf2") : renderPlaceholderCard("SF2", "sf2")}
-      ${renderPlaceholderCard("FINALE 1°-2°", "final-match")}
-      ${renderPlaceholderCard("FINALE 3°-4°", "third-place")}
+        ${renderBracketMatch(matchMap["Q1"], "qf1")}
+        ${renderBracketMatch(matchMap["Q2"], "qf2")}
+        ${renderBracketMatch(matchMap["Q3"], "qf3")}
+        ${renderBracketMatch(matchMap["Q4"], "qf4")}
+        ${sf1Match ? renderBracketMatch(sf1Match, "sf1") : renderPlaceholderCard("SF1", "sf1")}
+        ${sf2Match ? renderBracketMatch(sf2Match, "sf2") : renderPlaceholderCard("SF2", "sf2")}
+        ${renderPlaceholderCard("FINALE 1°-2°", "final-match")}
+        ${renderPlaceholderCard("FINALE 3°-4°", "third-place")}
     </div>
-  `;
+    `;
 }
 function renderNextPhaseButton() {
     const oldBtn = document.getElementById("next-phase-action-btn"); 
@@ -2135,28 +2141,32 @@ function renderBracketMatch(match, cls="") {
     const logoCasa = match.casa?.logo ? `<img src="${getCachedImage(match.casa.logo, 24)}" alt="${match.casa.nome}" onerror="this.style.display='none'">` : `<div style="width:24px;height:24px;border-radius:50%;background:#f0f0f0"></div>`;
     const logoTrasf = match.trasferta?.logo ? `<img src="${getCachedImage(match.trasferta.logo, 24)}" alt="${match.trasferta.nome}" onerror="this.style.display='none'">` : `<div style="width:24px;height:24px;border-radius:50%;background:#f0f0f0"></div>`;
     
-    const isLive = ["LIVE", "SUPP", "RIGORI"].includes(match.stato); 
-    const isSupp = match.stato === "SUPP"; 
+    const isLive = ["LIVE", "SUPP", "RIGORI"].includes(match.stato);
+    const isSupp = match.stato === "SUPP";
     const isFinished = match.stato === "FINITA";
     
     let scoreCasa = "0"; let scoreTrasf = "0";
     if (isLive || isFinished) { scoreCasa = match.golCasa || 0; scoreTrasf = match.golTrasferta || 0; }
     
     const scoreClass = isLive ? "bracket-score live" : "bracket-score scheduled";
-    
     let casaClass = "", trasfClass = "";
-    if (isFinished) { if (scoreCasa > scoreTrasf) { casaClass = "winner"; trasfClass = "loser"; } else { casaClass = "loser"; trasfClass = "winner"; } }
     
-    const statusIndicator = isSupp ? '<span style="font-size:9px;color:#8c1d2c;font-weight:700;margin-left:4px">/span>' : '';
+    if (isFinished) { 
+        if (scoreCasa > scoreTrasf) { casaClass = "winner"; trasfClass = "loser"; } 
+        else { casaClass = "loser"; trasfClass = "winner"; } 
+    }
     
-    // 🔥 LOGICA LIVE CORRETTA: Assegna live-gold o live-bronze se siamo nelle finali
+    // FIX: statusIndicator corretto senza tag spezzati
+    const statusIndicator = isSupp ? '<span style="font-size:9px;color:#8c1d2c;font-weight:700;margin-left:4px">SUPP</span>' : '';
+    
     let liveClass = "";
     if (isLive) {
         if (cls === 'final-match') liveClass = "live-gold";
         else if (cls === 'third-place') liveClass = "live-bronze";
-        else liveClass = "live-match"; // Granata per quarti/semifinali
+        else liveClass = "live-match";
     }
-
+    
+    // FIX: Template string pulita
     return `<div class="bracket-match ${cls} ${isFinished ? 'concluded' : ''} ${liveClass}" onclick="openMatch('${match.matchId}')">
         <div class="bracket-team ${casaClass}">${logoCasa}<span>${(match.casa?.nome || "TBD").toUpperCase()}</span><span class="${scoreClass}">${scoreCasa}${statusIndicator}</span></div>
         <div class="bracket-team ${trasfClass}">${logoTrasf}<span>${(match.trasferta?.nome || "TBD").toUpperCase()}</span><span class="${scoreClass}">${scoreTrasf}${statusIndicator}</span></div>
