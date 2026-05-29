@@ -365,14 +365,19 @@ function getNextMatchCard() {
   );
   
   if (liveMatch) {
-    // ✅ VALIDAZIONE DATI PRIMA DEL RENDERING
+    // ✅ VALIDAZIONE DATI OBBLIGATORI
     if (!liveMatch.MATCH_ID || !liveMatch.CASA_ID || !liveMatch.TRASFERTA_ID) {
-      console.error('⚠️ Match LIVE incompleto:', liveMatch);
-      // Tenta di recuperare i dati completi
-      const fullMatch = window.APP_STATE.matchesById[liveMatch.MATCH_ID] || 
-                        window.APP_CACHE.matches.find(m => String(m.MATCH_ID) === String(liveMatch.MATCH_ID));
+      console.error('⚠️ Match LIVE/SUPP incompleto:', liveMatch);
+      // Tenta recupero da matchesById
+      const fullMatch = window.APP_STATE.matchesById[liveMatch.MATCH_ID];
       if (fullMatch && fullMatch.CASA_ID && fullMatch.TRASFERTA_ID) {
-        return renderHomeMatchCard(fullMatch, liveMatch.STATO_PARTITA);
+        let matchWithScore = { ...fullMatch };
+        const hasValidScore = (fullMatch.GOL_CASA !== undefined && fullMatch.GOL_TRASFERTA !== undefined);
+        if (!hasValidScore) {
+          const liveEvents = eventsByMatch[fullMatch.MATCH_ID] || [];
+          matchWithScore = calculateMatchScore(fullMatch, liveEvents);
+        }
+        return renderHomeMatchCard(matchWithScore, liveMatch.STATO_PARTITA);
       }
       // Se non ci sono dati validi, mostra card vuota
       return renderEmptyNextMatch();
@@ -407,8 +412,7 @@ function getNextMatchCard() {
     // ✅ VALIDAZIONE DATI
     if (!nextMatch.MATCH_ID || !nextMatch.CASA_ID || !nextMatch.TRASFERTA_ID) {
       console.error('⚠️ Prossima partita incompleta:', nextMatch);
-      const fullMatch = window.APP_STATE.matchesById[nextMatch.MATCH_ID] || 
-                        window.APP_CACHE.matches.find(m => String(m.MATCH_ID) === String(nextMatch.MATCH_ID));
+      const fullMatch = window.APP_STATE.matchesById[nextMatch.MATCH_ID];
       if (fullMatch && fullMatch.CASA_ID && fullMatch.TRASFERTA_ID) {
         nextMatch = fullMatch;
       } else {
@@ -428,7 +432,7 @@ function getNextMatchCard() {
   return renderEmptyNextMatch();
 }
 
-// ✅ AGGIUNGI QUESTA FUNZIONE HELPER
+// ✅ AGGIUNGI QUESTA FUNZIONE
 function renderEmptyNextMatch() {
   return `<div class="home-next-match" style="
     opacity:0.7;
@@ -456,7 +460,6 @@ function renderEmptyNextMatch() {
     </div>
   </div>`;
 }
-
 function calculateMatchScore(match, events) {
     const goals = events.filter(e => e.TIPO === 'GOAL');
     let golCasa = 0, golTrasferta = 0;
@@ -468,6 +471,12 @@ function calculateMatchScore(match, events) {
 }
 
 function renderHomeMatchCard(match, isLive) {
+  // ✅ CONTROLLI DI SICUREZZA
+  if (!match || !match.SQUADRA_CASA || !match.SQUADRA_TRASFERTA) {
+    console.error('❌ renderHomeMatchCard: dati incompleti', match);
+    return renderEmptyNextMatch();
+  }
+  
   const statoDisplay = typeof isLive === 'string' ? isLive : (isLive ? "LIVE" : "");
   const isAttiva = (statoDisplay === "LIVE" || statoDisplay === "SUPP" || statoDisplay === "RIGORI");
   
@@ -475,14 +484,25 @@ function renderHomeMatchCard(match, isLive) {
   const squadraCasa = Sanitizer.html((match.SQUADRA_CASA || "").toUpperCase());
   const squadraTrasf = Sanitizer.html((match.SQUADRA_TRASFERTA || "").toUpperCase());
   
-  const logoCasa = match.LOGO_CASA 
-    ? `<img src="${getCachedImage(match.LOGO_CASA, 34)}" alt="${squadraCasa}" onerror="this.style.display='none'">` 
-    : `<div class="home-team-logo">⚽</div>`;
-    
-  const logoTrasf = match.LOGO_TRASFERTA 
-    ? `<img src="${getCachedImage(match.LOGO_TRASFERTA, 34)}" alt="${squadraTrasf}" onerror="this.style.display='none'">` 
-    : `<div class="home-team-logo">⚽</div>`;
-    
+  // ✅ GESTIONE LOGO PIÙ SICURA
+  let logoCasaHtml = `<div class="home-team-logo">⚽</div>`;
+  if (match.LOGO_CASA) {
+    const logoUrl = getCachedImage(match.LOGO_CASA, 34);
+    if (logoUrl) {
+      logoCasaHtml = `<img src="${logoUrl}" alt="${squadraCasa}" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex'">
+                      <div class="home-team-logo" style="display:none">⚽</div>`;
+    }
+  }
+  
+  let logoTrasfHtml = `<div class="home-team-logo">⚽</div>`;
+  if (match.LOGO_TRASFERTA) {
+    const logoUrl = getCachedImage(match.LOGO_TRASFERTA, 34);
+    if (logoUrl) {
+      logoTrasfHtml = `<img src="${logoUrl}" alt="${squadraTrasf}" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex'">
+                       <div class="home-team-logo" style="display:none">⚽</div>`;
+    }
+  }
+  
   let centerContent = "";
   if (isAttiva) {
     centerContent = `<div class="home-live-badge"><div class="home-score">${match.GOL_CASA || 0} - ${match.GOL_TRASFERTA || 0}</div>
@@ -497,9 +517,9 @@ function renderHomeMatchCard(match, isLive) {
   const matchId = Sanitizer.attr(match.MATCH_ID);
   
   return `<div class="home-next-match ${isAttiva ? 'live-card' : ''}" onclick="openMatch('${matchId}')">
-    <div class="home-team-block left">${logoCasa}<span class="home-team">${squadraCasa}</span></div>
+    <div class="home-team-block left">${logoCasaHtml}<span class="home-team">${squadraCasa}</span></div>
     <div class="home-match-center">${centerContent}</div>
-    <div class="home-team-block right"><span class="home-team">${squadraTrasf}</span>${logoTrasf}</div>
+    <div class="home-team-block right"><span class="home-team">${squadraTrasf}</span>${logoTrasfHtml}</div>
   </div>`;
 }
 
