@@ -3,7 +3,7 @@
 // ============================================================================
 const CONFIG = {
     // 🔥 SOSTITUISCI CON IL TUO URL APPS SCRIPT WEB APP
-    BACKEND_URL: 'https://script.google.com/macros/s/AKfycbx_TVSzqfBetvJj_9-24Waee4m7hDA3crKPrfPyC3tL6WPG8QppXn412gI2_3u2dz5Y/exec',
+    BACKEND_URL: 'https://script.google.com/macros/s/AKfycbxEud0fOyHosvZ1YqPnVFkj7k9p2SNOtvgjqrDsR33_gcutAPU-rlg0m-kSmDLrL2zP/exec',
     API_TIMEOUT: 30000,
     CACHE_VERSION: 'v3.0',
     CACHE_MAX_AGE: 5 * 60 * 1000
@@ -1850,11 +1850,11 @@ function startMatchLiveRefresh() {
           }
           
           // Crea oggetto match aggiornato con dati validati
-          const updatedMatch = { 
-            ...freshData.match, 
-            ...calculatedScore, 
-            DATA: safeData 
-          };
+          const updatedMatch = {
+              ...window.APP_CACHE.matches[idx],
+              ...freshData.match,
+              ...calculatedScore
+            };
           
           // ✅ Aggiorna APP_CACHE.matches
           const idx = window.APP_CACHE.matches.findIndex(m => 
