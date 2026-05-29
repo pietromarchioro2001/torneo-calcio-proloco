@@ -1870,11 +1870,31 @@ function startMatchLiveRefresh() {
           window.APP_CACHE.eventsByMatch[match.MATCH_ID] = freshEvents;
           
           // ✅ AGGIORNA UI SOLO SE I DATI SONO VALIDI
-          if (document.querySelector('.match-page') && 
-              String(window.APP_STATE.currentMatchId) === String(match.MATCH_ID)) {
-            renderMatchPage(updatedMatch);
-            loadPlayersForMatch(updatedMatch);
-          }
+            if (document.querySelector('.match-page') && 
+                String(window.APP_STATE.currentMatchId) === String(match.MATCH_ID)) {
+              renderMatchPage(updatedMatch);
+              loadPlayersForMatch(updatedMatch);
+            }
+            
+            // 🔥 FIX CRITICO: Aggiorna anche matchesById con la data normalizzata
+            if (window.APP_STATE.matchesById[match.MATCH_ID]) {
+              window.APP_STATE.matchesById[match.MATCH_ID] = {
+                ...window.APP_STATE.matchesById[match.MATCH_ID],
+                ...updatedMatch,
+                DATA: safeData // ← DATA NORMALIZZATA
+              };
+            }
+            
+            // 🔥 FIX: Se siamo nella pagina matches, forza re-render CON la data selezionata
+            if (document.querySelector('.matches-page')) {
+              // Non basta renderMatches(), dobbiamo usare la data attualmente selezionata
+              const selectedDate = window.APP_STATE.selectedDate;
+              if (selectedDate) {
+                renderMatchesByDate(selectedDate); // ← RERENDER DELLA DATA CORRENTE
+              } else {
+                renderMatches(); // ← Fallback
+              }
+            }
           
           if (document.querySelector('.home-container')) {
               const nextCardHtml = getNextMatchCard(); // ← Stringa HTML
@@ -1890,16 +1910,12 @@ function startMatchLiveRefresh() {
                 // existing.replaceWith(temp.firstElementChild);
               }
             }
-          
-          if (document.querySelector('.matches-page')) {
-            renderMatches();
-          }
         }
       } catch (error) {
         console.error(`❌ Errore refresh match ${match.MATCH_ID}:`, error);
       }
     }
-  }, 3000);
+  }, 2000);
 }
 
 function stopMatchLiveRefresh() {
