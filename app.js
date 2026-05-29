@@ -1897,17 +1897,11 @@ function startMatchLiveRefresh() {
             }
           
           if (document.querySelector('.home-container')) {
-              const nextCardHtml = getNextMatchCard(); // ← Stringa HTML
+              const nextCardHtml = getNextMatchCard(); // Stringa HTML
               const existing = document.querySelector('.home-next-match');
               
-              if (existing) {
-                // ✅ METODO 1: Usa outerHTML (più semplice)
-                existing.outerHTML = nextCardHtml;
-                
-                // ✅ METODO 2 (alternativa): Crea elemento temporaneo
-                // const temp = document.createElement('div');
-                // temp.innerHTML = nextCardHtml;
-                // existing.replaceWith(temp.firstElementChild);
+              if (existing && nextCardHtml) {
+                existing.outerHTML = nextCardHtml; // ✅ CORRETTO
               }
             }
         }
@@ -2185,9 +2179,12 @@ async function refreshAllData() {
         
         // Aggiorna UI attiva
         if (document.querySelector(".home-container")) {
-            const nextMatchCard = getNextMatchCard();
-            const existingCard = document.querySelector(".home-next-match");
-            if (existingCard) existingCard.replaceWith(nextMatchCard);
+          const nextMatchCard = getNextMatchCard();
+          const existingCard = document.querySelector(".home-next-match");
+          if (existingCard && nextMatchCard) {
+            // ✅ USA outerHTML INVECE DI replaceWith
+            existingCard.outerHTML = nextMatchCard;
+          }
         }
         if (document.querySelector(".matches-page")) renderMatches();
         if (document.querySelector(".standings-page")) {
@@ -2241,13 +2238,16 @@ async function invalidateCacheAndRefresh(type) {
                     CacheManager.save(window.APP_CACHE);
                 }
                 // Aggiorna UI
-                if (document.querySelector(".matches-page")) renderMatches();
-                if (document.querySelector(".home-container")) {
-                    const nextCard = getNextMatchCard();
-                    const existing = document.querySelector(".home-next-match");
-                    if (existing) existing.replaceWith(nextCard);
+              if (document.querySelector(".matches-page")) renderMatches();
+              if (document.querySelector(".home-container")) {
+                const nextCard = getNextMatchCard();
+                const existing = document.querySelector(".home-next-match");
+                if (existing && nextCard) {
+                  // ✅ USA outerHTML INVECE DI replaceWith
+                  existing.outerHTML = nextCard;
                 }
-                break;
+              }
+              break;
                 
             case 'standings':
                 // Ricarica classifiche
@@ -2425,23 +2425,20 @@ function bootAdminApp() {
             startMatchLiveRefresh();
         }
       }
-      
-      // ✅ ROUTING INTELLIGENTE: se fase finale attiva, vai subito lì
-      if (!initialRouteHandled) {
-        initialRouteHandled = true;
-        const currentHash = window.location.hash || "#home";
-        
-        if (finalStageStarted && !currentHash.includes("standings")) {
-          // Se siamo in fase finale, prepara la tab corretta
-          window.APP_STATE._activeStandingsTab = "fasefinale";
-          window.APP_STATE._finalStageLoaded = false;
+   
+      // ✅ ROUTING: FORZA SEMPRE HOME ALL'AVVIO
+        if (!initialRouteHandled) {
+          initialRouteHandled = true;
+          
+          // Ignora completamente l'hash, apri sempre home
+          showHome();
+          
+          // ✅ Salva comunque lo stato per la fase finale se attiva
+          if (finalStageStarted) {
+            window.APP_STATE._activeStandingsTab = "fasefinale";
+            window.APP_STATE._finalStageLoaded = false;
+          }
         }
-        
-        if (currentHash.includes("matches")) showMatches();
-        else if (currentHash.includes("teams")) showTeams();
-        else if (currentHash.includes("standings")) showStandings();
-        else showHome();
-      }
     })
     .catch(error => {
       console.error('❌ Errore caricamento:', error);
