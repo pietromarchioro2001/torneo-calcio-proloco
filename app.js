@@ -1833,76 +1833,77 @@ function startMatchLiveRefresh() {
         const freshEvents = await ApiClient.getEventsAdmin(match.MATCH_ID);
         
         if (freshData?.match) {
+          // Calcola punteggio dagli eventi
           const calculatedScore = calculateMatchScore(freshData.match, freshEvents);
           
-          // 🔥 MIGLIORAMENTO: Normalizzazione data PIÙ ROBUSTA
+          // 🔥 NORMALIZZAZIONE DATA ROBUSTA (evita mismatch "2026-8-6" vs "2026-08-06")
           let safeData = freshData.match.DATA;
           if (safeData) {
             try {
               const d = new Date(safeData);
               if (!isNaN(d.getTime())) {
-                // ✅ FORMATTAZIONE CONSISTENTE: YYYY-MM-DD con zero padding
                 safeData = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
-                console.log(`📅 Data normalizzata: ${safeData}`);
               }
             } catch(e) {
               console.warn('⚠️ Errore normalizzazione data:', e, safeData);
-              // Mantieni la data originale se non riesci a normalizzarla
             }
           }
           
+          // Crea oggetto match aggiornato con dati validati
           const updatedMatch = { 
             ...freshData.match, 
             ...calculatedScore, 
             DATA: safeData 
           };
           
-          // ✅ AGGIORNA CACHE CON DATI VALIDATI
+          // ✅ Aggiorna APP_CACHE.matches
           const idx = window.APP_CACHE.matches.findIndex(m => 
             String(m.MATCH_ID) === String(match.MATCH_ID)
           );
-          
           if (idx >= 0) {
             window.APP_CACHE.matches[idx] = updatedMatch;
-            CacheManager.save(window.APP_CACHE);
           }
           
+          // ✅ Aggiorna eventi in cache
           window.APP_CACHE.eventsByMatch[match.MATCH_ID] = freshEvents;
           
-          // ✅ AGGIORNA UI SOLO SE I DATI SONO VALIDI
-            if (document.querySelector('.match-page') && 
-                String(window.APP_STATE.currentMatchId) === String(match.MATCH_ID)) {
-              renderMatchPage(updatedMatch);
-              loadPlayersForMatch(updatedMatch);
-            }
-            
-            // 🔥 FIX CRITICO: Aggiorna anche matchesById con la data normalizzata
-            if (window.APP_STATE.matchesById[match.MATCH_ID]) {
-              window.APP_STATE.matchesById[match.MATCH_ID] = {
-                ...window.APP_STATE.matchesById[match.MATCH_ID],
-                ...updatedMatch,
-                DATA: safeData // ← DATA NORMALIZZATA
-              };
-            }
-            
-            // 🔥 FIX: Se siamo nella pagina matches, forza re-render CON la data selezionata
-            if (document.querySelector('.matches-page')) {
-              // Non basta renderMatches(), dobbiamo usare la data attualmente selezionata
-              const selectedDate = window.APP_STATE.selectedDate;
-              if (selectedDate) {
-                renderMatchesByDate(selectedDate); // ← RERENDER DELLA DATA CORRENTE
-              } else {
-                renderMatches(); // ← Fallback
-              }
-            }
+          // ✅ Salva cache (debounce 300ms)
+          CacheManager.save(window.APP_CACHE);
           
-          if (document.querySelector('.home-container')) {
-                const nextCardHtml = getNextMatchCard();  // Stringa HTML
-                const existing = document.querySelector('.home-next-match');
-                if (existing && nextCardHtml) {
-                    existing.outerHTML = nextCardHtml;  // ✅ CORRETTO
-                }
+          // ✅ Aggiorna APP_STATE.matchesById (CRITICO per renderMatchesByDate)
+          if (window.APP_STATE.matchesById[match.MATCH_ID]) {
+            window.APP_STATE.matchesById[match.MATCH_ID] = {
+              ...window.APP_STATE.matchesById[match.MATCH_ID],
+              ...updatedMatch,
+              DATA: safeData
+            };
+          }
+          
+          // ✅ Aggiorna UI: pagina match detail
+          if (document.querySelector('.match-page') && 
+              String(window.APP_STATE.currentMatchId) === String(match.MATCH_ID)) {
+            renderMatchPage(updatedMatch);
+            loadPlayersForMatch(updatedMatch);
+          }
+          
+          // ✅ Aggiorna UI: pagina lista partite (usa data selezionata!)
+          if (document.querySelector('.matches-page')) {
+            const selectedDate = window.APP_STATE.selectedDate;
+            if (selectedDate) {
+              renderMatchesByDate(selectedDate);
+            } else {
+              renderMatches();
             }
+          }
+          
+          // ✅ Aggiorna UI: home card (USA outerHTML, NON replaceWith!)
+          if (document.querySelector('.home-container')) {
+            const nextCardHtml = getNextMatchCard();
+            const existing = document.querySelector('.home-next-match');
+            if (existing && nextCardHtml) {
+              existing.outerHTML = nextCardHtml;  // ← CORRETTO: parsare stringa HTML
+            }
+          }
         }
       } catch (error) {
         console.error(`❌ Errore refresh match ${match.MATCH_ID}:`, error);
