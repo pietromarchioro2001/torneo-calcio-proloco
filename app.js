@@ -3,7 +3,7 @@
 // ============================================================================
 const CONFIG = {
     // 🔥 SOSTITUISCI CON IL TUO URL APPS SCRIPT WEB APP
-    BACKEND_URL: 'https://script.google.com/macros/s/AKfycbyH1yksF3SkgpPhOTwItH7ouPoSdHxuSAf8hSuGCjjZ1Nsnb-PGx1SpWdgsS7hqI2o2/exec',
+    BACKEND_URL: 'https://script.google.com/macros/s/AKfycbxP3nLhgr89AkMaLsjiMO5JCjLdEWjDNlEbCd5s7W7xH-mIf_NeFKmX8eQjtRBheT6Z/exec',
     API_TIMEOUT: 30000,
     CACHE_VERSION: 'v3.0',
     CACHE_MAX_AGE: 5 * 60 * 1000
@@ -525,6 +525,8 @@ async function saveTeam() {
             window.APP_CACHE.teams = [...(window.APP_CACHE.teams || []), newTeam];
             CacheManager.save(window.APP_CACHE);
         }
+        // 🔥 AGGIUNGI QUESTA RIGA
+        await invalidateCacheAndRefresh('teams');
         showTeams();
     } catch (e) { alert("Errore salvataggio: " + (e?.message || e)); }
 }
@@ -640,10 +642,17 @@ async function savePlayerPopup() {
         const playerId = await ApiClient.savePlayerAdmin(currentPlayerId, teamId, name.toUpperCase(), "");
         currentPlayerId = playerId;
         if (playerPhotoTemp) {
-            const base64 = await fileToBase64(playerPhotoTemp); const newPhotoId = await ApiClient.uploadPlayerPhotoReplace(playerId, teamId, name.toUpperCase(), playerPhotoTemp.name, playerPhotoTemp.type, base64);
-            if (window.APP_CACHE.playersMap) { window.APP_CACHE.playersMap[playerId] = { ...window.APP_CACHE.playersMap[playerId], FOTO_ID: newPhotoId, NOME: name.toUpperCase() }; CacheManager.save(window.APP_CACHE); }
+            const base64 = await fileToBase64(playerPhotoTemp);
+            const newPhotoId = await ApiClient.uploadPlayerPhotoReplace(playerId, teamId, name.toUpperCase(), playerPhotoTemp.name, playerPhotoTemp.type, base64);
+            if (window.APP_CACHE.playersMap) {
+                window.APP_CACHE.playersMap[playerId] = { ...window.APP_CACHE.playersMap[playerId], FOTO_ID: newPhotoId, NOME: name.toUpperCase() };
+                CacheManager.save(window.APP_CACHE);
+            }
         }
-        document.querySelector(".modalOverlay")?.remove(); await loadTeamData(teamId);
+        document.querySelector(".modalOverlay")?.remove();
+        // 🔥 AGGIUNGI QUESTA RIGA
+        await invalidateCacheAndRefresh('teams');
+        await loadTeamData(teamId);
     } catch (error) { console.error('Save player error:', error); alert("Errore salvataggio: " + error.message); }
 }
 
@@ -670,6 +679,8 @@ function deleteTeam(id) {
     if (window.APP_CACHE.fullTeams) delete window.APP_CACHE.fullTeams[id];
     if (window.APP_CACHE.teams) { window.APP_CACHE.teams = window.APP_CACHE.teams.filter(t => t.TEAM_ID != id); CacheManager.save(window.APP_CACHE); }
     ApiClient.deleteTeamAdmin(id).catch(console.error);
+    // 🔥 AGGIUNGI QUESTA RIGA
+    invalidateCacheAndRefresh('teams');
 }
 
 // ============================================================================
@@ -705,7 +716,7 @@ async function deleteEvent(eventId, matchId) {
         }
         renderEvents(newEvents, match); renderPlayersTab(window.APP_CACHE.fullTeams?.[String(match.CASA_ID)], window.APP_CACHE.fullTeams?.[String(match.TRASFERTA_ID)], match);
     }
-    try { await ApiClient.deleteEventAdmin(strEventId); refreshStandingsDebounced(500); } catch (error) { console.error('Errore eliminazione backend:', error); alert('Errore eliminazione: ' + error.message); }
+    try { await ApiClient.deleteEventAdmin(strEventId); refreshStandingsDebounced(500); invalidateCacheAndRefresh('matches'); } catch (error) { console.error('Errore eliminazione backend:', error); alert('Errore eliminazione: ' + error.message); }
 }
 
 function updateScoreLocally(matchId, eventId) {
@@ -937,8 +948,12 @@ function openMatchMenu(ev, matchId) {
 
 function deleteMatch(matchId) {
     if (!confirm("Eliminare partita?")) return;
-    delete window.APP_STATE.matchesById[matchId]; if (window.APP_CACHE.matches) { window.APP_CACHE.matches = window.APP_CACHE.matches.filter(m => m.MATCH_ID != matchId); CacheManager.save(window.APP_CACHE); }
-    renderMatches(); ApiClient.deleteMatchAdmin(matchId).catch(console.error);
+    delete window.APP_STATE.matchesById[matchId];
+    if (window.APP_CACHE.matches) { window.APP_CACHE.matches = window.APP_CACHE.matches.filter(m => m.MATCH_ID != matchId); CacheManager.save(window.APP_CACHE); }
+    renderMatches();
+    ApiClient.deleteMatchAdmin(matchId).catch(console.error);
+    // 🔥 AGGIUNGI QUESTA RIGA
+    invalidateCacheAndRefresh('matches');
 }
 
 function openNewMatchPage() {
@@ -957,7 +972,13 @@ async function saveMatch() {
     const girone = document.getElementById("matchGirone")?.value, casa = document.getElementById("teamCasa")?.value, trasferta = document.getElementById("teamTrasferta")?.value;
     const data = document.getElementById("matchDate")?.value, ora = document.getElementById("matchTime")?.value;
     if (!girone) { alert("Seleziona girone"); return; } if (!casa || !trasferta) { alert("Seleziona le squadre"); return; } if (casa === trasferta) { alert("Le squadre devono essere diverse"); return; }
-    try { await ApiClient.createMatchGirone(girone, casa, trasferta, data, ora); document.querySelector(".modalOverlay")?.remove(); showMatches(); } catch (e) { alert("Errore: " + (e?.message || e)); }
+    try {
+        await ApiClient.createMatchGirone(girone, casa, trasferta, data, ora);
+        document.querySelector(".modalOverlay")?.remove();
+        // 🔥 AGGIUNGI QUESTA RIGA
+        await invalidateCacheAndRefresh('matches');
+        showMatches();
+    } catch (e) { alert("Errore: " + (e?.message || e)); }
 }
 
 // ============================================================================
@@ -1304,6 +1325,10 @@ async function toggleMatch() {
             renderPenaltyIndicators(window.APP_CACHE.eventsByMatch[freshMatch.MATCH_ID] || [], freshMatch);
         }
     } catch (error) { console.error('Errore toggle match:', error); alert("Errore durante l'aggiornamento: " + error.message); match.STATO_PARTITA = newStatus === "FINITA" ? "LIVE" : "FINITA"; updateMatchUI(match); }
+    if (newStatus === "FINITA") {
+    // Dopo una partita finita, aggiorna anche le classifiche
+    invalidateCacheAndRefresh('standings');
+}
 }
 
 function addEvent(team) {
@@ -1936,76 +1961,158 @@ function openNextPhasePopup(phase) {
 }
 
 async function saveNextPhase(phase) {
-  const date1 = document.getElementById("date1")?.value;
-  const time1 = document.getElementById("time1")?.value;
-  const date2 = document.getElementById("date2")?.value;
-  const time2 = document.getElementById("time2")?.value;
-  
-  if (!date1 || !time1 || !date2 || !time2) { 
-    alert("Compila tutte le date e gli orari"); 
-    return; 
-  }
-  
-  try { 
-    if (phase === "SEMIFINALI") { 
-      await ApiClient.createSemiFinals(date1, time1, date2, time2); 
-    } else { 
-      await ApiClient.createFinals(date1, time1, date2, time2); 
+    const date1 = document.getElementById("date1")?.value;
+    const time1 = document.getElementById("time1")?.value;
+    const date2 = document.getElementById("date2")?.value;
+    const time2 = document.getElementById("time2")?.value;
+    if (!date1 || !time1 || !date2 || !time2) { alert("Compila tutte le date e gli orari"); return; }
+    try {
+        if (phase === "SEMIFINALI") {
+            await ApiClient.createSemiFinals(date1, time1, date2, time2);
+        } else {
+            await ApiClient.createFinals(date1, time1, date2, time2);
+        }
+        document.querySelector(".modalOverlay")?.remove();
+        
+        // 🔥 MODIFICA QUESTA RIGA
+        await invalidateCacheAndRefresh('finalStage');
+        await invalidateCacheAndRefresh('matches');
+        
+        if (document.querySelector(".final-stage-page")) {
+            loadFinalStage();
+        }
+        alert("Partite create con successo!");
+    } catch (error) {
+        console.error('Error creating next phase:', error);
+        alert('Errore: ' + error.message);
     }
-    
-    document.querySelector(".modalOverlay")?.remove();
-    
-    // 🔥 AGGIORNAMENTO AUTOMATICO DATI
-    await refreshAllData();
-    
-    // Se siamo nella pagina CLASSIFICA, ricarica il tabellone
-    if (document.querySelector(".final-stage-page")) {
-      loadFinalStage();
-    }
-    
-    alert("Partite create con successo!");
-    
-  } catch (error) { 
-    console.error('Error creating next phase:', error); 
-    alert('Errore: ' + error.message); 
-  }
 }
 
-// 🔥 FUNZIONE PER AGGIORNARE TUTTI I DATI
+// 🔥 FUNZIONE PER AGGIORNARE TUTTI I DATI (ESTESA)
 async function refreshAllData() {
-  try {
-    const [matches, standings] = await Promise.all([
-      ApiClient.getMatches(),
-      ApiClient.getStandings()
-    ]);
-    
-    if (matches) {
-      window.APP_CACHE.matches = matches;
-      hydrateMatches(matches);
-      CacheManager.save(window.APP_CACHE);
+    try {
+        console.log('🔄 Refresh completo dati in corso...');
+        
+        const [matches, standings, initialData] = await Promise.all([
+            ApiClient.getMatches(),
+            ApiClient.getStandings(),
+            ApiClient.getInitialData()
+        ]);
+        
+        if (initialData) {
+            window.APP_CACHE.teams = initialData.teams || window.APP_CACHE.teams;
+            window.APP_CACHE.fullTeams = initialData.fullTeams || window.APP_CACHE.fullTeams;
+            window.APP_CACHE.playersMap = initialData.playersMap || window.APP_CACHE.playersMap;
+        }
+        
+        if (matches) {
+            window.APP_CACHE.matches = matches;
+            hydrateMatches(matches);
+        }
+        
+        if (standings) {
+            window.APP_CACHE.standings = standings;
+        }
+        
+        CacheManager.save(window.APP_CACHE);
+        
+        // Aggiorna UI attiva
+        if (document.querySelector(".home-container")) {
+            const nextMatchCard = getNextMatchCard();
+            const existingCard = document.querySelector(".home-next-match");
+            if (existingCard) existingCard.replaceWith(nextMatchCard);
+        }
+        if (document.querySelector(".matches-page")) renderMatches();
+        if (document.querySelector(".standings-page")) {
+            if (window.APP_STATE._activeStandingsTab === "fasefinale") {
+                loadFinalStage();
+            } else {
+                renderStandings(window.APP_CACHE.standings);
+            }
+        }
+        if (document.querySelector(".teams-page")) renderTeams();
+        
+        console.log('✅ Refresh completo completato');
+    } catch (error) {
+        console.error('❌ Errore refresh completo:', error);
     }
+}
+
+// 🔥 INVALIDAZIONE CACHE E REFRESH DATI
+async function invalidateCacheAndRefresh(type) {
+    console.log(`🔄 Invalidazione cache e refresh: ${type}`);
     
-    if (standings) {
-      window.APP_CACHE.standings = standings;
-      CacheManager.save(window.APP_CACHE);
+    try {
+        switch(type) {
+            case 'all':
+                await refreshAllData();
+                break;
+                
+            case 'teams':
+                // Ricarica squadre e giocatori
+                const teamsData = await ApiClient.getInitialData();
+                if (teamsData?.teams) {
+                    window.APP_CACHE.teams = teamsData.teams;
+                    if (teamsData?.fullTeams) window.APP_CACHE.fullTeams = teamsData.fullTeams;
+                    if (teamsData?.playersMap) window.APP_CACHE.playersMap = teamsData.playersMap;
+                    CacheManager.save(window.APP_CACHE);
+                }
+                // Aggiorna UI se siamo nella pagina squadre
+                if (document.querySelector(".teams-page")) renderTeams();
+                if (document.querySelector(".team-editor")) {
+                    const currentTeamId = window.APP_STATE.currentTeamId;
+                    if (currentTeamId) loadTeamData(currentTeamId);
+                }
+                break;
+                
+            case 'matches':
+                // Ricarica partite
+                const matches = await ApiClient.getMatches();
+                if (matches) {
+                    window.APP_CACHE.matches = matches;
+                    hydrateMatches(matches);
+                    CacheManager.save(window.APP_CACHE);
+                }
+                // Aggiorna UI
+                if (document.querySelector(".matches-page")) renderMatches();
+                if (document.querySelector(".home-container")) {
+                    const nextCard = getNextMatchCard();
+                    const existing = document.querySelector(".home-next-match");
+                    if (existing) existing.replaceWith(nextCard);
+                }
+                break;
+                
+            case 'standings':
+                // Ricarica classifiche
+                const standings = await ApiClient.getStandings();
+                if (standings) {
+                    window.APP_CACHE.standings = standings;
+                    CacheManager.save(window.APP_CACHE);
+                }
+                if (document.querySelector(".standings-page")) {
+                    if (window.APP_STATE._activeStandingsTab === "fasefinale") {
+                        loadFinalStage();
+                    } else {
+                        renderStandings(standings);
+                    }
+                }
+                break;
+                
+            case 'finalStage':
+                // Ricarica fase finale
+                const finalData = await ApiClient.getFinalStageMatches();
+                if (finalData) {
+                    window.APP_CACHE.finalStage = finalData;
+                    CacheManager.save(window.APP_CACHE);
+                }
+                if (document.querySelector(".final-stage-page")) {
+                    renderFinalStage(finalData || window.APP_CACHE.finalStage);
+                }
+                break;
+        }
+    } catch (error) {
+        console.error(`❌ Errore refresh ${type}:`, error);
     }
-    
-    // Aggiorna UI se siamo in home o matches
-    if (document.querySelector(".home-container")) {
-      const nextMatchCard = getNextMatchCard();
-      const existingCard = document.querySelector(".home-next-match");
-      if (existingCard) {
-        existingCard.replaceWith(nextMatchCard);
-      }
-    }
-    
-    if (document.querySelector(".matches-page")) {
-      renderMatches();
-    }
-    
-  } catch (error) {
-    console.error('Error refreshing data:', error);
-  }
 }
 
 function renderPlaceholderCard(label, cls="") { return `<div class="bracket-match bracket-placeholder ${cls}"><div style="text-align:center; width:100%; display:flex; align-items:center; justify-content:center; height:100%;"><div style="font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:1px; color:#666;">${Sanitizer.html(label)}</div></div></div>`; }
