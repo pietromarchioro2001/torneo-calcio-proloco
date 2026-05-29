@@ -369,8 +369,9 @@ function getNextMatchCard() {
     if (!liveMatch.MATCH_ID || !liveMatch.CASA_ID || !liveMatch.TRASFERTA_ID) {
       console.error('⚠️ Match LIVE incompleto:', liveMatch);
       // Tenta di recuperare i dati completi
-      const fullMatch = window.APP_STATE.matchesById[liveMatch.MATCH_ID];
-      if (fullMatch) {
+      const fullMatch = window.APP_STATE.matchesById[liveMatch.MATCH_ID] || 
+                        window.APP_CACHE.matches.find(m => String(m.MATCH_ID) === String(liveMatch.MATCH_ID));
+      if (fullMatch && fullMatch.CASA_ID && fullMatch.TRASFERTA_ID) {
         return renderHomeMatchCard(fullMatch, liveMatch.STATO_PARTITA);
       }
       // Se non ci sono dati validi, mostra card vuota
@@ -386,7 +387,45 @@ function getNextMatchCard() {
     return renderHomeMatchCard(matchWithScore, liveMatch.STATO_PARTITA);
   }
   
-  // ... resto della funzione invariato
+  // 2. Cerca partite future (oggi o domani)
+  const todayMatches = matches.filter(m => {
+    const matchDate = String(m.DATA || "").slice(0, 10);
+    return matchDate >= nowStr && 
+           m.STATO_PARTITA !== "FINITA" &&
+           m.STATO_PARTITA !== "LIVE" &&
+           m.STATO_PARTITA !== "SUPP" &&
+           m.STATO_PARTITA !== "RIGORI";
+  }).sort((a, b) => {
+    const dateA = String(a.DATA || "").slice(0, 10) + (a.ORA || "00:00");
+    const dateB = String(b.DATA || "").slice(0, 10) + (b.ORA || "00:00");
+    return dateA.localeCompare(dateB);
+  });
+  
+  if (todayMatches.length > 0) {
+    let nextMatch = { ...todayMatches[0] };
+    
+    // ✅ VALIDAZIONE DATI
+    if (!nextMatch.MATCH_ID || !nextMatch.CASA_ID || !nextMatch.TRASFERTA_ID) {
+      console.error('⚠️ Prossima partita incompleta:', nextMatch);
+      const fullMatch = window.APP_STATE.matchesById[nextMatch.MATCH_ID] || 
+                        window.APP_CACHE.matches.find(m => String(m.MATCH_ID) === String(nextMatch.MATCH_ID));
+      if (fullMatch && fullMatch.CASA_ID && fullMatch.TRASFERTA_ID) {
+        nextMatch = fullMatch;
+      } else {
+        return renderEmptyNextMatch();
+      }
+    }
+    
+    const hasValidScore = (nextMatch.GOL_CASA !== undefined && nextMatch.GOL_TRASFERTA !== undefined);
+    if (!hasValidScore) {
+      const nextEvents = eventsByMatch[nextMatch.MATCH_ID] || [];
+      nextMatch = calculateMatchScore(nextMatch, nextEvents);
+    }
+    return renderHomeMatchCard(nextMatch, false);
+  }
+  
+  // 3. Nessun match -> Card vuota
+  return renderEmptyNextMatch();
 }
 
 // ✅ AGGIUNGI QUESTA FUNZIONE HELPER
@@ -405,8 +444,15 @@ function renderEmptyNextMatch() {
     justify-content: center;
     border-radius: 12px;
   ">
-    <div style="color: #666; font-size: 14px; letter-spacing: 1px; font-weight: 600; text-transform: uppercase;">
-      Caricamento...
+    <div style="
+      color: #666;
+      font-size: 14px;
+      letter-spacing: 1px;
+      font-weight: 600;
+      text-transform: uppercase;
+      width: 100%;
+    ">
+      Nessuna partita in programma
     </div>
   </div>`;
 }
