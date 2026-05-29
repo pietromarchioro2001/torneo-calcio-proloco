@@ -1849,20 +1849,21 @@ function startMatchLiveRefresh() {
             }
           }
           
-          // Crea oggetto match aggiornato con dati validati
+         const idx = window.APP_CACHE.matches.findIndex(m => 
+          String(m.MATCH_ID) === String(match.MATCH_ID)
+        );
+        
+        if (idx >= 0) {
+        
           const updatedMatch = {
-              ...window.APP_CACHE.matches[idx],
-              ...freshData.match,
-              ...calculatedScore
-            };
-          
-          // ✅ Aggiorna APP_CACHE.matches
-          const idx = window.APP_CACHE.matches.findIndex(m => 
-            String(m.MATCH_ID) === String(match.MATCH_ID)
-          );
-          if (idx >= 0) {
-            window.APP_CACHE.matches[idx] = updatedMatch;
-          }
+            ...window.APP_CACHE.matches[idx],
+            ...freshData.match,
+            ...calculatedScore,
+            DATA: safeData
+          };
+        
+          window.APP_CACHE.matches[idx] = updatedMatch;
+        }
           
           // ✅ Aggiorna eventi in cache
           window.APP_CACHE.eventsByMatch[match.MATCH_ID] = freshEvents;
