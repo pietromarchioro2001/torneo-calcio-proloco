@@ -2076,7 +2076,7 @@ function renderNextPhaseButton() {
     const quartiFiniti = quarti.filter(m => m.stato === "FINITA").length;
     const semi = finalStageData.filter(m => m.turno === "SEMIFINALE"); 
     const semiFiniti = semi.filter(m => m.stato === "FINITA").length;
-    const finali = finalStageData.filter(m => m.turno === "FINALE" || m.turno === "FINALE 3-4"); 
+    const finali = finalStageData.filter(m => m.turno === "FINALE 1-2" || m.turno === "FINALE 3-4"); 
     const finaliFiniti = finali.filter(m => m.stato === "FINITA").length;
     
     // Verifica se le semifinali sono già state create
