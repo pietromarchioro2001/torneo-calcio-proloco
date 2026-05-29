@@ -1689,72 +1689,84 @@ function startStandingsLiveRefresh() {
         const activeTab = window.APP_STATE._activeStandingsTab;
         if (activeTab === "gironi") { ApiClient.getStandings().then(data => { if (data) { window.APP_CACHE.standings = data; CacheManager.save(window.APP_CACHE); } if (window.APP_STATE._activeStandingsTab === "gironi") { renderStandings(data); } }).catch(console.error); }
         else if (activeTab === "fasefinale") { ApiClient.getFinalStageMatches().then(data => { if (data) { window.APP_CACHE.finalStage = data || []; CacheManager.save(window.APP_CACHE); } if (window.APP_STATE._activeStandingsTab === "fasefinale") { renderFinalStage(data || window.APP_CACHE.finalStage); } }).catch(console.error); }
-    }, 5000);
+    }, 3000);
 }
 
 // 🔥 POLLING PER PARTITE LIVE - Aggiorna risultati in tempo reale
 let matchLiveRefreshInterval = null;
 let currentPollingMatchId = null; // 🔥 Tracciamo quale partita stiamo monitorando
 
-function startMatchLiveRefresh(matchId) {
-    // Se già attivo per questa partita, non fare nulla
-    if (matchLiveRefreshInterval && currentPollingMatchId === matchId) return;
+function startMatchLiveRefresh() {
+    // Se c'è già un intervallo attivo, non farne uno nuovo
+    if (matchLiveRefreshInterval) return;
     
-    // Ferma eventuali timer precedenti
-    stopMatchLiveRefresh();
-    
-    currentPollingMatchId = matchId;
-    console.log('🔴 Avvio polling per partita:', matchId);
+    console.log('🔴 Avvio polling globale partite LIVE (2s)...');
     
     matchLiveRefreshInterval = setInterval(async () => {
-        // 🔥 CONTROLLA SE L'UTENTE È ANCORA IN QUESTA PARTITA
-        // Se l'utente ha premuto "Indietro", window.APP_STATE.currentMatchId sarà diverso
-        const activeMatchId = window.APP_STATE.currentMatchId;
-        
-        if (!activeMatchId || activeMatchId !== matchId) {
-            console.log('⏹️ Utente ha lasciato la partita, stop polling.');
+        // Trova tutte le partite LIVE nella cache
+        const liveMatches = (window.APP_CACHE.matches || []).filter(m =>
+            m.STATO_PARTITA === "LIVE" || m.STATO_PARTITA === "SUPP" || m.STATO_PARTITA === "RIGORI"
+        );
+
+        // Se non ci sono partite LIVE, ferma il polling
+        if (liveMatches.length === 0) {
+            console.log('⏹️ Nessuna partita LIVE, stop polling');
             stopMatchLiveRefresh();
             return;
         }
 
-        try {
-            // Fetch dati aggiornati
-            const freshData = await ApiClient.getMatchFull(matchId);
-            const freshEvents = await ApiClient.getEventsAdmin(matchId);
-            
-            if (freshData?.match) {
-                // Aggiorna cache
-                const calculatedScore = calculateMatchScore(freshData.match, freshEvents);
-                const updatedMatch = { ...freshData.match, ...calculatedScore };
+        console.log(`🔄 Refresh globale: ${liveMatches.length} partita/e LIVE`);
+
+        // Aggiorna ogni partita LIVE trovata
+        for (const match of liveMatches) {
+            try {
+                // Fetch dati aggiornati dal backend
+                const freshData = await ApiClient.getMatchFull(match.MATCH_ID);
+                const freshEvents = await ApiClient.getEventsAdmin(match.MATCH_ID);
                 
-                // Aggiorna matches in cache
-                const idx = window.APP_CACHE.matches.findIndex(m => m.MATCH_ID === matchId);
-                if (idx >= 0) {
-                    window.APP_CACHE.matches[idx] = updatedMatch;
+                if (freshData?.match) {
+                    const calculatedScore = calculateMatchScore(freshData.match, freshEvents);
+                    const updatedMatch = { ...freshData.match, ...calculatedScore };
+                    
+                    // 🔥 1. Aggiorna la cache globale
+                    const idx = window.APP_CACHE.matches.findIndex(m => m.MATCH_ID === match.MATCH_ID);
+                    if (idx >= 0) window.APP_CACHE.matches[idx] = updatedMatch;
+                    window.APP_CACHE.eventsByMatch[match.MATCH_ID] = freshEvents;
+                    CacheManager.save(window.APP_CACHE);
+                    
+                    // 🔥 2. Aggiorna la UI in base alla pagina attiva
+                    
+                    // Se siamo nella pagina DETTAGLIO PARTITA
+                    if (document.querySelector('.match-page') && window.APP_STATE.currentMatchId === match.MATCH_ID) {
+                        renderMatchPage(updatedMatch);
+                        loadPlayersForMatch(updatedMatch);
+                    }
+                    
+                    // Se siamo in HOME -> Aggiorna la card
+                    if (document.querySelector('.home-container')) {
+                        const nextCard = getNextMatchCard();
+                        const existing = document.querySelector('.home-next-match');
+                        if (existing) existing.replaceWith(nextCard);
+                    }
+                    
+                    // Se siamo in PARTITE -> Aggiorna la lista
+                    if (document.querySelector('.matches-page')) {
+                        renderMatches();
+                    }
                 }
-                
-                // Aggiorna eventi
-                window.APP_CACHE.eventsByMatch[matchId] = freshEvents;
-                CacheManager.save(window.APP_CACHE);
-                
-                // 🔥 AGGIORNA UI SOLO SE È ANCORA LA PARTITA ATTIVA
-                if (window.APP_STATE.currentMatchId === matchId) {
-                    renderMatchPage(updatedMatch);
-                    loadPlayersForMatch(updatedMatch);
-                }
+            } catch (error) {
+                console.error(`❌ Errore refresh match ${match.MATCH_ID}:`, error);
             }
-        } catch (error) {
-            console.error(`❌ Errore refresh match ${matchId}:`, error);
         }
-    }, 5000);
+    }, 2000); // ✅ Aggiornato a 2 secondi
 }
+
 
 function stopMatchLiveRefresh() {
     if (matchLiveRefreshInterval) {
         clearInterval(matchLiveRefreshInterval);
         matchLiveRefreshInterval = null;
     }
-    currentPollingMatchId = null;
 }
 
 function showStandings() {
@@ -2246,6 +2258,13 @@ function bootAdminApp() {
         hydrateMatches(window.APP_CACHE.matches || []);
         preloadRecentEvents();
         CacheManager.save(window.APP_CACHE);
+
+        const hasLiveMatch = (window.APP_CACHE.matches || []).some(m =>
+            m.STATO_PARTITA === "LIVE" || m.STATO_PARTITA === "SUPP" || m.STATO_PARTITA === "RIGORI"
+        );
+        if (hasLiveMatch) {
+            startMatchLiveRefresh();
+        }
       }
       
       // ✅ ROUTING INTELLIGENTE: se fase finale attiva, vai subito lì
