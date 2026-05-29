@@ -428,34 +428,39 @@ function calculateMatchScore(match, events) {
 }
 
 function renderHomeMatchCard(match, isLive) {
-    const statoDisplay = typeof isLive === 'string' ? isLive : (isLive ? "LIVE" : "");
-    const isAttiva = (statoDisplay === "LIVE" || statoDisplay === "SUPP" || statoDisplay === "RIGORI");
+  const statoDisplay = typeof isLive === 'string' ? isLive : (isLive ? "LIVE" : "");
+  const isAttiva = (statoDisplay === "LIVE" || statoDisplay === "SUPP" || statoDisplay === "RIGORI");
+  
+  // ✅ SANITIZZA TUTTI I DATI
+  const squadraCasa = Sanitizer.html((match.SQUADRA_CASA || "").toUpperCase());
+  const squadraTrasf = Sanitizer.html((match.SQUADRA_TRASFERTA || "").toUpperCase());
+  
+  const logoCasa = match.LOGO_CASA 
+    ? `<img src="${getCachedImage(match.LOGO_CASA, 34)}" alt="${squadraCasa}" onerror="this.style.display='none'">` 
+    : `<div class="home-team-logo">⚽</div>`;
     
-    const logoCasa = match.LOGO_CASA 
-        ? `<img src="${getCachedImage(match.LOGO_CASA, 34)}" alt="${match.SQUADRA_CASA}" onerror="this.style.display='none'">` 
-        : `<div class="home-team-logo">⚽</div>`;
-        
-    const logoTrasf = match.LOGO_TRASFERTA 
-        ? `<img src="${getCachedImage(match.LOGO_TRASFERTA, 34)}" alt="${match.SQUADRA_TRASFERTA}" onerror="this.style.display='none'">` 
-        : `<div class="home-team-logo">⚽</div>`;
-        
-    let centerContent = "";
-    if (isAttiva) {
-        centerContent = `<div class="home-live-badge">
-            <div class="home-score">${match.GOL_CASA || 0} - ${match.GOL_TRASFERTA || 0}</div>
-            <div class="home-live-row"><div class="home-live-text">${statoDisplay}</div><div class="home-live-dot"></div></div>
-        </div>`;
-    } else {
-        const dateObj = parseLocalDate(match.DATA);
-        const dateStr = dateObj ? `${dateObj.getDate()}/${dateObj.getMonth()+1}` : "";
-        centerContent = `<div class="home-match-time">${match.ORA || "--:--"}</div><div class="home-match-date">${dateStr}</div>`;
-    }
+  const logoTrasf = match.LOGO_TRASFERTA 
+    ? `<img src="${getCachedImage(match.LOGO_TRASFERTA, 34)}" alt="${squadraTrasf}" onerror="this.style.display='none'">` 
+    : `<div class="home-team-logo">⚽</div>`;
     
-    return `<div class="home-next-match ${isAttiva ? 'live-card' : ''}" onclick="openMatch('${match.MATCH_ID}')">
-        <div class="home-team-block left">${logoCasa}<span class="home-team">${(match.SQUADRA_CASA || "").toUpperCase()}</span></div>
-        <div class="home-match-center">${centerContent}</div>
-        <div class="home-team-block right"><span class="home-team">${(match.SQUADRA_TRASFERTA || "").toUpperCase()}</span>${logoTrasf}</div>
-    </div>`;
+  let centerContent = "";
+  if (isAttiva) {
+    centerContent = `<div class="home-live-badge"><div class="home-score">${match.GOL_CASA || 0} - ${match.GOL_TRASFERTA || 0}</div>
+    <div class="home-live-row"><div class="home-live-text">${statoDisplay}</div><div class="home-live-dot"></div></div></div>`;
+  } else {
+    const dateObj = parseLocalDate(match.DATA);
+    const dateStr = dateObj ? `${dateObj.getDate()}/${dateObj.getMonth()+1}` : "";
+    centerContent = `<div class="home-match-time">${match.ORA || "--:--"}</div><div class="home-match-date">${dateStr}</div>`;
+  }
+  
+  // ✅ SANITIZZA matchId
+  const matchId = Sanitizer.attr(match.MATCH_ID);
+  
+  return `<div class="home-next-match ${isAttiva ? 'live-card' : ''}" onclick="openMatch('${matchId}')">
+    <div class="home-team-block left">${logoCasa}<span class="home-team">${squadraCasa}</span></div>
+    <div class="home-match-center">${centerContent}</div>
+    <div class="home-team-block right"><span class="home-team">${squadraTrasf}</span>${logoTrasf}</div>
+  </div>`;
 }
 
 function showHome() {
@@ -771,13 +776,36 @@ function showMatches() {
 }
 
 function renderMatches() {
-    const data = window.APP_CACHE.matches || [];
-    const matches = (data || []).filter(m => m?.MATCH_ID && m?.DATA).map(m => ({ ...m, DATA: String(m.DATA).slice(0, 10), STATO_PARTITA: String(m.STATO_PARTITA || "").trim().toUpperCase() }));
-    const dates = [...new Set(matches.filter(m => m.DATA).map(m => m.DATA))].sort().slice(0, 30);
-    window.APP_STATE.availableDates = dates;
-    const today = new Date(); const todayStr = formatLocalDate(today); const futureDates = dates.filter(d => d >= todayStr);
-    if (!window.APP_STATE.selectedDate) { window.APP_STATE.selectedDate = futureDates[0] || dates[0] || todayStr; }
-    renderDatesToolbar(); renderMatchesByDate(window.APP_STATE.selectedDate);
+  const data = window.APP_CACHE.matches || [];
+  console.log('📅 TOTALE PARTITE:', data.length);
+  
+  const matches = (data || []).filter(m => m?.MATCH_ID && m?.DATA).map(m => ({ 
+    ...m, 
+    DATA: String(m.DATA).slice(0, 10), 
+    STATO_PARTITA: String(m.STATO_PARTITA || "").trim().toUpperCase() 
+  }));
+  
+  // ✅ LOG PER VEDERE LE DATE DISPONIBILI
+  const uniqueDates = [...new Set(matches.map(m => m.DATA))].sort();
+  console.log('📅 DATE DISPONIBILI:', uniqueDates);
+  
+  const dates = uniqueDates.slice(0, 30);
+  window.APP_STATE.availableDates = dates;
+  
+  const today = new Date(); 
+  const todayStr = formatLocalDate(today); 
+  console.log('📅 OGGI:', todayStr);
+  
+  const futureDates = dates.filter(d => d >= todayStr);
+  console.log('📅 DATE FUTURE:', futureDates);
+  
+  if (!window.APP_STATE.selectedDate) { 
+    window.APP_STATE.selectedDate = futureDates[0] || dates[0] || todayStr; 
+    console.log('📅 DATA SELEZIONATA:', window.APP_STATE.selectedDate);
+  }
+  
+  renderDatesToolbar(); 
+  renderMatchesByDate(window.APP_STATE.selectedDate);
 }
 
 function renderDatesToolbar() {
@@ -801,43 +829,34 @@ function centerActiveDate() {
 
 function renderMatchesByDate(date) {
     const container = document.getElementById("matchesList");
-    if (!container) return;
-
-    const allMatches = window.APP_CACHE.matches || [];
-    
-    // Filtra e ordina le partite per la data selezionata
-    let matches = allMatches
-        .filter(m => {
-            const matchDate = String(m.DATA || "").slice(0, 10);
-            return matchDate === date && m?.MATCH_ID;
-        })
-        .sort((a, b) => {
-            const getPriority = (m) => {
-                const status = String(m.STATO_PARTITA || "").trim().toUpperCase();
-                if (["LIVE", "SUPP", "RIGORI"].includes(status)) return 0;
-                if (status === "PROGRAMMATA") return 1;
-                if (status === "FINITA") return 2;
-                return 3;
-            };
-            const priorityA = getPriority(a);
-            const priorityB = getPriority(b);
-            if (priorityA === priorityB) {
-                const timeA = a.ORA || "00:00";
-                const timeB = b.ORA || "00:00";
-                return timeA.localeCompare(timeB);
-            }
-            return priorityA - priorityB;
-        });
-
-    // Messaggio se nessuna partita trovata
-    if (matches.length === 0) {
-        container.innerHTML = `
-            <div style="text-align:center;padding:40px;color:#888">
-                <div style="font-size:3rem;margin-bottom:16px">📅</div>
-                <div>Nessuna partita per questa data</div>
-            </div>`;
-        return;
-    }
+  if (!container) return;
+  
+  const allMatches = window.APP_CACHE.matches || [];
+  
+  // ✅ LOG PER DEBUG
+  console.log(`🔍 FILTRO PARTITE PER DATA: ${date}`);
+  console.log('📊 TOTALE PARTITE IN CACHE:', allMatches.length);
+  
+  let matches = allMatches.filter(m => {
+    const matchDate = String(m.DATA || "").slice(0, 10);
+    const matchId = m.MATCH_ID || 'NO_ID';
+    // console.log(`  Partita ${matchId}: DATA=${matchDate}, MATCH=${date}, OK=${matchDate === date}`);
+    return matchDate === date && m?.MATCH_ID;
+  }).sort((a, b) => {
+    // ... resto del sort
+  });
+  
+  console.log(`✅ PARTITE TROVATE PER ${date}:`, matches.length);
+  
+  if (matches.length === 0) {
+    container.innerHTML = `
+    <div style="text-align:center;padding:40px;color:#888">
+      <div style="font-size:3rem;margin-bottom:16px">📅</div>
+      <div>Nessuna partita per questa data</div>
+      <div style="font-size:12px;margin-top:10px">Data selezionata: ${date}</div>
+    </div>`;
+    return;
+  }
 
     let html = "";
 
