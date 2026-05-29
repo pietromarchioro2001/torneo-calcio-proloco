@@ -1897,12 +1897,11 @@ function startMatchLiveRefresh() {
             }
           
           if (document.querySelector('.home-container')) {
-              const nextCardHtml = getNextMatchCard(); // Stringa HTML
-              const existing = document.querySelector('.home-next-match');
-              
-              if (existing && nextCardHtml) {
-                existing.outerHTML = nextCardHtml; // ✅ CORRETTO
-              }
+                const nextCardHtml = getNextMatchCard();  // Stringa HTML
+                const existing = document.querySelector('.home-next-match');
+                if (existing && nextCardHtml) {
+                    existing.outerHTML = nextCardHtml;  // ✅ CORRETTO
+                }
             }
         }
       } catch (error) {
