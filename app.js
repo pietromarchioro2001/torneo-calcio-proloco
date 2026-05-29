@@ -1892,7 +1892,7 @@ function startMatchLiveRefresh() {
         console.error(`❌ Errore refresh match ${match.MATCH_ID}:`, error);
       }
     }
-  }, 2000);
+  }, 3000);
 }
 
 function stopMatchLiveRefresh() {
