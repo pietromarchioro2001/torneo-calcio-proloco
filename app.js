@@ -3,7 +3,7 @@
 // ============================================================================
 const CONFIG = {
     // 🔥 SOSTITUISCI CON IL TUO URL APPS SCRIPT WEB APP
-    BACKEND_URL: 'https://script.google.com/macros/s/AKfycbxP3nLhgr89AkMaLsjiMO5JCjLdEWjDNlEbCd5s7W7xH-mIf_NeFKmX8eQjtRBheT6Z/exec',
+    BACKEND_URL: 'https://script.google.com/macros/s/AKfycbx_TVSzqfBetvJj_9-24Waee4m7hDA3crKPrfPyC3tL6WPG8QppXn412gI2_3u2dz5Y/exec',
     API_TIMEOUT: 30000,
     CACHE_VERSION: 'v3.0',
     CACHE_MAX_AGE: 5 * 60 * 1000
@@ -352,69 +352,63 @@ function renderToolbar(active) {
 }
 
 function getNextMatchCard() {
-    const matches = window.APP_CACHE.matches || [];
-    const eventsByMatch = window.APP_CACHE.eventsByMatch || {};
-    const now = new Date();
-    const nowStr = formatLocalDate(now);
-
-    // 1. Cerca partite LIVE
-    const liveMatch = matches.find(m => m.STATO_PARTITA === "LIVE" || m.STATO_PARTITA === "SUPP" || m.STATO_PARTITA === "RIGORI");
-    if (liveMatch) {
-        let matchWithScore = { ...liveMatch };
-        const hasValidScore = (liveMatch.GOL_CASA !== undefined && liveMatch.GOL_TRASFERTA !== undefined);
-        if (!hasValidScore) {
-            const liveEvents = eventsByMatch[liveMatch.MATCH_ID] || [];
-            matchWithScore = calculateMatchScore(liveMatch, liveEvents);
-        }
-        return renderHomeMatchCard(matchWithScore, liveMatch.STATO_PARTITA);
+  const matches = window.APP_CACHE.matches || [];
+  const eventsByMatch = window.APP_CACHE.eventsByMatch || {};
+  const now = new Date();
+  const nowStr = formatLocalDate(now);
+  
+  // 1. Cerca partite LIVE/SUPP/RIGORI
+  const liveMatch = matches.find(m => 
+    m.STATO_PARTITA === "LIVE" || 
+    m.STATO_PARTITA === "SUPP" || 
+    m.STATO_PARTITA === "RIGORI"
+  );
+  
+  if (liveMatch) {
+    // ✅ VALIDAZIONE DATI PRIMA DEL RENDERING
+    if (!liveMatch.MATCH_ID || !liveMatch.CASA_ID || !liveMatch.TRASFERTA_ID) {
+      console.error('⚠️ Match LIVE incompleto:', liveMatch);
+      // Tenta di recuperare i dati completi
+      const fullMatch = window.APP_STATE.matchesById[liveMatch.MATCH_ID];
+      if (fullMatch) {
+        return renderHomeMatchCard(fullMatch, liveMatch.STATO_PARTITA);
+      }
+      // Se non ci sono dati validi, mostra card vuota
+      return renderEmptyNextMatch();
     }
-
-    // 2. Cerca partite future (oggi o domani)
-    const todayMatches = matches.filter(m => {
-        const matchDate = String(m.DATA || "").slice(0, 10);
-        return matchDate >= nowStr && m.STATO_PARTITA !== "FINITA";
-    }).sort((a, b) => {
-        const dateA = String(a.DATA || "").slice(0, 10) + (a.ORA || "00:00");
-        const dateB = String(b.DATA || "").slice(0, 10) + (b.ORA || "00:00");
-        return dateA.localeCompare(dateB);
-    });
-
-    if (todayMatches.length > 0) {
-        let nextMatch = { ...todayMatches[0] };
-        const hasValidScore = (nextMatch.GOL_CASA !== undefined && nextMatch.GOL_TRASFERTA !== undefined);
-        if (!hasValidScore) {
-            const nextEvents = eventsByMatch[nextMatch.MATCH_ID] || [];
-            nextMatch = calculateMatchScore(nextMatch, nextEvents);
-        }
-        return renderHomeMatchCard(nextMatch, false);
+    
+    let matchWithScore = { ...liveMatch };
+    const hasValidScore = (liveMatch.GOL_CASA !== undefined && liveMatch.GOL_TRASFERTA !== undefined);
+    if (!hasValidScore) {
+      const liveEvents = eventsByMatch[liveMatch.MATCH_ID] || [];
+      matchWithScore = calculateMatchScore(liveMatch, liveEvents);
     }
+    return renderHomeMatchCard(matchWithScore, liveMatch.STATO_PARTITA);
+  }
+  
+  // ... resto della funzione invariato
+}
 
-   // 3. Nessun match -> Solo scritta semplice
-    return `<div class="home-next-match" style="
-        opacity:0.7; 
-        pointer-events:none; 
-        cursor:default; 
-        border: 1px solid rgba(122, 30, 44, 0.12); 
-        background: rgba(255,255,255,0.98);
-        padding: 20px 15px;
-        text-align: center;
-        min-height: 60px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        border-radius: 12px;
-    ">
-        <div style="
-            color: #666; 
-            font-size: 14px; 
-            letter-spacing: 1px; 
-            font-weight: 600; 
-            text-transform: uppercase;
-            width: 100%;
-        ">
-            Nessuna partita in programma
-        </div>
-    </div>`;
+// ✅ AGGIUNGI QUESTA FUNZIONE HELPER
+function renderEmptyNextMatch() {
+  return `<div class="home-next-match" style="
+    opacity:0.7;
+    pointer-events:none;
+    cursor:default;
+    border: 1px solid rgba(122, 30, 44, 0.12);
+    background: rgba(255,255,255,0.98);
+    padding: 20px 15px;
+    text-align: center;
+    min-height: 60px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 12px;
+  ">
+    <div style="color: #666; font-size: 14px; letter-spacing: 1px; font-weight: 600; text-transform: uppercase;">
+      Caricamento...
+    </div>
+  </div>`;
 }
 
 function calculateMatchScore(match, events) {
@@ -1113,10 +1107,28 @@ function openMatch(id) {
 }
 
 function renderMatchPage(match) {
-    if (!match || !match.MATCH_ID) {
-        console.error('Match non valido', match);
-        return;
+    // ✅ VALIDAZIONE INIZIALE
+  if (!match || !match.MATCH_ID) {
+    console.error('❌ Match non valido', match);
+    alert('Errore: dati partita non validi');
+    return;
+  }
+  
+  // ✅ CONTROLLA CHE GLI ID SQUADRA SIANO PRESENTI
+  if (!match.CASA_ID || !match.TRASFERTA_ID) {
+    console.error('❌ ID squadre mancanti!', match);
+    // Tenta recupero da cache
+    const cachedMatch = window.APP_CACHE.matches?.find(m => 
+      String(m.MATCH_ID) === String(match.MATCH_ID)
+    );
+    if (cachedMatch?.CASA_ID && cachedMatch?.TRASFERTA_ID) {
+      match.CASA_ID = cachedMatch.CASA_ID;
+      match.TRASFERTA_ID = cachedMatch.TRASFERTA_ID;
+    } else {
+      alert('Errore: dati squadre incompleti');
+      return;
     }
+  }
 
     // 🔥 RECUPERA NOMI E LOGHI SE MANCANO
     if (!match.SQUADRA_CASA || !match.LOGO_CASA) {
@@ -1736,69 +1748,85 @@ let matchLiveRefreshInterval = null;
 let currentPollingMatchId = null; // 🔥 Tracciamo quale partita stiamo monitorando
 
 function startMatchLiveRefresh() {
-    if (matchLiveRefreshInterval) return;
-    console.log('🔴 Avvio polling globale partite LIVE (2s)...');
+  if (matchLiveRefreshInterval) return;
+  console.log('🔴 Avvio polling globale partite LIVE (2s)...');
+  
+  matchLiveRefreshInterval = setInterval(async () => {
+    const liveMatches = (window.APP_CACHE.matches || []).filter(m =>
+      ["LIVE", "SUPP", "RIGORI"].includes(m.STATO_PARTITA)
+    );
     
-    matchLiveRefreshInterval = setInterval(async () => {
-        const liveMatches = (window.APP_CACHE.matches || []).filter(m =>
-            ["LIVE", "SUPP", "RIGORI"].includes(m.STATO_PARTITA)
-        );
-
-        if (liveMatches.length === 0) {
-            stopMatchLiveRefresh();
-            return;
-        }
-
-        for (const match of liveMatches) {
+    if (liveMatches.length === 0) {
+      stopMatchLiveRefresh();
+      return;
+    }
+    
+    for (const match of liveMatches) {
+      try {
+        const freshData = await ApiClient.getMatchFull(match.MATCH_ID);
+        const freshEvents = await ApiClient.getEventsAdmin(match.MATCH_ID);
+        
+        if (freshData?.match) {
+          const calculatedScore = calculateMatchScore(freshData.match, freshEvents);
+          
+          // 🔥 MIGLIORAMENTO: Normalizzazione data PIÙ ROBUSTA
+          let safeData = freshData.match.DATA;
+          if (safeData) {
             try {
-                const freshData = await ApiClient.getMatchFull(match.MATCH_ID);
-                const freshEvents = await ApiClient.getEventsAdmin(match.MATCH_ID);
-                
-                if (freshData?.match) {
-                    const calculatedScore = calculateMatchScore(freshData.match, freshEvents);
-                    
-                    // 🔥 FIX: Normalizza la data per evitare mismatch "2026-8-6" vs "2026-08-06"
-                    let safeData = freshData.match.DATA;
-                    if (safeData) {
-                        try {
-                            const d = new Date(safeData);
-                            if (!isNaN(d.getTime())) {
-                                safeData = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
-                            }
-                        } catch(e) {}
-                    }
-                    
-                    const updatedMatch = { ...freshData.match, ...calculatedScore, DATA: safeData };
-                    
-                    const idx = window.APP_CACHE.matches.findIndex(m => String(m.MATCH_ID) === String(match.MATCH_ID));
-                    if (idx >= 0) {
-                        window.APP_CACHE.matches[idx] = updatedMatch;
-                    }
-                    
-                    window.APP_CACHE.eventsByMatch[match.MATCH_ID] = freshEvents;
-                    CacheManager.save(window.APP_CACHE);
-
-                    // Aggiorna UI solo se siamo nella pagina rilevante
-                    if (document.querySelector('.match-page') && String(window.APP_STATE.currentMatchId) === String(match.MATCH_ID)) {
-                        renderMatchPage(updatedMatch);
-                        loadPlayersForMatch(updatedMatch);
-                    }
-                    
-                    if (document.querySelector('.home-container')) {
-                        const nextCard = getNextMatchCard();
-                        const existing = document.querySelector('.home-next-match');
-                        if (existing) existing.replaceWith(nextCard);
-                    }
-                    
-                    if (document.querySelector('.matches-page')) {
-                        renderMatches();
-                    }
-                }
-            } catch (error) {
-                console.error(`❌ Errore refresh match ${match.MATCH_ID}:`, error);
+              const d = new Date(safeData);
+              if (!isNaN(d.getTime())) {
+                // ✅ FORMATTAZIONE CONSISTENTE: YYYY-MM-DD con zero padding
+                safeData = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+                console.log(`📅 Data normalizzata: ${safeData}`);
+              }
+            } catch(e) {
+              console.warn('⚠️ Errore normalizzazione data:', e, safeData);
+              // Mantieni la data originale se non riesci a normalizzarla
             }
+          }
+          
+          const updatedMatch = { 
+            ...freshData.match, 
+            ...calculatedScore, 
+            DATA: safeData 
+          };
+          
+          // ✅ AGGIORNA CACHE CON DATI VALIDATI
+          const idx = window.APP_CACHE.matches.findIndex(m => 
+            String(m.MATCH_ID) === String(match.MATCH_ID)
+          );
+          
+          if (idx >= 0) {
+            window.APP_CACHE.matches[idx] = updatedMatch;
+            CacheManager.save(window.APP_CACHE);
+          }
+          
+          window.APP_CACHE.eventsByMatch[match.MATCH_ID] = freshEvents;
+          
+          // ✅ AGGIORNA UI SOLO SE I DATI SONO VALIDI
+          if (document.querySelector('.match-page') && 
+              String(window.APP_STATE.currentMatchId) === String(match.MATCH_ID)) {
+            renderMatchPage(updatedMatch);
+            loadPlayersForMatch(updatedMatch);
+          }
+          
+          if (document.querySelector('.home-container')) {
+            const nextCard = getNextMatchCard();
+            const existing = document.querySelector('.home-next-match');
+            if (existing) {
+              existing.replaceWith(nextCard);
+            }
+          }
+          
+          if (document.querySelector('.matches-page')) {
+            renderMatches();
+          }
         }
-    }, 2000);
+      } catch (error) {
+        console.error(`❌ Errore refresh match ${match.MATCH_ID}:`, error);
+      }
+    }
+  }, 2000);
 }
 
 function stopMatchLiveRefresh() {
