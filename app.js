@@ -1359,12 +1359,25 @@ async function toggleMatch() {
 
 function addEvent(team) {
     let match = window.APP_STATE.lastMatch;
-    if (!match || !match.CASA_ID || !match.TRASFERTA_ID) { const matchId = window.APP_STATE.currentMatchId; match = window.APP_STATE.matchesById?.[matchId]; if (!match?.CASA_ID) { match = window.APP_CACHE.matches?.find(m => String(m.MATCH_ID) === String(matchId)); } if (!match?.CASA_ID) { match = window.APP_STATE.matchesById?.[matchId]; } }
-    console.log('🔍 DEBUG addEvent:', { matchExists: !!match, matchId: match?.MATCH_ID, casaId: match?.CASA_ID, trasfertaId: match?.TRASFERTA_ID });
+    if (!match || !match.CASA_ID || !match.TRASFERTA_ID) { 
+        const matchId = window.APP_STATE.currentMatchId; 
+        match = window.APP_STATE.matchesById?.[matchId]; 
+        if (!match?.CASA_ID) { match = window.APP_CACHE.matches?.find(m => String(m.MATCH_ID) === String(matchId)); } 
+    }
+    
     if (!match) { alert("Partita non caricata. Ricarica la pagina."); return; }
-    if (!match.CASA_ID || !match.TRASFERTA_ID) { console.error('❌ ID squadra mancanti!', match); alert("Errore: dati squadra incompleti. Ricarica la pagina o seleziona di nuovo la partita."); return; }
-    if (match.STATO_PARTITA !== "LIVE") { alert("La partita non è in corso"); return; }
-    if (match.FASE === "GIRONI" && window.APP_CACHE.meta?.finalStageStarted) { alert("Impossibile modificare eventi: fase finale iniziata"); return; }
+    if (!match.CASA_ID || !match.TRASFERTA_ID) { alert("Errore: dati squadra incompleti."); return; }
+    
+    // 🔥 FIX: Permetti eventi anche in SUPP e RIGORI
+    if (!["LIVE", "SUPP", "RIGORI"].includes(match.STATO_PARTITA)) { 
+        alert("La partita non è in corso."); 
+        return; 
+    }
+    
+    if (match.FASE === "GIRONI" && window.APP_CACHE.meta?.finalStageStarted) { 
+        alert("Impossibile modificare eventi: fase finale iniziata"); 
+        return; 
+    }
     openEventPopup(team);
 }
 
@@ -1723,59 +1736,60 @@ let matchLiveRefreshInterval = null;
 let currentPollingMatchId = null; // 🔥 Tracciamo quale partita stiamo monitorando
 
 function startMatchLiveRefresh() {
-    // Se c'è già un intervallo attivo, non farne uno nuovo
     if (matchLiveRefreshInterval) return;
-    
     console.log('🔴 Avvio polling globale partite LIVE (2s)...');
     
     matchLiveRefreshInterval = setInterval(async () => {
-        // Trova tutte le partite LIVE nella cache
         const liveMatches = (window.APP_CACHE.matches || []).filter(m =>
-            m.STATO_PARTITA === "LIVE" || m.STATO_PARTITA === "SUPP" || m.STATO_PARTITA === "RIGORI"
+            ["LIVE", "SUPP", "RIGORI"].includes(m.STATO_PARTITA)
         );
 
-        // Se non ci sono partite LIVE, ferma il polling
         if (liveMatches.length === 0) {
-            console.log('⏹️ Nessuna partita LIVE, stop polling');
             stopMatchLiveRefresh();
             return;
         }
 
-        console.log(`🔄 Refresh globale: ${liveMatches.length} partita/e LIVE`);
-
-        // Aggiorna ogni partita LIVE trovata
         for (const match of liveMatches) {
             try {
-                // Fetch dati aggiornati dal backend
                 const freshData = await ApiClient.getMatchFull(match.MATCH_ID);
                 const freshEvents = await ApiClient.getEventsAdmin(match.MATCH_ID);
                 
                 if (freshData?.match) {
                     const calculatedScore = calculateMatchScore(freshData.match, freshEvents);
-                    const updatedMatch = { ...freshData.match, ...calculatedScore };
                     
-                    // 🔥 1. Aggiorna la cache globale
-                    const idx = window.APP_CACHE.matches.findIndex(m => m.MATCH_ID === match.MATCH_ID);
-                    if (idx >= 0) window.APP_CACHE.matches[idx] = updatedMatch;
+                    // 🔥 FIX: Normalizza la data per evitare mismatch "2026-8-6" vs "2026-08-06"
+                    let safeData = freshData.match.DATA;
+                    if (safeData) {
+                        try {
+                            const d = new Date(safeData);
+                            if (!isNaN(d.getTime())) {
+                                safeData = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+                            }
+                        } catch(e) {}
+                    }
+                    
+                    const updatedMatch = { ...freshData.match, ...calculatedScore, DATA: safeData };
+                    
+                    const idx = window.APP_CACHE.matches.findIndex(m => String(m.MATCH_ID) === String(match.MATCH_ID));
+                    if (idx >= 0) {
+                        window.APP_CACHE.matches[idx] = updatedMatch;
+                    }
+                    
                     window.APP_CACHE.eventsByMatch[match.MATCH_ID] = freshEvents;
                     CacheManager.save(window.APP_CACHE);
-                    
-                    // 🔥 2. Aggiorna la UI in base alla pagina attiva
-                    
-                    // Se siamo nella pagina DETTAGLIO PARTITA
-                    if (document.querySelector('.match-page') && window.APP_STATE.currentMatchId === match.MATCH_ID) {
+
+                    // Aggiorna UI solo se siamo nella pagina rilevante
+                    if (document.querySelector('.match-page') && String(window.APP_STATE.currentMatchId) === String(match.MATCH_ID)) {
                         renderMatchPage(updatedMatch);
                         loadPlayersForMatch(updatedMatch);
                     }
                     
-                    // Se siamo in HOME -> Aggiorna la card
                     if (document.querySelector('.home-container')) {
                         const nextCard = getNextMatchCard();
                         const existing = document.querySelector('.home-next-match');
                         if (existing) existing.replaceWith(nextCard);
                     }
                     
-                    // Se siamo in PARTITE -> Aggiorna la lista
                     if (document.querySelector('.matches-page')) {
                         renderMatches();
                     }
@@ -1784,9 +1798,8 @@ function startMatchLiveRefresh() {
                 console.error(`❌ Errore refresh match ${match.MATCH_ID}:`, error);
             }
         }
-    }, 2000); // ✅ Aggiornato a 2 secondi
+    }, 2000);
 }
-
 
 function stopMatchLiveRefresh() {
     if (matchLiveRefreshInterval) {
@@ -2448,15 +2461,35 @@ function renderPlayersTab(casaData, trasfData, match) {
 function renderMVPTab(casaData, trasfData, match) {
     const container = document.getElementById("mvpColumns"); if (!container) return;
     const casaPlayers = casaData?.players || []; const trasfPlayers = trasfData?.players || [];
-    const isLive = match.STATO_PARTITA === "LIVE"; const isFinished = match.STATO_PARTITA === "FINITA"; const currentMVP = match.MVP;
-    if (!isLive && !isFinished) { container.innerHTML = `<div style="text-align:center;padding:40px;color:#888;grid-column:1/-1"><div style="font-size:3rem;margin-bottom:16px">🎫</div><div>La votazione MVP sarà disponibile durante la partita</div></div>`; return; }
+    
+    // 🔥 FIX: Accetta LIVE, SUPP e RIGORI
+    const isLive = ["LIVE", "SUPP", "RIGORI"].includes(match.STATO_PARTITA);
+    const isFinished = match.STATO_PARTITA === "FINITA"; 
+    const currentMVP = match.MVP;
+    
+    if (!isLive && !isFinished) { 
+        container.innerHTML = `<div style="text-align:center;padding:40px;color:#888;grid-column:1/-1"><div style="font-size:3rem;margin-bottom:16px">🎫</div><div>La votazione MVP sarà disponibile durante la partita</div></div>`; 
+        return; 
+    }
+    
     if (isFinished && currentMVP) {
-        const renderMVPWinner = (players, teamName) => { const mvpPlayer = players.find(p => String(p.NOME || "").toUpperCase() === String(currentMVP).toUpperCase()); if (!mvpPlayer) return ""; const photoHtml = mvpPlayer.FOTO_ID ? `<img src="${getCachedImage(mvpPlayer.FOTO_ID, 80)}" alt="${mvpPlayer.NOME}" class="mvp-winner-photo">` : `<div class="player-avatar-fallback mvp-winner-avatar">👑</div>`; return `<div class="mvp-winner-card"><div class="mvp-winner-badge">🏆 MVP DEL MATCH</div>${photoHtml}<div class="mvp-winner-name">${(mvpPlayer.NOME || "").toUpperCase()}</div><div class="mvp-winner-team">${(teamName || "").toUpperCase()}</div></div>`; };
-        const casaHasMVP = casaPlayers.some(p => String(p.NOME || "").toUpperCase() === String(currentMVP).toUpperCase()); const trasfHasMVP = trasfPlayers.some(p => String(p.NOME || "").toUpperCase() === String(currentMVP).toUpperCase());
+        const renderMVPWinner = (players, teamName) => { 
+            const mvpPlayer = players.find(p => String(p.NOME || "").toUpperCase() === String(currentMVP).toUpperCase()); 
+            if (!mvpPlayer) return ""; 
+            const photoHtml = mvpPlayer.FOTO_ID ? `<img src="${getCachedImage(mvpPlayer.FOTO_ID, 80)}" alt="${mvpPlayer.NOME}" class="mvp-winner-photo">` : `<div class="player-avatar-fallback mvp-winner-avatar">👑</div>`; 
+            return `<div class="mvp-winner-card"><div class="mvp-winner-badge">🏆 MVP DEL MATCH</div>${photoHtml}<div class="mvp-winner-name">${(mvpPlayer.NOME || "").toUpperCase()}</div><div class="mvp-winner-team">${(teamName || "").toUpperCase()}</div></div>`; 
+        };
+        const casaHasMVP = casaPlayers.some(p => String(p.NOME || "").toUpperCase() === String(currentMVP).toUpperCase()); 
+        const trasfHasMVP = trasfPlayers.some(p => String(p.NOME || "").toUpperCase() === String(currentMVP).toUpperCase());
         container.innerHTML = `<div class="players-col"><div class="players-team">${(casaData?.team?.NOME_SQUADRA || match.SQUADRA_CASA || "").toUpperCase()}</div>${casaHasMVP ? renderMVPWinner(casaPlayers, match.SQUADRA_CASA) : ''}</div><div class="players-col"><div class="players-team">${(trasfData?.team?.NOME_SQUADRA || match.SQUADRA_TRASFERTA || "").toUpperCase()}</div>${trasfHasMVP ? renderMVPWinner(trasfPlayers, match.SQUADRA_TRASFERTA) : ''}</div>`;
         return;
     }
-    if (isFinished && !currentMVP) { container.innerHTML = `<div style="text-align:center;padding:40px;color:#888;grid-column:1/-1"><div style="font-size:3rem;margin-bottom:16px">⏳</div><div>Calcolo MVP in corso...</div><div style="font-size:12px;margin-top:8px;opacity:0.7">Attendere prego</div></div>`; return; }
+    
+    if (isFinished && !currentMVP) { 
+        container.innerHTML = `<div style="text-align:center;padding:40px;color:#888;grid-column:1/-1"><div style="font-size:3rem;margin-bottom:16px">⏳</div><div>Calcolo MVP in corso...</div><div style="font-size:12px;margin-top:8px;opacity:0.7">Attendere prego</div></div>`; 
+        return; 
+    }
+    
     const renderMVPVoteList = (players, teamId) => {
         if (!players.length) return `<div style="text-align:center;padding:20px;color:#888">Nessun giocatore</div>`;
         const savedVote = localStorage.getItem(`mvp_vote_${match.MATCH_ID}`); let selectedPlayerId = null;
