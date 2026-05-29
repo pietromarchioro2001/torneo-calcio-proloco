@@ -1863,7 +1863,14 @@ function startMatchLiveRefresh() {
         };
         
         window.APP_CACHE.matches[idx] = updatedMatch;
-          
+
+        if (
+          document.querySelector('.standings-page') &&
+          window.APP_STATE.activeStandingsTab === 'finale'
+        ) {
+          renderFinalBracket();
+        }
+                  
           // ✅ Aggiorna eventi in cache
           window.APP_CACHE.eventsByMatch[match.MATCH_ID] = freshEvents;
           
