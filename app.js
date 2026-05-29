@@ -1877,12 +1877,19 @@ function startMatchLiveRefresh() {
           }
           
           if (document.querySelector('.home-container')) {
-            const nextCard = getNextMatchCard();
-            const existing = document.querySelector('.home-next-match');
-            if (existing) {
-              existing.replaceWith(nextCard);
+              const nextCardHtml = getNextMatchCard(); // ← Stringa HTML
+              const existing = document.querySelector('.home-next-match');
+              
+              if (existing) {
+                // ✅ METODO 1: Usa outerHTML (più semplice)
+                existing.outerHTML = nextCardHtml;
+                
+                // ✅ METODO 2 (alternativa): Crea elemento temporaneo
+                // const temp = document.createElement('div');
+                // temp.innerHTML = nextCardHtml;
+                // existing.replaceWith(temp.firstElementChild);
+              }
             }
-          }
           
           if (document.querySelector('.matches-page')) {
             renderMatches();
