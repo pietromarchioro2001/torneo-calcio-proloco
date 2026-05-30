@@ -2044,9 +2044,15 @@ function renderFinalBracket(matches) {
     
     const matchMap = {};
     (matches || []).forEach(m => {
-        if (m.matchKey) {
-            matchMap[m.matchKey] = m;
-        }
+
+      const key =
+          m.matchKey ||
+          m.TURNO ||
+          m.turno;
+    
+      if (key) {
+          matchMap[key] = m;
+      }
     });
     
     const sf1Match = matchMap["SF1"];
@@ -2060,8 +2066,17 @@ function renderFinalBracket(matches) {
         ${renderBracketMatch(matchMap["Q4"], "qf4")}
         ${sf1Match ? renderBracketMatch(sf1Match, "sf1") : renderPlaceholderCard("SF1", "sf1")}
         ${sf2Match ? renderBracketMatch(sf2Match, "sf2") : renderPlaceholderCard("SF2", "sf2")}
-        ${renderPlaceholderCard("FINALE 1°-2°", "final-match")}
-        ${renderPlaceholderCard("FINALE 3°-4°", "third-place")}
+        const finalMatch = matchMap["F"];
+        const thirdPlaceMatch = matchMap["TP"];
+        ${finalMatch
+            ? renderBracketMatch(finalMatch, "final-match")
+            : renderPlaceholderCard("FINALE 1°-2°", "final-match")
+        }
+        
+        ${thirdPlaceMatch
+            ? renderBracketMatch(thirdPlaceMatch, "third-place")
+            : renderPlaceholderCard("FINALE 3°-4°", "third-place")
+        }
     </div>
     `;
 }
