@@ -978,14 +978,14 @@ body {
 /* =============================================================================================
    🏆 10. CLASSIFICHE & FASE FINALE
 =============================================================================================== */
-.standings-page { width: 1100px; margin: 0 auto; height: 100vh; overflow-y: auto; padding: 10px 0 180px; box-sizing: border-box; }
+.standings-page { width: 1100px; margin: 0 auto; height: 100vh; overflow-y: auto; padding: 0 0 180px; box-sizing: border-box; }
 .standings-page::after { content: ""; display: block; height: 80px; }
 
 .standings-tabs {
   display: flex;
   justify-content: center;
   gap: 14px;
-  margin-bottom: 15px;
+  margin-bottom: 5px;
 }
 .standings-tab { padding: 12px 24px; border-radius: 12px; background: #f3f3f3; font-size: 13px; font-weight: 700; letter-spacing: 3px; cursor: pointer; transition: 0.2s; }
 .standings-tab.active { background: var(--granata); color: white; }
@@ -1077,8 +1077,13 @@ body {
 .bracket-match.bracket-placeholder:hover { transform: none; box-shadow: 0 4px 15px rgba(0,0,0,0.08); }
 .bracket-match.bracket-placeholder div { font-size: 12px !important; font-weight: 700 !important; color: #666666 !important; opacity: 1 !important; letter-spacing: 1px !important; }
 
-.bracket-match.final-match, .bracket-placeholder.final-match {
-  border: 2px solid #d4af37 !important; left: 50%; margin-left: -100px; top: 300px; z-index: 10;
+.bracket-match.final-match,
+.bracket-placeholder.final-match {
+  border: 2px solid #d4af37 !important;
+  left: 50%;
+  margin-left: -100px;
+  top: 210px;
+  z-index: 10;
 }
 
 /* Forza stile per card vuote/placeholder */
