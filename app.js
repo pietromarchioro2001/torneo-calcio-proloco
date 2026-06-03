@@ -1641,6 +1641,53 @@ async function toggleMatch() {
     if (newStatus === "FINITA") {
         invalidateCacheAndRefresh('standings');
         invalidateCacheAndRefresh('matches');
+        // 🔥 AGGIUNGI QUESTA RIGA:
+        invalidateCacheAndRefresh('finalStage');
+    }
+}
+
+async function forzaRicalcoloFaseFinale() {
+    console.log('🔄 Forzo ricalcolo fase finale...');
+    
+    try {
+        // 1. Invalida cache
+        const finalData = await ApiClient.getFinalStageMatches();
+        if (finalData) {
+            window.APP_CACHE.finalStage = finalData;
+            CacheManager.save(window.APP_CACHE);
+            console.log('✅ Cache finalStage aggiornata');
+        }
+        
+        // 2. Aggiorna matches
+        const matches = await ApiClient.getMatches();
+        if (matches) {
+            window.APP_CACHE.matches = matches;
+            hydrateMatches(matches);
+            CacheManager.save(window.APP_CACHE);
+            console.log('✅ Cache matches aggiornata');
+        }
+        
+        // 3. Rerenderizza se siamo nella pagina giusta
+        if (document.querySelector('.final-stage-page')) {
+            renderFinalStage(finalData || window.APP_CACHE.finalStage);
+            console.log('✅ Tabellone rerenderizzato');
+        }
+        
+        // 4. Aggiorna anche standings se necessario
+        if (document.querySelector('.standings-page')) {
+            const standings = await ApiClient.getStandings();
+            if (standings) {
+                window.APP_CACHE.standings = standings;
+                CacheManager.save(window.APP_CACHE);
+                if (window.APP_STATE._activeStandingsTab === "fasefinale") {
+                    renderFinalStage(finalData || window.APP_CACHE.finalStage);
+                }
+            }
+        }
+        
+        console.log('✅ Ricalcolo fase finale completato');
+    } catch (error) {
+        console.error('❌ Errore nel ricalcolo:', error);
     }
 }
 
@@ -1991,16 +2038,50 @@ function openRigoriPopup(directMode = false) {
 
     window.finishRigori = async () => {
         if (!confirm("Confermi la fine dei rigori?")) return;
-        const rigoriData = { matchId: match.MATCH_ID, casaRigori: rigoriState.casaScore, trasfRigori: rigoriState.trasfScore, events: rigoriState.history.map((h, idx) => ({ teamId: h.team === 'casa' ? match.CASA_ID : match.TRASFERTA_ID, type: h.result === 'goal' ? 'RIGORE_SEGNO' : 'RIGORE_SBAGLIO', minute: 120 + idx + 1 })) };
+        
+        const rigoriData = { 
+            matchId: match.MATCH_ID, 
+            casaRigori: rigoriState.casaScore, 
+            trasfRigori: rigoriState.trasfScore, 
+            events: rigoriState.history.map((h, idx) => ({ 
+                teamId: h.team === 'casa' ? match.CASA_ID : match.TRASFERTA_ID, 
+                type: h.result === 'goal' ? 'RIGORE_SEGNO' : 'RIGORE_SBAGLIO', 
+                minute: 120 + idx + 1 
+            })) 
+        };
+        
         try {
             await ApiClient.saveRigoriResults(rigoriData);
-            match.STATO_PARTITA = "FINITA"; match.RIGORI_CASA = rigoriState.casaScore; match.RIGORI_TRASFERTA = rigoriState.trasfScore;
-            window.APP_STATE.lastMatch = match; updateMatchUI(match);
+            
+            // Aggiorna stato locale
+            match.STATO_PARTITA = "FINITA"; 
+            match.RIGORI_CASA = rigoriState.casaScore; 
+            match.RIGORI_TRASFERTA = rigoriState.trasfScore;
+            window.APP_STATE.lastMatch = match; 
+            updateMatchUI(match);
             renderPenaltyIndicators(window.APP_CACHE.eventsByMatch[match.MATCH_ID] || [], match);
             localStorage.removeItem(storageKey);
-            setTimeout(() => { ApiClient.getMatchFull(match.MATCH_ID).then(data => { if (data?.match) { window.APP_STATE.lastMatch = data.match; renderMatchPage(data.match); } }); }, 500);
-            alert("✅ Rigori conclusi! Risultato salvato."); document.getElementById('rigoriPopupOverlay')?.remove();
-        } catch (error) { console.error('Errore:', error); alert('Errore: ' + error.message); }
+            
+            // 🔥 AGGIUNGI QUESTE RIGHE CRITICHE:
+            await invalidateCacheAndRefresh('finalStage');
+            await invalidateCacheAndRefresh('matches');
+            await invalidateCacheAndRefresh('standings');
+            
+            setTimeout(() => { 
+                ApiClient.getMatchFull(match.MATCH_ID).then(data => { 
+                    if (data?.match) { 
+                        window.APP_STATE.lastMatch = data.match; 
+                        renderMatchPage(data.match); 
+                    } 
+                }); 
+            }, 500);
+            
+            alert("✅ Rigori conclusi! Risultato salvato."); 
+            document.getElementById('rigoriPopupOverlay')?.remove();
+        } catch (error) { 
+            console.error('Errore:', error); 
+            alert('Errore: ' + error.message); 
+        }
     };
 }
 
@@ -2530,7 +2611,7 @@ async function invalidateCacheAndRefresh(type) {
                 break;
                 
             case 'finalStage':
-                // Ricarica fase finale
+                console.log('🔄 Refresh finalStage...');
                 const finalData = await ApiClient.getFinalStageMatches();
                 if (finalData) {
                     window.APP_CACHE.finalStage = finalData;
@@ -2538,6 +2619,12 @@ async function invalidateCacheAndRefresh(type) {
                 }
                 if (document.querySelector(".final-stage-page")) {
                     renderFinalStage(finalData || window.APP_CACHE.finalStage);
+                    renderNextPhaseButton(); // 🔥 Importante: aggiorna anche il pulsante!
+                }
+                // Se siamo nella pagina standings con tab fasefinale
+                if (document.querySelector(".standings-page") && window.APP_STATE._activeStandingsTab === "fasefinale") {
+                    renderFinalStage(finalData || window.APP_CACHE.finalStage);
+                    renderNextPhaseButton();
                 }
                 break;
         }
