@@ -1871,12 +1871,6 @@ function openRigoriPopup(directMode = false) {
     rigoriState.casaScore = parseInt(rigoriState.casaScore) || 0; rigoriState.trasfScore = parseInt(rigoriState.trasfScore) || 0;
     function saveRigoriState() { localStorage.setItem(storageKey, JSON.stringify(rigoriState)); }
     function checkRigoriWinner() {
-        const casaKicks = rigoriState.history.filter(h => h.team === 'casa').length;
-        const trasfKicks = rigoriState.history.filter(h => h.team === 'trasferta').length;
-        if (casaKicks >= 5 && trasfKicks >= 5) { if (rigoriState.casaScore !== rigoriState.trasfScore) return true; }
-        const remainingKicks = 5 - Math.max(casaKicks, trasfKicks);
-        if (remainingKicks > 0) { const diff = Math.abs(rigoriState.casaScore - rigoriState.trasfScore); if (diff > remainingKicks) return true; }
-        if (casaKicks > 5 && trasfKicks === casaKicks) { if (rigoriState.casaScore !== rigoriState.trasfScore) return true; }
         return false;
     }
 
