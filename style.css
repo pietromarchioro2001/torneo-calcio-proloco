@@ -1557,54 +1557,25 @@ body {
 }
 
 /* Card home vincitore torneo */
-.home-winner-card {
-    background: linear-gradient(135deg, rgba(255,215,0,0.15) 0%, rgba(255,237,78,0.1) 100%);
-    border: 2px solid #ffd700;
-    border-radius: 16px;
-    padding: 20px 15px;
-    text-align: center;
-    position: relative;
-    overflow: hidden;
+/* Forza stile corretto per la card vincitore torneo */
+.home-next-match[style*="fffbeb"],
+.home-next-match[style*="fef3c7"] {
+    position: absolute !important;
+    bottom: 80px !important;
+    left: 50% !important;
+    transform: translateX(-50%) !important;
+    z-index: 100 !important;
+    width: 85% !important;
+    max-width: 360px !important;
+    min-height: 60px !important;
+    padding: 8px 12px !important;
+    border-radius: 12px !important;
+    box-shadow: 0 -4px 20px rgba(251, 191, 36, 0.3) !important;
+    backdrop-filter: blur(8px) !important;
 }
 
-.home-winner-card .winner-trophy-bg {
-    position: absolute;
-    top: -20px;
-    right: -20px;
-    font-size: 80px;
-    opacity: 0.1;
-}
-
-.home-winner-card .winner-label {
-    font-size: 12px;
-    color: #ffd700;
-    font-weight: 700;
-    margin-bottom: 10px;
-    text-transform: uppercase;
-    letter-spacing: 2px;
-}
-
-.home-winner-card .winner-logo {
-    width: 80px;
-    height: 80px;
-    border-radius: 50%;
-    border: 3px solid #ffd700;
-    box-shadow: 0 4px 16px rgba(255,215,0,0.4);
-    margin: 0 auto 10px;
-    object-fit: cover;
-}
-
-.home-winner-card .winner-name {
-    font-size: 20px;
-    font-weight: 900;
-    color: #ffd700;
-    text-transform: uppercase;
-    letter-spacing: 1px;
-    margin-bottom: 5px;
-}
-
-.home-winner-card .winner-subtitle {
-    font-size: 11px;
-    color: #fff;
-    opacity: 0.8;
+.home-next-match[style*="fffbeb"]:hover,
+.home-next-match[style*="fef3c7"]:hover {
+    transform: translateX(-50%) translateY(-2px) !important;
+    box-shadow: 0 -8px 30px rgba(251, 191, 36, 0.45) !important;
 }
