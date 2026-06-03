@@ -1078,7 +1078,7 @@ body {
 .bracket-match.bracket-placeholder div { font-size: 12px !important; font-weight: 700 !important; color: #666666 !important; opacity: 1 !important; letter-spacing: 1px !important; }
 
 .bracket-match.final-match,
-.bracket-placeholder.final-match {
+.bracket-placeholder {
   border: 2px solid #d4af37 !important;
   left: 50%;
   margin-left: -100px;
@@ -1099,10 +1099,10 @@ body {
 
 .live-indicator { display: none !important; width: 6px; height: 6px; background: #dc2626; border-radius: 50%; margin-left: 6px; animation: dotPulse 1.5s infinite; }
 
-.qf1 { left: 20px; top: 90px; }
+.qf1 { left: 20px; top: 110px; }
 .qf2 { left: 20px; top: 330px; }
 
-.qf3 { right: 20px; top: 90px; }
+.qf3 { right: 20px; top: 110px; }
 .qf4 { right: 20px; top: 330px; }
 
 .sf1 { left: 200px; top: 190px; }
