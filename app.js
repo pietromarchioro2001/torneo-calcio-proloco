@@ -889,12 +889,18 @@ function enableDragScrollDates() {
     let startX;
     let scrollLeft;
 
+    let touchStartX = 0;
+
+    // ⚠️ stato globale del drag
+    window.isDraggingDates = false;
+
     el.addEventListener("mousedown", (e) => {
         isDown = true;
         el.classList.add("dragging");
         startX = e.pageX - el.offsetLeft;
         scrollLeft = el.scrollLeft;
-        isDraggingDates = false);
+
+        window.isDraggingDates = false;
     });
 
     el.addEventListener("mouseleave", () => {
@@ -912,14 +918,14 @@ function enableDragScrollDates() {
         e.preventDefault();
 
         const x = e.pageX - el.offsetLeft;
-        const walk = (x - startX) * 1.2; // velocità drag
+        const walk = (x - startX) * 1.2;
+
         el.scrollLeft = scrollLeft - walk;
-        isDraggingDates = true);
+
+        window.isDraggingDates = true;
     });
 
-    // touch (mobile)
-    let touchStartX = 0;
-
+    // touch
     el.addEventListener("touchstart", (e) => {
         touchStartX = e.touches[0].clientX;
         scrollLeft = el.scrollLeft;
@@ -932,7 +938,14 @@ function enableDragScrollDates() {
     });
 }
 
-function selectDate(date) { if (window.isDraggingDates) return; window.APP_STATE.selectedDate = date; window.APP_STATE.userSelectedDate = true; renderDatesToolbar(); renderMatchesByDate(date); }
+function selectDate(date) {
+    if (window.isDraggingDates) return;
+
+    window.APP_STATE.selectedDate = date;
+    window.APP_STATE.userSelectedDate = true;
+    renderDatesToolbar();
+    renderMatchesByDate(date);
+}
 
 function centerActiveDate() {
     const container = document.getElementById("datesToolbar"), active = container?.querySelector(".date-item.active");
