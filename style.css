@@ -1100,10 +1100,10 @@ body {
 .live-indicator { display: none !important; width: 6px; height: 6px; background: #dc2626; border-radius: 50%; margin-left: 6px; animation: dotPulse 1.5s infinite; }
 
 .qf1 { left: 20px; top: 60px; }
-.qf2 { left: 20px; top: 330px; }
+.qf2 { left: 20px; top: 320px; }
 
 .qf3 { right: 20px; top: 60px; }
-.qf4 { right: 20px; top: 330px; }
+.qf4 { right: 20px; top: 320px; }
 
 .sf1 { left: 200px; top: 190px; }
 .sf2 { right: 200px; top: 190px; }
@@ -1117,7 +1117,7 @@ body {
 .third-place {
   left: 50%;
   margin-left: -100px;
-  top: 330px;
+  top: 320px;
 }
 
 .bracket-team { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
