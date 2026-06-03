@@ -1991,10 +1991,13 @@ function startMatchLiveRefresh() {
                 const freshEvents = await ApiClient.getEventsAdmin(match.MATCH_ID);
                 
                 if (freshData?.match) {
-                    // Calcola punteggio dagli eventi
-                    const calculatedScore = calculateMatchScore(freshData.match, freshEvents);
+                    // 1️⃣ MERGE EVENTI: Preserva gli eventi temporanei locali se non sono ancora nel backend
+                    const mergedEvents = mergeEventsWithLocal(freshEvents, match.MATCH_ID);
                     
-                    // 🔥 NORMALIZZAZIONE DATA ROBUSTA
+                    // 2️⃣ CALCOLA PUNTEGGIO: Usa gli eventi mergiati (include i gol temporanei!)
+                    const calculatedScore = calculateMatchScore(freshData.match, mergedEvents);
+                    
+                    // 3️⃣ NORMALIZZAZIONE DATA ROBUSTA
                     let safeData = freshData.match.DATA;
                     if (safeData) {
                         try {
@@ -2023,12 +2026,6 @@ function startMatchLiveRefresh() {
                     if (document.querySelector('.standings-page') && window.APP_STATE.activeStandingsTab === 'finale') {
                         renderFinalBracket();
                     }
-                    
-                    // ✅ MERGE EVENTI: Mantieni gli eventi temporanei locali se non sono ancora presenti nel backend
-                    const mergedEvents = mergeEventsWithLocal(freshEvents, match.MATCH_ID);
-
-                    // 🔥 CALCOLA PUNTEGGIO SUGLI EVENTI MERGIATI (include i gol temporanei!)
-                    const calculatedScore = calculateMatchScore(freshData.match, mergedEvents);
                     
                     // ✅ Aggiorna eventi in cache con la versione mergiata
                     window.APP_CACHE.eventsByMatch[match.MATCH_ID] = mergedEvents;
