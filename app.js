@@ -3,7 +3,7 @@
 // ============================================================================
 const CONFIG = {
     // 🔥 SOSTITUISCI CON IL TUO URL APPS SCRIPT WEB APP
-    BACKEND_URL: 'https://script.google.com/macros/s/AKfycbxKsp85rQnHOZzvZzdQmi8JtIUmyBe9vAYmPjK6DXIuRGkUZHMmKcXVQ1mZsErGzywn/exec',
+    BACKEND_URL: 'https://script.google.com/macros/s/AKfycbzVjqHzzu8c_TlRTw7_W9D-sJiVf2w6Xi4uzc2ncQOPsBhYA2NOL37f5rsP8ehxpbkg/exec',
     API_TIMEOUT: 30000,
     CACHE_VERSION: 'v3.0',
     CACHE_MAX_AGE: 5 * 60 * 1000
