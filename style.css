@@ -554,6 +554,9 @@ body {
     6. LISTA PARTITE
 =============================================================================================== */
 .matches-page { width: 1100px; margin: 0 auto; }
+.matches-page .team-name {
+  color: #333 !important;
+}
 .matches-header { position: sticky; top: 0; background: white; z-index: 5; padding: 20px 0; display: flex; align-items: center; justify-content: space-between; }
 .matches-actions { width: 1100px; margin: 0 auto 25px; display: flex; }
 .matches-scroll { width: 1100px; margin: 0 auto; }
@@ -1556,26 +1559,30 @@ body {
     padding: 20px;
 }
 
-/* Card home vincitore torneo */
-/* Forza stile corretto per la card vincitore torneo */
-.home-next-match[style*="fffbeb"],
-.home-next-match[style*="fef3c7"] {
+/* Card vincitore torneo - Home */
+.home-next-match.winner-card {
     position: absolute !important;
     bottom: 80px !important;
     left: 50% !important;
     transform: translateX(-50%) !important;
     z-index: 100 !important;
     width: 85% !important;
-    max-width: 360px !important;
-    min-height: 60px !important;
-    padding: 8px 12px !important;
+    max-width: 400px !important;
+    min-height: auto !important;
     border-radius: 12px !important;
     box-shadow: 0 -4px 20px rgba(251, 191, 36, 0.3) !important;
     backdrop-filter: blur(8px) !important;
+    cursor: pointer !important;
+    transition: transform 0.2s, box-shadow 0.2s !important;
 }
 
-.home-next-match[style*="fffbeb"]:hover,
-.home-next-match[style*="fef3c7"]:hover {
-    transform: translateX(-50%) translateY(-2px) !important;
+.home-next-match.winner-card:hover {
+    transform: translateX(-50%) translateY(-3px) !important;
     box-shadow: 0 -8px 30px rgba(251, 191, 36, 0.45) !important;
+}
+
+/* Override stili base per winner card */
+.home-next-match.winner-card .home-team-block,
+.home-next-match.winner-card .home-match-center {
+    display: none !important;
 }
