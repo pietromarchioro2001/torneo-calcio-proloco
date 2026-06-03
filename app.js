@@ -3,7 +3,7 @@
 // ============================================================================
 const CONFIG = {
     // 🔥 SOSTITUISCI CON IL TUO URL APPS SCRIPT WEB APP
-    BACKEND_URL: 'https://script.google.com/macros/s/AKfycbznHSi2iWDZeG71f-wUP1D91ohZNVnMTaAPEUQrP24zLit9D45_D822UUzmTYjTtc_m/exec',
+    BACKEND_URL: 'https://script.google.com/macros/s/AKfycbx8mmanYLttSAA2p6EHi8jrKwr_buuptFkhLufAy_ffDl7kOfM4_XnrF92TkjmLL0I/exec',
     API_TIMEOUT: 30000,
     CACHE_VERSION: 'v3.0',
     CACHE_MAX_AGE: 5 * 60 * 1000
@@ -363,18 +363,28 @@ if (finale1 && finale3 &&
     finale1.STATO_PARTITA === "FINITA" &&
     finale3.STATO_PARTITA === "FINITA") {
     // 🔥 DETERMINA VINCITORE CONSIDERANDO I RIGORI
-    let vincitore;
-    const rigoriCasa = finale1.RIGORE_CASA ?? finale1.RIGORI_CASA ?? null;
-    const rigoriTrasf = finale1.RIGORE_TRASFERTA ?? finale1.RIGORI_TRASFERTA ?? null;
-    if (rigoriCasa !== null && rigoriTrasf !== null) {
-        vincitore = rigoriCasa > rigoriTrasf
-            ? { nome: finale1.SQUADRA_CASA, logo: finale1.LOGO_CASA }
-            : { nome: finale1.SQUADRA_TRASFERTA, logo: finale1.LOGO_TRASFERTA };
-    } else {
-        vincitore = finale1.GOL_CASA > finale1.GOL_TRASFERTA
-            ? { nome: finale1.SQUADRA_CASA, logo: finale1.LOGO_CASA }
-            : { nome: finale1.SQUADRA_TRASFERTA, logo: finale1.LOGO_TRASFERTA };
-    }
+    // 🔥 DETERMINA VINCITORE CONSIDERANDO I RIGORI
+let vincitore;
+const rigoriCasa = finale1.RIGORE_CASA ?? finale1.RIGORI_CASA ?? null;
+const rigoriTrasf = finale1.RIGORE_TRASFERTA ?? finale1.RIGORI_TRASFERTA ?? null;
+
+// ✅ Verifica che i rigori siano valori validi
+const hasValidRigori = (
+  rigoriCasa !== null && rigoriCasa !== undefined && rigoriCasa !== "" &&
+  rigoriTrasf !== null && rigoriTrasf !== undefined && rigoriTrasf !== ""
+);
+
+if (hasValidRigori) {
+  // ✅ Usa SEMPRE i rigori se sono presenti
+  vincitore = Number(rigoriCasa) > Number(rigoriTrasf)
+    ? { nome: finale1.SQUADRA_CASA, logo: finale1.LOGO_CASA }
+    : { nome: finale1.SQUADRA_TRASFERTA, logo: finale1.LOGO_TRASFERTA };
+} else {
+  // Altrimenti usa il punteggio regolare
+  vincitore = finale1.GOL_CASA > finale1.GOL_TRASFERTA
+    ? { nome: finale1.SQUADRA_CASA, logo: finale1.LOGO_CASA }
+    : { nome: finale1.SQUADRA_TRASFERTA, logo: finale1.LOGO_TRASFERTA };
+}
     const logoHtml = vincitore.logo
         ? `<img src="${getCachedImage(vincitore.logo, 50)}" alt="${vincitore.nome}" style="width:50px;height:50px;border-radius:50%;object-fit:cover;">`
         : '<div style="width:50px;height:50px;border-radius:50%;background:#f0f0f0;display:flex;align-items:center;justify-content:center;font-size:24px;">⚽</div>';
@@ -2773,30 +2783,35 @@ const scoreClass = isLive ? "bracket-score live" : "bracket-score scheduled";
 // 🔥 FIX: Determina il vincitore considerando PRIMA i rigori per le finali
 let casaClass = "", trasfClass = "";
 if (isFinished) {
-// Controlla se ci sono i rigori (colonne RIGORE_CASA/RIGORE_TRASFERTA o RIGORI_CASA/RIGORI_TRASFERTA)
-const rigoriCasa = match.rigoriCasa ?? match.casaRigori ?? match.RIGORE_CASA ?? match.RIGORI_CASA ?? null;
-const rigoriTrasf = match.rigoriTrasf ?? match.trasfertaRigori ?? match.RIGORE_TRASFERTA ?? match.RIGORI_TRASFERTA ?? null;
-const hasPenalties = (rigoriCasa !== null && rigoriTrasf !== null);
-
-if (hasPenalties) {
-// La partita è decisa ai rigori - il vincitore è chi ha fatto più rigori
-if (rigoriCasa > rigoriTrasf) {
-casaClass = "winner";
-trasfClass = "loser";
-} else {
-casaClass = "loser";
-trasfClass = "winner";
-}
-} else {
-// Partita decisa nei tempi regolamentari/supplementari
-if (scoreCasa > scoreTrasf) {
-casaClass = "winner";
-trasfClass = "loser";
-} else {
-casaClass = "loser";
-trasfClass = "winner";
-}
-}
+  // 🔥 CORREZIONE: Controlla prima se ci sono i rigori
+  const rigoriCasa = match.rigoriCasa ?? match.casaRigori ?? match.RIGORE_CASA ?? match.RIGORI_CASA ?? null;
+  const rigoriTrasf = match.rigoriTrasf ?? match.trasfertaRigori ?? match.RIGORE_TRASFERTA ?? match.RIGORI_TRASFERTA ?? null;
+  
+  // Verifica che entrambi i valori siano validi (non null/undefined/vuoti)
+  const hasValidRigori = (
+    rigoriCasa !== null && rigoriCasa !== undefined && rigoriCasa !== "" &&
+    rigoriTrasf !== null && rigoriTrasf !== undefined && rigoriTrasf !== ""
+  );
+  
+  if (hasValidRigori) {
+    // ✅ La partita è decisa ai rigori - usa SEMPRE i rigori
+    if (Number(rigoriCasa) > Number(rigoriTrasf)) {
+      casaClass = "winner";
+      trasfClass = "loser";
+    } else {
+      casaClass = "loser";
+      trasfClass = "winner";
+    }
+  } else {
+    // Partita decisa nei tempi regolamentari/supplementari
+    if (scoreCasa > scoreTrasf) {
+      casaClass = "winner";
+      trasfClass = "loser";
+    } else {
+      casaClass = "loser";
+      trasfClass = "winner";
+    }
+  }
 }
 
 const statusIndicator = isSupp ? '<span style="font-size:9px;color:#8c1d2c;font-weight:700;margin-left:4px">SUPP</span>' : '';
