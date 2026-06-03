@@ -2066,30 +2066,37 @@ function startMatchLiveRefresh() {
                     // 2️⃣ CALCOLA PUNTEGGIO: Usa gli eventi mergiati (include i gol temporanei!)
                     const calculatedScore = calculateMatchScore(freshData.match, mergedEvents);
                     
-                    // 3️⃣ NORMALIZZAZIONE DATA ROBUSTA (Timezone-proof)
-                    let safeData = freshData.match.DATA;
-                    if (safeData) {
-                        try {
-                            const clean = String(safeData).substring(0, 10);
-                            const parts = clean.split("-");
-                            if (parts.length === 3) {
-                                safeData = `${parts[0]}-${String(parts[1]).padStart(2, '0')}-${String(parts[2]).padStart(2, '0')}`;
-                            }
-                        } catch(e) {
-                            console.warn('⚠️ Errore normalizzazione data:', e, safeData);
-                        }
-                    }
-                    
-                    const idx = window.APP_CACHE.matches.findIndex(m =>
-                        String(m.MATCH_ID) === String(match.MATCH_ID)
-                    );
+                    // 3️⃣ NORMALIZZAZIONE DATA ROBUSTA (Timezone-proof, no new Date())
+                    const idx = window.APP_CACHE.matches.findIndex(m => String(m.MATCH_ID) === String(match.MATCH_ID));
                     if (idx < 0) continue;
                     
+                    // Fallback alla data già corretta in cache per massima sicurezza
+                    let safeData = window.APP_CACHE.matches[idx]?.DATA; 
+                    
+                    if (freshData.match.DATA) {
+                        try {
+                            const str = String(freshData.match.DATA).trim();
+                            // 1. Prova formato YYYY-MM-DD (anche con orario tipo "2026-08-15T12:00:00")
+                            const matchDateStr = str.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/);
+                            if (matchDateStr) {
+                                safeData = `${matchDateStr[1]}-${String(matchDateStr[2]).padStart(2, '0')}-${String(matchDateStr[3]).padStart(2, '0')}`;
+                            } else {
+                                // 2. Prova formato DD/MM/YYYY o DD-MM-YYYY
+                                const matchDateStr2 = str.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})/);
+                                if (matchDateStr2) {
+                                    safeData = `${matchDateStr2[3]}-${String(matchDateStr2[2]).padStart(2, '0')}-${String(matchDateStr2[1]).padStart(2, '0')}`;
+                                }
+                            }
+                        } catch(e) {
+                            console.warn('⚠️ Errore normalizzazione data:', e, freshData.match.DATA);
+                        }
+                    }
+
                     const updatedMatch = {
                         ...window.APP_CACHE.matches[idx],
                         ...freshData.match,
                         ...calculatedScore,
-                        DATA: safeData
+                        DATA: safeData // ✅ Forza la data normalizzata YYYY-MM-DD
                     };
                     window.APP_CACHE.matches[idx] = updatedMatch;
                     
@@ -2107,18 +2114,16 @@ function startMatchLiveRefresh() {
                             DATA: safeData
                         };
                     }
-
+                    
                     // 🔥 ✅ AGGIORNAMENTO ISTANTANEO TABELLONE FASE FINALE
                     if (document.querySelector('.standings-page') && window.APP_STATE._activeStandingsTab === 'fasefinale') {
                         const fsIndex = (window.APP_CACHE.finalStage || []).findIndex(m => String(m.matchId) === String(match.MATCH_ID));
                         if (fsIndex >= 0) {
-                            // Iniettiamo i dati live freschi direttamente nella cache della fase finale
                             window.APP_CACHE.finalStage[fsIndex].stato = updatedMatch.STATO_PARTITA;
                             window.APP_CACHE.finalStage[fsIndex].golCasa = updatedMatch.GOL_CASA;
                             window.APP_CACHE.finalStage[fsIndex].golTrasferta = updatedMatch.GOL_TRASFERTA;
                             CacheManager.save(window.APP_CACHE);
                         }
-                        // Ridisegniamo il tabellone immediatamente
                         renderFinalBracket(window.APP_CACHE.finalStage);
                     }
                     
@@ -2153,6 +2158,7 @@ function startMatchLiveRefresh() {
         }
     }, 2000);
 }
+
 
 function stopMatchLiveRefresh() {
     if (matchLiveRefreshInterval) {
