@@ -2040,7 +2040,7 @@ function startStandingsLiveRefresh() {
 let matchLiveRefreshInterval = null;
 let currentPollingMatchId = null; // 🔥 Tracciamo quale partita stiamo monitorando
 
-function startMatchLiveRefresh() {
+unction startMatchLiveRefresh() {
     if (matchLiveRefreshInterval) return;
     console.log('🔴 Avvio polling globale partite LIVE (2s)...');
     
@@ -2066,13 +2066,15 @@ function startMatchLiveRefresh() {
                     // 2️⃣ CALCOLA PUNTEGGIO: Usa gli eventi mergiati (include i gol temporanei!)
                     const calculatedScore = calculateMatchScore(freshData.match, mergedEvents);
                     
-                    // 3️⃣ NORMALIZZAZIONE DATA ROBUSTA
+                    // 3️⃣ NORMALIZZAZIONE DATA ROBUSTA (Timezone-proof: evita new Date() che causa shift di giorno)
                     let safeData = freshData.match.DATA;
                     if (safeData) {
                         try {
-                            const d = new Date(safeData);
-                            if (!isNaN(d.getTime())) {
-                                safeData = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+                            // Estraiamo solo le prime 10 caratteri (YYYY-MM-DD) ed evitiamo new Date()
+                            const clean = String(safeData).substring(0, 10);
+                            const parts = clean.split("-");
+                            if (parts.length === 3) {
+                                safeData = `${parts[0]}-${String(parts[1]).padStart(2, '0')}-${String(parts[2]).padStart(2, '0')}`;
                             }
                         } catch(e) {
                             console.warn('⚠️ Errore normalizzazione data:', e, safeData);
