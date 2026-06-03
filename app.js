@@ -1556,7 +1556,7 @@ async function toggleMatch() {
     const match = window.APP_STATE.lastMatch;
     if (!match) return;
 
-    // Determina il nuovo stato (se è LIVE, SUPP o RIGORI, diventa FINITA, altrimenti LIVE)
+    // Determina il nuovo stato
     const isCurrentlyActive = ["LIVE", "SUPP", "RIGORI"].includes(match.STATO_PARTITA);
     const newStatus = isCurrentlyActive ? "FINITA" : "LIVE";
 
