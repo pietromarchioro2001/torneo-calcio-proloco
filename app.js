@@ -2007,6 +2007,13 @@ function openRigoriPopup(directMode = false) {
     if (btnMiss) btnMiss.onclick = () => handleRigoreClick('miss'); if (btnGoal) btnGoal.onclick = () => handleRigoreClick('goal');
 
     function handleRigoreClick(result) {
+
+        console.log('🎯 Click rigore - Stato attuale:', {
+        casaScore: rigoriState.casaScore,
+        trasfScore: rigoriState.trasfScore,
+        finished: rigoriState.finished,
+        history: rigoriState.history.length
+    });
         if (rigoriState.finished) return;
         const currentTeam = rigoriState.currentKicker; const isGoal = result === 'goal';
         if (isGoal) { if (currentTeam === 'casa') { rigoriState.casaScore++; } else { rigoriState.trasfScore++; } }
