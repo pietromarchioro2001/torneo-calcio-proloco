@@ -356,33 +356,54 @@ function getNextMatchCard() {
     const now = new Date();
     const nowStr = formatLocalDate(now);
     
-    // 🔥 Controlla se il torneo è concluso (entrambe le finali sono FINITA)
     const finale1 = matches.find(m => m.TURNO === "FINALE 1-2" || m.matchKey === "F");
-    const finale3 = matches.find(m => m.TURNO === "FINALE 3-4" || m.matchKey === "TP");
+const finale3 = matches.find(m => m.TURNO === "FINALE 3-4" || m.matchKey === "TP");
+
+if (finale1 && finale3 && 
+    finale1.STATO_PARTITA === "FINITA" && 
+    finale3.STATO_PARTITA === "FINITA") {
     
-    if (finale1 && finale3 && 
-        finale1.STATO_PARTITA === "FINITA" && 
-        finale3.STATO_PARTITA === "FINITA") {
-        
-        // Determina vincitore
-        const vincitore = finale1.GOL_CASA > finale1.GOL_TRASFERTA 
+    // 🔥 DETERMINA VINCITORE CONSIDERANDO I RIGORI
+    let vincitore;
+    const rigoriCasa = finale1.RIGORE_CASA ?? finale1.RIGORI_CASA ?? null;
+    const rigoriTrasf = finale1.RIGORE_TRASFERTA ?? finale1.RIGORI_TRASFERTA ?? null;
+    
+    if (rigoriCasa !== null && rigoriTrasf !== null) {
+        // Se ci sono i rigori, vince chi ne ha fatti di più
+        vincitore = rigoriCasa > rigoriTrasf 
             ? { nome: finale1.SQUADRA_CASA, logo: finale1.LOGO_CASA }
             : { nome: finale1.SQUADRA_TRASFERTA, logo: finale1.LOGO_TRASFERTA };
-        
-        const logoHtml = vincitore.logo 
-            ? `<img src="${getCachedImage(vincitore.logo, 80)}" class="winner-logo" alt="${vincitore.nome}">`
-            : '<div class="winner-logo" style="background:#f0f0f0;display:flex;align-items:center;justify-content:center;font-size:32px;">⚽</div>';
-        
-        return `
-            <div class="home-winner-card">
-                <div class="winner-trophy-bg">🏆</div>
-                <div class="winner-label">🏆 Vincitore del Torneo 🏆</div>
-                ${logoHtml}
-                <div class="winner-name">${(vincitore.nome || "").toUpperCase()}</div>
-                <div class="winner-subtitle">Campione ${now.getFullYear()}</div>
-            </div>
-        `;
+    } else {
+        // Altrimenti usa i gol regolamentari
+        vincitore = finale1.GOL_CASA > finale1.GOL_TRASFERTA 
+            ? { nome: finale1.SQUADRA_CASA, logo: finale1.LOGO_CASA }
+            : { nome: finale1.SQUADRA_TRASFERTA, logo: finale1.LOGO_TRASFERTA };
     }
+    
+    const logoHtml = vincitore.logo 
+        ? `<img src="${getCachedImage(vincitore.logo, 34)}" alt="${vincitore.nome}" style="width:34px;height:34px;border-radius:50%;object-fit:cover;">`
+        : '<div style="width:34px;height:34px;border-radius:50%;background:#f0f0f0;display:flex;align-items:center;justify-content:center;">⚽</div>';
+    
+    const nomeVincitore = Sanitizer.html((vincitore.nome || "").toUpperCase());
+    
+    return `
+        <div class="home-next-match" onclick="openMatch('${Sanitizer.attr(finale1.MATCH_ID)}')" style="
+            background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%);
+            border: 2px solid #fbbf24;
+        ">
+            <div class="home-team-block left">
+                <div style="font-size:20px;">🏆</div>
+                <span class="home-team" style="color:#92400e;">${nomeVincitore}</span>
+            </div>
+            <div class="home-match-center">
+                <div class="home-match-time" style="color:#b45309;font-size:10px;">CAMPIONE 2026</div>
+            </div>
+            <div class="home-team-block right">
+                ${logoHtml}
+            </div>
+        </div>
+    `;
+}
     
     // 1. Cerca partite LIVE/SUPP/RIGORI
     const liveMatch = matches.find(m =>
