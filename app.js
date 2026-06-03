@@ -387,11 +387,10 @@ if (finale1 && finale3 &&
         ">
         <div style="display:flex;align-items:center;justify-content:center;gap:15px;width:100%;">
             <div style="font-size:32px;">🏆</div>
+             ${logoHtml}
             <div style="text-align:center;">
-                <div style="font-size:11px;color:#b45309;font-weight:700;letter-spacing:2px;text-transform:uppercase;margin-bottom:4px;">CAMPIONE 2026</div>
                 <div style="font-size:20px;font-weight:800;color:#92400e;letter-spacing:1px;text-transform:uppercase;">${nomeVincitore}</div>
             </div>
-            ${logoHtml}
         </div>
     </div>
     `;
