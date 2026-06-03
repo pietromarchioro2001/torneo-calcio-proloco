@@ -234,7 +234,7 @@ const ApiClient = {
     uploadTeamLogoReplace: (teamId, fileName, fileType, base64) => ApiClient.call('uploadTeamLogoReplace', [teamId, fileName, fileType, base64]),
     uploadTeamPhotoReplace: (teamId, fileName, fileType, base64) => ApiClient.call('uploadTeamPhotoReplace', [teamId, fileName, fileType, base64]),
     uploadPlayerPhotoReplace: (playerId, teamId, playerName, fileName, fileType, base64) => ApiClient.call('uploadPlayerPhotoReplace', [playerId, teamId, playerName, fileName, fileType, base64]),
-    saveRigoriResults: (data) => ApiClient.call('saveRigoriResults', [data]),
+    saveRigoriResults: (data) => ApiClient.call('saveRigoriResults', data),
     prepareFinalStage: () => ApiClient.call('prepareFinalStage'),
     createFinalStageMatches: (matches) => ApiClient.call('createFinalStageMatches', [matches]),
     getFinalStageMatches: () => ApiClient.call('getFinalStageMatches'),
@@ -1346,7 +1346,6 @@ function renderMatchPage(match) {
 
     // 🔥 FORZA RICARICAMENTO EVENTI
     const events = window.APP_CACHE.eventsByMatch?.[match.MATCH_ID] || [];
-    console.log('📥 Eventi caricati per match:', match.MATCH_ID, 'totale:', events.length);
 
     if (events.length === 0) {
         ApiClient.getEventsAdmin(match.MATCH_ID).then(freshEvents => {
@@ -1724,7 +1723,6 @@ function updateScoreFromEvents(matchId) {
 }
 
 function renderPenaltyIndicators(events, match) {
-    console.log("🔍 [DEBUG] Rendering Penalty Indicators...");
     
     const timeline = document.getElementById('eventsTimeline');
     if (!timeline) {
@@ -1742,8 +1740,6 @@ function renderPenaltyIndicators(events, match) {
         return rigoreResult === 'RIGORE_SEGNO' || rigoreResult === 'RIGORE_SBAGLIO';
     });
     
-    console.log(`✅ Eventi rigore trovati: ${penaltyEvents.length}`);
-    
     if (penaltyEvents.length === 0) {
         console.log("⚠️ Nessun evento rigore trovato nel foglio.");
         return;
@@ -1760,9 +1756,6 @@ function renderPenaltyIndicators(events, match) {
         if (isCasa) casaTiri.push(isGoal);
         else trasfTiri.push(isGoal);
     });
-    
-    console.log(`🟢 ${match.SQUADRA_CASA}: ${casaTiri.filter(t=>t).length} segnati, ${casaTiri.filter(t=>!t).length} sbagliati`);
-    console.log(`🟢 ${match.SQUADRA_TRASFERTA}: ${trasfTiri.filter(t=>t).length} segnati, ${trasfTiri.filter(t=>!t).length} sbagliati`);
     
     // Crea HTML bollini
     const createDots = (tiri) => tiri.map(isGoal =>
@@ -2072,7 +2065,6 @@ let currentPollingMatchId = null; // 🔥 Tracciamo quale partita stiamo monitor
 
 function startMatchLiveRefresh() {
     if (matchLiveRefreshInterval) return;
-    console.log('🔴 Avvio polling globale partite LIVE (2s)...');
     
     matchLiveRefreshInterval = setInterval(async () => {
         const liveMatches = (window.APP_CACHE.matches || []).filter(m =>
@@ -2944,7 +2936,7 @@ function updateMVPVoteUI(selectedPlayerId) {
 }
 
 function loadExistingMVPVote(matchId) {
-    const savedVote = localStorage.getItem(`mvp_vote_${matchId}`); if (savedVote) { try { const voteData = JSON.parse(savedVote); console.log('📥 Voto precedente:', voteData.playerName); updateMVPVoteUI(voteData.playerId); } catch (e) { console.error('Errore lettura voto:', e); } }
+    const savedVote = localStorage.getItem(`mvp_vote_${matchId}`); if (savedVote) { try { const voteData = JSON.parse(savedVote); updateMVPVoteUI(voteData.playerId); } catch (e) { console.error('Errore lettura voto:', e); } }
 }
 
 function updateLocalMVPCounter() {
