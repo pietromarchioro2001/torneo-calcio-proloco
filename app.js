@@ -1553,44 +1553,113 @@ function ensureMatchHasTeamIds(match) {
 }
 
 async function toggleMatch() {
-    const match = window.APP_STATE.lastMatch; if (!match) return;
-    const newStatus = match.STATO_PARTITA === "LIVE" ? "FINITA" : "LIVE";
-    match.STATO_PARTITA = newStatus; window.APP_STATE.lastMatch = match; updateMatchUI(match);
+    const match = window.APP_STATE.lastMatch;
+    if (!match) return;
+
+    // Determina il nuovo stato (se è LIVE, SUPP o RIGORI, diventa FINITA, altrimenti LIVE)
+    const isCurrentlyActive = ["LIVE", "SUPP", "RIGORI"].includes(match.STATO_PARTITA);
+    const newStatus = isCurrentlyActive ? "FINITA" : "LIVE";
+
+    // 🔥 1. AGGIUNTA CONFERMA PER LA CONCLUSIONE
+    if (newStatus === "FINITA") {
+        if (!confirm("⚠️ Sei sicuro di voler CONCLUDERE la partita?\n\nQuesta azione disattiverà l'inserimento di nuovi eventi e avvierà il calcolo dell'MVP.")) {
+            return; // L'utente ha annullato, non facciamo nulla
+        }
+    }
+
+    // Aggiorna stato locale immediatamente per reattività UI istantanea
+    match.STATO_PARTITA = newStatus;
+    window.APP_STATE.lastMatch = match;
+    updateMatchUI(match); // Aggiorna il badge di stato e il pulsante principale
+
+    // Disabilita/Abilita i pulsanti degli eventi in base al nuovo stato
     const canAddEvents = (newStatus === "LIVE" || newStatus === "SUPP") && (match.FASE === "FINALI" || !window.APP_CACHE.meta?.finalStageStarted);
     document.querySelectorAll('.phase-btn.small').forEach(btn => {
         if (btn.textContent.trim().includes('+ EVENTO')) {
-            if (canAddEvents) { btn.style.opacity = '1'; btn.style.pointerEvents = 'auto'; btn.style.cursor = 'pointer'; if (btn.textContent.includes('CASA')) { btn.onclick = () => addEvent('casa'); } else if (btn.textContent.includes('TRASFERTA')) { btn.onclick = () => addEvent('trasferta'); } }
-            else { btn.style.opacity = '0.5'; btn.style.pointerEvents = 'none'; btn.style.cursor = 'not-allowed'; btn.onclick = null; }
+            if (canAddEvents) {
+                btn.style.opacity = '1'; 
+                btn.style.pointerEvents = 'auto'; 
+                btn.style.cursor = 'pointer';
+                if (btn.textContent.includes('CASA')) btn.onclick = () => addEvent('casa');
+                else if (btn.textContent.includes('TRASFERTA')) btn.onclick = () => addEvent('trasferta');
+            } else {
+                btn.style.opacity = '0.5'; 
+                btn.style.pointerEvents = 'none'; 
+                btn.style.cursor = 'not-allowed'; 
+                btn.onclick = null;
+            }
         }
     });
-    const mainBtn = document.querySelector(".start-btn"); if (mainBtn) { mainBtn.textContent = newStatus === "LIVE" ? "CONCLUDI" : "INIZIA"; mainBtn.classList.toggle("active", newStatus === "LIVE"); }
+
     let freshMatch = null;
     try {
+        // 1. Invia aggiornamento al backend
         await ApiClient.updateMatchStatus(match.MATCH_ID, newStatus);
-        // 🔥 AVVIA POLLING SE LA PARTITA È LIVE
+
+        // 2. Gestione Polling
         if (newStatus === "LIVE") {
             startMatchLiveRefresh();
         } else {
             stopMatchLiveRefresh();
         }
+
+        // 3. Recupera i dati freschi dal backend (incluso eventuale MVP calcolato)
         const fullData = await ApiClient.getMatchFull(match.MATCH_ID);
         if (fullData?.match) {
-            freshMatch = fullData.match; window.APP_STATE.lastMatch = freshMatch; window.APP_STATE.matchesById[freshMatch.MATCH_ID] = freshMatch;
-            if (window.APP_CACHE.matches) { const idx = window.APP_CACHE.matches.findIndex(m => m.MATCH_ID === freshMatch.MATCH_ID); if (idx >= 0) { window.APP_CACHE.matches[idx] = { ...window.APP_CACHE.matches[idx], ...freshMatch }; CacheManager.save(window.APP_CACHE); } }
-            if (freshMatch.MVP) { updateMVPBanner(freshMatch); } loadPlayersForMatch(freshMatch);
+            freshMatch = fullData.match;
+            window.APP_STATE.lastMatch = freshMatch;
+            window.APP_STATE.matchesById[freshMatch.MATCH_ID] = freshMatch;
+
+            // Aggiorna cache globale delle partite
+            if (window.APP_CACHE.matches) {
+                const idx = window.APP_CACHE.matches.findIndex(m => String(m.MATCH_ID) === String(freshMatch.MATCH_ID));
+                if (idx >= 0) {
+                    window.APP_CACHE.matches[idx] = { ...window.APP_CACHE.matches[idx], ...freshMatch };
+                    CacheManager.save(window.APP_CACHE);
+                }
+            }
+
+            // 🔥 4. RERENDER COMPLETO DELLA PAGINA (Risolve il problema del "non si aggiorna finché non esco e rientro")
+            renderMatchPage(freshMatch);
+
+            // Gestione MVP in background se la partita è appena finita
+            if (newStatus === "FINITA") {
+                console.log("🏆 Partita conclusa. Gestione MVP in background...");
+                (async () => {
+                    try {
+                        await submitAllMVPVotes(freshMatch.MATCH_ID);
+                        await ApiClient.finalizeMVP(freshMatch.MATCH_ID);
+                        
+                        // Dopo la finalizzazione, ricarichiamo di nuovo per mostrare l'MVP definitivo nella UI
+                        const finalData = await ApiClient.getMatchFull(freshMatch.MATCH_ID);
+                        if (finalData?.match) {
+                            window.APP_STATE.lastMatch = finalData.match;
+                            renderMatchPage(finalData.match); // Aggiorna UI con MVP definitivo
+                        }
+                        refreshStandingsDebounced(500);
+                    } catch (err) {
+                        console.error("Errore background MVP:", err);
+                    }
+                })();
+            } else {
+                refreshStandingsDebounced(500);
+            }
         }
-        if (newStatus === "FINITA") {
-            console.log("🏆 Partita conclusa. Gestione MVP in background...");
-            (async () => { try { if (!freshMatch) return; await submitAllMVPVotes(freshMatch.MATCH_ID); await ApiClient.finalizeMVP(freshMatch.MATCH_ID); pollForMVPUpdate(freshMatch.MATCH_ID); } catch (err) { console.error("Errore background MVP:", err); } })();
-        } else { refreshStandingsDebounced(500); }
-        if (freshMatch) {
-            renderPenaltyIndicators(window.APP_CACHE.eventsByMatch[freshMatch.MATCH_ID] || [], freshMatch);
-        }
-    } catch (error) { console.error('Errore toggle match:', error); alert("Errore durante l'aggiornamento: " + error.message); match.STATO_PARTITA = newStatus === "FINITA" ? "LIVE" : "FINITA"; updateMatchUI(match); }
+    } catch (error) {
+        console.error('Errore toggle match:', error);
+        alert("Errore durante l'aggiornamento: " + (error.message || "Sconosciuto"));
+        
+        // Revert locale in caso di errore di rete
+        match.STATO_PARTITA = isCurrentlyActive ? "LIVE" : "FINITA";
+        window.APP_STATE.lastMatch = match;
+        updateMatchUI(match);
+    }
+
+    // Aggiorna classifiche e lista partite se finita
     if (newStatus === "FINITA") {
-    // Dopo una partita finita, aggiorna anche le classifiche
-    invalidateCacheAndRefresh('standings');
-}
+        invalidateCacheAndRefresh('standings');
+        invalidateCacheAndRefresh('matches');
+    }
 }
 
 function addEvent(team) {
