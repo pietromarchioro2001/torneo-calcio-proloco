@@ -2066,11 +2066,10 @@ function startMatchLiveRefresh() {
                     // 2️⃣ CALCOLA PUNTEGGIO: Usa gli eventi mergiati (include i gol temporanei!)
                     const calculatedScore = calculateMatchScore(freshData.match, mergedEvents);
                     
-                    // 3️⃣ NORMALIZZAZIONE DATA ROBUSTA (Timezone-proof: evita new Date() che causa shift di giorno)
+                    // 3️⃣ NORMALIZZAZIONE DATA ROBUSTA (Timezone-proof)
                     let safeData = freshData.match.DATA;
                     if (safeData) {
                         try {
-                            // Estraiamo solo le prime 10 caratteri (YYYY-MM-DD) ed evitiamo new Date()
                             const clean = String(safeData).substring(0, 10);
                             const parts = clean.split("-");
                             if (parts.length === 3) {
@@ -2094,10 +2093,6 @@ function startMatchLiveRefresh() {
                     };
                     window.APP_CACHE.matches[idx] = updatedMatch;
                     
-                    if (document.querySelector('.standings-page') && window.APP_STATE.activeStandingsTab === 'finale') {
-                        renderFinalBracket();
-                    }
-                    
                     // ✅ Aggiorna eventi in cache con la versione mergiata
                     window.APP_CACHE.eventsByMatch[match.MATCH_ID] = mergedEvents;
                     
@@ -2111,6 +2106,20 @@ function startMatchLiveRefresh() {
                             ...updatedMatch,
                             DATA: safeData
                         };
+                    }
+
+                    // 🔥 ✅ AGGIORNAMENTO ISTANTANEO TABELLONE FASE FINALE
+                    if (document.querySelector('.standings-page') && window.APP_STATE._activeStandingsTab === 'fasefinale') {
+                        const fsIndex = (window.APP_CACHE.finalStage || []).findIndex(m => String(m.matchId) === String(match.MATCH_ID));
+                        if (fsIndex >= 0) {
+                            // Iniettiamo i dati live freschi direttamente nella cache della fase finale
+                            window.APP_CACHE.finalStage[fsIndex].stato = updatedMatch.STATO_PARTITA;
+                            window.APP_CACHE.finalStage[fsIndex].golCasa = updatedMatch.GOL_CASA;
+                            window.APP_CACHE.finalStage[fsIndex].golTrasferta = updatedMatch.GOL_TRASFERTA;
+                            CacheManager.save(window.APP_CACHE);
+                        }
+                        // Ridisegniamo il tabellone immediatamente
+                        renderFinalBracket(window.APP_CACHE.finalStage);
                     }
                     
                     // ✅ Aggiorna UI: pagina match detail
