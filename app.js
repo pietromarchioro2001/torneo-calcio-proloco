@@ -878,9 +878,61 @@ function renderDatesToolbar() {
         html += `<div class="date-item ${isActive ? 'active' : ''} ${isToday ? 'today' : ''}" onclick="selectDate('${d}')"><div class="date-day">${dayNum}</div><div class="date-month">${monthName}</div></div>`;
     });
     container.innerHTML = html; setTimeout(centerActiveDate, 100);
+    enableDragScrollDates();
 }
 
-function selectDate(date) { window.APP_STATE.selectedDate = date; window.APP_STATE.userSelectedDate = true; renderDatesToolbar(); renderMatchesByDate(date); }
+function enableDragScrollDates() {
+    const el = document.getElementById("datesToolbar");
+    if (!el) return;
+
+    let isDown = false;
+    let startX;
+    let scrollLeft;
+
+    el.addEventListener("mousedown", (e) => {
+        isDown = true;
+        el.classList.add("dragging");
+        startX = e.pageX - el.offsetLeft;
+        scrollLeft = el.scrollLeft;
+        isDraggingDates = false);
+    });
+
+    el.addEventListener("mouseleave", () => {
+        isDown = false;
+        el.classList.remove("dragging");
+    });
+
+    el.addEventListener("mouseup", () => {
+        isDown = false;
+        el.classList.remove("dragging");
+    });
+
+    el.addEventListener("mousemove", (e) => {
+        if (!isDown) return;
+        e.preventDefault();
+
+        const x = e.pageX - el.offsetLeft;
+        const walk = (x - startX) * 1.2; // velocità drag
+        el.scrollLeft = scrollLeft - walk;
+        isDraggingDates = true);
+    });
+
+    // touch (mobile)
+    let touchStartX = 0;
+
+    el.addEventListener("touchstart", (e) => {
+        touchStartX = e.touches[0].clientX;
+        scrollLeft = el.scrollLeft;
+    });
+
+    el.addEventListener("touchmove", (e) => {
+        const x = e.touches[0].clientX;
+        const walk = (x - touchStartX) * 1.2;
+        el.scrollLeft = scrollLeft - walk;
+    });
+}
+
+function selectDate(date) { if (window.isDraggingDates) return; window.APP_STATE.selectedDate = date; window.APP_STATE.userSelectedDate = true; renderDatesToolbar(); renderMatchesByDate(date); }
 
 function centerActiveDate() {
     const container = document.getElementById("datesToolbar"), active = container?.querySelector(".date-item.active");
