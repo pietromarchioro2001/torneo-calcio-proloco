@@ -2097,13 +2097,23 @@ function openRigoriPopup(directMode = false) {
             match.RIGORI_TRASFERTA = rigoriState.trasfScore;
             window.APP_STATE.lastMatch = match; 
             updateMatchUI(match);
+            
+            // 🔥 AGGIUNGI QUESTO BLOCCO: Aggiorna anche la cache globale delle partite
+            if (window.APP_CACHE.matches) {
+                const idx = window.APP_CACHE.matches.findIndex(m => String(m.MATCH_ID) === String(match.MATCH_ID));
+                if (idx >= 0) {
+                    window.APP_CACHE.matches[idx] = { 
+                        ...window.APP_CACHE.matches[idx], 
+                        STATO_PARTITA: "FINITA",
+                        RIGORI_CASA: rigoriState.casaScore,
+                        RIGORI_TRASFERTA: rigoriState.trasfScore
+                    };
+                    CacheManager.save(window.APP_CACHE);
+                }
+            }
+            
             renderPenaltyIndicators(window.APP_CACHE.eventsByMatch[match.MATCH_ID] || [], match);
             localStorage.removeItem(storageKey);
-            
-            // 🔥 AGGIUNGI QUESTE RIGHE CRITICHE:
-            await invalidateCacheAndRefresh('finalStage');
-            await invalidateCacheAndRefresh('matches');
-            await invalidateCacheAndRefresh('standings');
             
             setTimeout(() => { 
                 ApiClient.getMatchFull(match.MATCH_ID).then(data => { 
