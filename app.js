@@ -470,6 +470,30 @@ function calculateMatchScore(match, events) {
     return { ...match, GOL_CASA: golCasa, GOL_TRASFERTA: golTrasferta };
 }
 
+function mergeEventsWithLocal(freshEvents, matchId) {
+    const localEvents = window.APP_CACHE.eventsByMatch?.[matchId] || [];
+    const mergedEvents = [...freshEvents];
+    
+    localEvents.forEach(localEv => {
+        if (localEv.EVENT_ID && String(localEv.EVENT_ID).startsWith('temp_')) {
+            // Verifica se l'evento è già stato salvato nel backend (confronto approssimativo)
+            const alreadySaved = freshEvents.some(fe => 
+                String(fe.MINUTO) === String(localEv.MINUTO) &&
+                String(fe.TEAM_ID) === String(localEv.TEAM_ID) &&
+                String(fe.TIPO) === String(localEv.TIPO) &&
+                String(fe.PLAYER_ID) === String(localEv.PLAYER_ID)
+            );
+            
+            // Se non è ancora nel backend, lo manteniamo in cache per evitare che scompaia dalla UI
+            if (!alreadySaved) {
+                mergedEvents.push(localEv);
+            }
+        }
+    });
+    
+    return mergedEvents;
+}
+
 function renderHomeMatchCard(match, isLive) {
   // ✅ CONTROLLI DI SICUREZZA
   if (!match || !match.SQUADRA_CASA || !match.SQUADRA_TRASFERTA) {
@@ -1177,100 +1201,114 @@ function getCurrentMatch() { return window.APP_STATE.matchesById[window.APP_STAT
 
 async function forceReloadEvents(matchId, match) {
     console.log('🔄 [FORCE RELOAD] Eventi per match:', matchId);
-    try { const freshEvents = await ApiClient.getEventsAdmin(matchId); console.log('✅ [FORCE RELOAD] Eventi ricevuti:', freshEvents.length); window.APP_CACHE.eventsByMatch[matchId] = freshEvents; CacheManager.save(window.APP_CACHE); renderEvents(freshEvents, match); } catch (error) { console.error('❌ [FORCE RELOAD] Errore:', error); }
+    try { 
+        const freshEvents = await ApiClient.getEventsAdmin(matchId); 
+        console.log('✅ [FORCE RELOAD] Eventi ricevuti:', freshEvents.length); 
+        
+        // 🔥 Applica il merge per non perdere eventi temporanei
+        const mergedEvents = mergeEventsWithLocal(freshEvents, matchId);
+        
+        window.APP_CACHE.eventsByMatch[matchId] = mergedEvents; 
+        CacheManager.save(window.APP_CACHE); 
+        renderEvents(mergedEvents, match); 
+    } catch (error) { 
+        console.error('❌ [FORCE RELOAD] Errore:', error); 
+    }
 }
 
 function openMatch(id) {
-    const myNonce = ++window.APP_STATE._matchRequestNonce; 
-    setCurrentMatch(id); 
+    const myNonce = ++window.APP_STATE._matchRequestNonce;
+    setCurrentMatch(id);
     console.log('🔍 [OPEN MATCH] ID:', id, 'Nonce:', myNonce);
     
-    window.APP_STATE._matchLoading = true; 
+    window.APP_STATE._matchLoading = true;
     setTimeout(() => { window.APP_STATE._matchLoading = false; }, 10000);
     
     const cachedMatch = window.APP_CACHE.matches?.find(m => String(m.MATCH_ID) === String(id));
     
     // ✅ PARTE 1: Render immediato dalla cache (se disponibile)
     if (cachedMatch && cachedMatch.CASA_ID && cachedMatch.TRASFERTA_ID) {
-        console.log('✅ Match COMPLETO dalla cache:', { 
-            casaId: cachedMatch.CASA_ID, 
-            trasfertaId: cachedMatch.TRASFERTA_ID 
+        console.log('✅ Match COMPLETO dalla cache:', {
+            casaId: cachedMatch.CASA_ID,
+            trasfertaId: cachedMatch.TRASFERTA_ID
         });
         
-        if (cachedMatch && cachedMatch.STATO_PARTITA === "RIGORI") { 
-            setTimeout(() => { 
-                console.log('🎯 Partita in RIGORI - Apro popup direttamente in modalità tiri'); 
-                openRigoriPopup(true); 
-            }, 100); 
+        if (cachedMatch && cachedMatch.STATO_PARTITA === "RIGORI") {
+            setTimeout(() => {
+                console.log('🎯 Partita in RIGORI - Apro popup direttamente in modalità tiri');
+                openRigoriPopup(true);
+            }, 100);
         }
         
-        const localEvents = window.APP_CACHE.eventsByMatch?.[id] || []; 
+        const localEvents = window.APP_CACHE.eventsByMatch?.[id] || [];
         const calculatedScore = calculateMatchScore(cachedMatch, localEvents);
         
         // 🔥 RENDER IMMEDIATO
-        renderMatchPage({...cachedMatch, ...calculatedScore}); 
+        renderMatchPage({...cachedMatch, ...calculatedScore});
         updateMatchUI(cachedMatch);
-        window.APP_STATE.lastMatch = { ...cachedMatch, ...calculatedScore }; 
-        renderEvents(localEvents, cachedMatch); 
+        window.APP_STATE.lastMatch = { ...cachedMatch, ...calculatedScore };
+        renderEvents(localEvents, cachedMatch);
         loadPlayersForMatch(cachedMatch);
         
         // Controllo eventi vuoti
-        setTimeout(() => { 
-            const cachedEvents = window.APP_CACHE.eventsByMatch?.[id] || []; 
-            if (cachedEvents.length === 0) { 
-                console.log('⚠️ Cache eventi vuota, forzo ricarica...'); 
-                forceReloadEvents(id, cachedMatch); 
-            } 
+        setTimeout(() => {
+            const cachedEvents = window.APP_CACHE.eventsByMatch?.[id] || [];
+            if (cachedEvents.length === 0) {
+                console.log('⚠️ Cache eventi vuota, forzo ricarica...');
+                forceReloadEvents(id, cachedMatch);
+            }
         }, 500);
     }
     
     // ✅ PARTE 2: Fetch dal backend (in background)
     ApiClient.getMatchFull(id).then(res => {
-        if (myNonce !== window.APP_STATE._matchRequestNonce) return; 
+        if (myNonce !== window.APP_STATE._matchRequestNonce) return;
         if (!res?.match) return;
         
         const freshMatch = res.match;
-        
-        if (!freshMatch.CASA_ID || !freshMatch.TRASFERTA_ID || freshMatch.CASA_ID === "" || freshMatch.TRASFERTA_ID === "") { 
-            console.warn('⚠️ Backend ha ritornato ID VUOTI, MANTENGO CACHE:', freshMatch); 
-            return; 
+        if (!freshMatch.CASA_ID || !freshMatch.TRASFERTA_ID || freshMatch.CASA_ID === "" || freshMatch.TRASFERTA_ID === "") {
+            console.warn('⚠️ Backend ha ritornato ID VUOTI, MANTENGO CACHE:', freshMatch);
+            return;
         }
         
         return ApiClient.getEventsAdmin(id).then(freshEvents => {
-            window.APP_CACHE.eventsByMatch[id] = freshEvents; 
+            // 🔥 MERGE EVENTI: Mantieni gli eventi temporanei locali se non sono ancora presenti nel backend
+            const mergedEvents = mergeEventsWithLocal(freshEvents, id);
+            
+            window.APP_CACHE.eventsByMatch[id] = mergedEvents;
             CacheManager.save(window.APP_CACHE);
             
-            const calculatedScore = calculateMatchScore(freshMatch, freshEvents);
+            const calculatedScore = calculateMatchScore(freshMatch, mergedEvents);
             console.log('✅ Backend dati validi, aggiorno cache con punteggio calcolato');
             
-            window.APP_STATE.matchesById[freshMatch.MATCH_ID] = {...freshMatch, ...calculatedScore}; 
+            window.APP_STATE.matchesById[freshMatch.MATCH_ID] = {...freshMatch, ...calculatedScore};
             window.APP_STATE.lastMatch = {...freshMatch, ...calculatedScore};
             
-            if (window.APP_CACHE.matches) { 
-                const idx = window.APP_CACHE.matches.findIndex(m => String(m.MATCH_ID) === String(freshMatch.MATCH_ID)); 
-                if (idx >= 0) { 
-                    window.APP_CACHE.matches[idx] = { 
-                        ...window.APP_CACHE.matches[idx], 
-                        ...freshMatch, 
-                        ...calculatedScore 
-                    }; 
-                    CacheManager.save(window.APP_CACHE); 
-                } 
+            if (window.APP_CACHE.matches) {
+                const idx = window.APP_CACHE.matches.findIndex(m => String(m.MATCH_ID) === String(freshMatch.MATCH_ID));
+                if (idx >= 0) {
+                    window.APP_CACHE.matches[idx] = {
+                        ...window.APP_CACHE.matches[idx],
+                        ...freshMatch,
+                        ...calculatedScore
+                    };
+                    CacheManager.save(window.APP_CACHE);
+                }
             }
             
             // 🔥 AGGIORNA UI SOLO SE I DATI SONO CAMBIATI
             if (cachedMatch && (
-                calculatedScore.GOL_CASA !== cachedMatch.GOL_CASA || 
-                calculatedScore.GOL_TRASFERTA !== cachedMatch.GOL_TRASFERTA || 
+                calculatedScore.GOL_CASA !== cachedMatch.GOL_CASA ||
+                calculatedScore.GOL_TRASFERTA !== cachedMatch.GOL_TRASFERTA ||
                 freshMatch.STATO_PARTITA !== cachedMatch.STATO_PARTITA
-            )) { 
-                console.log('🔄 Aggiorno UI con nuovi dati backend + punteggio calcolato'); 
-                renderMatchPage({...freshMatch, ...calculatedScore}); 
-                loadPlayersForMatch(freshMatch); 
+            )) {
+                console.log('🔄 Aggiorno UI con nuovi dati backend + punteggio calcolato');
+                renderMatchPage({...freshMatch, ...calculatedScore});
+                loadPlayersForMatch(freshMatch);
             }
         });
-    }).catch(err => { 
-        console.error('❌ Errore backend getMatchFull:', err); 
+    }).catch(err => {
+        console.error('❌ Errore backend getMatchFull:', err);
     });
 }
 
@@ -1916,109 +1954,106 @@ let matchLiveRefreshInterval = null;
 let currentPollingMatchId = null; // 🔥 Tracciamo quale partita stiamo monitorando
 
 function startMatchLiveRefresh() {
-  if (matchLiveRefreshInterval) return;
-  console.log('🔴 Avvio polling globale partite LIVE (2s)...');
-  
-  matchLiveRefreshInterval = setInterval(async () => {
-    const liveMatches = (window.APP_CACHE.matches || []).filter(m =>
-      ["LIVE", "SUPP", "RIGORI"].includes(m.STATO_PARTITA)
-    );
+    if (matchLiveRefreshInterval) return;
+    console.log('🔴 Avvio polling globale partite LIVE (2s)...');
     
-    if (liveMatches.length === 0) {
-      stopMatchLiveRefresh();
-      return;
-    }
-    
-    for (const match of liveMatches) {
-      try {
-        const freshData = await ApiClient.getMatchFull(match.MATCH_ID);
-        const freshEvents = await ApiClient.getEventsAdmin(match.MATCH_ID);
-        
-        if (freshData?.match) {
-          // Calcola punteggio dagli eventi
-          const calculatedScore = calculateMatchScore(freshData.match, freshEvents);
-          
-          // 🔥 NORMALIZZAZIONE DATA ROBUSTA (evita mismatch "2026-8-6" vs "2026-08-06")
-          let safeData = freshData.match.DATA;
-          if (safeData) {
-            try {
-              const d = new Date(safeData);
-              if (!isNaN(d.getTime())) {
-                safeData = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
-              }
-            } catch(e) {
-              console.warn('⚠️ Errore normalizzazione data:', e, safeData);
-            }
-          }
-          
-         const idx = window.APP_CACHE.matches.findIndex(m => 
-          String(m.MATCH_ID) === String(match.MATCH_ID)
+    matchLiveRefreshInterval = setInterval(async () => {
+        const liveMatches = (window.APP_CACHE.matches || []).filter(m =>
+            ["LIVE", "SUPP", "RIGORI"].includes(m.STATO_PARTITA)
         );
         
-        if (idx < 0) continue;
-
-        const updatedMatch = {
-          ...window.APP_CACHE.matches[idx],
-          ...freshData.match,
-          ...calculatedScore,
-          DATA: safeData
-        };
+        if (liveMatches.length === 0) {
+            stopMatchLiveRefresh();
+            return;
+        }
         
-        window.APP_CACHE.matches[idx] = updatedMatch;
-
-        if (
-          document.querySelector('.standings-page') &&
-          window.APP_STATE.activeStandingsTab === 'finale'
-        ) {
-          renderFinalBracket();
-        }
-                  
-          // ✅ Aggiorna eventi in cache
-          window.APP_CACHE.eventsByMatch[match.MATCH_ID] = freshEvents;
-          
-          // ✅ Salva cache (debounce 300ms)
-          CacheManager.save(window.APP_CACHE);
-          
-          // ✅ Aggiorna APP_STATE.matchesById (CRITICO per renderMatchesByDate)
-          if (window.APP_STATE.matchesById[match.MATCH_ID]) {
-            window.APP_STATE.matchesById[match.MATCH_ID] = {
-              ...window.APP_STATE.matchesById[match.MATCH_ID],
-              ...updatedMatch,
-              DATA: safeData
-            };
-          }
-          
-          // ✅ Aggiorna UI: pagina match detail
-          if (document.querySelector('.match-page') && 
-              String(window.APP_STATE.currentMatchId) === String(match.MATCH_ID)) {
-            renderMatchPage(updatedMatch);
-            loadPlayersForMatch(updatedMatch);
-          }
-          
-          // ✅ Aggiorna UI: pagina lista partite (usa data selezionata!)
-          if (document.querySelector('.matches-page')) {
-            const selectedDate = window.APP_STATE.selectedDate;
-            if (selectedDate) {
-              renderMatchesByDate(selectedDate);
-            } else {
-              renderMatches();
+        for (const match of liveMatches) {
+            try {
+                const freshData = await ApiClient.getMatchFull(match.MATCH_ID);
+                const freshEvents = await ApiClient.getEventsAdmin(match.MATCH_ID);
+                
+                if (freshData?.match) {
+                    // Calcola punteggio dagli eventi
+                    const calculatedScore = calculateMatchScore(freshData.match, freshEvents);
+                    
+                    // 🔥 NORMALIZZAZIONE DATA ROBUSTA
+                    let safeData = freshData.match.DATA;
+                    if (safeData) {
+                        try {
+                            const d = new Date(safeData);
+                            if (!isNaN(d.getTime())) {
+                                safeData = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+                            }
+                        } catch(e) {
+                            console.warn('⚠️ Errore normalizzazione data:', e, safeData);
+                        }
+                    }
+                    
+                    const idx = window.APP_CACHE.matches.findIndex(m =>
+                        String(m.MATCH_ID) === String(match.MATCH_ID)
+                    );
+                    if (idx < 0) continue;
+                    
+                    const updatedMatch = {
+                        ...window.APP_CACHE.matches[idx],
+                        ...freshData.match,
+                        ...calculatedScore,
+                        DATA: safeData
+                    };
+                    window.APP_CACHE.matches[idx] = updatedMatch;
+                    
+                    if (document.querySelector('.standings-page') && window.APP_STATE.activeStandingsTab === 'finale') {
+                        renderFinalBracket();
+                    }
+                    
+                    // ✅ MERGE EVENTI: Mantieni gli eventi temporanei locali se non sono ancora presenti nel backend
+                    const mergedEvents = mergeEventsWithLocal(freshEvents, match.MATCH_ID);
+                    
+                    // ✅ Aggiorna eventi in cache con la versione mergiata
+                    window.APP_CACHE.eventsByMatch[match.MATCH_ID] = mergedEvents;
+                    
+                    // ✅ Salva cache (debounce 300ms)
+                    CacheManager.save(window.APP_CACHE);
+                    
+                    // ✅ Aggiorna APP_STATE.matchesById
+                    if (window.APP_STATE.matchesById[match.MATCH_ID]) {
+                        window.APP_STATE.matchesById[match.MATCH_ID] = {
+                            ...window.APP_STATE.matchesById[match.MATCH_ID],
+                            ...updatedMatch,
+                            DATA: safeData
+                        };
+                    }
+                    
+                    // ✅ Aggiorna UI: pagina match detail
+                    if (document.querySelector('.match-page') && String(window.APP_STATE.currentMatchId) === String(match.MATCH_ID)) {
+                        renderMatchPage(updatedMatch);
+                        loadPlayersForMatch(updatedMatch);
+                    }
+                    
+                    // ✅ Aggiorna UI: pagina lista partite
+                    if (document.querySelector('.matches-page')) {
+                        const selectedDate = window.APP_STATE.selectedDate;
+                        if (selectedDate) {
+                            renderMatchesByDate(selectedDate);
+                        } else {
+                            renderMatches();
+                        }
+                    }
+                    
+                    // ✅ Aggiorna UI: home card
+                    if (document.querySelector('.home-container')) {
+                        const nextCardHtml = getNextMatchCard();
+                        const existing = document.querySelector('.home-next-match');
+                        if (existing && nextCardHtml) {
+                            existing.outerHTML = nextCardHtml;
+                        }
+                    }
+                }
+            } catch (error) {
+                console.error(`❌ Errore refresh match ${match.MATCH_ID}:`, error);
             }
-          }
-          
-          // ✅ Aggiorna UI: home card (USA outerHTML, NON replaceWith!)
-          if (document.querySelector('.home-container')) {
-            const nextCardHtml = getNextMatchCard();
-            const existing = document.querySelector('.home-next-match');
-            if (existing && nextCardHtml) {
-              existing.outerHTML = nextCardHtml;  // ← CORRETTO: parsare stringa HTML
-            }
-          }
         }
-      } catch (error) {
-        console.error(`❌ Errore refresh match ${match.MATCH_ID}:`, error);
-      }
-    }
-  }, 2000);
+    }, 2000);
 }
 
 function stopMatchLiveRefresh() {
