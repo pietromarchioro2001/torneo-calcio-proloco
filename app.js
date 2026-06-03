@@ -1211,7 +1211,6 @@ async function forceReloadEvents(matchId, match) {
 function openMatch(id) {
     const myNonce = ++window.APP_STATE._matchRequestNonce;
     setCurrentMatch(id);
-    console.log('🔍 [OPEN MATCH] ID:', id, 'Nonce:', myNonce);
     
     window.APP_STATE._matchLoading = true;
     setTimeout(() => { window.APP_STATE._matchLoading = false; }, 10000);
@@ -1740,11 +1739,6 @@ function renderPenaltyIndicators(events, match) {
         return rigoreResult === 'RIGORE_SEGNO' || rigoreResult === 'RIGORE_SBAGLIO';
     });
     
-    if (penaltyEvents.length === 0) {
-        console.log("⚠️ Nessun evento rigore trovato nel foglio.");
-        return;
-    }
-    
     const casaId = String(match.CASA_ID || "").trim();
     const casaTiri = [];
     const trasfTiri = [];
@@ -1860,8 +1854,12 @@ function openRigoriPopup(directMode = false) {
     const storageKey = `rigori_${match.MATCH_ID}`;
     const savedState = localStorage.getItem(storageKey);
     let rigoriState = savedState ? JSON.parse(savedState) : { fase: directMode ? 'tiri' : 'selezione', casaScore: 0, trasfScore: 0, currentKicker: 'casa', history: [], finished: false };
-
-    rigoriState.casaScore = parseInt(rigoriState.casaScore) || 0; rigoriState.trasfScore = parseInt(rigoriState.trasfScore) || 0;
+    rigoriState.casaScore = parseInt(rigoriState.casaScore) || 0; 
+    rigoriState.trasfScore = parseInt(rigoriState.trasfScore) || 0;
+    
+    // 🔥 FIX CRITICO: Resetta sempre finished a false
+    // La fine dei rigori la decide l'utente con il pulsante FINE, non la logica automatica
+    rigoriState.finished = false;
     function saveRigoriState() { localStorage.setItem(storageKey, JSON.stringify(rigoriState)); }
     function checkRigoriWinner() {
     const casaKicks = rigoriState.history.filter(h => h.team === 'casa').length;
@@ -2007,7 +2005,6 @@ function openRigoriPopup(directMode = false) {
         finished: rigoriState.finished,
         history: rigoriState.history.length
     });
-        if (rigoriState.finished) return;
         const currentTeam = rigoriState.currentKicker; const isGoal = result === 'goal';
         if (isGoal) { if (currentTeam === 'casa') { rigoriState.casaScore++; } else { rigoriState.trasfScore++; } }
         rigoriState.history.push({ team: currentTeam, result: result });
