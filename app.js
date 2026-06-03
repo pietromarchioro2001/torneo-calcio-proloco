@@ -1203,14 +1203,22 @@ async function forceReloadEvents(matchId, match) {
     console.log('🔄 [FORCE RELOAD] Eventi per match:', matchId);
     try { 
         const freshEvents = await ApiClient.getEventsAdmin(matchId); 
-        console.log('✅ [FORCE RELOAD] Eventi ricevuti:', freshEvents.length); 
-        
-        // 🔥 Applica il merge per non perdere eventi temporanei
         const mergedEvents = mergeEventsWithLocal(freshEvents, matchId);
         
         window.APP_CACHE.eventsByMatch[matchId] = mergedEvents; 
         CacheManager.save(window.APP_CACHE); 
-        renderEvents(mergedEvents, match); 
+        
+        // 🔥 Ricalcola il punteggio con gli eventi mergiati
+        const calculatedScore = calculateMatchScore(match, mergedEvents);
+        const updatedMatch = { ...match, ...calculatedScore };
+        
+        renderEvents(mergedEvents, updatedMatch);
+        
+        // Aggiorna anche il punteggio a video se siamo nella pagina match
+        const scoreEl = document.querySelector(".score-big");
+        if (scoreEl) {
+            scoreEl.textContent = `${updatedMatch.GOL_CASA || 0} - ${updatedMatch.GOL_TRASFERTA || 0}`;
+        }
     } catch (error) { 
         console.error('❌ [FORCE RELOAD] Errore:', error); 
     }
@@ -1358,9 +1366,19 @@ function renderMatchPage(match) {
 
     if (events.length === 0) {
         ApiClient.getEventsAdmin(match.MATCH_ID).then(freshEvents => {
-            window.APP_CACHE.eventsByMatch[match.MATCH_ID] = freshEvents;
+            // 🔥 Applica il merge anche nel fallback per coerenza totale
+            const mergedEvents = mergeEventsWithLocal(freshEvents, match.MATCH_ID);
+            
+            window.APP_CACHE.eventsByMatch[match.MATCH_ID] = mergedEvents;
             CacheManager.save(window.APP_CACHE);
-            renderEvents(freshEvents, match);
+            
+            // 🔥 Ricalcola punteggio e renderizza con gli eventi mergiati
+            const calculatedScore = calculateMatchScore(match, mergedEvents);
+            const updatedMatch = { ...match, ...calculatedScore };
+            
+            renderEvents(mergedEvents, updatedMatch);
+            const scoreEl = document.querySelector(".score-big");
+            if (scoreEl) scoreEl.textContent = `${updatedMatch.GOL_CASA || 0} - ${updatedMatch.GOL_TRASFERTA || 0}`;
         }).catch(err => {
             console.error('❌ Errore caricamento eventi:', err);
             renderEvents([], match);
@@ -2008,6 +2026,9 @@ function startMatchLiveRefresh() {
                     
                     // ✅ MERGE EVENTI: Mantieni gli eventi temporanei locali se non sono ancora presenti nel backend
                     const mergedEvents = mergeEventsWithLocal(freshEvents, match.MATCH_ID);
+
+                    // 🔥 CALCOLA PUNTEGGIO SUGLI EVENTI MERGIATI (include i gol temporanei!)
+                    const calculatedScore = calculateMatchScore(freshData.match, mergedEvents);
                     
                     // ✅ Aggiorna eventi in cache con la versione mergiata
                     window.APP_CACHE.eventsByMatch[match.MATCH_ID] = mergedEvents;
