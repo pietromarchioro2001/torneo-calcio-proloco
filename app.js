@@ -2040,7 +2040,7 @@ function startStandingsLiveRefresh() {
 let matchLiveRefreshInterval = null;
 let currentPollingMatchId = null; // 🔥 Tracciamo quale partita stiamo monitorando
 
-unction startMatchLiveRefresh() {
+function startMatchLiveRefresh() {
     if (matchLiveRefreshInterval) return;
     console.log('🔴 Avvio polling globale partite LIVE (2s)...');
     
