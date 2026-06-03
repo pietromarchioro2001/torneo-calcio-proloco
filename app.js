@@ -1862,39 +1862,8 @@ function openRigoriPopup(directMode = false) {
     rigoriState.finished = false;
     function saveRigoriState() { localStorage.setItem(storageKey, JSON.stringify(rigoriState)); }
     function checkRigoriWinner() {
-    const casaKicks = rigoriState.history.filter(h => h.team === 'casa').length;
-    const trasfKicks = rigoriState.history.filter(h => h.team === 'trasferta').length;
-    
-    // Dopo i primi 5 tiri per squadra
-    if (casaKicks >= 5 && trasfKicks >= 5) {
-        if (rigoriState.casaScore !== rigoriState.trasfScore) {
-            return true;  // C'è un vincitore
-        }
-        // Se è pari, continua a oltranza
         return false;
     }
-    
-    // Durante i primi 5 tiri
-    if (casaKicks < 5 || trasfKicks < 5) {
-        const remainingKicks = 5 - Math.max(casaKicks, trasfKicks);
-        const diff = Math.abs(rigoriState.casaScore - rigoriState.trasfScore);
-        
-        // Se la differenza è maggiore dei rigori rimanenti, c'è un vincitore
-        if (diff > remainingKicks) {
-            return true;
-        }
-        return false;
-    }
-    
-    // Fase a oltranza (dopo il 5-5)
-    if (casaKicks > 5 && trasfKicks === casaKicks) {
-        if (rigoriState.casaScore !== rigoriState.trasfScore) {
-            return true;
-        }
-    }
-    
-    return false;
-}
 
     const popup = document.createElement('div'); popup.className = 'rigori-popup-overlay'; popup.id = 'rigoriPopupOverlay';
     popup.innerHTML = `
@@ -2013,8 +1982,10 @@ function openRigoriPopup(directMode = false) {
         setTimeout(() => {
             indicator.style.background = '#555'; renderKickIndicators();
             rigoriState.currentKicker = currentTeam === 'casa' ? 'trasferta' : 'casa';
-            const nextTeam = rigoriState.currentKicker === 'casa' ? casaNome : trasfNome; document.getElementById('rigori-current').textContent = nextTeam;
-            saveRigoriState(); if (checkRigoriWinner()) { rigoriState.finished = true; saveRigoriState(); }
+            const nextTeam = rigoriState.currentKicker === 'casa' ? casaNome : trasfNome; 
+            document.getElementById('rigori-current').textContent = nextTeam;
+            saveRigoriState();
+            // 🔥 RIMOSSO: if (checkRigoriWinner()) { rigoriState.finished = true; saveRigoriState(); }
         }, 3000);
     }
 
