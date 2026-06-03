@@ -1951,11 +1951,25 @@ function openRigoriPopup(directMode = false) {
     function updateUI() { document.getElementById('score-casa').textContent = rigoriState.casaScore; document.getElementById('score-trasferta').textContent = rigoriState.trasfScore; }
 
     window.startRigori = (team) => {
-        rigoriState.fase = 'tiri'; rigoriState.currentKicker = team; saveRigoriState();
-        document.getElementById('rigori-selezione').style.display = 'none'; document.getElementById('rigori-tiri').style.display = 'block';
-        const startingTeam = team === 'casa' ? casaNome : trasfNome; document.getElementById('rigori-current').textContent = startingTeam;
-        match.STATO_PARTITA = "RIGORI"; window.APP_STATE.lastMatch = match; updateMatchUI(match);
+        rigoriState.fase = 'tiri'; 
+        rigoriState.currentKicker = team; 
+        saveRigoriState();
+        
+        document.getElementById('rigori-selezione').style.display = 'none'; 
+        document.getElementById('rigori-tiri').style.display = 'block';
+        
+        const startingTeam = team === 'casa' ? casaNome : trasfNome; 
+        document.getElementById('rigori-current').textContent = startingTeam;
+        
+        match.STATO_PARTITA = "RIGORI"; 
+        window.APP_STATE.lastMatch = match; 
+        updateMatchUI(match);
         renderKickIndicators();
+        
+        // 🔥 AGGIUNGI QUESTA RIGA:
+        ApiClient.updateMatchStatus(match.MATCH_ID, "RIGORI")
+            .then(() => console.log('✅ Stato RIGORI salvato nel backend'))
+            .catch(err => console.error('❌ Errore salvataggio stato RIGORI:', err));
     };
 
     if (directMode || rigoriState.history.length > 0) {
