@@ -1297,10 +1297,10 @@ function renderMatchPage(match) {
     // 🔥 DEFINISCI LOGHI
     const logoCasa = match.LOGO_CASA
         ? `<img src="${getCachedImage(match.LOGO_CASA, 120)}" alt="${match.SQUADRA_CASA}" onerror="this.style.display='none'">`
-        : `<div style="width:70px;height:70px;border-radius:50%;background:#f0f0f0;display:flex;align-items:center;justify-content:center;font-size:1.5rem">⚽</div>`;
+        : `<div style="width:80px;height:80px;border-radius:50%;background:#f0f0f0;display:flex;align-items:center;justify-content:center;font-size:1.5rem">⚽</div>`;
     const logoTrasf = match.LOGO_TRASFERTA
         ? `<img src="${getCachedImage(match.LOGO_TRASFERTA, 120)}" alt="${match.SQUADRA_TRASFERTA}" onerror="this.style.display='none'">`
-        : `<div style="width:70px;height:70px;border-radius:50%;background:#f0f0f0;display:flex;align-items:center;justify-content:center;font-size:1.5rem">⚽</div>`;
+        : `<div style="width:80px;height:80px;border-radius:50%;background:#f0f0f0;display:flex;align-items:center;justify-content:center;font-size:1.5rem">⚽</div>`;
 
     const nomeCasa = (match.SQUADRA_CASA || "CASA").toUpperCase();
     const nomeTrasf = (match.SQUADRA_TRASFERTA || "TRASFERTA").toUpperCase();
