@@ -2578,7 +2578,7 @@ function renderBracketMatch(match, cls="") {
     }
     
     // FIX: statusIndicator corretto senza tag spezzati
-    const statusIndicator = isSupp ? '<span style="font-size:9px;color:#8c1d2c;font-weight:700;margin-left:4px">SUPP</span>' : '';
+    const statusIndicator = '';
     
     let liveClass = "";
     if (isLive) {
