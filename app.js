@@ -947,6 +947,37 @@ function selectDate(date) {
     renderMatchesByDate(date);
 }
 
+function getMatchPriority(m) {
+    const turno = (m.TURNO || m.turno || m.matchKey || "").toUpperCase();
+    const status = (m.STATO_PARTITA || "").toUpperCase();
+
+    // finale 3°-4° posto
+    if (turno === "TP") {
+        // se non finita → alta priorità (prima della finale)
+        if (status !== "FINITA") return 1;
+        // se finita → scende sotto
+        return 10;
+    }
+
+    // finale
+    if (turno === "F") {
+        return 2;
+    }
+
+    // semifinali
+    if (turno.startsWith("SF")) {
+        return 3;
+    }
+
+    // quarti
+    if (turno.startsWith("Q")) {
+        return 4;
+    }
+
+    // gironi / altro
+    return 5;
+}
+
 function centerActiveDate() {
     const container = document.getElementById("datesToolbar"), active = container?.querySelector(".date-item.active");
     if (!active) return; const offset = active.offsetLeft - (container.offsetWidth/2) + (active.offsetWidth/2); container.scrollTo({ left: offset, behavior: "smooth" });
@@ -968,8 +999,14 @@ function renderMatchesByDate(date) {
     // console.log(`  Partita ${matchId}: DATA=${matchDate}, MATCH=${date}, OK=${matchDate === date}`);
     return matchDate === date && m?.MATCH_ID;
   }).sort((a, b) => {
-    // ... resto del sort
-  });
+    const pa = getMatchPriority(a);
+    const pb = getMatchPriority(b);
+
+    if (pa !== pb) return pa - pb;
+
+    // fallback: ora partita
+    return (a.ORA || "").localeCompare(b.ORA || "");
+});
   
   console.log(`✅ PARTITE TROVATE PER ${date}:`, matches.length);
   
