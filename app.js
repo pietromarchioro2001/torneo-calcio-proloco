@@ -292,7 +292,6 @@ function queueApiCall(fn, priority = 0) {
   window.APP_STATE._apiCallQueue.sort((a, b) => b.priority - a.priority);
 }
 
-// 🔥 MODIFICA refreshStandingsDebounced per usare la coda
 function refreshStandingsDebounced(delay = 1200) {
   // ✅ Se non abbiamo finito il caricamento iniziale, accoda
   if (!window.APP_STATE._initialLoadComplete) {
