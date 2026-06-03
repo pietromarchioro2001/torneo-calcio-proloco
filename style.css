@@ -1099,10 +1099,10 @@ body {
 
 .live-indicator { display: none !important; width: 6px; height: 6px; background: #dc2626; border-radius: 50%; margin-left: 6px; animation: dotPulse 1.5s infinite; }
 
-.qf1 { left: 20px; top: 110px; }
+.qf1 { left: 20px; top: 70px; }
 .qf2 { left: 20px; top: 330px; }
 
-.qf3 { right: 20px; top: 110px; }
+.qf3 { right: 20px; top: 70px; }
 .qf4 { right: 20px; top: 330px; }
 
 .sf1 { left: 200px; top: 190px; }
