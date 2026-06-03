@@ -352,6 +352,51 @@ function renderToolbar(active) {
 }
 
 function getNextMatchCard() {
+
+ // 🔥 CONTROLLA SE IL TORNEO È CONCLUSO
+    const finalStageData = window.APP_CACHE.finalStage || [];
+    const finali = finalStageData.filter(m => m.matchKey === "F" || m.matchKey === "TP");
+    const finaliConcluse = finali.filter(m => m.stato === "FINITA").length;
+    
+    if (finaliConcluse === 2) {
+        // Trova il vincitore della finale
+        const finale = finalStageData.find(m => m.matchKey === "F");
+        if (finale && finale.casa && finale.trasferta) {
+            const vincitore = finale.golCasa > finale.golTrasferta ? finale.casa : finale.trasferta;
+            
+            return `
+                <div class="home-winner-card" style="
+                    background: linear-gradient(135deg, rgba(255,215,0,0.15) 0%, rgba(255,237,78,0.1) 100%);
+                    border: 2px solid #ffd700;
+                    border-radius: 16px;
+                    padding: 30px 20px;
+                    text-align: center;
+                    position: relative;
+                    overflow: hidden;
+                ">
+                    <div style="position: absolute; top: -20px; right: -20px; font-size: 80px; opacity: 0.1;">🏆</div>
+                    <div style="font-size: 14px; color: #ffd700; font-weight: 700; margin-bottom: 15px; text-transform: uppercase; letter-spacing: 2px;">
+                        🏆 Vincitore del Torneo 🏆
+                    </div>
+                    ${vincitore.logo ? `<img src="${getCachedImage(vincitore.logo, 100)}" alt="${vincitore.nome}" style="
+                        width: 100px;
+                        height: 100px;
+                        border-radius: 50%;
+                        border: 4px solid #ffd700;
+                        box-shadow: 0 8px 24px rgba(255,215,0,0.4);
+                        margin-bottom: 15px;
+                        object-fit: cover;
+                    ">` : '<div style="width: 100px; height: 100px; border-radius: 50%; background: #ffd700; margin: 0 auto 15px; display: flex; align-items: center; justify-content: center; font-size: 48px;">⚽</div>'}
+                    <div style="font-size: 24px; font-weight: 900; color: #ffd700; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 10px;">
+                        ${(vincitore.nome || "").toUpperCase()}
+                    </div>
+                    <div style="font-size: 12px; color: #fff; opacity: 0.8;">
+                        Campione ${new Date().getFullYear()}
+                    </div>
+                </div>
+            `;
+        }
+    }
   const matches = window.APP_CACHE.matches || [];
   const eventsByMatch = window.APP_CACHE.eventsByMatch || {};
   const now = new Date();
@@ -2403,18 +2448,19 @@ function renderFinalBracket(matches) {
     </div>
     `;
 }
+
 function renderNextPhaseButton() {
-    const oldBtn = document.getElementById("next-phase-action-btn"); 
+    const oldBtn = document.getElementById("next-phase-action-btn");
     if (oldBtn) oldBtn.remove();
-    const container = document.getElementById("finalBracketContainer"); 
+    const container = document.getElementById("finalBracketContainer");
     if (!container) return;
-    const finalStageData = window.APP_CACHE.finalStage || [];
     
-    const quarti = finalStageData.filter(m => m.turno === "QUARTI"); 
+    const finalStageData = window.APP_CACHE.finalStage || [];
+    const quarti = finalStageData.filter(m => m.turno === "QUARTI");
     const quartiFiniti = quarti.filter(m => m.stato === "FINITA").length;
-    const semi = finalStageData.filter(m => m.turno === "SEMIFINALE"); 
+    const semi = finalStageData.filter(m => m.turno === "SEMIFINALE");
     const semiFiniti = semi.filter(m => m.stato === "FINITA").length;
-    const finali = finalStageData.filter(m => m.turno === "FINALE 1-2" || m.turno === "FINALE 3-4"); 
+    const finali = finalStageData.filter(m => m.turno === "FINALE 1-2" || m.turno === "FINALE 3-4");
     const finaliFiniti = finali.filter(m => m.stato === "FINITA").length;
     
     // Verifica se le semifinali sono già state create
@@ -2427,33 +2473,47 @@ function renderNextPhaseButton() {
     const final3Exists = finalStageData.some(m => m.matchKey === "TP");
     const finaliCreate = final1Exists && final3Exists;
     
-    let isReady = false; 
+    // 🔥 VERIFICA SE TUTTE LE FINALI SONO CONCLUSE
+    const tutteFinaliConcluse = finaliCreate && finaliFiniti === 2;
+    
+    let isReady = false;
     let action = null;
     
     // Logica per SEMIFINALI: quarti finiti E semifinali non ancora create
-    if (quartiFiniti === 4 && !semiCreate) { 
-        isReady = true; 
-        action = "SEMIFINALI"; 
+    if (quartiFiniti === 4 && !semiCreate) {
+        isReady = true;
+        action = "SEMIFINALI";
     }
     // Logica per FINALI: semifinali finite E finali non ancora create
-    else if (quartiFiniti === 4 && semiFiniti === 2 && !finaliCreate) { 
-        isReady = true; 
-        action = "FINALI"; 
+    else if (quartiFiniti === 4 && semiFiniti === 2 && !finaliCreate) {
+        isReady = true;
+        action = "FINALI";
+    }
+    // 🔥 NUOVO: TORNEO CONCLUSO - mostra pulsante per vedere il podio
+    else if (tutteFinaliConcluse) {
+        isReady = true;
+        action = "PODIO";
     }
     
-    const btnWrapper = document.createElement("div"); 
-    btnWrapper.className = "next-phase-button"; 
+    const btnWrapper = document.createElement("div");
+    btnWrapper.className = "next-phase-button";
     btnWrapper.id = "next-phase-action-btn";
-    const btn = document.createElement("button"); 
-    btn.className = `next-phase-btn ${isReady ? '' : 'disabled'}`; 
-    btn.textContent = "PROSSIMA FASE"; 
-    if (isReady) { 
-        btn.onclick = () => openNextPhasePopup(action); 
+    const btn = document.createElement("button");
+    btn.className = `next-phase-btn ${isReady ? '' : 'disabled'} ${action === 'PODIO' ? 'trophy-btn' : ''}`;
+    btn.textContent = action === "PODIO" ? "🏆 VINCITORE" : "PROSSIMA FASE";
+    if (isReady) {
+        btn.onclick = () => {
+            if (action === "PODIO") {
+                showTournamentPodium(finalStageData);
+            } else {
+                openNextPhasePopup(action);
+            }
+        };
     }
-    btnWrapper.appendChild(btn); 
-    const pageContainer = document.querySelector('.final-stage-page'); 
-    if(pageContainer) { 
-        pageContainer.appendChild(btnWrapper); 
+    btnWrapper.appendChild(btn);
+    const pageContainer = document.querySelector('.final-stage-page');
+    if(pageContainer) {
+        pageContainer.appendChild(btnWrapper);
     }
 }
 
@@ -2464,6 +2524,311 @@ function openNextPhasePopup(phase) {
     const match2Label = phase === "SEMIFINALI" ? "SEMIFINALE 2" : "FINALE 3°-4°";
     modal.innerHTML = `<div class="modalBox" style="max-width:500px;"><div class="modalTitle">${title}</div><div class="match-form"><div style="margin-bottom:20px;"><div style="font-weight:700;margin-bottom:8px;">${match1Label}</div><input type="date" id="date1" class="match-input" style="margin-right:10px;"><input type="time" id="time1" class="match-input"></div><div><div style="font-weight:700;margin-bottom:8px;">${match2Label}</div><input type="date" id="date2" class="match-input" style="margin-right:10px;"><input type="time" id="time2" class="match-input"></div><div class="modalActions" style="margin-top:20px;"><div class="phase-btn" onclick="saveNextPhase('${phase}')">CREA PARTITE</div><div class="phase-btn secondary" onclick="this.closest('.modalOverlay').remove()">ANNULLA</div></div></div></div>`;
     document.body.appendChild(modal); modal.onclick = (e) => { if (e.target === modal) modal.remove(); }; modal.querySelector(".modalBox").onclick = (e) => e.stopPropagation();
+}
+
+function showTournamentPodium(finalStageData) {
+    // Trova le finali
+    const finale1 = finalStageData.find(m => m.matchKey === "F");
+    const finale3 = finalStageData.find(m => m.matchKey === "TP");
+    
+    if (!finale1 || !finale3) {
+        alert("Errore: dati finali non trovati");
+        return;
+    }
+    
+    // Determina i vincitori
+    let primoPosto, secondoPosto, terzoPosto;
+    
+    // Finale 1°-2°
+    if (finale1.golCasa > finale1.golTrasferta) {
+        primoPosto = finale1.casa;
+        secondoPosto = finale1.trasferta;
+    } else {
+        primoPosto = finale1.trasferta;
+        secondoPosto = finale1.casa;
+    }
+    
+    // Finale 3°-4°
+    if (finale3.golCasa > finale3.golTrasferta) {
+        terzoPosto = finale3.casa;
+    } else {
+        terzoPosto = finale3.trasferta;
+    }
+    
+    // Crea il popup del podio
+    const modal = document.createElement("div");
+    modal.className = "modalOverlay";
+    modal.id = "podiumModal";
+    
+    modal.innerHTML = `
+        <div class="podium-container" onclick="event.stopPropagation()">
+            <div class="podium-header">
+                <h2>🏆 TORNEO CONCLUSO 🏆</h2>
+                <div class="podium-subtitle">Classifica Finale</div>
+            </div>
+            
+            <div class="podium-wrapper">
+                <!-- SECONDO POSTO -->
+                <div class="podium-position second-place">
+                    <div class="position-number">2°</div>
+                    <div class="team-info">
+                        ${secondoPosto.logo ? `<img src="${getCachedImage(secondoPosto.logo, 80)}" alt="${secondoPosto.nome}" class="podium-logo">` : '<div class="podium-logo-placeholder">⚽</div>'}
+                        <div class="team-name">${(secondoPosto.nome || "").toUpperCase()}</div>
+                    </div>
+                    <div class="podium-step step-2"></div>
+                </div>
+                
+                <!-- PRIMO POSTO -->
+                <div class="podium-position first-place">
+                    <div class="crown">👑</div>
+                    <div class="position-number">1°</div>
+                    <div class="team-info">
+                        ${primoPosto.logo ? `<img src="${getCachedImage(primoPosto.logo, 100)}" alt="${primoPosto.nome}" class="podium-logo winner">` : '<div class="podium-logo-placeholder winner">⚽</div>'}
+                        <div class="team-name winner">${(primoPosto.nome || "").toUpperCase()}</div>
+                    </div>
+                    <div class="podium-step step-1"></div>
+                    <div class="trophy">🏆</div>
+                </div>
+                
+                <!-- TERZO POSTO -->
+                <div class="podium-position third-place">
+                    <div class="position-number">3°</div>
+                    <div class="team-info">
+                        ${terzoPosto.logo ? `<img src="${getCachedImage(terzoPosto.logo, 80)}" alt="${terzoPosto.nome}" class="podium-logo">` : '<div class="podium-logo-placeholder">⚽</div>'}
+                        <div class="team-name">${(terzoPosto.nome || "").toUpperCase()}</div>
+                    </div>
+                    <div class="podium-step step-3"></div>
+                </div>
+            </div>
+            
+            <div class="podium-footer">
+                <div class="phase-btn" onclick="closePodium()">CHIUDI</div>
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(modal);
+    
+    // Aggiungi stili CSS
+    addPodiumStyles();
+}
+
+function closePodium() {
+    const modal = document.getElementById("podiumModal");
+    if (modal) {
+        modal.remove();
+    }
+}
+
+function addPodiumStyles() {
+    const styleId = "podiumStyles";
+    if (document.getElementById(styleId)) return;
+    
+    const style = document.createElement("style");
+    style.id = styleId;
+    style.textContent = `
+        .podium-container {
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            border-radius: 20px;
+            padding: 30px;
+            max-width: 800px;
+            width: 90%;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+            position: relative;
+        }
+        
+        .podium-header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+        
+        .podium-header h2 {
+            color: #ffd700;
+            font-size: 32px;
+            margin: 0 0 10px 0;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+        
+        .podium-subtitle {
+            color: #fff;
+            font-size: 16px;
+            opacity: 0.8;
+        }
+        
+        .podium-wrapper {
+            display: flex;
+            align-items: flex-end;
+            justify-content: center;
+            gap: 20px;
+            margin: 40px 0;
+            min-height: 350px;
+        }
+        
+        .podium-position {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            position: relative;
+        }
+        
+        .first-place {
+            order: 2;
+            transform: translateY(-30px);
+        }
+        
+        .second-place {
+            order: 1;
+        }
+        
+        .third-place {
+            order: 3;
+        }
+        
+        .position-number {
+            font-size: 48px;
+            font-weight: 900;
+            margin-bottom: 15px;
+            text-shadow: 0 4px 8px rgba(0,0,0,0.3);
+        }
+        
+        .first-place .position-number {
+            color: #ffd700;
+            font-size: 64px;
+        }
+        
+        .second-place .position-number {
+            color: #c0c0c0;
+        }
+        
+        .third-place .position-number {
+            color: #cd7f32;
+        }
+        
+        .team-info {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-bottom: 15px;
+            z-index: 10;
+        }
+        
+        .podium-logo {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 4px solid #fff;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            margin-bottom: 10px;
+        }
+        
+        .podium-logo.winner {
+            width: 100px;
+            height: 100px;
+            border: 5px solid #ffd700;
+        }
+        
+        .podium-logo-placeholder {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            background: #f0f0f0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 32px;
+            border: 4px solid #fff;
+            margin-bottom: 10px;
+        }
+        
+        .podium-logo-placeholder.winner {
+            width: 100px;
+            height: 100px;
+            border: 5px solid #ffd700;
+        }
+        
+        .team-name {
+            color: #fff;
+            font-size: 14px;
+            font-weight: 700;
+            text-align: center;
+            text-transform: uppercase;
+            max-width: 120px;
+            line-height: 1.2;
+        }
+        
+        .team-name.winner {
+            font-size: 18px;
+            color: #ffd700;
+        }
+        
+        .podium-step {
+            border-radius: 8px 8px 0 0;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+        }
+        
+        .step-1 {
+            width: 120px;
+            height: 100px;
+            background: linear-gradient(180deg, #ffd700 0%, #ffed4e 100%);
+        }
+        
+        .step-2 {
+            width: 100px;
+            height: 70px;
+            background: linear-gradient(180deg, #c0c0c0 0%, #e8e8e8 100%);
+        }
+        
+        .step-3 {
+            width: 100px;
+            height: 50px;
+            background: linear-gradient(180deg, #cd7f32 0%, #e8a85c 100%);
+        }
+        
+        .crown {
+            position: absolute;
+            top: -40px;
+            font-size: 48px;
+            animation: bounce 2s infinite;
+        }
+        
+        .trophy {
+            position: absolute;
+            top: -60px;
+            font-size: 64px;
+            animation: glow 2s ease-in-out infinite;
+        }
+        
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+        
+        @keyframes glow {
+            0%, 100% { filter: drop-shadow(0 0 10px #ffd700); }
+            50% { filter: drop-shadow(0 0 20px #ffd700); }
+        }
+        
+        .podium-footer {
+            text-align: center;
+            margin-top: 30px;
+        }
+        
+        .trophy-btn {
+            background: linear-gradient(135deg, #ffd700 0%, #ffed4e 100%) !important;
+            color: #1a1a2e !important;
+            font-weight: 900 !important;
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+    `;
+    
+    document.head.appendChild(style);
 }
 
 async function saveNextPhase(phase) {
