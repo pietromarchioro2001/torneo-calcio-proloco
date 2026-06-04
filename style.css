@@ -608,7 +608,7 @@ body {
 .match-options:hover { background: #f3f3f3; color: #222; }
 
 /* Date Toolbar */
-.dates-toolbar { display: flex; justify-content: center; overflow-x: auto; gap: 8px; padding: 8px 20px; scroll-behavior: smooth; scroll-snap-type: x mandatory; }
+.dates-toolbar { display: flex; justify-content: center; overflow-x: auto; gap: 8px; padding: 8px 20px; scroll-behavior: smooth; cursor: grab; scroll-snap-type: x mandatory; }
 .date-item { flex: 0 0 auto; width: 70px; padding: 6px 0; min-height: 48px; border-radius: 14px; background: #f1f1f1; text-align: center; cursor: pointer; transition: 0.2s; scroll-snap-align: center; }
 .date-item.today { border: 2px solid #8c404e; }
 .date-item:hover { transform: translateY(-2px); }
@@ -619,10 +619,6 @@ body {
 .dates-toolbar.dragging {
   cursor: grabbing;
   user-select: none;
-}
-
-.dates-toolbar {
-  cursor: grab;
 }
 
 /* Placeholder Loghi */
@@ -1026,7 +1022,7 @@ body {
   min-height: 110px;
   box-sizing: border-box;
   flex-shrink: 0;
-  background: #ffffff;
+  background: linear-gradient(135deg, rgba(255,255,255,0.95) 0%, rgba(122,30,44,0.05) 100%) !important;
   border: 1px solid rgba(0,0,0,0.06); 
   box-shadow: 0 4px 12px rgba(0,0,0,0.05);
   border-radius: 16px;
@@ -1043,14 +1039,6 @@ body {
 .bracket-match.bracket-placeholder:hover { transform: none; box-shadow: 0 4px 15px rgba(0,0,0,0.08); }
 .bracket-match.bracket-placeholder div { font-size: 12px !important; font-weight: 700 !important; color: #666666 !important; opacity: 1 !important; letter-spacing: 1px !important; }
 
-.bracket-placeholder {
-  border: 2px solid #d4af37 !important;
-  left: 50%;
-  margin-left: -100px;
-  top: 190px;
-  z-index: 10;
-}
-
 /* Forza stile per card vuote/placeholder */
 .bracket-placeholder {
   background: linear-gradient(135deg, 
@@ -1060,8 +1048,6 @@ body {
 }
 .bracket-match.final-match:hover { transform: none !important; }
 .bracket-match.bracket-placeholder.final-match { opacity: 1 !important; transform: none !important; }
-
-.live-indicator { display: none !important; width: 6px; height: 6px; background: #dc2626; border-radius: 50%; margin-left: 6px; animation: dotPulse 1.5s infinite; }
 
 .qf1 { left: 20px; top: 60px; }
 .qf2 { left: 20px; top: 320px; }
@@ -1212,7 +1198,6 @@ body {
 /* =============================================================================================
    🎬 12. ANIMAZIONI & UTILITÀ
 =============================================================================================== */
-@keyframes float { 0%,100%{ transform:translateY(0); } 50%{ transform:translateY(-10px); } }
 @keyframes floatReal { 0%,100%{ transform:translate(-50%, -52%); } 50%{ transform:translate(-50%, -48%); } }
 @keyframes shadowReal { 0%,100%{ opacity:0.2; width:220px; height:55px; } 50%{ opacity:0.45; width:280px; height:70px; } }
 @keyframes skeletonMove { 0%{ background-position:200% 0; } 100%{ background-position:-200% 0; } }
@@ -1220,13 +1205,9 @@ body {
 @keyframes liveDotPulse { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.4; transform: scale(1.3); } }
 @keyframes standingsLivePulse { 0%{ opacity:1; } 50%{ opacity:.45; } 100%{ opacity:1; } }
 @keyframes pulse { 0%{ transform:scale(1); opacity:1;} 50%{ transform:scale(1.5); opacity:0.4;} 100%{ transform:scale(1); opacity:1;} }
-@keyframes mvpPulse { 0%{ transform:translate(-50%, -50%) scale(1); box-shadow:0 0 0 rgba(212,175,55,0); } 50%{ transform:translate(-50%, -50%) scale(1.03); box-shadow:0 0 22px rgba(212,175,55,0.35); } 100%{ transform:translate(-50%, -50%) scale(1); box-shadow:0 0 0 rgba(212,175,55,0); } }
 @keyframes mvpAppear { from { opacity: 0; transform: translateX(-50%) translateY(-10px); } to { opacity: 1; transform: translateX(-50%) translateY(0); } }
-@keyframes crownPulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.2); } }
-@keyframes winnerGlow { 0%, 100% { box-shadow: 0 4px 16px rgba(251, 191, 36, 0.2); } 50% { box-shadow: 0 6px 20px rgba(251, 191, 36, 0.3); } }
 @keyframes ptsBlink { 0%{ opacity:1; } 50%{ opacity:.45; } 100%{ opacity:1; } }
 @keyframes livePulse { 0%{ box-shadow: inset 0 0 0 rgba(128,0,32,0); } 50%{ box-shadow: inset 6px 0 0 rgba(128,0,32,.45); } 100%{ box-shadow: inset 0 0 0 rgba(128,0,32,0); } }
-@keyframes scorePulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.7; } }
 @keyframes scorePulseLive {
   0%, 100% { 
     opacity: 1; 
@@ -1260,7 +1241,6 @@ body {
 }
 @keyframes dotPulse { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.4; transform: scale(1.3); } }
 @keyframes semaforoPulse { 0% { transform: scale(1); } 50% { transform: scale(1.1); } 100% { transform: scale(1); } }
-@keyframes kickAppear { 0% { transform: scale(0); opacity: 0; } 50% { transform: scale(1.2); } 100% { transform: scale(1); opacity: 1; } }
 /* =============================================================================================
    📱 13. RESPONSIVE
 =============================================================================================== */
