@@ -1004,7 +1004,7 @@ body {
 .final-empty .phase-btn { padding: 14px 30px; font-size: 14px; }
 
 .next-phase-button { width: 100%; display: flex; justify-content: center; margin-top: 40px; }
-.next-phase-btn { background-color: #7a1e2c; color: white; padding: 14px 30px; border-radius: 8px; font-weight: 700; text-transform: uppercase; cursor: pointer; transition: all 0.3s ease; letter-spacing: 1px; border: none; font-size: 15px; box-shadow: 0 4px 12px rgba(122, 30, 44, 0.3); }
+.next-phase-btn { background-color: #7a1e2c; color: white; padding: 14px 30px; border-radius: 8px; font-weight: 700; text-transform: uppercase; cursor: pointer; transition: all 0.3s ease; letter-spacing: 2px; border: none; font-size: 16px; box-shadow: 0 4px 12px rgba(122, 30, 44, 0.3); font-family: 'Oswald', sans-serif !important; }
 .next-phase-btn:hover { transform: translateY(-2px); background-color: #94283b; }
 .next-phase-btn.disabled { background-color: #e5e5e5; color: #999; cursor: not-allowed; pointer-events: none; box-shadow: none; }
 
