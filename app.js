@@ -351,64 +351,64 @@ function renderToolbar(active) {
 }
 
 function getNextMatchCard() {
-const matches = window.APP_CACHE.matches || [];
-const eventsByMatch = window.APP_CACHE.eventsByMatch || {};
-const now = new Date();
-const nowStr = formatLocalDate(now);
-const finale1 = matches.find(m => m.TURNO === "FINALE 1-2" || m.matchKey === "F");
-const finale3 = matches.find(m => m.TURNO === "FINALE 3-4" || m.matchKey === "TP");
-
-if (finale1 && finale3 &&
-finale1.STATO_PARTITA === "FINITA" &&
-finale3.STATO_PARTITA === "FINITA") {
-
-// 🔥 DETERMINA VINCITORE CONSIDERANDO I RIGORI
-let vincitore;
-
-// ✅ Controlla TUTTE le varianti (minuscolo dal backend, maiuscolo da cache)
-const rigoriCasa = finale1.rigoriCasa ?? finale1.RIGORE_CASA ?? finale1.RIGORI_CASA ?? null;
-const rigoriTrasf = finale1.rigoriTrasferta ?? finale1.RIGORE_TRASFERTA ?? finale1.RIGORI_TRASFERTA ?? null;
-
-// ✅ Verifica che i rigori siano valori VALIDI (non null/undefined/vuoti)
-const hasValidRigori = (
-rigoriCasa !== null && rigoriCasa !== undefined && rigoriCasa !== "" &&
-rigoriTrasf !== null && rigoriTrasf !== undefined && rigoriTrasf !== ""
-);
-
-if (hasValidRigori) {
-// ✅ Usa SEMPRE i rigori se sono presenti
-vincitore = Number(rigoriCasa) > Number(rigoriTrasf)
-? { nome: finale1.SQUADRA_CASA, logo: finale1.LOGO_CASA }
-: { nome: finale1.SQUADRA_TRASFERTA, logo: finale1.LOGO_TRASFERTA };
-} else {
-// Altrimenti usa il punteggio regolare
-vincitore = finale1.GOL_CASA > finale1.GOL_TRASFERTA
-? { nome: finale1.SQUADRA_CASA, logo: finale1.LOGO_CASA }
-: { nome: finale1.SQUADRA_TRASFERTA, logo: finale1.LOGO_TRASFERTA };
-}
-
-const logoHtml = vincitore.logo
-? `<img src="${getCachedImage(vincitore.logo, 50)}" alt="${vincitore.nome}" style="width:50px;height:50px;border-radius:50%;object-fit:cover;">`
-: '<div style="width:50px;height:50px;border-radius:50%;background:#f0f0f0;display:flex;align-items:center;justify-content:center;font-size:24px;">⚽</div>';
-
-const nomeVincitore = Sanitizer.html((vincitore.nome || "").toUpperCase());
-
-return `
-<div class="home-next-match winner-card" onclick="openMatch('${Sanitizer.attr(finale1.MATCH_ID)}')" style="
-background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%);
-border: 2px solid #fbbf24;
-padding: 15px 20px;
-">
-<div style="display:flex;align-items:center;justify-content:center;gap:15px;width:100%;">
-<div style="font-size:32px;">🏆</div>
-${logoHtml}
-<div style="text-align:center;">
-<div style="font-size:20px;font-weight:800;color:#92400e;letter-spacing:1px;text-transform:uppercase;">${nomeVincitore}</div>
-</div>
-</div>
-</div>
-`;
-}
+  const matches = window.APP_CACHE.matches || [];
+  const eventsByMatch = window.APP_CACHE.eventsByMatch || {};
+  const now = new Date();
+  const nowStr = formatLocalDate(now);
+  const finale1 = matches.find(m => m.TURNO === "FINALE 1-2" || m.matchKey === "F");
+  const finale3 = matches.find(m => m.TURNO === "FINALE 3-4" || m.matchKey === "TP");
+  
+  if (finale1 && finale3 &&
+      finale1.STATO_PARTITA === "FINITA" &&
+      finale3.STATO_PARTITA === "FINITA") {
+    
+    // 🔥 DETERMINA VINCITORE CONSIDERANDO I RIGORI
+    let vincitore;
+    
+    // ✅ Controlla TUTTE le varianti (minuscolo dal backend, maiuscolo da cache)
+    const rigoriCasa = finale1.rigoriCasa ?? finale1.RIGORE_CASA ?? finale1.RIGORI_CASA ?? null;
+    const rigoriTrasf = finale1.rigoriTrasferta ?? finale1.RIGORE_TRASFERTA ?? finale1.RIGORI_TRASFERTA ?? null;
+    
+    // ✅ Verifica che i rigori siano valori VALIDI (non null/undefined/vuoti)
+    const hasValidRigori = (
+      rigoriCasa !== null && rigoriCasa !== undefined && rigoriCasa !== "" &&
+      rigoriTrasf !== null && rigoriTrasf !== undefined && rigoriTrasf !== ""
+    );
+    
+    if (hasValidRigori) {
+      // ✅ Usa SEMPRE i rigori se sono presenti
+      vincitore = Number(rigoriCasa) > Number(rigoriTrasf)
+        ? { nome: finale1.SQUADRA_CASA, logo: finale1.LOGO_CASA }
+        : { nome: finale1.SQUADRA_TRASFERTA, logo: finale1.LOGO_TRASFERTA };
+    } else {
+      // Altrimenti usa il punteggio regolare
+      vincitore = finale1.GOL_CASA > finale1.GOL_TRASFERTA
+        ? { nome: finale1.SQUADRA_CASA, logo: finale1.LOGO_CASA }
+        : { nome: finale1.SQUADRA_TRASFERTA, logo: finale1.LOGO_TRASFERTA };
+    }
+    
+    const logoHtml = vincitore.logo
+      ? `<img src="${getCachedImage(vincitore.logo, 50)}" alt="${vincitore.nome}" style="width:50px;height:50px;border-radius:50%;object-fit:cover;">`
+      : '<div style="width:50px;height:50px;border-radius:50%;background:#f0f0f0;display:flex;align-items:center;justify-content:center;font-size:24px;">⚽</div>';
+    
+    const nomeVincitore = Sanitizer.html((vincitore.nome || "").toUpperCase());
+    
+    return `
+      <div class="home-next-match winner-card" onclick="openMatch('${Sanitizer.attr(finale1.MATCH_ID)}')" style="
+        background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%);
+        border: 2px solid #fbbf24;
+        padding: 15px 20px;
+      ">
+        <div style="display:flex;align-items:center;justify-content:center;gap:15px;width:100%;">
+          <div style="font-size:32px;">🏆</div>
+          ${logoHtml}
+          <div style="text-align:center;">
+            <div style="font-size:20px;font-weight:800;color:#92400e;letter-spacing:1px;text-transform:uppercase;">${nomeVincitore}</div>
+          </div>
+        </div>
+      </div>
+    `;
+  }
 
 // 1. Cerca partite LIVE/SUPP/RIGORI
 const liveMatch = matches.find(m =>
@@ -2977,6 +2977,37 @@ function bootAdminApp() {
             finalStageStarted: finalStageStarted // ✅ SALVA SUBITO
           }
         };
+
+        if (finalStageStarted) {
+          try {
+            const finalData = await ApiClient.getFinalStageMatches();
+            if (finalData) {
+              window.APP_CACHE.finalStage = finalData;
+              
+              // 🔥 AGGIORNA ANCHE I MATCH CON I DATI DEI RIGORI
+              if (window.APP_CACHE.matches) {
+                finalData.forEach(fm => {
+                  const idx = window.APP_CACHE.matches.findIndex(m => String(m.MATCH_ID) === String(fm.matchId));
+                  if (idx >= 0) {
+                    window.APP_CACHE.matches[idx] = {
+                      ...window.APP_CACHE.matches[idx],
+                      rigoriCasa: fm.rigoriCasa,
+                      rigoriTrasferta: fm.rigoriTrasferta,
+                      RIGORE_CASA: fm.rigoriCasa,
+                      RIGORE_TRASFERTA: fm.rigoriTrasferta,
+                      RIGORI_CASA: fm.rigoriCasa,
+                      RIGORI_TRASFERTA: fm.rigoriTrasferta
+                    };
+                  }
+                });
+              }
+              
+              CacheManager.save(window.APP_CACHE);
+            }
+          } catch (err) {
+            console.error('Errore caricamento fase finale:', err);
+          }
+        }
         hydrateMatches(window.APP_CACHE.matches || []);
         preloadRecentEvents();
         CacheManager.save(window.APP_CACHE);
