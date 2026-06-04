@@ -3,7 +3,7 @@
 // ============================================================================
 const CONFIG = {
     // 🔥 SOSTITUISCI CON IL TUO URL APPS SCRIPT WEB APP
-    BACKEND_URL: 'https://script.google.com/macros/s/AKfycbx8mmanYLttSAA2p6EHi8jrKwr_buuptFkhLufAy_ffDl7kOfM4_XnrF92TkjmLL0I/exec',
+    BACKEND_URL: 'https://script.google.com/macros/s/AKfycbyTClCYiQPW3vrJPzGtVKjGA3150cnTvjze2mDPUFMNZHiW9on1Fx_gamcE2dKawoLa/exec',
     API_TIMEOUT: 30000,
     CACHE_VERSION: 'v3.0',
     CACHE_MAX_AGE: 5 * 60 * 1000
@@ -1814,95 +1814,79 @@ function updateScoreFromEvents(matchId) {
 }
 
 function renderPenaltyIndicators(events, match) {
-    
-    const faseFinale = (match.FASE || "").toUpperCase() === "FINALI";
+  const timeline = document.getElementById('eventsTimeline');
+  if (!timeline) return;
   
-  // Controlla se ci sono i valori dei rigori (colonne J e K del foglio)
-  const rigoriCasa = match.RIGORE_CASA ?? match.RIGORI_CASA ?? null;
-  const rigoriTrasf = match.RIGORE_TRASFERTA ?? match.RIGORI_TRASFERTA ?? null;
+  // ✅ ESCI SUBITO SE NON SIAMO IN FASE FINALE
+  const fase = String(match.FASE || "").trim().toUpperCase();
+  if (fase !== "FINALI") return;
+  
+  // ✅ VERIFICA CHE CI SIANO I VALORI DEI RIGORI (da colonne J/K del foglio)
+  const rc = match.RIGORE_CASA ?? match.RIGORI_CASA;
+  const rt = match.RIGORE_TRASFERTA ?? match.RIGORI_TRASFERTA;
   
   const hasValidRigori = (
-    rigoriCasa !== null && rigoriCasa !== undefined && rigoriCasa !== "" &&
-    rigoriTrasf !== null && rigoriTrasf !== undefined && rigoriTrasf !== ""
+    rc !== null && rc !== undefined && rc !== "" &&
+    rt !== null && rt !== undefined && rt !== ""
   );
   
-  // ✅ Se non è fase finale O non ci sono rigori, esci senza mostrare nulla
-  if (!faseFinale || !hasValidRigori) {
-    return;
-  }
-  
-  // ... resto del codice esistente ...
-  const timeline = document.getElementById('eventsTimeline');
-  if (!timeline) {
-    console.error("❌ eventsTimeline element not found!");
-    return;
-  }
+  // ✅ ESCI SE NON CI SONO RIGORI
+  if (!hasValidRigori) return;
   
   // Rimuovi eventuali indicatori precedenti
   const existing = document.getElementById('penalty-indicators');
   if (existing) existing.remove();
-    
-    // Filtra eventi rigore: cerca RIGORE_RESULT (colonna E del foglio)
-    const penaltyEvents = events.filter(e => {
-        const rigoreResult = String(e.RIGORE_RESULT || "").toUpperCase();
-        return rigoreResult === 'RIGORE_SEGNO' || rigoreResult === 'RIGORE_SBAGLIO';
-    });
-    
-    const casaId = String(match.CASA_ID || "").trim();
-    const casaTiri = [];
-    const trasfTiri = [];
-    
-    // Organizza i tiri per squadra
-    penaltyEvents.forEach(e => {
-        const isGoal = (e.RIGORE_RESULT === 'RIGORE_SEGNO');
-        const isCasa = String(e.TEAM_ID) === casaId;
-        if (isCasa) casaTiri.push(isGoal);
-        else trasfTiri.push(isGoal);
-    });
-    
-    // Crea HTML bollini
-    const createDots = (tiri) => tiri.map(isGoal =>
-        `<span class="penalty-dot ${isGoal ? 'goal' : 'miss'}"></span>`
-    ).join('');
-    
-    // 🔥 LETTURA PUNTEGGI - CON FALLBACK
-    // Prima prova a leggere dalle colonne J/K
-    let rc = match.RIGORE_CASA !== undefined ? match.RIGORE_CASA : match.RIGORI_CASA;
-    let rt = match.RIGORE_TRASFERTA !== undefined ? match.RIGORE_TRASFERTA : match.RIGORI_TRASFERTA;
-    
-    // Se sono null/undefined/vuoti, calcolali dai pallini verdi
-    if (rc === null || rc === undefined || rc === "") {
-        rc = casaTiri.filter(t => t === true).length;
-    }
-    if (rt === null || rt === undefined || rt === "") {
-        rt = trasfTiri.filter(t => t === true).length;
-    }
-    
-    const scoreText = `${rc} - ${rt}`;
-    
-    const indicatorsDiv = document.createElement('div');
-    indicatorsDiv.id = 'penalty-indicators';
-    indicatorsDiv.className = 'penalty-indicators-container';
-    indicatorsDiv.innerHTML = `
-        <div class="penalty-header-label">SEQUENZA TIRI</div>
-        <div class="penalty-dots-row">
-            <div class="penalty-team-block">
-                <div class="penalty-team-name">${match.SQUADRA_CASA}</div>
-                <div class="penalty-dots">${createDots(casaTiri)}</div>
-            </div>
-            <div class="penalty-vs-score">${scoreText}</div>
-            <div class="penalty-team-block">
-                <div class="penalty-team-name">${match.SQUADRA_TRASFERTA}</div>
-                <div class="penalty-dots">${createDots(trasfTiri)}</div>
-            </div>
-        </div>
-    `;
-    
-    // 🔥 INSERISCI DOPO GLI EVENTI (sotto la timeline, non sopra)
-    if (timeline.parentNode) {
-        timeline.parentNode.insertBefore(indicatorsDiv, timeline.nextSibling);
-    }
+  
+  // Filtra eventi rigore: cerca RIGORE_RESULT (colonna E del foglio)
+  const penaltyEvents = events.filter(e => {
+    const rigoreResult = String(e.RIGORE_RESULT || "").toUpperCase();
+    return rigoreResult === 'RIGORE_SEGNO' || rigoreResult === 'RIGORE_SBAGLIO';
+  });
+  
+  const casaId = String(match.CASA_ID || "").trim();
+  const casaTiri = [];
+  const trasfTiri = [];
+  
+  // Organizza i tiri per squadra
+  penaltyEvents.forEach(e => {
+    const isGoal = (String(e.RIGORE_RESULT || "").toUpperCase() === 'RIGORE_SEGNO');
+    const isCasa = String(e.TEAM_ID) === casaId;
+    if (isCasa) casaTiri.push(isGoal);
+    else trasfTiri.push(isGoal);
+  });
+  
+  // Crea HTML bollini
+  const createDots = (tiri) => tiri.map(isGoal =>
+    `<span class="penalty-dot ${isGoal ? 'goal' : 'miss'}"></span>`
+  ).join('');
+  
+  // Usa i punteggi dalle colonne J/K (non calcolarli dai bollini)
+  const scoreText = `${rc} - ${rt}`;
+  
+  const indicatorsDiv = document.createElement('div');
+  indicatorsDiv.id = 'penalty-indicators';
+  indicatorsDiv.className = 'penalty-indicators-container';
+  indicatorsDiv.innerHTML = `
+    <div class="penalty-header-label">SEQUENZA TIRI</div>
+    <div class="penalty-dots-row">
+      <div class="penalty-team-block">
+        <div class="penalty-team-name">${match.SQUADRA_CASA}</div>
+        <div class="penalty-dots">${createDots(casaTiri)}</div>
+      </div>
+      <div class="penalty-vs-score">${scoreText}</div>
+      <div class="penalty-team-block">
+        <div class="penalty-team-name">${match.SQUADRA_TRASFERTA}</div>
+        <div class="penalty-dots">${createDots(trasfTiri)}</div>
+      </div>
+    </div>
+  `;
+  
+  // Inserisci dopo gli eventi (sotto la timeline)
+  if (timeline.parentNode) {
+    timeline.parentNode.insertBefore(indicatorsDiv, timeline.nextSibling);
+  }
 }
+
 // ============================================================================
 // 📊 RENDERING EVENTI E CRONACA
 // ============================================================================
