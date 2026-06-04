@@ -1574,19 +1574,56 @@ body {
     left: 50% !important;
     transform: translateX(-50%) !important;
     z-index: 100 !important;
-    width: 85% !important;
-    max-width: 400px !important;
-    min-height: auto !important;
+    width: 60% !important;
+    max-width: 280px !important;
+    min-height: 180px !important;
+    padding: 20px 15px !important;
     border-radius: 12px !important;
     box-shadow: 0 -4px 20px rgba(251, 191, 36, 0.3) !important;
     backdrop-filter: blur(8px) !important;
     cursor: pointer !important;
     transition: transform 0.2s, box-shadow 0.2s !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 10px !important;
 }
 
 .home-next-match.winner-card:hover {
     transform: translateX(-50%) translateY(-3px) !important;
     box-shadow: 0 -8px 30px rgba(251, 191, 36, 0.45) !important;
+}
+
+/* Testo Campione */
+.home-next-match.winner-card .champion-label {
+    font-size: 14px !important;
+    font-weight: 700 !important;
+    color: #92400e !important;
+    letter-spacing: 2px !important;
+    text-transform: uppercase !important;
+    text-align: center !important;
+}
+
+/* Logo squadra campione */
+.home-next-match.winner-card .champion-logo {
+    width: 70px !important;
+    height: 70px !important;
+    border-radius: 50% !important;
+    object-fit: cover !important;
+    border: 3px solid #fbbf24 !important;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15) !important;
+}
+
+/* Nome squadra campione */
+.home-next-match.winner-card .champion-name {
+    font-size: 18px !important;
+    font-weight: 800 !important;
+    color: #92400e !important;
+    letter-spacing: 1px !important;
+    text-transform: uppercase !important;
+    text-align: center !important;
+    line-height: 1.2 !important;
 }
 
 /* Override stili base per winner card */
