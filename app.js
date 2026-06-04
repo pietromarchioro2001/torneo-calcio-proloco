@@ -351,124 +351,131 @@ function renderToolbar(active) {
 }
 
 function getNextMatchCard() {
-    const matches = window.APP_CACHE.matches || [];
-    const eventsByMatch = window.APP_CACHE.eventsByMatch || {};
-    const now = new Date();
-    const nowStr = formatLocalDate(now);
-    
-    const finale1 = matches.find(m => m.TURNO === "FINALE 1-2" || m.matchKey === "F");
+const matches = window.APP_CACHE.matches || [];
+const eventsByMatch = window.APP_CACHE.eventsByMatch || {};
+const now = new Date();
+const nowStr = formatLocalDate(now);
+const finale1 = matches.find(m => m.TURNO === "FINALE 1-2" || m.matchKey === "F");
 const finale3 = matches.find(m => m.TURNO === "FINALE 3-4" || m.matchKey === "TP");
 
 if (finale1 && finale3 &&
-    finale1.STATO_PARTITA === "FINITA" &&
-    finale3.STATO_PARTITA === "FINITA") {
-    // 🔥 DETERMINA VINCITORE CONSIDERANDO I RIGORI
-    // 🔥 DETERMINA VINCITORE CONSIDERANDO I RIGORI
+finale1.STATO_PARTITA === "FINITA" &&
+finale3.STATO_PARTITA === "FINITA") {
+
+// 🔥 DETERMINA VINCITORE CONSIDERANDO I RIGORI
 let vincitore;
+
+// ✅ Controlla TUTTE le varianti (minuscolo dal backend, maiuscolo da cache)
 const rigoriCasa = finale1.rigoriCasa ?? finale1.RIGORE_CASA ?? finale1.RIGORI_CASA ?? null;
 const rigoriTrasf = finale1.rigoriTrasferta ?? finale1.RIGORE_TRASFERTA ?? finale1.RIGORI_TRASFERTA ?? null;
 
-// ✅ Verifica che i rigori siano valori validi
+// ✅ Verifica che i rigori siano valori VALIDI (non null/undefined/vuoti)
 const hasValidRigori = (
-  rigoriCasa !== null && rigoriCasa !== undefined && rigoriCasa !== "" &&
-  rigoriTrasf !== null && rigoriTrasf !== undefined && rigoriTrasf !== ""
+rigoriCasa !== null && rigoriCasa !== undefined && rigoriCasa !== "" &&
+rigoriTrasf !== null && rigoriTrasf !== undefined && rigoriTrasf !== ""
 );
 
 if (hasValidRigori) {
-  // ✅ Usa SEMPRE i rigori se sono presenti
-  vincitore = Number(rigoriCasa) > Number(rigoriTrasf)
-    ? { nome: finale1.SQUADRA_CASA, logo: finale1.LOGO_CASA }
-    : { nome: finale1.SQUADRA_TRASFERTA, logo: finale1.LOGO_TRASFERTA };
+// ✅ Usa SEMPRE i rigori se sono presenti
+vincitore = Number(rigoriCasa) > Number(rigoriTrasf)
+? { nome: finale1.SQUADRA_CASA, logo: finale1.LOGO_CASA }
+: { nome: finale1.SQUADRA_TRASFERTA, logo: finale1.LOGO_TRASFERTA };
 } else {
-  // Altrimenti usa il punteggio regolare
-  vincitore = finale1.GOL_CASA > finale1.GOL_TRASFERTA
-    ? { nome: finale1.SQUADRA_CASA, logo: finale1.LOGO_CASA }
-    : { nome: finale1.SQUADRA_TRASFERTA, logo: finale1.LOGO_TRASFERTA };
+// Altrimenti usa il punteggio regolare
+vincitore = finale1.GOL_CASA > finale1.GOL_TRASFERTA
+? { nome: finale1.SQUADRA_CASA, logo: finale1.LOGO_CASA }
+: { nome: finale1.SQUADRA_TRASFERTA, logo: finale1.LOGO_TRASFERTA };
 }
-    const logoHtml = vincitore.logo
-        ? `<img src="${getCachedImage(vincitore.logo, 50)}" alt="${vincitore.nome}" style="width:50px;height:50px;border-radius:50%;object-fit:cover;">`
-        : '<div style="width:50px;height:50px;border-radius:50%;background:#f0f0f0;display:flex;align-items:center;justify-content:center;font-size:24px;">⚽</div>';
-    const nomeVincitore = Sanitizer.html((vincitore.nome || "").toUpperCase());
-    return `
-    <div class="home-next-match winner-card" onclick="openMatch('${Sanitizer.attr(finale1.MATCH_ID)}')" style="
-        background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%);
-        border: 2px solid #fbbf24;
-        padding: 15px 20px;
-        ">
-        <div style="display:flex;align-items:center;justify-content:center;gap:15px;width:100%;">
-            <div style="font-size:32px;">🏆</div>
-             ${logoHtml}
-            <div style="text-align:center;">
-                <div style="font-size:20px;font-weight:800;color:#92400e;letter-spacing:1px;text-transform:uppercase;">${nomeVincitore}</div>
-            </div>
-        </div>
-    </div>
-    `;
+
+const logoHtml = vincitore.logo
+? `<img src="${getCachedImage(vincitore.logo, 50)}" alt="${vincitore.nome}" style="width:50px;height:50px;border-radius:50%;object-fit:cover;">`
+: '<div style="width:50px;height:50px;border-radius:50%;background:#f0f0f0;display:flex;align-items:center;justify-content:center;font-size:24px;">⚽</div>';
+
+const nomeVincitore = Sanitizer.html((vincitore.nome || "").toUpperCase());
+
+return `
+<div class="home-next-match winner-card" onclick="openMatch('${Sanitizer.attr(finale1.MATCH_ID)}')" style="
+background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%);
+border: 2px solid #fbbf24;
+padding: 15px 20px;
+">
+<div style="display:flex;align-items:center;justify-content:center;gap:15px;width:100%;">
+<div style="font-size:32px;">🏆</div>
+${logoHtml}
+<div style="text-align:center;">
+<div style="font-size:20px;font-weight:800;color:#92400e;letter-spacing:1px;text-transform:uppercase;">${nomeVincitore}</div>
+</div>
+</div>
+</div>
+`;
 }
-    
-    // 1. Cerca partite LIVE/SUPP/RIGORI
-    const liveMatch = matches.find(m =>
-        m.STATO_PARTITA === "LIVE" ||
-        m.STATO_PARTITA === "SUPP" ||
-        m.STATO_PARTITA === "RIGORI"
-    );
-    if (liveMatch) {
-        if (!liveMatch.MATCH_ID || !liveMatch.CASA_ID || !liveMatch.TRASFERTA_ID) {
-            console.error('⚠️ Match LIVE/SUPP incompleto:', liveMatch);
-            const fullMatch = window.APP_STATE.matchesById[liveMatch.MATCH_ID];
-            if (fullMatch && fullMatch.CASA_ID && fullMatch.TRASFERTA_ID) {
-                let matchWithScore = { ...fullMatch };
-                const hasValidScore = (fullMatch.GOL_CASA !== undefined && fullMatch.GOL_TRASFERTA !== undefined);
-                if (!hasValidScore) {
-                    const liveEvents = eventsByMatch[fullMatch.MATCH_ID] || [];
-                    matchWithScore = calculateMatchScore(fullMatch, liveEvents);
-                }
-                return renderHomeMatchCard(matchWithScore, liveMatch.STATO_PARTITA);
-            }
-            return renderEmptyNextMatch();
-        }
-        let matchWithScore = { ...liveMatch };
-        const hasValidScore = (liveMatch.GOL_CASA !== undefined && liveMatch.GOL_TRASFERTA !== undefined);
-        if (!hasValidScore) {
-            const liveEvents = eventsByMatch[liveMatch.MATCH_ID] || [];
-            matchWithScore = calculateMatchScore(liveMatch, liveEvents);
-        }
-        return renderHomeMatchCard(matchWithScore, liveMatch.STATO_PARTITA);
-    }
-    
-    // 2. Cerca partite future
-    const todayMatches = matches.filter(m => {
-        const matchDate = String(m.DATA || "").slice(0, 10);
-        return matchDate >= nowStr &&
-            m.STATO_PARTITA !== "FINITA" &&
-            m.STATO_PARTITA !== "LIVE" &&
-            m.STATO_PARTITA !== "SUPP" &&
-            m.STATO_PARTITA !== "RIGORI";
-    }).sort((a, b) => {
-        const dateA = String(a.DATA || "").slice(0, 10) + (a.ORA || "00:00");
-        const dateB = String(b.DATA || "").slice(0, 10) + (b.ORA || "00:00");
-        return dateA.localeCompare(dateB);
-    });
-    if (todayMatches.length > 0) {
-        let nextMatch = { ...todayMatches[0] };
-        if (!nextMatch.MATCH_ID || !nextMatch.CASA_ID || !nextMatch.TRASFERTA_ID) {
-            console.error('⚠️ Prossima partita incompleta:', nextMatch);
-            const fullMatch = window.APP_STATE.matchesById[nextMatch.MATCH_ID];
-            if (fullMatch && fullMatch.CASA_ID && fullMatch.TRASFERTA_ID) {
-                nextMatch = fullMatch;
-            } else {
-                return renderEmptyNextMatch();
-            }
-        }
-        const hasValidScore = (nextMatch.GOL_CASA !== undefined && nextMatch.GOL_TRASFERTA !== undefined);
-        if (!hasValidScore) {
-            const nextEvents = eventsByMatch[nextMatch.MATCH_ID] || [];
-            nextMatch = calculateMatchScore(nextMatch, nextEvents);
-        }
-        return renderHomeMatchCard(nextMatch, false);
-    }
-    
-    return renderEmptyNextMatch();
+
+// 1. Cerca partite LIVE/SUPP/RIGORI
+const liveMatch = matches.find(m =>
+m.STATO_PARTITA === "LIVE" ||
+m.STATO_PARTITA === "SUPP" ||
+m.STATO_PARTITA === "RIGORI"
+);
+
+if (liveMatch) {
+if (!liveMatch.MATCH_ID || !liveMatch.CASA_ID || !liveMatch.TRASFERTA_ID) {
+console.error('⚠️ Match LIVE/SUPP incompleto:', liveMatch);
+const fullMatch = window.APP_STATE.matchesById[liveMatch.MATCH_ID];
+if (fullMatch && fullMatch.CASA_ID && fullMatch.TRASFERTA_ID) {
+let matchWithScore = { ...fullMatch };
+const hasValidScore = (fullMatch.GOL_CASA !== undefined && fullMatch.GOL_TRASFERTA !== undefined);
+if (!hasValidScore) {
+const liveEvents = eventsByMatch[fullMatch.MATCH_ID] || [];
+matchWithScore = calculateMatchScore(fullMatch, liveEvents);
+}
+return renderHomeMatchCard(matchWithScore, liveMatch.STATO_PARTITA);
+}
+return renderEmptyNextMatch();
+}
+
+let matchWithScore = { ...liveMatch };
+const hasValidScore = (liveMatch.GOL_CASA !== undefined && liveMatch.GOL_TRASFERTA !== undefined);
+if (!hasValidScore) {
+const liveEvents = eventsByMatch[liveMatch.MATCH_ID] || [];
+matchWithScore = calculateMatchScore(liveMatch, liveEvents);
+}
+return renderHomeMatchCard(matchWithScore, liveMatch.STATO_PARTITA);
+}
+
+// 2. Cerca partite future
+const todayMatches = matches.filter(m => {
+const matchDate = String(m.DATA || "").slice(0, 10);
+return matchDate >= nowStr &&
+m.STATO_PARTITA !== "FINITA" &&
+m.STATO_PARTITA !== "LIVE" &&
+m.STATO_PARTITA !== "SUPP" &&
+m.STATO_PARTITA !== "RIGORI";
+}).sort((a, b) => {
+const dateA = String(a.DATA || "").slice(0, 10) + (a.ORA || "00:00");
+const dateB = String(b.DATA || "").slice(0, 10) + (b.ORA || "00:00");
+return dateA.localeCompare(dateB);
+});
+
+if (todayMatches.length > 0) {
+let nextMatch = { ...todayMatches[0] };
+if (!nextMatch.MATCH_ID || !nextMatch.CASA_ID || !nextMatch.TRASFERTA_ID) {
+console.error('⚠️ Prossima partita incompleta:', nextMatch);
+const fullMatch = window.APP_STATE.matchesById[nextMatch.MATCH_ID];
+if (fullMatch && fullMatch.CASA_ID && fullMatch.TRASFERTA_ID) {
+nextMatch = fullMatch;
+} else {
+return renderEmptyNextMatch();
+}
+}
+const hasValidScore = (nextMatch.GOL_CASA !== undefined && nextMatch.GOL_TRASFERTA !== undefined);
+if (!hasValidScore) {
+const nextEvents = eventsByMatch[nextMatch.MATCH_ID] || [];
+nextMatch = calculateMatchScore(nextMatch, nextEvents);
+}
+return renderHomeMatchCard(nextMatch, false);
+}
+
+return renderEmptyNextMatch();
 }
 
 // ✅ AGGIUNGI QUESTA FUNZIONE
@@ -2517,85 +2524,118 @@ function openNextPhasePopup(phase) {
 }
 
 function showTournamentPodium(finalStageData) {
-    // Rimuovi popup esistente se presente
-    const existing = document.getElementById("podiumPopupOverlay");
-    if (existing) existing.remove();
-    
-    const finale1 = finalStageData.find(m => m.matchKey === "F");
-    const finale3 = finalStageData.find(m => m.matchKey === "TP");
-    
-    if (!finale1 || !finale3) return;
-    
-    // Determina vincitori
-    let primo, secondo, terzo;
-    const rigoriCasaFinale = finale1.rigoriCasa ?? finale1.RIGORE_CASA ?? finale1.RIGORI_CASA ?? null;
-    const rigoriTrasfFinale = finale1.rigoriTrasferta ?? finale1.RIGORE_TRASFERTA ?? finale1.RIGORI_TRASFERTA ?? null;
+// Rimuovi popup esistente se presente
+const existing = document.getElementById("podiumPopupOverlay");
+if (existing) existing.remove();
 
-    const rigoriCasa3 = finale3.rigoriCasa ?? finale3.RIGORE_CASA ?? finale3.RIGORI_CASA ?? null;
-    const rigoriTrasf3 = finale3.rigoriTrasferta ?? finale3.RIGORE_TRASFERTA ?? finale3.RIGORI_TRASFERTA ?? null;
-    
-    if (finale1.golCasa > finale1.golTrasferta) {
-        primo = finale1.casa;
-        secondo = finale1.trasferta;
-    } else {
-        primo = finale1.trasferta;
-        secondo = finale1.casa;
-    }
-    
-    if (finale3.golCasa > finale3.golTrasferta) {
-        terzo = finale3.casa;
-    } else {
-        terzo = finale3.trasferta;
-    }
-    
-    const popup = document.createElement("div");
-    popup.className = "podium-popup-overlay";
-    popup.id = "podiumPopupOverlay";
-    popup.onclick = (e) => {
-        if (e.target === popup) popup.remove();
-    };
-    
-    popup.innerHTML = `
-        <div class="podium-container" onclick="event.stopPropagation()">
-            <div class="podium-header">
-                <h2>🏆 TORNEO CONCLUSO 🏆</h2>
-                <div class="podium-subtitle">Classifica Finale</div>
-            </div>
-            <div class="podium-wrapper">
-                <div class="podium-position second-place">
-                    <div class="position-number">2°</div>
-                    <div class="team-info">
-                        ${secondo.logo ? `<img src="${getCachedImage(secondo.logo, 80)}" class="podium-logo" alt="${secondo.nome}">` : '<div class="podium-logo-placeholder">⚽</div>'}
-                        <div class="team-name">${(secondo.nome || "").toUpperCase()}</div>
-                    </div>
-                    <div class="podium-step step-2"></div>
-                </div>
-                <div class="podium-position first-place">
-                    <div class="crown">👑</div>
-                    <div class="position-number">1°</div>
-                    <div class="team-info">
-                        ${primo.logo ? `<img src="${getCachedImage(primo.logo, 100)}" class="podium-logo winner" alt="${primo.nome}">` : '<div class="podium-logo-placeholder winner">⚽</div>'}
-                        <div class="team-name winner">${(primo.nome || "").toUpperCase()}</div>
-                    </div>
-                    <div class="podium-step step-1"></div>
-                    <div class="trophy">🏆</div>
-                </div>
-                <div class="podium-position third-place">
-                    <div class="position-number">3°</div>
-                    <div class="team-info">
-                        ${terzo.logo ? `<img src="${getCachedImage(terzo.logo, 80)}" class="podium-logo" alt="${terzo.nome}">` : '<div class="podium-logo-placeholder">⚽</div>'}
-                        <div class="team-name">${(terzo.nome || "").toUpperCase()}</div>
-                    </div>
-                    <div class="podium-step step-3"></div>
-                </div>
-            </div>
-            <div class="podium-footer">
-                <div class="phase-btn" onclick="document.getElementById('podiumPopupOverlay')?.remove()">CHIUDI</div>
-            </div>
-        </div>
-    `;
-    
-    document.body.appendChild(popup);
+const finale1 = finalStageData.find(m => m.matchKey === "F");
+const finale3 = finalStageData.find(m => m.matchKey === "TP");
+
+if (!finale1 || !finale3) return;
+
+// 🔥 Determina vincitori CON RIGORI
+let primo, secondo, terzo;
+
+// ✅ FINALE 1°-2°: controlla prima i rigori
+const rigoriCasaFinale = finale1.rigoriCasa ?? finale1.RIGORE_CASA ?? finale1.RIGORI_CASA ?? null;
+const rigoriTrasfFinale = finale1.rigoriTrasferta ?? finale1.RIGORE_TRASFERTA ?? finale1.RIGORI_TRASFERTA ?? null;
+
+const hasValidRigoriFinale = (
+rigoriCasaFinale !== null && rigoriCasaFinale !== undefined && rigoriCasaFinale !== "" &&
+rigoriTrasfFinale !== null && rigoriTrasfFinale !== undefined && rigoriTrasfFinale !== ""
+);
+
+if (hasValidRigoriFinale) {
+// ✅ Deciso ai rigori
+if (Number(rigoriCasaFinale) > Number(rigoriTrasfFinale)) {
+primo = finale1.casa;
+secondo = finale1.trasferta;
+} else {
+primo = finale1.trasferta;
+secondo = finale1.casa;
+}
+} else {
+// Deciso nei tempi regolamentari
+if (finale1.golCasa > finale1.golTrasferta) {
+primo = finale1.casa;
+secondo = finale1.trasferta;
+} else {
+primo = finale1.trasferta;
+secondo = finale1.casa;
+}
+}
+
+// ✅ FINALE 3°-4°: stessa logica
+const rigoriCasa3 = finale3.rigoriCasa ?? finale3.RIGORE_CASA ?? finale3.RIGORI_CASA ?? null;
+const rigoriTrasf3 = finale3.rigoriTrasferta ?? finale3.RIGORE_TRASFERTA ?? finale3.RIGORI_TRASFERTA ?? null;
+
+const hasValidRigori3 = (
+rigoriCasa3 !== null && rigoriCasa3 !== undefined && rigoriCasa3 !== "" &&
+rigoriTrasf3 !== null && rigoriTrasf3 !== undefined && rigoriTrasf3 !== ""
+);
+
+if (hasValidRigori3) {
+if (Number(rigoriCasa3) > Number(rigoriTrasf3)) {
+terzo = finale3.casa;
+} else {
+terzo = finale3.trasferta;
+}
+} else {
+if (finale3.golCasa > finale3.golTrasferta) {
+terzo = finale3.casa;
+} else {
+terzo = finale3.trasferta;
+}
+}
+
+const popup = document.createElement("div");
+popup.className = "podium-popup-overlay";
+popup.id = "podiumPopupOverlay";
+popup.onclick = (e) => {
+if (e.target === popup) popup.remove();
+};
+
+popup.innerHTML = `
+<div class="podium-container" onclick="event.stopPropagation()">
+<div class="podium-header">
+<h2>🏆 TORNEO CONCLUSO 🏆</h2>
+<div class="podium-subtitle">Classifica Finale</div>
+</div>
+<div class="podium-wrapper">
+<div class="podium-position second-place">
+<div class="position-number">2°</div>
+<div class="team-info">
+${secondo.logo ? `<img src="${getCachedImage(secondo.logo, 80)}" class="podium-logo" alt="${secondo.nome}">` : '<div class="podium-logo-placeholder">⚽</div>'}
+<div class="team-name">${(secondo.nome || "").toUpperCase()}</div>
+</div>
+<div class="podium-step step-2"></div>
+</div>
+<div class="podium-position first-place">
+<div class="crown">👑</div>
+<div class="position-number">1°</div>
+<div class="team-info">
+${primo.logo ? `<img src="${getCachedImage(primo.logo, 100)}" class="podium-logo winner" alt="${primo.nome}">` : '<div class="podium-logo-placeholder winner">⚽</div>'}
+<div class="team-name winner">${(primo.nome || "").toUpperCase()}</div>
+</div>
+<div class="podium-step step-1"></div>
+<div class="trophy">🏆</div>
+</div>
+<div class="podium-position third-place">
+<div class="position-number">3°</div>
+<div class="team-info">
+${terzo.logo ? `<img src="${getCachedImage(terzo.logo, 80)}" class="podium-logo" alt="${terzo.nome}">` : '<div class="podium-logo-placeholder">⚽</div>'}
+<div class="team-name">${(terzo.nome || "").toUpperCase()}</div>
+</div>
+<div class="podium-step step-3"></div>
+</div>
+</div>
+<div class="podium-footer">
+<div class="phase-btn" onclick="document.getElementById('podiumPopupOverlay')?.remove()">CHIUDI</div>
+</div>
+</div>
+`;
+
+document.body.appendChild(popup);
 }
 
 function closePodium() {
@@ -2775,51 +2815,63 @@ async function invalidateCacheAndRefresh(type) {
 function renderPlaceholderCard(label, cls="") { return `<div class="bracket-match bracket-placeholder ${cls}"><div style="text-align:center; width:100%; display:flex; align-items:center; justify-content:center; height:100%;"><div style="font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:1px; color:#666;">${Sanitizer.html(label)}</div></div></div>`; }
 
 function renderBracketMatch(match, cls="") {
-if (!match || !match.casa?.nome) { return `<div class="bracket-placeholder ${cls}"><div class="bracket-placeholder-title"></div></div>`; }
+if (!match || !match.casa?.nome) { 
+return `<div class="bracket-placeholder ${cls}"><div class="bracket-placeholder-title"></div></div>`; 
+}
+
 const logoCasa = match.casa?.logo ? `<img src="${getCachedImage(match.casa.logo, 24)}" alt="${match.casa.nome}" onerror="this.style.display='none'">` : `<div style="width:24px;height:24px;border-radius:50%;background:#f0f0f0"></div>`;
 const logoTrasf = match.trasferta?.logo ? `<img src="${getCachedImage(match.trasferta.logo, 24)}" alt="${match.trasferta.nome}" onerror="this.style.display='none'">` : `<div style="width:24px;height:24px;border-radius:50%;background:#f0f0f0"></div>`;
+
 const isLive = ["LIVE", "SUPP", "RIGORI"].includes(match.stato);
 const isSupp = match.stato === "SUPP";
 const isFinished = match.stato === "FINITA";
-let scoreCasa = "0"; let scoreTrasf = "0";
-if (isLive || isFinished) { scoreCasa = match.golCasa || 0; scoreTrasf = match.golTrasferta || 0; }
+
+let scoreCasa = "0"; 
+let scoreTrasf = "0";
+if (isLive || isFinished) { 
+scoreCasa = match.golCasa || 0; 
+scoreTrasf = match.golTrasferta || 0; 
+}
+
 const scoreClass = isLive ? "bracket-score live" : "bracket-score scheduled";
 
-// 🔥 FIX: Determina il vincitore considerando PRIMA i rigori per le finali
+// 🔥 FIX: Determina il vincitore considerando PRIMA i rigori
 let casaClass = "", trasfClass = "";
+
 if (isFinished) {
-  // 🔥 CORREZIONE: Controlla prima se ci sono i rigori
-  const rigoriCasa = match.rigoriCasa ?? match.RIGORE_CASA ?? match.RIGORI_CASA ?? null;
-  const rigoriTrasf = match.rigoriTrasferta ?? match.RIGORE_TRASFERTA ?? match.RIGORI_TRASFERTA ?? null;
-  
-  // Verifica che entrambi i valori siano validi (non null/undefined/vuoti)
-  const hasValidRigori = (
-    rigoriCasa !== null && rigoriCasa !== undefined && rigoriCasa !== "" &&
-    rigoriTrasf !== null && rigoriTrasf !== undefined && rigoriTrasf !== ""
-  );
-  
-  if (hasValidRigori) {
-    // ✅ La partita è decisa ai rigori - usa SEMPRE i rigori
-    if (Number(rigoriCasa) > Number(rigoriTrasf)) {
-      casaClass = "winner";
-      trasfClass = "loser";
-    } else {
-      casaClass = "loser";
-      trasfClass = "winner";
-    }
-  } else {
-    // Partita decisa nei tempi regolamentari/supplementari
-    if (scoreCasa > scoreTrasf) {
-      casaClass = "winner";
-      trasfClass = "loser";
-    } else {
-      casaClass = "loser";
-      trasfClass = "winner";
-    }
-  }
+// ✅ Controlla se ci sono i rigori (supporta tutte le varianti)
+const rigoriCasa = match.rigoriCasa ?? match.RIGORE_CASA ?? match.RIGORI_CASA ?? null;
+const rigoriTrasf = match.rigoriTrasferta ?? match.RIGORE_TRASFERTA ?? match.RIGORI_TRASFERTA ?? null;
+
+// ✅ Verifica che entrambi i valori siano validi
+const hasValidRigori = (
+rigoriCasa !== null && rigoriCasa !== undefined && rigoriCasa !== "" &&
+rigoriTrasf !== null && rigoriTrasf !== undefined && rigoriTrasf !== ""
+);
+
+if (hasValidRigori) {
+// ✅ La partita è decisa ai rigori - usa SEMPRE i rigori
+if (Number(rigoriCasa) > Number(rigoriTrasf)) {
+casaClass = "winner";
+trasfClass = "loser";
+} else {
+casaClass = "loser";
+trasfClass = "winner";
+}
+} else {
+// Partita decisa nei tempi regolamentari/supplementari
+if (scoreCasa > scoreTrasf) {
+casaClass = "winner";
+trasfClass = "loser";
+} else {
+casaClass = "loser";
+trasfClass = "winner";
+}
+}
 }
 
 const statusIndicator = isSupp ? '<span style="font-size:9px;color:#8c1d2c;font-weight:700;margin-left:4px">SUPP</span>' : '';
+
 let liveClass = "";
 if (isLive) {
 if (cls === 'final-match') liveClass = "live-gold";
