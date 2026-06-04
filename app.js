@@ -2942,7 +2942,7 @@ function bootAdminApp() {
   // 1. Carica cache istantaneamente
   window.APP_CACHE = CacheManager.load();
   const loader = document.getElementById("startupLoader");
-  const LOADER_MIN_TIME = 2000;
+  const LOADER_MIN_TIME = 500;
   const loaderStartTime = Date.now();
   if (loader) loader.style.display = "flex";
   
