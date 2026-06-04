@@ -1577,8 +1577,8 @@ body {
     min-width: 240px !important;
     padding: 16px 24px !important;
     border-radius: 12px !important;
-    background: linear-gradient(135deg, #fef3c7 0%, #fde68a 50%, #fcd34d 100%) !important;
-    border: 2px solid #fbbf24 !important;
+    background: linear-gradient(135deg, #fefce8 0%, #fef9c3 100%) !important;
+    border: 1.5px solid #fde047 !important;
     box-shadow: 0 -4px 20px rgba(251, 191, 36, 0.25) !important;
     backdrop-filter: blur(8px) !important;
     cursor: pointer !important;
@@ -1596,7 +1596,7 @@ body {
 }
 
 .home-next-match.winner-card .champion-label {
-    font-size: 11px !important;
+    font-size: 13px !important;
     font-weight: 700 !important;
     color: #92400e !important;
     letter-spacing: 3px !important;
