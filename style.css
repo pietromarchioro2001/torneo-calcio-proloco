@@ -1595,17 +1595,17 @@ body {
   /* Sponsor in alto visibili e più piccoli */
   .home-sponsors {
     top: 16px;
-    gap: 28px;
+    gap: 32px;
     display: flex !important;
   }
   .home-sponsors img {
-    height: 55px !important;
+    height: 65px !important;
     width: auto;
   }
 
   /* Titolo più centrato */
   .title-wrapper {
-    top: 43%;
+    top: 41%;
     left: 50%;
     transform: translate(-50%, -50%);
     width: 95%;
@@ -1629,27 +1629,40 @@ body {
 
   /* Campanili più grandi */
   .camp {
-    height: min(85vh, 750px);
+    height: min(95vh, 850px);
     opacity: 0.25;
   }
   .camp-left {
-    left: -8% !important;
-    max-width: 45vw !important;
+    left: -12% !important;
+    max-width: 55vw !important;
   }
   .camp-right {
-    right: -8% !important;
-    max-width: 45vw !important;
+    right: -12% !important;
+    max-width: 55vw !important;
   }
 
-  /* Cerchio e linea più piccoli */
   .field-lines .center {
-    width: 55%;
-    top: 44%;
+    top: 42% !important;
+    width: 60% !important;
+    height: 3px !important;
+    background: linear-gradient(to right, 
+      rgba(122,30,44,0) 0%, 
+      rgba(122,30,44,0.3) 15%, 
+      rgba(122,30,44,0.5) 30%, 
+      rgba(122,30,44,0.1) 42%, 
+      transparent 47%, 
+      transparent 53%, 
+      rgba(122,30,44,0.1) 58%, 
+      rgba(122,30,44,0.5) 70%, 
+      rgba(122,30,44,0.3) 85%, 
+      rgba(122,30,44,0) 100%) !important;
   }
   .field-lines .circle {
-    width: 420px;
-    height: 420px;
-    top: 46%;
+    top: 44% !important;
+    width: 450px !important;
+    height: 450px !important;
+    border-width: 3px !important;
+    border-color: rgba(122,30,44,0.15) !important;
   }
 
   /* Card partita sotto più piccola */
@@ -1680,26 +1693,26 @@ body {
 
   /* Card campione */
   .home-next-match.winner-card {
-    min-width: 180px !important;
-    max-width: 260px !important;
-    width: 80% !important;
-    padding: 10px 16px !important;
+    min-width: 160px !important;
+    max-width: 220px !important;
+    width: 70% !important;
+    padding: 8px 14px !important;
     bottom: 85px !important;
   }
   .home-next-match.winner-card .champion-label {
-    font-size: 10px !important;
+    font-size: 9px !important;
     letter-spacing: 2px !important;
   }
   .home-next-match.winner-card .champion-name {
-    font-size: 14px !important;
+    font-size: 13px !important;
     letter-spacing: 1px !important;
   }
   .home-next-match.winner-card .champion-logo {
-    width: 30px !important;
-    height: 30px !important;
+    width: 28px !important;
+    height: 28px !important;
   }
   .home-next-match.winner-card .champion-content {
-    gap: 8px !important;
+    gap: 6px !important;
   }
 
   /* === PARTITE MOBILE === */
