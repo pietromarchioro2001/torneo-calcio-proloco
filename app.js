@@ -2665,7 +2665,7 @@ if (e.target === popup) popup.remove();
 popup.innerHTML = `
 <div class="podium-container" onclick="event.stopPropagation()">
 <div class="podium-header">
-<h2>🏆 TORNEO CONCLUSO 🏆</h2>
+<h2>TORNEO CONCLUSO</h2>
 <div class="podium-subtitle">Classifica Finale</div>
 </div>
 <div class="podium-wrapper">
@@ -2685,7 +2685,6 @@ ${primo.logo ? `<img src="${getCachedImage(primo.logo, 100)}" class="podium-logo
 <div class="team-name winner">${(primo.nome || "").toUpperCase()}</div>
 </div>
 <div class="podium-step step-1"></div>
-<div class="trophy">🏆</div>
 </div>
 <div class="podium-position third-place">
 <div class="position-number">3°</div>
