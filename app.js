@@ -1818,11 +1818,17 @@ function updateScoreFromEvents(matchId) {
 
 function renderPenaltyIndicators(events, match) {
   const timeline = document.getElementById('eventsTimeline');
-  if (!timeline) return;
+  if (!timeline) {
+    console.error("❌ eventsTimeline element not found!");
+    return;
+  }
   
   // ✅ ESCI SUBITO SE NON SIAMO IN FASE FINALE
   const fase = String(match.FASE || "").trim().toUpperCase();
-  if (fase !== "FINALI") return;
+  if (fase !== "FINALI") {
+    console.log('ℹ️ Non è fase finale, non mostro sequenza rigori');
+    return;
+  }
   
   // ✅ VERIFICA CHE CI SIANO I VALORI DEI RIGORI (da colonne J/K del foglio)
   const rc = match.RIGORE_CASA ?? match.RIGORI_CASA;
@@ -1836,13 +1842,16 @@ function renderPenaltyIndicators(events, match) {
   );
   
   // ✅ ESCI SE NON CI SONO RIGORI
-  if (!hasValidRigori) return;
+  if (!hasValidRigori) {
+    console.log('ℹ️ Nessun rigore valido (J/K vuote o = 0)');
+    return;
+  }
   
   // Rimuovi eventuali indicatori precedenti
   const existing = document.getElementById('penalty-indicators');
   if (existing) existing.remove();
   
-  // Filtra eventi rigore
+  // Filtra eventi rigore: cerca RIGORE_RESULT (colonna E del foglio)
   const penaltyEvents = events.filter(e => {
     const rigoreResult = String(e.RIGORE_RESULT || "").toUpperCase();
     return rigoreResult === 'RIGORE_SEGNO' || rigoreResult === 'RIGORE_SBAGLIO';
@@ -1852,18 +1861,33 @@ function renderPenaltyIndicators(events, match) {
   const casaTiri = [];
   const trasfTiri = [];
   
+  // Organizza i tiri per squadra
   penaltyEvents.forEach(e => {
-    const isGoal = (String(e.RIGORE_RESULT || "").toUpperCase() === 'RIGORE_SEGNO');
+    const isGoal = (e.RIGORE_RESULT === 'RIGORE_SEGNO');
     const isCasa = String(e.TEAM_ID) === casaId;
     if (isCasa) casaTiri.push(isGoal);
     else trasfTiri.push(isGoal);
   });
   
+  // Crea HTML bollini
   const createDots = (tiri) => tiri.map(isGoal =>
     `<span class="penalty-dot ${isGoal ? 'goal' : 'miss'}"></span>`
   ).join('');
   
-  const scoreText = `${rc} - ${rt}`;
+  // 🔥 LETTURA PUNTEGGI - CON FALLBACK
+  // Prima prova a leggere dalle colonne J/K
+  let scoreCasa = match.RIGORE_CASA !== undefined ? match.RIGORE_CASA : match.RIGORI_CASA;
+  let scoreTrasf = match.RIGORE_TRASFERTA !== undefined ? match.RIGORE_TRASFERTA : match.RIGORI_TRASFERTA;
+  
+  // Se sono null/undefined/vuoti, calcolali dai pallini verdi
+  if (scoreCasa === null || scoreCasa === undefined || scoreCasa === "") {
+    scoreCasa = casaTiri.filter(t => t === true).length;
+  }
+  if (scoreTrasf === null || scoreTrasf === undefined || scoreTrasf === "") {
+    scoreTrasf = trasfTiri.filter(t => t === true).length;
+  }
+  
+  const scoreText = `${scoreCasa} - ${scoreTrasf}`;
   
   const indicatorsDiv = document.createElement('div');
   indicatorsDiv.id = 'penalty-indicators';
@@ -1883,10 +1907,12 @@ function renderPenaltyIndicators(events, match) {
     </div>
   `;
   
+  // 🔥 INSERISCI DOPO GLI EVENTI (sotto la timeline, non sopra)
   if (timeline.parentNode) {
     timeline.parentNode.insertBefore(indicatorsDiv, timeline.nextSibling);
   }
 }
+
 // ============================================================================
 // 📊 RENDERING EVENTI E CRONACA
 // ============================================================================
