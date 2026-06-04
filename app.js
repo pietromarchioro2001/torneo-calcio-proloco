@@ -1132,22 +1132,25 @@ function renderMatchesByDate(date) {
                       <div class="status live">RIGORI</div>${faseBadge}`;
         }
         else if (status === "FINITA") {
-            // 🔥 Gestione compatibile rigori: controlla entrambe le varianti di campo
-            const rc = m.RIGORE_CASA ?? m.RIGORI_CASA;
-            const rt = m.RIGORE_TRASFERTA ?? m.RIGORI_TRASFERTA;
-            
-            // Mostra DCR solo se entrambi i valori sono validi
-            const hasValidRigori = (rc !== null && rc !== undefined && rc !== "" && 
-                                   rt !== null && rt !== undefined && rt !== "");
-            
-            if (hasValidRigori) {
-                center = `<div class="score">${m.GOL_CASA ?? 0} - ${m.GOL_TRASFERTA ?? 0} 
-                          <span style="font-size:12px;color:#666">(${rc}-${rt} dcr)</span></div>
-                          <div class="status">TERMINATA</div>${faseBadge}`;
-            } else {
-                center = `<div class="score">${m.GOL_CASA ?? 0} - ${m.GOL_TRASFERTA ?? 0}</div>
-                          <div class="status">TERMINATA</div>${faseBadge}`;
-            }
+          // 🔥 Gestione compatibile rigori: controlla entrambe le varianti di campo
+          const rc = m.RIGORE_CASA ?? m.RIGORI_CASA;
+          const rt = m.RIGORE_TRASFERTA ?? m.RIGORI_TRASFERTA;
+          
+          // ✅ Mostra DCR solo se entrambi i valori sono NUMERI > 0
+          // (0 significa che le colonne J/K sono vuote, non che hanno fatto 0 rigori)
+          const hasValidRigori = (
+            rc !== null && rc !== undefined && rc !== "" && Number(rc) > 0 &&
+            rt !== null && rt !== undefined && rt !== "" && Number(rt) > 0
+          );
+          
+          if (hasValidRigori) {
+            center = `<div class="score">${m.GOL_CASA ?? 0} - ${m.GOL_TRASFERTA ?? 0}
+            <span style="font-size:12px;color:#666">(${rc}-${rt} dcr)</span></div>
+            <div class="status">TERMINATA</div>${faseBadge}`;
+          } else {
+            center = `<div class="score">${m.GOL_CASA ?? 0} - ${m.GOL_TRASFERTA ?? 0}</div>
+            <div class="status">TERMINATA</div>${faseBadge}`;
+          }
         }
         else {
             // Partita programmata
@@ -1825,9 +1828,11 @@ function renderPenaltyIndicators(events, match) {
   const rc = match.RIGORE_CASA ?? match.RIGORI_CASA;
   const rt = match.RIGORE_TRASFERTA ?? match.RIGORI_TRASFERTA;
   
+  // 🔥 FIX CRITICO: deve essere > 0, non solo "esistente"
+  // Il backend restituisce 0 quando le colonne J/K sono vuote!
   const hasValidRigori = (
-    rc !== null && rc !== undefined && rc !== "" &&
-    rt !== null && rt !== undefined && rt !== ""
+    rc !== null && rc !== undefined && rc !== "" && Number(rc) > 0 &&
+    rt !== null && rt !== undefined && rt !== "" && Number(rt) > 0
   );
   
   // ✅ ESCI SE NON CI SONO RIGORI
@@ -1837,7 +1842,7 @@ function renderPenaltyIndicators(events, match) {
   const existing = document.getElementById('penalty-indicators');
   if (existing) existing.remove();
   
-  // Filtra eventi rigore: cerca RIGORE_RESULT (colonna E del foglio)
+  // Filtra eventi rigore
   const penaltyEvents = events.filter(e => {
     const rigoreResult = String(e.RIGORE_RESULT || "").toUpperCase();
     return rigoreResult === 'RIGORE_SEGNO' || rigoreResult === 'RIGORE_SBAGLIO';
@@ -1847,7 +1852,6 @@ function renderPenaltyIndicators(events, match) {
   const casaTiri = [];
   const trasfTiri = [];
   
-  // Organizza i tiri per squadra
   penaltyEvents.forEach(e => {
     const isGoal = (String(e.RIGORE_RESULT || "").toUpperCase() === 'RIGORE_SEGNO');
     const isCasa = String(e.TEAM_ID) === casaId;
@@ -1855,12 +1859,10 @@ function renderPenaltyIndicators(events, match) {
     else trasfTiri.push(isGoal);
   });
   
-  // Crea HTML bollini
   const createDots = (tiri) => tiri.map(isGoal =>
     `<span class="penalty-dot ${isGoal ? 'goal' : 'miss'}"></span>`
   ).join('');
   
-  // Usa i punteggi dalle colonne J/K (non calcolarli dai bollini)
   const scoreText = `${rc} - ${rt}`;
   
   const indicatorsDiv = document.createElement('div');
@@ -1881,12 +1883,10 @@ function renderPenaltyIndicators(events, match) {
     </div>
   `;
   
-  // Inserisci dopo gli eventi (sotto la timeline)
   if (timeline.parentNode) {
     timeline.parentNode.insertBefore(indicatorsDiv, timeline.nextSibling);
   }
 }
-
 // ============================================================================
 // 📊 RENDERING EVENTI E CRONACA
 // ============================================================================
