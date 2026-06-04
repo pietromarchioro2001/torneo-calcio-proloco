@@ -365,8 +365,8 @@ if (finale1 && finale3 &&
     // 🔥 DETERMINA VINCITORE CONSIDERANDO I RIGORI
     // 🔥 DETERMINA VINCITORE CONSIDERANDO I RIGORI
 let vincitore;
-const rigoriCasa = finale1.RIGORE_CASA ?? finale1.RIGORI_CASA ?? null;
-const rigoriTrasf = finale1.RIGORE_TRASFERTA ?? finale1.RIGORI_TRASFERTA ?? null;
+const rigoriCasa = finale1.rigoriCasa ?? finale1.RIGORE_CASA ?? finale1.RIGORI_CASA ?? null;
+const rigoriTrasf = finale1.rigoriTrasferta ?? finale1.RIGORE_TRASFERTA ?? finale1.RIGORI_TRASFERTA ?? null;
 
 // ✅ Verifica che i rigori siano valori validi
 const hasValidRigori = (
@@ -2528,6 +2528,11 @@ function showTournamentPodium(finalStageData) {
     
     // Determina vincitori
     let primo, secondo, terzo;
+    const rigoriCasaFinale = finale1.rigoriCasa ?? finale1.RIGORE_CASA ?? finale1.RIGORI_CASA ?? null;
+    const rigoriTrasfFinale = finale1.rigoriTrasferta ?? finale1.RIGORE_TRASFERTA ?? finale1.RIGORI_TRASFERTA ?? null;
+
+    const rigoriCasa3 = finale3.rigoriCasa ?? finale3.RIGORE_CASA ?? finale3.RIGORI_CASA ?? null;
+    const rigoriTrasf3 = finale3.rigoriTrasferta ?? finale3.RIGORE_TRASFERTA ?? finale3.RIGORI_TRASFERTA ?? null;
     
     if (finale1.golCasa > finale1.golTrasferta) {
         primo = finale1.casa;
@@ -2784,8 +2789,8 @@ const scoreClass = isLive ? "bracket-score live" : "bracket-score scheduled";
 let casaClass = "", trasfClass = "";
 if (isFinished) {
   // 🔥 CORREZIONE: Controlla prima se ci sono i rigori
-  const rigoriCasa = match.rigoriCasa ?? match.casaRigori ?? match.RIGORE_CASA ?? match.RIGORI_CASA ?? null;
-  const rigoriTrasf = match.rigoriTrasf ?? match.trasfertaRigori ?? match.RIGORE_TRASFERTA ?? match.RIGORI_TRASFERTA ?? null;
+  const rigoriCasa = match.rigoriCasa ?? match.RIGORE_CASA ?? match.RIGORI_CASA ?? null;
+  const rigoriTrasf = match.rigoriTrasferta ?? match.RIGORE_TRASFERTA ?? match.RIGORI_TRASFERTA ?? null;
   
   // Verifica che entrambi i valori siano validi (non null/undefined/vuoti)
   const hasValidRigori = (
