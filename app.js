@@ -394,19 +394,11 @@ function getNextMatchCard() {
     const nomeVincitore = Sanitizer.html((vincitore.nome || "").toUpperCase());
     
     return `
-      <div class="home-next-match winner-card" onclick="openMatch('${Sanitizer.attr(finale1.MATCH_ID)}')" style="
-        background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%);
-        border: 2px solid #fbbf24;
-        padding: 15px 20px;
-      ">
-        <div style="display:flex;align-items:center;justify-content:center;gap:15px;width:100%;">
-          <div style="font-size:32px;">🏆</div>
-          ${logoHtml}
-          <div style="text-align:center;">
-            <div style="font-size:20px;font-weight:800;color:#92400e;letter-spacing:1px;text-transform:uppercase;">${nomeVincitore}</div>
-          </div>
-        </div>
-      </div>
+    <div class="home-next-match winner-card" onclick="openMatch('${Sanitizer.attr(finale1.MATCH_ID)}')">
+        <div class="champion-label">CAMPIONE 2026:</div>
+        ${logoHtml}
+        <div class="champion-name">${nomeVincitore}</div>
+    </div>
     `;
   }
 
