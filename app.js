@@ -173,10 +173,9 @@ const ApiClient = {
   
   try {
     const response = await fetch(CONFIG.BACKEND_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'text/plain', 'Accept': 'application/json' },
-      body: JSON.stringify({ action, payload }),
-      signal: controller.signal
+        method: 'POST',
+        body: JSON.stringify({ action, payload }),
+        signal: controller.signal
     });
     clearTimeout(timeout);
     
