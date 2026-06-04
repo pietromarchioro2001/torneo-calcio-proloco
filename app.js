@@ -2514,6 +2514,11 @@ function renderFinalBracket(matches) {
 }
 
 function renderNextPhaseButton() {
+    // ✅ ASSICURATI DI ESSERE NELLA PAGINA FASE FINALE
+    if (!document.querySelector('.final-stage-page') && 
+        !(document.querySelector('.standings-page') && window.APP_STATE._activeStandingsTab === "fasefinale")) {
+        return; // Esci se non siamo nella pagina giusta
+    }
     const oldBtn = document.getElementById("next-phase-action-btn");
     if (oldBtn) oldBtn.remove();
     const container = document.getElementById("finalBracketContainer");
@@ -2577,6 +2582,12 @@ function openNextPhasePopup(phase) {
 }
 
 function showTournamentPodium(finalStageData) {
+// ✅ VERIFICA DI ESSERE NELLA PAGINA FASE FINALE
+if (!document.querySelector('.final-stage-page') && !document.querySelector('.standings-page')) {
+    console.warn('⚠️ showTournamentPodium chiamato fuori dalla pagina corretta');
+    return;
+}
+
 // Rimuovi popup esistente se presente
 const existing = document.getElementById("podiumPopupOverlay");
 if (existing) existing.remove();
