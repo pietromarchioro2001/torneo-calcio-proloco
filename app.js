@@ -280,6 +280,8 @@ window.APP_STATE = {
 window.APP_STATE._initialLoadComplete = false;
 window.APP_STATE._apiCallQueue = [];
 
+let podiumDismissed = false;
+
 // 🔥 AGGIUNGI questa funzione helper
 function queueApiCall(fn, priority = 0) {
   if (window.APP_STATE._initialLoadComplete) {
@@ -2444,7 +2446,7 @@ function renderFinalStage(data) {
   const finaliFiniti = finali.filter(m => m.stato === "FINITA").length;
   const finaliCreate = finali.length >= 2;
   
-  if (finaliCreate && finaliFiniti === 2) {
+  if (finaliCreate && finaliFiniti === 2 && !podiumDismissed) {
     // Aspetta un attimo per assicurarsi che il DOM sia pronto
     setTimeout(() => {
       // Controlla se il popup non è già visibile
@@ -2701,6 +2703,7 @@ function closeTournamentPodium() {
     const popup = document.getElementById('podiumPopupOverlay');
     if (popup) {
         popup.remove();
+        podiumDismissed = true; 
     }
 }
 
