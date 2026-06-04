@@ -594,6 +594,7 @@ function renderHomeMatchCard(match, isLive) {
 }
 
 function showHome() {
+    closeTournamentPodium();
     window.location.hash = '#home';
     stopStandingsLiveRefresh();
     renderToolbar("home");
@@ -620,6 +621,7 @@ function showHome() {
 // 👥 TEAMS FUNCTIONS
 // ============================================================================
 function showTeams() {
+    closeTournamentPodium();
     window.location.hash = '#teams'; stopStandingsLiveRefresh(); renderToolbar("teams");
     document.getElementById("app").innerHTML = `<div class="teams-page"><div class="teams-header"><div class="page-title">SQUADRE</div><div class="phase-btn" onclick="openNewTeamPage()">+ NUOVA SQUADRA</div></div><div class="teams-scroll"><div id="teamsList"></div></div></div>`;
     renderTeams();
@@ -893,6 +895,7 @@ function updateMVPBanner(match) {
 // ⚽ MATCHES FUNCTIONS
 // ============================================================================
 function showMatches() {
+    closeTournamentPodium();
     window.location.hash = '#matches'; stopMatchLiveRefresh(); stopStandingsLiveRefresh(); renderToolbar("matches");
     // 🔥 Controlla se ci sono partite LIVE e avvia polling
     const hasLiveMatch = (window.APP_CACHE.matches || []).some(m => 
@@ -2700,6 +2703,13 @@ ${terzo.logo ? `<img src="${getCachedImage(terzo.logo, 80)}" class="podium-logo"
 `;
 
 document.body.appendChild(popup);
+}
+
+function closeTournamentPodium() {
+    const popup = document.getElementById('podiumPopupOverlay');
+    if (popup) {
+        popup.remove();
+    }
 }
 
 function closePodium() {
