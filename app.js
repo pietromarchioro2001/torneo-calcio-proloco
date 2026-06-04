@@ -2704,6 +2704,7 @@ function closeTournamentPodium() {
     if (popup) {
         popup.remove();
         podiumDismissed = true; 
+        localStorage.setItem('podiumDismissed', 'true');
     }
 }
 
@@ -3089,6 +3090,10 @@ function bootAdminApp() {
         window.APP_STATE._activeStandingsTab = "fasefinale";
         window.APP_STATE._finalStageLoaded = false;
       }
+    }
+
+      if (localStorage.getItem('podiumDismissed') === 'true') {
+        podiumDismissed = true;
     }
     
     // ✅ Segnala caricamento completato DENTRO il then
