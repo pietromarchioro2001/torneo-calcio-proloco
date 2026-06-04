@@ -1815,15 +1815,32 @@ function updateScoreFromEvents(matchId) {
 
 function renderPenaltyIndicators(events, match) {
     
-    const timeline = document.getElementById('eventsTimeline');
-    if (!timeline) {
-        console.error("❌ eventsTimeline element not found!");
-        return;
-    }
-    
-    // Rimuovi eventuali indicatori precedenti
-    const existing = document.getElementById('penalty-indicators');
-    if (existing) existing.remove();
+    const faseFinale = (match.FASE || "").toUpperCase() === "FINALI";
+  
+  // Controlla se ci sono i valori dei rigori (colonne J e K del foglio)
+  const rigoriCasa = match.RIGORE_CASA ?? match.RIGORI_CASA ?? null;
+  const rigoriTrasf = match.RIGORE_TRASFERTA ?? match.RIGORI_TRASFERTA ?? null;
+  
+  const hasValidRigori = (
+    rigoriCasa !== null && rigoriCasa !== undefined && rigoriCasa !== "" &&
+    rigoriTrasf !== null && rigoriTrasf !== undefined && rigoriTrasf !== ""
+  );
+  
+  // ✅ Se non è fase finale O non ci sono rigori, esci senza mostrare nulla
+  if (!faseFinale || !hasValidRigori) {
+    return;
+  }
+  
+  // ... resto del codice esistente ...
+  const timeline = document.getElementById('eventsTimeline');
+  if (!timeline) {
+    console.error("❌ eventsTimeline element not found!");
+    return;
+  }
+  
+  // Rimuovi eventuali indicatori precedenti
+  const existing = document.getElementById('penalty-indicators');
+  if (existing) existing.remove();
     
     // Filtra eventi rigore: cerca RIGORE_RESULT (colonna E del foglio)
     const penaltyEvents = events.filter(e => {
