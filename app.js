@@ -1548,7 +1548,6 @@ function renderMatchPage(match) {
 
     // Carica giocatori
     loadPlayersForMatch(match);
-    renderPenaltyIndicators(events, match);
 
     // Salva riferimento
     window.APP_STATE.lastMatch = match;
