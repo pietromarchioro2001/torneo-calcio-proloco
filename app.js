@@ -2428,10 +2428,35 @@ function loadFinalStage() {
 }
 
 function renderFinalStage(data) {
-    const container = document.getElementById("standingsContent"); if (!container) return;
-    if (!data?.length) { container.innerHTML = `<div class="final-empty"><div class="final-empty-icon">🏆</div><div class="final-empty-title">FASE FINALE</div><div class="final-empty-line"></div><div class="final-empty-text">Crea la fase finale per visualizzare il tabellone del torneo.</div><div class="phase-btn" onclick="createFinalStage()">CREA FASE FINALE</div></div>`; return; }
-    container.innerHTML = `<div class="final-stage-page"><div id="finalBracketContainer"></div></div>`;
-    renderFinalBracket(data); renderNextPhaseButton();
+  const container = document.getElementById("standingsContent"); 
+  if (!container) return;
+  
+  if (!data?.length) { 
+    container.innerHTML = `<div class="final-empty"><div class="final-empty-icon">🏆</div><div class="final-empty-title">FASE FINALE</div><div class="final-empty-line"></div><div class="final-empty-text">Crea la fase finale per visualizzare il tabellone del torneo.</div><div class="phase-btn" onclick="createFinalStage()">CREA FASE FINALE</div></div>`; 
+    return; 
+  }
+  
+  container.innerHTML = `<div class="final-stage-page"><div id="finalBracketContainer"></div></div>`;
+  renderFinalBracket(data); 
+  renderNextPhaseButton();
+  
+  // 🔥 MOSTRA AUTOMATICAMENTE IL PODIO SE LE FINALI SONO CONCLUSE
+  const finali = (data || []).filter(m => 
+    m.turno === "FINALE 1-2" || m.turno === "FINALE 3-4" || 
+    m.matchKey === "F" || m.matchKey === "TP"
+  );
+  const finaliFiniti = finali.filter(m => m.stato === "FINITA").length;
+  const finaliCreate = finali.length >= 2;
+  
+  if (finaliCreate && finaliFiniti === 2) {
+    // Aspetta un attimo per assicurarsi che il DOM sia pronto
+    setTimeout(() => {
+      // Controlla se il popup non è già visibile
+      if (!document.getElementById('podiumPopupOverlay')) {
+        showTournamentPodium(data);
+      }
+    }, 500);
+  }
 }
 
 function renderFinalBracket(matches) {
