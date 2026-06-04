@@ -1594,18 +1594,18 @@ body {
 
   /* Sponsor in alto visibili e più piccoli */
   .home-sponsors {
-    top: 12px;
-    gap: 20px;
+    top: 16px;
+    gap: 28px;
     display: flex !important;
   }
   .home-sponsors img {
-    height: 40px !important;
+    height: 55px !important;
     width: auto;
   }
 
   /* Titolo più centrato */
   .title-wrapper {
-    top: 45%;
+    top: 43%;
     left: 50%;
     transform: translate(-50%, -50%);
     width: 95%;
@@ -1629,27 +1629,27 @@ body {
 
   /* Campanili più grandi */
   .camp {
-    height: min(70vh, 600px);
+    height: min(85vh, 750px);
     opacity: 0.25;
   }
   .camp-left {
-    left: 0%;
-    max-width: 35vw;
+    left: -8% !important;
+    max-width: 45vw !important;
   }
   .camp-right {
-    right: 0%;
-    max-width: 35vw;
+    right: -8% !important;
+    max-width: 45vw !important;
   }
 
   /* Cerchio e linea più piccoli */
   .field-lines .center {
-    width: 50%;
-    top: 49%;
+    width: 55%;
+    top: 44%;
   }
   .field-lines .circle {
-    width: 400px;
-    height: 400px;
-    top: 51%;
+    width: 420px;
+    height: 420px;
+    top: 46%;
   }
 
   /* Card partita sotto più piccola */
@@ -1680,18 +1680,26 @@ body {
 
   /* Card campione */
   .home-next-match.winner-card {
-    min-width: 200px !important;
-    padding: 12px 18px !important;
+    min-width: 180px !important;
+    max-width: 260px !important;
+    width: 80% !important;
+    padding: 10px 16px !important;
+    bottom: 85px !important;
   }
   .home-next-match.winner-card .champion-label {
-    font-size: 11px !important;
+    font-size: 10px !important;
+    letter-spacing: 2px !important;
   }
   .home-next-match.winner-card .champion-name {
-    font-size: 15px !important;
+    font-size: 14px !important;
+    letter-spacing: 1px !important;
   }
   .home-next-match.winner-card .champion-logo {
-    width: 34px !important;
-    height: 34px !important;
+    width: 30px !important;
+    height: 30px !important;
+  }
+  .home-next-match.winner-card .champion-content {
+    gap: 8px !important;
   }
 
   /* === PARTITE MOBILE === */
