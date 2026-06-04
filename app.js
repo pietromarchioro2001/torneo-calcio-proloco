@@ -1548,10 +1548,10 @@ function renderMatchPage(match) {
 
     // Renderizza eventi
     renderEvents(events, match);
-    renderPenaltyIndicators(events, match);
 
     // Carica giocatori
     loadPlayersForMatch(match);
+    renderPenaltyIndicators(events, match);
     
 
     // Salva riferimento
