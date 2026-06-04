@@ -2426,35 +2426,38 @@ function loadFinalStage() {
 }
 
 function renderFinalStage(data) {
-  const container = document.getElementById("standingsContent"); 
-  if (!container) return;
-  
-  if (!data?.length) { 
-    container.innerHTML = `<div class="final-empty"><div class="final-empty-icon">🏆</div><div class="final-empty-title">FASE FINALE</div><div class="final-empty-line"></div><div class="final-empty-text">Crea la fase finale per visualizzare il tabellone del torneo.</div><div class="phase-btn" onclick="createFinalStage()">CREA FASE FINALE</div></div>`; 
-    return; 
-  }
-  
-  container.innerHTML = `<div class="final-stage-page"><div id="finalBracketContainer"></div></div>`;
-  renderFinalBracket(data); 
-  renderNextPhaseButton();
-  
-  // 🔥 MOSTRA AUTOMATICAMENTE IL PODIO SE LE FINALI SONO CONCLUSE
-  const finali = (data || []).filter(m => 
-    m.turno === "FINALE 1-2" || m.turno === "FINALE 3-4" || 
-    m.matchKey === "F" || m.matchKey === "TP"
-  );
-  const finaliFiniti = finali.filter(m => m.stato === "FINITA").length;
-  const finaliCreate = finali.length >= 2;
-  
-  if (finaliCreate && finaliFiniti === 2 && !podiumDismissed) {
-    // Aspetta un attimo per assicurarsi che il DOM sia pronto
-    setTimeout(() => {
-      // Controlla se il popup non è già visibile
-      if (!document.getElementById('podiumPopupOverlay')) {
-        showTournamentPodium(data);
-      }
-    }, 500);
-  }
+    const container = document.getElementById("standingsContent");
+    if (!container) return;
+    if (!data?.length) {
+        container.innerHTML = `<div class="final-empty"><div class="final-empty-icon">🏆</div><div class="final-empty-title">FASE FINALE</div><div class="final-empty-line"></div><div class="final-empty-text">Crea la fase finale per visualizzare il tabellone del torneo.</div><div class="phase-btn" onclick="createFinalStage()">CREA FASE FINALE</div></div>`;
+        return;
+    }
+    container.innerHTML = `<div class="final-stage-page"><div id="finalBracketContainer"></div></div>`;
+    renderFinalBracket(data);
+    renderNextPhaseButton();
+    
+    // 🔥 MOSTRA AUTOMATICAMENTE IL PODIO SE LE FINALI SONO CONCLUSE
+    const finali = (data || []).filter(m =>
+        m.turno === "FINALE 1-2" || m.turno === "FINALE 3-4" ||
+        m.matchKey === "F" || m.matchKey === "TP"
+    );
+    const finaliFiniti = finali.filter(m => m.stato === "FINITA").length;
+    const finaliCreate = finali.length >= 2;
+    
+    // ✅ Controlla se il podio è già stato mostrato (usa localStorage per persistenza)
+    const podiumAlreadyShown = localStorage.getItem('podiumShown_' + new Date().getFullYear());
+    
+    if (finaliCreate && finaliFiniti === 2 && !podiumAlreadyShown) {
+        // Aspetta un attimo per assicurarsi che il DOM sia pronto
+        setTimeout(() => {
+            // Controlla se il popup non è già visibile
+            if (!document.getElementById('podiumPopupOverlay')) {
+                showTournamentPodium(data);
+                // ✅ Segna che il podio è stato mostrato
+                localStorage.setItem('podiumShown_' + new Date().getFullYear(), 'true');
+            }
+        }, 500);
+    }
 }
 
 function renderFinalBracket(matches) {
@@ -2580,123 +2583,121 @@ function openNextPhasePopup(phase) {
 }
 
 function showTournamentPodium(finalStageData) {
-// ✅ VERIFICA DI ESSERE NELLA PAGINA FASE FINALE
-if (!document.querySelector('.final-stage-page') && !document.querySelector('.standings-page')) {
-    console.warn('⚠️ showTournamentPodium chiamato fuori dalla pagina corretta');
-    return;
-}
-
-// Rimuovi popup esistente se presente
-const existing = document.getElementById("podiumPopupOverlay");
-if (existing) existing.remove();
-
-const finale1 = finalStageData.find(m => m.matchKey === "F");
-const finale3 = finalStageData.find(m => m.matchKey === "TP");
-
-if (!finale1 || !finale3) return;
-
-// 🔥 Determina vincitori CON RIGORI
-let primo, secondo, terzo;
-
-// ✅ FINALE 1°-2°: controlla prima i rigori
-const rigoriCasaFinale = finale1.rigoriCasa ?? finale1.RIGORE_CASA ?? finale1.RIGORI_CASA ?? null;
-const rigoriTrasfFinale = finale1.rigoriTrasferta ?? finale1.RIGORE_TRASFERTA ?? finale1.RIGORI_TRASFERTA ?? null;
-
-const hasValidRigoriFinale = (
-rigoriCasaFinale !== null && rigoriCasaFinale !== undefined && rigoriCasaFinale !== "" &&
-rigoriTrasfFinale !== null && rigoriTrasfFinale !== undefined && rigoriTrasfFinale !== ""
-);
-
-if (hasValidRigoriFinale) {
-// ✅ Deciso ai rigori
-if (Number(rigoriCasaFinale) > Number(rigoriTrasfFinale)) {
-primo = finale1.casa;
-secondo = finale1.trasferta;
-} else {
-primo = finale1.trasferta;
-secondo = finale1.casa;
-}
-} else {
-// Deciso nei tempi regolamentari
-if (finale1.golCasa > finale1.golTrasferta) {
-primo = finale1.casa;
-secondo = finale1.trasferta;
-} else {
-primo = finale1.trasferta;
-secondo = finale1.casa;
-}
-}
-
-// ✅ FINALE 3°-4°: stessa logica
-const rigoriCasa3 = finale3.rigoriCasa ?? finale3.RIGORE_CASA ?? finale3.RIGORI_CASA ?? null;
-const rigoriTrasf3 = finale3.rigoriTrasferta ?? finale3.RIGORE_TRASFERTA ?? finale3.RIGORI_TRASFERTA ?? null;
-
-const hasValidRigori3 = (
-rigoriCasa3 !== null && rigoriCasa3 !== undefined && rigoriCasa3 !== "" &&
-rigoriTrasf3 !== null && rigoriTrasf3 !== undefined && rigoriTrasf3 !== ""
-);
-
-if (hasValidRigori3) {
-if (Number(rigoriCasa3) > Number(rigoriTrasf3)) {
-terzo = finale3.casa;
-} else {
-terzo = finale3.trasferta;
-}
-} else {
-if (finale3.golCasa > finale3.golTrasferta) {
-terzo = finale3.casa;
-} else {
-terzo = finale3.trasferta;
-}
-}
-
-const popup = document.createElement("div");
-popup.className = "podium-popup-overlay";
-popup.id = "podiumPopupOverlay";
-popup.onclick = (e) => {
-if (e.target === popup) popup.remove();
-};
-
-popup.innerHTML = `
-<div class="podium-container" onclick="event.stopPropagation()">
-<div class="podium-header">
-<h2>TORNEO CONCLUSO</h2>
-<div class="podium-subtitle">Classifica Finale</div>
-</div>
-<div class="podium-wrapper">
-<div class="podium-position second-place">
-<div class="position-number">2°</div>
-<div class="team-info">
-${secondo.logo ? `<img src="${getCachedImage(secondo.logo, 80)}" class="podium-logo" alt="${secondo.nome}">` : '<div class="podium-logo-placeholder">⚽</div>'}
-<div class="team-name">${(secondo.nome || "").toUpperCase()}</div>
-</div>
-<div class="podium-step step-2"></div>
-</div>
-<div class="podium-position first-place">
-<div class="crown">👑</div>
-<div class="position-number">1°</div>
-<div class="team-info">
-${primo.logo ? `<img src="${getCachedImage(primo.logo, 100)}" class="podium-logo winner" alt="${primo.nome}">` : '<div class="podium-logo-placeholder winner">⚽</div>'}
-<div class="team-name winner">${(primo.nome || "").toUpperCase()}</div>
-</div>
-<div class="podium-step step-1"></div>
-</div>
-<div class="podium-position third-place">
-<div class="position-number">3°</div>
-<div class="team-info">
-${terzo.logo ? `<img src="${getCachedImage(terzo.logo, 80)}" class="podium-logo" alt="${terzo.nome}">` : '<div class="podium-logo-placeholder">⚽</div>'}
-<div class="team-name">${(terzo.nome || "").toUpperCase()}</div>
-</div>
-<div class="podium-step step-3"></div>
-</div>
-</div>
-<div class="podium-footer">
-<div class="phase-btn" onclick="document.getElementById('podiumPopupOverlay')?.remove()">CHIUDI</div>
-</div>
-</div>
-`;
-
-document.body.appendChild(popup);
+    // ✅ VERIFICA DI ESSERE NELLA PAGINA FASE FINALE
+    if (!document.querySelector('.final-stage-page') && 
+        !(document.querySelector('.standings-page') && window.APP_STATE._activeStandingsTab === "fasefinale")) {
+        console.warn('⚠️ showTournamentPodium chiamato fuori dalla pagina corretta');
+        return;
+    }
+    
+    // Rimuovi popup esistente se presente
+    const existing = document.getElementById("podiumPopupOverlay");
+    if (existing) existing.remove();
+    
+    const finale1 = finalStageData.find(m => m.matchKey === "F");
+    const finale3 = finalStageData.find(m => m.matchKey === "TP");
+    if (!finale1 || !finale3) return;
+    
+    // 🔥 Determina vincitori CON RIGORI
+    let primo, secondo, terzo;
+    
+    // ✅ FINALE 1°-2°: controlla prima i rigori
+    const rigoriCasaFinale = finale1.rigoriCasa ?? finale1.RIGORE_CASA ?? finale1.RIGORI_CASA ?? null;
+    const rigoriTrasfFinale = finale1.rigoriTrasferta ?? finale1.RIGORE_TRASFERTA ?? finale1.RIGORI_TRASFERTA ?? null;
+    const hasValidRigoriFinale = (
+        rigoriCasaFinale !== null && rigoriCasaFinale !== undefined && rigoriCasaFinale !== "" &&
+        rigoriTrasfFinale !== null && rigoriTrasfFinale !== undefined && rigoriTrasfFinale !== ""
+    );
+    
+    if (hasValidRigoriFinale) {
+        // ✅ Deciso ai rigori
+        if (Number(rigoriCasaFinale) > Number(rigoriTrasfFinale)) {
+            primo = finale1.casa;
+            secondo = finale1.trasferta;
+        } else {
+            primo = finale1.trasferta;
+            secondo = finale1.casa;
+        }
+    } else {
+        // Deciso nei tempi regolamentari
+        if (finale1.golCasa > finale1.golTrasferta) {
+            primo = finale1.casa;
+            secondo = finale1.trasferta;
+        } else {
+            primo = finale1.trasferta;
+            secondo = finale1.casa;
+        }
+    }
+    
+    // ✅ FINALE 3°-4°: stessa logica
+    const rigoriCasa3 = finale3.rigoriCasa ?? finale3.RIGORE_CASA ?? finale3.RIGORI_CASA ?? null;
+    const rigoriTrasf3 = finale3.rigoriTrasferta ?? finale3.RIGORE_TRASFERTA ?? finale3.RIGORI_TRASFERTA ?? null;
+    const hasValidRigori3 = (
+        rigoriCasa3 !== null && rigoriCasa3 !== undefined && rigoriCasa3 !== "" &&
+        rigoriTrasf3 !== null && rigoriTrasf3 !== undefined && rigoriTrasf3 !== ""
+    );
+    
+    if (hasValidRigori3) {
+        if (Number(rigoriCasa3) > Number(rigoriTrasf3)) {
+            terzo = finale3.casa;
+        } else {
+            terzo = finale3.trasferta;
+        }
+    } else {
+        if (finale3.golCasa > finale3.golTrasferta) {
+            terzo = finale3.casa;
+        } else {
+            terzo = finale3.trasferta;
+        }
+    }
+    
+    const popup = document.createElement("div");
+    popup.className = "podium-popup-overlay";
+    popup.id = "podiumPopupOverlay";
+    popup.onclick = (e) => {
+        if (e.target === popup) popup.remove();
+    };
+    
+    popup.innerHTML = `
+        <div class="podium-container" onclick="event.stopPropagation()">
+            <div class="podium-header">
+                <h2>TORNEO CONCLUSO</h2>
+                <div class="podium-subtitle">Classifica Finale</div>
+            </div>
+            <div class="podium-wrapper">
+                <div class="podium-position second-place">
+                    <div class="position-number">2°</div>
+                    <div class="team-info">
+                        ${secondo.logo ? `<img src="${getCachedImage(secondo.logo, 80)}" class="podium-logo" alt="${secondo.nome}">` : '<div class="podium-logo-placeholder">⚽</div>'}
+                        <div class="team-name">${(secondo.nome || "").toUpperCase()}</div>
+                    </div>
+                    <div class="podium-step step-2"></div>
+                </div>
+                <div class="podium-position first-place">
+                    <div class="crown">👑</div>
+                    <div class="position-number">1°</div>
+                    <div class="team-info">
+                        ${primo.logo ? `<img src="${getCachedImage(primo.logo, 100)}" class="podium-logo winner" alt="${primo.nome}">` : '<div class="podium-logo-placeholder winner">⚽</div>'}
+                        <div class="team-name winner">${(primo.nome || "").toUpperCase()}</div>
+                    </div>
+                    <div class="podium-step step-1"></div>
+                </div>
+                <div class="podium-position third-place">
+                    <div class="position-number">3°</div>
+                    <div class="team-info">
+                        ${terzo.logo ? `<img src="${getCachedImage(terzo.logo, 80)}" class="podium-logo" alt="${terzo.nome}">` : '<div class="podium-logo-placeholder">⚽</div>'}
+                        <div class="team-name">${(terzo.nome || "").toUpperCase()}</div>
+                    </div>
+                    <div class="podium-step step-3"></div>
+                </div>
+            </div>
+            <div class="podium-footer">
+                <div class="phase-btn" onclick="document.getElementById('podiumPopupOverlay')?.remove()">CHIUDI</div>
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(popup);
 }
 
 function closeTournamentPodium() {
