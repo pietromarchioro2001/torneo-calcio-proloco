@@ -905,7 +905,6 @@ function showMatches() {
 
 function renderMatches() {
   const data = window.APP_CACHE.matches || [];
-  console.log('📅 TOTALE PARTITE:', data.length);
   
   const matches = (data || []).filter(m => m?.MATCH_ID && m?.DATA).map(m => ({ 
     ...m, 
@@ -915,21 +914,17 @@ function renderMatches() {
   
   // ✅ LOG PER VEDERE LE DATE DISPONIBILI
   const uniqueDates = [...new Set(matches.map(m => m.DATA))].sort();
-  console.log('📅 DATE DISPONIBILI:', uniqueDates);
   
   const dates = uniqueDates.slice(0, 30);
   window.APP_STATE.availableDates = dates;
   
   const today = new Date(); 
   const todayStr = formatLocalDate(today); 
-  console.log('📅 OGGI:', todayStr);
   
   const futureDates = dates.filter(d => d >= todayStr);
-  console.log('📅 DATE FUTURE:', futureDates);
   
   if (!window.APP_STATE.selectedDate) { 
     window.APP_STATE.selectedDate = futureDates[0] || dates[0] || todayStr; 
-    console.log('📅 DATA SELEZIONATA:', window.APP_STATE.selectedDate);
   }
   
   renderDatesToolbar(); 
