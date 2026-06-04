@@ -1557,6 +1557,16 @@ body {
     .crown { font-size: 24px; top: -22px; }
 }
 
+/* 🔥 FIX: Sovrascrive il position:absolute del bracket */
+.podium-position.third-place,
+.podium-position.first-place,
+.podium-position.second-place {
+    position: relative !important;
+    left: auto !important;
+    top: auto !important;
+    margin-left: 0 !important;
+}
+
 /* Card vincitore torneo - Home */
 .home-next-match.winner-card {
     position: absolute !important;
