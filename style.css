@@ -2401,40 +2401,58 @@ body {
 
   /* === PODIO MOBILE === */
   .podium-container {
-    padding: 20px 15px;
-  }
-  .podium-header h2 {
-    font-size: 20px;
-  }
-  .podium-wrapper {
-    gap: 8px;
-    min-height: 200px;
-  }
-  .podium-step {
-    width: 70px;
-  }
-  .step-1 { height: 60px; }
-  .step-2 { height: 40px; }
-  .step-3 { height: 25px; }
-  .podium-container .podium-logo {
-    width: 50px;
-    height: 50px;
-  }
-  .podium-container .podium-logo.winner {
-    width: 60px;
-    height: 60px;
-  }
-  .podium-container .team-name {
-    font-size: 10px;
-    max-width: 70px;
-  }
-  .podium-container .team-name.winner {
-    font-size: 11px;
-  }
-  .position-number {
-    font-size: 28px !important;
-  }
+  padding: 20px 15px;
+}
+.podium-header h2 {
+  font-size: 20px;
+}
+.podium-wrapper {
+  gap: 8px;
+  min-height: 200px;
+}
+.podium-step {
+  width: 70px;
+  border: none !important; /* ✅ Rimuove eventuali bordi */
+  outline: none !important; /* ✅ Rimuove outline */
+  box-shadow: none !important; /* ✅ Rimuove ombre indesiderate */
+}
+.step-1 { height: 60px; }
+.step-2 { height: 40px; }
+.step-3 { height: 30px; }
+.podium-container .podium-logo {
+  width: 50px;
+  height: 50px;
+}
+.podium-container .podium-logo.winner {
+  width: 60px;
+  height: 60px;
+}
+.podium-container .team-name {
+  font-size: 10px;
+  max-width: 70px;
+}
+.podium-container .team-name.winner {
+  font-size: 11px;
+}
+.position-number {
+  font-size: 28px !important;
+}
 
+/* ✅ FIX: Rimuove bordi/outline su tutte le posizioni del podio mobile */
+.podium-position,
+.podium-position.first-place,
+.podium-position.second-place,
+.podium-position.third-place {
+  border: none !important;
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+/* ✅ FIX: Nome squadra 3° posto leggibile (bronzo scuro invece di bianco) */
+.podium-position.third-place .team-name {
+  color: #78350f !important; /* ✅ Bronzo scuro per leggibilità */
+  font-weight: 700 !important;
+}
   /* === RIGORI MOBILE === */
   .rigori-popup {
     width: 95% !important;
