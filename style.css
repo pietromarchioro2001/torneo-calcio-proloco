@@ -2250,19 +2250,17 @@ body {
     font-size: 16px;
   }
 
-  /* === CLASSIFICHE MOBILE - BRACKET VERTICALE === */
+  /* === BRACKET MOBILE === */
 
-/* Nascondi pulsante PROSSIMA FASE */
 .next-phase-button {
   display: none !important;
 }
 
-/* Tournament wrapper: da absolute a layout verticale */
+/* Tournament wrapper: grid layout */
 .tournament-wrapper {
-  display: flex !important;
-  flex-direction: column !important;
-  align-items: center !important;
-  gap: 12px !important;
+  display: grid !important;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px !important;
   height: auto !important;
   min-height: auto !important;
   overflow: visible !important;
@@ -2271,7 +2269,7 @@ body {
   box-sizing: border-box;
 }
 
-/* Reset di TUTTE le posizioni absolute delle card */
+/* Reset posizioni absolute */
 .bracket-match,
 .bracket-placeholder {
   position: relative !important;
@@ -2279,22 +2277,63 @@ body {
   right: auto !important;
   top: auto !important;
   margin-left: 0 !important;
-  width: 92% !important;
-  max-width: 340px !important;
+  width: 100% !important;
+  max-width: none !important;
   height: auto !important;
-  min-height: 75px !important;
+  min-height: 70px !important;
   padding: 10px 12px !important;
 }
 
-/* Reset classi di posizione specifiche */
-.qf1, .qf2, .qf3, .qf4,
-.sf1, .sf2,
-.final-match,
-.third-place {
-  left: auto !important;
-  right: auto !important;
-  top: auto !important;
-  margin-left: 0 !important;
+/* Quarti di finale - colonna singola */
+.qf1 { 
+  grid-column: 1; 
+  grid-row: 1; 
+}
+.qf2 { 
+  grid-column: 2; 
+  grid-row: 1; 
+}
+
+/* Semifinale 1 - tutta la larghezza, centrata */
+.sf1 { 
+  grid-column: 1 / -1; 
+  grid-row: 2; 
+  justify-self: center; 
+  width: 90% !important;
+  max-width: 340px !important;
+}
+
+/* Finale e Terzo Posto - affiancate */
+.final-match { 
+  grid-column: 1; 
+  grid-row: 3; 
+  background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%) !important;
+  border: 1.5px solid #fde047 !important;
+}
+.third-place { 
+  grid-column: 2; 
+  grid-row: 3; 
+  background: linear-gradient(135deg, #fff8f0 0%, #fed7aa 100%) !important;
+  border: 1.5px solid #fdba74 !important;
+}
+
+/* Semifinale 2 - tutta la larghezza, centrata */
+.sf2 { 
+  grid-column: 1 / -1; 
+  grid-row: 4; 
+  justify-self: center; 
+  width: 90% !important;
+  max-width: 340px !important;
+}
+
+/* Quarti di finale - colonna singola */
+.qf3 { 
+  grid-column: 1; 
+  grid-row: 5; 
+}
+.qf4 { 
+  grid-column: 2; 
+  grid-row: 5; 
 }
 
 /* Card bracket dimensioni mobile */
@@ -2309,51 +2348,18 @@ body {
   font-size: 15px !important;
 }
 
-/* Separatore visivo tra turni (se il DOM è ordinato: quarti → semi → finale) */
-/* Quarti di finale */
-.qf1, .qf2, .qf3, .qf4 {
-  order: 1;
-}
-/* Semifinali */
-.sf1, .sf2 {
-  order: 2;
-}
-/* Finale e terzo posto */
-.final-match {
-  order: 3;
-  background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%) !important;
-  border: 1.5px solid #fde047 !important;
-}
-.third-place {
-  order: 4;
-  background: linear-gradient(135deg, #fff8f0 0%, #fed7aa 100%) !important;
-  border: 1.5px solid #fdba74 !important;
-}
-
 /* Placeholder */
 .bracket-placeholder {
   opacity: 0.7 !important;
 }
 
 /* === PULSANTE VEDI PODIO === */
-/* Il pulsante vedi podio dovrebbe essere già visibile, 
-   ma lo sistemo per mobile */
-.phase-btn.podium-btn,
-button.podium-btn,
-.podium-button {
-  display: block !important;
-  margin: 30px auto 20px !important;
-  padding: 14px 32px !important;
-  font-size: 14px !important;
-  letter-spacing: 2px !important;
-}
-
-/* Se il pulsante vedi podio è un phase-btn generico nella pagina classifiche */
 .standings-page .phase-btn:not(.standings-tab) {
   display: block !important;
   margin: 30px auto 20px !important;
   padding: 14px 32px !important;
   font-size: 14px !important;
+  letter-spacing: 2px !important;
 }
 
   /* === TOOLBAR NAVIGAZIONE MOBILE === */
