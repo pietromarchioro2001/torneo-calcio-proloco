@@ -1735,6 +1735,7 @@ body {
    }
   .matches-scroll {
     width: 100%;
+    padding-right: 2px !important;
   }
 
   /* Pulsante inserisci partite più piccolo */
@@ -1752,7 +1753,7 @@ body {
   .dates-toolbar {
      margin-top: 10px !important;
      gap: 6px !important;
-     padding: 8px 8px !important;
+     padding: 8px 10px !important;
      overflow-x: auto !important;
      overflow-y: hidden !important;
      scroll-behavior: auto;
@@ -1789,7 +1790,7 @@ body {
      min-height: 48px;
    }
    .team-block {
-     width: 42%;
+     width: 40%;
      gap: 4px;
    }
    .team-block img {
@@ -1801,18 +1802,22 @@ body {
      letter-spacing: 0.3px;
    }
    .match-center {
-     width: 16% !important;
+     width: 20% !important;
      padding: 0 2px;
    }
    .score {
-     font-size: 13px !important;
+     font-size: 11px !important;
      font-weight: 800;
+     line-height: 1.1;
+     white-space: nowrap;
    }
    .vs {
      font-size: 11px !important;
    }
    .time, .status {
-     font-size: 8px !important;
+     font-size: 7px !important;
+     line-height: 1.2;
+     letter-spacing: 0.5px;
    }
    .match-day-title {
      font-size: 10px !important;
