@@ -1867,50 +1867,61 @@ body {
   }
 
   /* === SQUADRE MOBILE === */
-  .teams-page {
-    width: 100%;
-    padding: 0 10px;
-  }
-  .teams-scroll {
-    height: calc(100vh - 140px);
-  }
-  .teams-header {
-    padding: 10px 0;
-  }
+.teams-page {
+  width: 100% !important;
+  padding: 0 10px !important;
+  box-sizing: border-box !important;
+  margin: 0 !important;
+}
+.teams-scroll {
+  width: 100% !important;
+  max-width: 100% !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  box-sizing: border-box !important;
+  height: calc(100vh - 140px);
+}
+.teams-header {
+  padding: 10px 0;
+}
 
-  /* Tabella squadre più piccola */
-  .teams-table {
-    font-size: 14px;
-    border-radius: 14px;
-  }
-  .teams-table th {
-    padding: 10px 12px;
-    font-size: 10px;
-    letter-spacing: 2px;
-  }
-  .teams-table td {
-    padding: 6px 12px;
-  }
-  .teams-table tr {
-    height: 48px;
-  }
-  .team-row-inner {
-    gap: 12px;
-    padding-left: 14px;
-  }
-  .teams-team-name {
-    font-size: 13px;
-    letter-spacing: 0.5px;
-  }
-  .team-logo-box {
-    width: 50px;
-    height: 50px;
-  }
-  .team-mini-logo {
-    width: 45px;
-    height: 45px;
-  }
+/* Nascondi pulsante NUOVA SQUADRA */
+.teams-header .phase-btn {
+  display: none !important;
+}
 
+/* Tabella squadre */
+.teams-table {
+  font-size: 14px;
+  border-radius: 14px;
+}
+.teams-table th {
+  padding: 10px 12px;
+  font-size: 10px;
+  letter-spacing: 2px;
+}
+.teams-table td {
+  padding: 6px 12px;
+}
+.teams-table tr {
+  height: 48px;
+}
+.team-row-inner {
+  gap: 12px;
+  padding-left: 14px;
+}
+.teams-team-name {
+  font-size: 13px;
+  letter-spacing: 0.5px;
+}
+.team-logo-box {
+  width: 50px;
+  height: 50px;
+}
+.team-mini-logo {
+  width: 45px;
+  height: 45px;
+}
   /* Popup Nuova Squadra centrato e sistemato */
   .modalBox {
     min-width: 0;
