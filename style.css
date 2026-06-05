@@ -1668,16 +1668,46 @@ body {
     font-size: 9px;
   }
 
-  /* Card campione più stretta */
+ /* Card normale - z-index sopra toolbar */
+  .home-next-match {
+    bottom: 75px !important;
+    z-index: 1001 !important;
+    width: 90%;
+    max-width: 320px;
+    padding: 10px 14px;
+    min-height: 50px;
+  }
+  .home-team {
+    font-size: 12px;
+  }
+  .home-team-logo,
+  .home-team-block img {
+    width: 28px;
+    height: 28px;
+  }
+  .home-score {
+    font-size: 14px;
+  }
+  .home-match-time {
+    font-size: 12px;
+  }
+  .home-match-date {
+    font-size: 9px;
+  }
+
+  /* Card campione - z-index sopra toolbar + distanza fissa da toolbar */
   .home-next-match.winner-card {
-     min-width: 160px !important;
-     max-width: 220px !important;
-     width: 70% !important;
-     padding: 8px 14px !important;
-     bottom: 90px !important;
-     transform: translateX(-50%) translateY(-40px) !important; /* Alza di 40px */
-   }
-   
+    bottom: 75px !important;
+    z-index: 1001 !important;
+    min-width: 160px !important;
+    max-width: 220px !important;
+    width: 70% !important;
+    padding: 8px 14px !important;
+    transform: translateX(-50%) !important;
+  }
+  .home-next-match.winner-card:hover {
+    transform: translateX(-50%) translateY(-2px) !important;
+  }
   .home-next-match.winner-card .champion-label {
     font-size: 9px !important;
     letter-spacing: 2px !important;
