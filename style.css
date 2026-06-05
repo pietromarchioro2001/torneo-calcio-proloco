@@ -1670,12 +1670,14 @@ body {
 
   /* Card campione più stretta */
   .home-next-match.winner-card {
-    min-width: 160px !important;
-    max-width: 220px !important;
-    width: 70% !important;
-    padding: 8px 14px !important;
-    bottom: 150px !important;
-  }
+     min-width: 160px !important;
+     max-width: 220px !important;
+     width: 70% !important;
+     padding: 8px 14px !important;
+     bottom: 90px !important;
+     transform: translateX(-50%) translateY(-40px) !important; /* Alza di 40px */
+   }
+   
   .home-next-match.winner-card .champion-label {
     font-size: 9px !important;
     letter-spacing: 2px !important;
