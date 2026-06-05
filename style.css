@@ -2062,19 +2062,27 @@ body {
   width: 70px !important;
   height: 70px !important;
   flex-shrink: 0 !important;
+  cursor: default !important; /* ✅ Disattiva click */
+  pointer-events: none !important; /* ✅ Disattiva click */
 }
 
+/* ✅ Disattiva click su nome squadra */
 .team-name-display {
   font-size: 20px !important;
   letter-spacing: 3px !important;
   line-height: 1.1 !important;
   margin: 0 !important;
+  cursor: default !important;
+  pointer-events: none !important;
 }
 
+/* ✅ Disattiva click su girone */
 .team-girone-display {
   font-size: 11px !important;
   letter-spacing: 2px !important;
   margin: 0 !important;
+  cursor: default !important;
+  pointer-events: none !important;
 }
 
 /* ✅ Riquadro foto squadra */
@@ -2082,6 +2090,7 @@ body {
   width: 85% !important;
   max-width: 280px !important;
   margin: 15px auto 20px !important;
+  cursor: pointer !important; /* ✅ Mantieni click per vedere foto grande */
 }
 
 .team-photo-view {
@@ -2094,6 +2103,7 @@ body {
   aspect-ratio: 16/9 !important;
   border-radius: 12px !important;
   margin: 0 auto !important;
+  pointer-events: none !important; /* ✅ Disattiva upload */
 }
 
 /* ✅ Titolo GIOCATORI */
@@ -2108,7 +2118,7 @@ body {
   margin-top: 5px !important;
 }
 
-/* ✅ Tabella giocatori: meno spazio foto-nome, più margine destro */
+/* ✅ Tabella giocatori */
 .playersTable {
   font-size: 12px !important;
   width: 100% !important;
@@ -2127,29 +2137,26 @@ body {
   text-align: center !important;
 }
 
-/* ✅ Prima colonna (foto giocatore): riduci larghezza */
 .playersTable th:first-child,
 .playersTable td:first-child {
-  width: 35px !important; /* ✅ Ridotto da 40px */
-  padding: 8px 2px !important; /* ✅ Ridotto padding */
+  width: 35px !important;
+  padding: 8px 2px !important;
   text-align: center !important;
 }
 
-/* ✅ Colonna NOME: riduci spazio dalla foto */
 .playersTable th:nth-child(2),
 .playersTable td:nth-child(2) {
   width: auto !important;
-  min-width: 90px !important; /* ✅ Ridotto da 100px */
+  min-width: 90px !important;
   text-align: left !important;
-  padding-left: 4px !important; /* ✅ Ridotto da 8px - meno spazio dalla foto */
-  padding-right: 8px !important; /* ✅ Spazio prima dei dati */
+  padding-left: 4px !important;
+  padding-right: 8px !important;
 }
 
 .playersTable th:nth-child(2) {
   text-align: left !important;
 }
 
-/* ✅ Colonne dati (GOL, ASS, AMM, ESP): compatte */
 .playersTable th:nth-child(n+3):nth-child(-n+6),
 .playersTable td:nth-child(n+3):nth-child(-n+6) {
   width: 35px !important;
@@ -2157,15 +2164,13 @@ body {
   padding: 8px 2px !important;
 }
 
-/* ✅ Ultima colonna (MVP): più margine destro */
 .playersTable th:last-child,
 .playersTable td:last-child {
-  width: 40px !important; /* ✅ Aumentato da 35px */
-  padding-right: 12px !important; /* ✅ Margine destro aumentato */
+  width: 40px !important;
+  padding-right: 12px !important;
   text-align: center !important;
 }
 
-/* ✅ Nomi giocatori */
 .playersTable td:nth-child(2) {
   font-size: 11px !important;
   letter-spacing: 0.5px !important;
@@ -2206,26 +2211,62 @@ body {
   font-size: 11px !important;
 }
 
-/* ✅ Player rows più compatte */
 .player-row {
   padding: 6px 8px !important;
   margin-bottom: 4px !important;
+  cursor: pointer !important; /* ✅ Mantieni click per vedere profilo */
 }
 
 .players-list {
   gap: 4px !important;
 }
 
-/* ✅ Bottone indietro più piccolo */
+/* ✅ Bottone indietro VISIBILE */
 .back-btn-wrapper {
   margin-top: 30px !important;
-  padding: 10px 0 !important;
+  padding: 15px 0 !important;
+  display: flex !important; /* ✅ Assicurati che sia visibile */
+  justify-content: flex-end !important;
 }
 
 .back-btn {
-  padding: 8px 16px !important;
-  font-size: 11px !important;
-  letter-spacing: 1px !important;
+  padding: 10px 20px !important;
+  font-size: 12px !important;
+  letter-spacing: 2px !important;
+  background: var(--granata) !important;
+  color: white !important;
+  border-radius: 8px !important;
+  border: none !important;
+  cursor: pointer !important;
+  display: inline-block !important;
+}
+
+/* ✅ Nascondi pulsanti di modifica nei popup */
+.modalOverlay .delete-btn,
+.modalOverlay .phase-btn,
+.modalOverlay .modalBtn,
+.modalOverlay .form-actions,
+.modalOverlay .uploadBox,
+.modalOverlay .modern-upload,
+.modalOverlay .player-upload {
+  display: none !important;
+}
+
+/* ✅ Popup giocatore: nascondi form di modifica */
+.player-modal .player-form {
+  pointer-events: none !important;
+}
+
+.player-modal .player-input {
+  border: none !important;
+  background: transparent !important;
+  pointer-events: none !important;
+}
+
+/* ✅ Popup foto squadra: nascondi upload */
+.team-photo-wrapper .uploadBox,
+.team-photo-wrapper .modern-upload {
+  display: none !important;
 }
   /* === DETTAGLIO PARTITA MOBILE === */
   .match-page {
