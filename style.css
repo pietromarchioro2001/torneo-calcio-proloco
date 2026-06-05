@@ -2037,7 +2037,8 @@ body {
   }
 
   /* === EDITORE GIOCATORE MOBILE === */
-  .team-editor {
+ /* === EDITORE GIOCATORE MOBILE === */
+.team-editor {
   width: 100%;
   padding: 0 10px;
 }
@@ -2048,126 +2049,162 @@ body {
   display: none !important;
 }
 
+/* ✅ Header squadra: logo a sinistra, nome a fianco */
 .team-header {
-  flex-direction: column;
-  gap: 8px;
-  margin-top: 0;
+  flex-direction: row !important; /* ✅ Cambia da column a row */
+  align-items: center !important;
+  justify-content: flex-start !important;
+  gap: 12px !important;
+  margin-top: 0 !important;
+  padding: 10px 0 !important;
 }
 
 .team-header-logo {
-  width: 80px !important; /* ✅ Ridotto da 100px */
-  height: 80px !important;
+  width: 70px !important; /* ✅ Ridotto */
+  height: 70px !important;
+  flex-shrink: 0 !important;
+}
+
+/* Container per nome e girone */
+.team-header-info {
+  display: flex !important;
+  flex-direction: column !important;
+  justify-content: center !important;
+  gap: 2px !important;
 }
 
 .team-name-display {
-  font-size: 18px !important; /* ✅ Ridotto da 20px */
-  letter-spacing: 2px;
+  font-size: 20px !important; /* ✅ Aumentato per leggibilità */
+  letter-spacing: 3px !important;
+  line-height: 1.1 !important;
+  margin: 0 !important;
 }
 
 .team-girone-display {
   font-size: 11px !important;
-  letter-spacing: 2px;
+  letter-spacing: 2px !important;
+  margin: 0 !important;
 }
 
+/* ✅ Riquadro foto squadra ridotto */
 .team-photo-wrapper {
-  width: 100%;
-  max-width: 280px; /* ✅ Ridotto */
-  margin: 10px auto 15px;
+  width: 100% !important;
+  max-width: 320px !important; /* ✅ Ridotto da 380px */
+  margin: 15px auto 20px !important;
 }
 
 .team-photo-view {
-  border-radius: 10px;
+  border-radius: 12px !important;
 }
 
+.team-photo-empty {
+  width: 100% !important;
+  max-width: 320px !important; /* ✅ Ridotto */
+  aspect-ratio: 16/9 !important;
+  border-radius: 12px !important;
+}
+
+/* ✅ Titolo GIOCATORI */
 .players-title {
-  font-size: 16px !important; /* ✅ Ridotto da 18px */
-  letter-spacing: 2px;
-  margin: 20px 0 12px;
+  font-size: 18px !important;
+  letter-spacing: 3px !important;
+  margin: 20px 0 12px !important;
 }
 
 .players-title::after {
-  width: 40px; /* ✅ Ridotto */
-  margin-top: 4px;
+  width: 50px !important;
+  margin-top: 5px !important;
 }
 
-/* Tabella giocatori più compatta */
+/* ✅ Tabella giocatori più compatta */
 .playersTable {
-  font-size: 11px !important; /* ✅ Ridotto da 12px */
+  font-size: 12px !important;
+  width: 100% !important;
 }
 
 .playersTable th {
-  padding: 6px 4px !important; /* ✅ Ridotto */
-  font-size: 9px !important; /* ✅ Ridotto */
-  letter-spacing: 1px;
+  padding: 8px 6px !important; /* ✅ Ridotto */
+  font-size: 10px !important;
+  letter-spacing: 1px !important;
 }
 
 .playersTable td {
-  padding: 6px 4px !important; /* ✅ Ridotto */
-  font-size: 11px !important;
+  padding: 8px 6px !important; /* ✅ Ridotto */
+  font-size: 12px !important;
 }
 
 .playersTable th:nth-child(n+3),
 .playersTable td:nth-child(n+3) {
-  width: 40px !important; /* ✅ Ridotto da 70px */
+  width: 45px !important; /* ✅ Ridotto da 70px */
+  text-align: center !important;
 }
 
 .playersTable td:last-child {
-  width: 40px !important;
+  width: 45px !important;
+}
+
+/* ✅ Nomi giocatori: permetti wrapping per nomi lunghi */
+.playersTable td:nth-child(2) {
+  font-size: 11px !important;
+  letter-spacing: 1px !important;
+  line-height: 1.2 !important;
+  white-space: normal !important; /* ✅ Permette a capo */
+  word-break: break-word !important;
 }
 
 .playerPhoto {
-  width: 28px !important; /* ✅ Ridotto da 32px */
-  height: 28px !important;
-  border-radius: 6px;
+  width: 30px !important;
+  height: 30px !important;
+  border-radius: 6px !important;
 }
 
 .playerPhotoEmpty {
-  width: 28px !important;
-  height: 28px !important;
+  width: 30px !important;
+  height: 30px !important;
+  border-radius: 6px !important;
 }
 
 .player-avatar {
-  width: 28px !important;
-  height: 28px !important;
-  min-width: 28px !important;
+  width: 30px !important;
+  height: 30px !important;
+  min-width: 30px !important;
 }
 
 .player-avatar img {
-  width: 28px !important;
-  height: 28px !important;
+  width: 30px !important;
+  height: 30px !important;
 }
 
 .player-name {
-  font-size: 11px !important; /* ✅ Ridotto */
-  letter-spacing: 0.5px;
+  font-size: 12px !important;
+  letter-spacing: 0.5px !important;
 }
 
 .player-badges {
-  font-size: 10px !important; /* ✅ Ridotto */
+  font-size: 11px !important;
 }
 
-/* Player rows più compatte */
+/* ✅ Player rows più compatte */
 .player-row {
-  padding: 4px 6px !important; /* ✅ Ridotto */
+  padding: 6px 8px !important;
   margin-bottom: 4px !important;
 }
 
 .players-list {
-  gap: 4px !important; /* ✅ Ridotto */
+  gap: 4px !important;
 }
 
-/* Bottone indietro più piccolo */
+/* ✅ Bottone indietro più piccolo */
 .back-btn-wrapper {
-  margin-top: 30px !important; /* ✅ Ridotto */
+  margin-top: 30px !important;
   padding: 10px 0 !important;
 }
 
 .back-btn {
   padding: 8px 16px !important;
   font-size: 11px !important;
-  letter-spacing: 1px;
+  letter-spacing: 1px !important;
 }
-
   /* === DETTAGLIO PARTITA MOBILE === */
   .match-page {
     width: 100%;
