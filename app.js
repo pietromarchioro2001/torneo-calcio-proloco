@@ -2510,62 +2510,66 @@ function renderFinalBracket(matches) {
 }
 
 function renderNextPhaseButton() {
-    // ✅ ASSICURATI DI ESSERE NELLA PAGINA FASE FINALE
-    if (!document.querySelector('.final-stage-page') && 
-        !(document.querySelector('.standings-page') && window.APP_STATE._activeStandingsTab === "fasefinale")) {
-        return; // Esci se non siamo nella pagina giusta
-    }
-    const oldBtn = document.getElementById("next-phase-action-btn");
-    if (oldBtn) oldBtn.remove();
-    const container = document.getElementById("finalBracketContainer");
-    if (!container) return;
-    const finalStageData = window.APP_CACHE.finalStage || [];
-    const quarti = finalStageData.filter(m => m.turno === "QUARTI");
-    const quartiFiniti = quarti.filter(m => m.stato === "FINITA").length;
-    const semi = finalStageData.filter(m => m.turno === "SEMIFINALE");
-    const semiFiniti = semi.filter(m => m.stato === "FINITA").length;
-    const finali = finalStageData.filter(m => m.turno === "FINALE 1-2" || m.turno === "FINALE 3-4");
-    const finaliFiniti = finali.filter(m => m.stato === "FINITA").length;
-    const sf1Exists = finalStageData.some(m => m.matchKey === "SF1");
-    const sf2Exists = finalStageData.some(m => m.matchKey === "SF2");
-    const semiCreate = sf1Exists && sf2Exists;
-    const final1Exists = finalStageData.some(m => m.matchKey === "F");
-    const final3Exists = finalStageData.some(m => m.matchKey === "TP");
-    const finaliCreate = final1Exists && final3Exists;
-    let isReady = false;
-    let action = null;
-    if (quartiFiniti === 4 && !semiCreate) {
-        isReady = true;
-        action = "SEMIFINALI";
-    }
-    else if (quartiFiniti === 4 && semiFiniti === 2 && !finaliCreate) {
-        isReady = true;
-        action = "FINALI";
-    }
-    else if (finaliCreate && finaliFiniti === 2) {
-        isReady = true;
-        action = "PODIO";
-    }
-    const btnWrapper = document.createElement("div");
-    btnWrapper.className = "next-phase-button";
-    btnWrapper.id = "next-phase-action-btn";
-    const btn = document.createElement("button");
-    btn.className = `next-phase-btn ${isReady ? '' : 'disabled'}`;
-    btn.textContent = action === "PODIO" ? "🏆 VEDI PODIO" : "PROSSIMA FASE";
-    if (isReady) {
-        btn.onclick = () => {
-            if (action === "PODIO") {
-                showTournamentPodium(finalStageData);
-            } else {
-                openNextPhasePopup(action);
-            }
-        };
-    }
-    btnWrapper.appendChild(btn);
-    const pageContainer = document.querySelector('.final-stage-page');
-    if(pageContainer) {
-        pageContainer.appendChild(btnWrapper);
-    }
+  // ✅ ASSICURATI DI ESSERE NELLA PAGINA FASE FINALE
+  if (!document.querySelector('.final-stage-page') &&
+      !(document.querySelector('.standings-page') && window.APP_STATE._activeStandingsTab === "fasefinale")) {
+    return;
+  }
+  const oldBtn = document.getElementById("next-phase-action-btn");
+  if (oldBtn) oldBtn.remove();
+  const container = document.getElementById("finalBracketContainer");
+  if (!container) return;
+  const finalStageData = window.APP_CACHE.finalStage || [];
+  const quarti = finalStageData.filter(m => m.turno === "QUARTI");
+  const quartiFiniti = quarti.filter(m => m.stato === "FINITA").length;
+  const semi = finalStageData.filter(m => m.turno === "SEMIFINALE");
+  const semiFiniti = semi.filter(m => m.stato === "FINITA").length;
+  const finali = finalStageData.filter(m => m.turno === "FINALE 1-2" || m.turno === "FINALE 3-4");
+  const finaliFiniti = finali.filter(m => m.stato === "FINITA").length;
+  const sf1Exists = finalStageData.some(m => m.matchKey === "SF1");
+  const sf2Exists = finalStageData.some(m => m.matchKey === "SF2");
+  const semiCreate = sf1Exists && sf2Exists;
+  const final1Exists = finalStageData.some(m => m.matchKey === "F");
+  const final3Exists = finalStageData.some(m => m.matchKey === "TP");
+  const finaliCreate = final1Exists && final3Exists;
+  let isReady = false;
+  let action = null;
+  if (quartiFiniti === 4 && !semiCreate) {
+    isReady = true;
+    action = "SEMIFINALI";
+  }
+  else if (quartiFiniti === 4 && semiFiniti === 2 && !finaliCreate) {
+    isReady = true;
+    action = "FINALI";
+  }
+  else if (finaliCreate && finaliFiniti === 2) {
+    isReady = true;
+    action = "PODIO";
+  }
+  const btnWrapper = document.createElement("div");
+  btnWrapper.className = "next-phase-button";
+  // ✅ AGGIUNGI classe podio-ready solo se è PODIO (per mobile)
+  if (action === "PODIO") {
+    btnWrapper.classList.add("podio-ready");
+  }
+  btnWrapper.id = "next-phase-action-btn";
+  const btn = document.createElement("button");
+  btn.className = `next-phase-btn ${isReady ? '' : 'disabled'}`;
+  btn.textContent = action === "PODIO" ? " VEDI PODIO" : "PROSSIMA FASE";
+  if (isReady) {
+    btn.onclick = () => {
+      if (action === "PODIO") {
+        showTournamentPodium(finalStageData);
+      } else {
+        openNextPhasePopup(action);
+      }
+    };
+  }
+  btnWrapper.appendChild(btn);
+  const pageContainer = document.querySelector('.final-stage-page');
+  if(pageContainer) {
+    pageContainer.appendChild(btnWrapper);
+  }
 }
 
 function openNextPhasePopup(phase) {
