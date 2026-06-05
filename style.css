@@ -1644,7 +1644,7 @@ body {
 
  /* Card normale - z-index sopra toolbar */
   .home-next-match {
-    bottom: 120px !important;
+    bottom: 130px !important;
     z-index: 1001 !important;
     width: 90%;
     max-width: 320px;
@@ -1671,7 +1671,7 @@ body {
 
   /* Card campione - z-index sopra toolbar + distanza fissa da toolbar */
   .home-next-match.winner-card {
-    bottom: 120px !important;
+    bottom: 130px !important;
     z-index: 1001 !important;
     min-width: 160px !important;
     max-width: 220px !important;
