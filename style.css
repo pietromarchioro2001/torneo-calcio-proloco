@@ -1700,171 +1700,174 @@ body {
 
   /* === PARTITE MOBILE === */
   .matches-page {
-     width: 100% !important;
-     padding: 0 10px !important;
-     box-sizing: border-box !important;
-     margin: 0 !important;
-   }
-   .matches-header {
-     padding: 0;
-     margin-top: 10px;
-   }
-  .matches-actions {
-     display: none !important;
-   }
-  .matches-scroll {
-     width: 100% !important;
-     max-width: 100% !important;
-     margin: 0 !important;
-     padding: 0 !important;
-     box-sizing: border-box !important;
-   }
+   width: 100% !important;
+   padding: 0 10px !important;
+   box-sizing: border-box !important;
+   margin: 0 !important;
+ }
+ .matches-header {
+   padding: 0;
+   margin-top: 10px;
+ }
+.matches-actions {
+   display: none !important;
+ }
+.matches-scroll {
+   width: 100% !important;
+   max-width: 100% !important;
+   margin: 0 !important;
+   padding: 0 !important;
+   box-sizing: border-box !important;
+ }
 
-  /* Pulsante inserisci partite più piccolo */
-  .phase-btn {
-     padding: 6px 12px;
-     font-size: 10px;
-     letter-spacing: 1px;
-   }
-   .phase-btn.small {
-     padding: 5px 10px;
-     font-size: 9px;
-   }
+/* Pulsante inserisci partite più piccolo */
+.phase-btn {
+   padding: 6px 12px;
+   font-size: 10px;
+   letter-spacing: 1px;
+ }
+ .phase-btn.small {
+   padding: 5px 10px;
+   font-size: 9px;
+ }
 
-  /* Toolbar date più piccola */
-  .dates-toolbar {
-     margin-top: 10px !important;
-     gap: 6px !important;
-     padding: 8px 12px !important;
-     overflow-x: auto !important;
-     overflow-y: hidden !important;
-     scroll-behavior: auto;
-     -webkit-overflow-scrolling: touch;
-     scrollbar-width: none;
-     -ms-overflow-style: none;
-     display: flex !important;
-     flex-wrap: nowrap !important;
-     justify-content: flex-start !important;
-   }
-   .dates-toolbar::-webkit-scrollbar {
-     display: none;
-   }
-   .date-item {
-     flex: 0 0 auto !important;
-     width: 44px !important;
-     min-height: 38px !important;
-     padding: 4px 0 !important;
-     border-radius: 8px !important;
-     margin: 0 1px !important;
-   }
-   .date-day {
-     font-size: 13px !important;
-     font-weight: 800;
-   }
-   .date-month {
-     font-size: 7px !important;
-   }
-  /* Card partite più piccole */
- .match-card {
-     padding: 6px 8px !important;
-     margin: 3px 0 !important;
-     border-radius: 8px !important;
-     min-height: 48px;
-     box-sizing: border-box !important;
-   }
-   .team-block {
-     width: 40%;
-     gap: 4px;
-   }
-   .team-block img {
-     width: 24px !important;
-     height: 24px !important;
-   }
-   .team-name {
-     font-size: 10px !important;
-     letter-spacing: 0.3px;
-   }
-   .match-center {
-     width: 20% !important;
-     padding: 0 2px;
-   }
-   .score {
-     font-size: 11px !important;
-     font-weight: 800;
-     line-height: 1.1;
-     white-space: nowrap;
-   }
-   .vs {
-     font-size: 11px !important;
-   }
-   .time, .status {
-     font-size: 7px !important;
-     line-height: 1.2;
-     letter-spacing: 0.5px;
-   }
+/* Toolbar date più piccola */
+.dates-toolbar {
+   margin-top: 10px !important;
+   gap: 6px !important;
+   padding: 8px 12px !important;
+   overflow-x: auto !important;
+   overflow-y: hidden !important;
+   scroll-behavior: auto;
+   -webkit-overflow-scrolling: touch;
+   scrollbar-width: none;
+   -ms-overflow-style: none;
+   display: flex !important;
+   flex-wrap: nowrap !important;
+   justify-content: flex-start !important;
+ }
+ .dates-toolbar::-webkit-scrollbar {
+   display: none;
+ }
+ .date-item {
+   flex: 0 0 auto !important;
+   width: 44px !important;
+   min-height: 38px !important;
+   padding: 4px 0 !important;
+   border-radius: 8px !important;
+   margin: 0 1px !important;
+ }
+ .date-day {
+   font-size: 13px !important;
+   font-weight: 800;
+ }
+ .date-month {
+   font-size: 7px !important;
+ }
 
- .match-fase-badge,
+/* Card partite - leggermente più alte per elementi più grandi */
+.match-card {
+   padding: 8px 10px !important;
+   margin: 4px 0 !important;
+   border-radius: 10px !important;
+   min-height: 56px !important;
+   box-sizing: border-box !important;
+ }
+ .team-block {
+   width: 38%;
+   gap: 5px;
+ }
+ .team-block img {
+   width: 28px !important; /* ✅ Aumentato da 24px */
+   height: 28px !important;
+ }
+ .team-name {
+   font-size: 12px !important; /* ✅ Aumentato da 10px */
+   letter-spacing: 0.5px;
+ }
+ .match-center {
+   width: 24% !important;
+   padding: 0 2px;
+ }
+ .score {
+   font-size: 14px !important; /* ✅ Aumentato da 11px */
+   font-weight: 800;
+   line-height: 1.1;
+   white-space: nowrap;
+ }
+ .vs {
+   font-size: 12px !important;
+ }
+
+/* ✅ NASCONDI: TERMINATA, LIVE, SUPP, RIGORI */
+.status {
+   display: none !important;
+ }
+
+/* ✅ NASCONDI: FINALE, SEMIFINALI, QUARTI */
+.match-fase-badge,
 .status.fase {
-  font-size: 7px !important;
-  font-weight: 600 !important;
-  letter-spacing: 0.5px !important;
-  margin-top: 2px !important;
-  text-transform: uppercase;
-}
+   display: none !important;
+ }
 
-/* Se "FINALE 3-4" è in un elemento diverso */
+/* Nascondi anche eventuali altri elementi fase */
 .match-center .status:nth-child(3),
 .match-center div:last-child {
-  font-size: 7px !important;
-  line-height: 1.2;
-}
+   display: none !important;
+ }
 
+/* Time (orario partita) - mantenuto piccolo */
+.time {
+   font-size: 8px !important;
+   line-height: 1.2;
+   letter-spacing: 0.5px;
+ }
    
-   .match-day-title {
-     font-size: 10px !important;
-     margin: 10px 5px 6px !important;
-   }
+ .match-day-title {
+   font-size: 10px !important;
+   margin: 10px 5px 6px !important;
+ }
 
-  /* Popup Nuova Partita sistemato */
-  .match-modal {
-    min-width: 0;
-    width: 90%;
-    max-width: 340px;
-    padding: 20px;
-  }
-  .modalTitle {
-    font-size: 22px;
-    letter-spacing: 2px;
-    margin-bottom: 18px;
-  }
-  .match-form {
-    gap: 12px;
-  }
-  .match-row {
-    flex-direction: column;
-    gap: 8px;
-  }
-  .match-select,
-  .match-input {
-    padding: 10px;
-    font-size: 13px;
-    width: 100%;
-  }
-  .vs-big {
-    font-size: 14px;
-  }
-  .time-row {
-    flex-direction: row;
-    gap: 10px;
-  }
-  .modalActions {
-    gap: 12px;
-  }
-  .modalBtn {
-    padding: 10px 18px;
-    font-size: 13px;
-    min-width: 100px;
-  }
+/* Popup Nuova Partita sistemato */
+.match-modal {
+  min-width: 0;
+  width: 90%;
+  max-width: 340px;
+  padding: 20px;
+}
+.modalTitle {
+  font-size: 22px;
+  letter-spacing: 2px;
+  margin-bottom: 18px;
+}
+.match-form {
+  gap: 12px;
+}
+.match-row {
+  flex-direction: column;
+  gap: 8px;
+}
+.match-select,
+.match-input {
+  padding: 10px;
+  font-size: 13px;
+  width: 100%;
+}
+.vs-big {
+  font-size: 14px;
+}
+.time-row {
+  flex-direction: row;
+  gap: 10px;
+}
+.modalActions {
+  gap: 12px;
+}
+.modalBtn {
+  padding: 10px 18px;
+  font-size: 13px;
+  min-width: 100px;
+}
 
   /* === SQUADRE MOBILE === */
 .teams-page {
@@ -2260,7 +2263,7 @@ body {
   display: grid !important;
   grid-template-columns: 1fr 1fr !important;
   gap: 4px 4px !important; /* column-gap row-gap */
-  row-gap: 10px !important; /* ✅ Gap aumentato tra le righe */
+  row-gap: 15px !important; /* ✅ Gap aumentato tra le righe */
   height: auto !important;
   min-height: auto !important;
   overflow: visible !important;
