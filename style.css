@@ -2259,7 +2259,8 @@ body {
 .tournament-wrapper {
   display: grid !important;
   grid-template-columns: 1fr 1fr !important;
-  gap: 4px !important;
+  gap: 4px 4px !important; /* column-gap row-gap */
+  row-gap: 10px !important; /* ✅ Gap aumentato tra le righe */
   height: auto !important;
   min-height: auto !important;
   overflow: visible !important;
@@ -2270,7 +2271,7 @@ body {
   width: 100% !important;
 }
 
-/* Card leggermente più grandi */
+/* Card leggermente più grandi per ospitare nomi lunghi */
 .bracket-match,
 .bracket-placeholder {
   position: relative !important;
@@ -2280,9 +2281,9 @@ body {
   margin: 0 !important;
   margin-left: 0 !important;
   width: 100% !important;
-  max-width: 135px !important; /* Aumentato da 120px */
-  height: 60px !important; /* Aumentato da 55px */
-  min-height: 60px !important;
+  max-width: 145px !important; /* ✅ Aumentato per nomi lunghi */
+  height: 62px !important;
+  min-height: 62px !important;
   min-width: 0 !important;
   padding: 5px 6px !important;
   border-radius: 8px !important;
@@ -2299,7 +2300,7 @@ body {
   grid-row: 2 !important;
   justify-self: center !important;
   width: 55% !important;
-  max-width: 160px !important;
+  max-width: 170px !important;
 }
 
 /* Finale e 3° posto - riga 3 */
@@ -2324,19 +2325,19 @@ body {
   grid-row: 4 !important;
   justify-self: center !important;
   width: 55% !important;
-  max-width: 160px !important;
+  max-width: 170px !important;
 }
 
 /* Quarti - riga 5 */
 .qf3 { grid-column: 1 !important; grid-row: 5 !important; justify-self: end !important; }
 .qf4 { grid-column: 2 !important; grid-row: 5 !important; justify-self: start !important; }
 
-/* Layout interno - spazio minimo tra nome e punteggio */
+/* Layout interno */
 .bracket-team {
   display: flex !important;
   align-items: center !important;
   justify-content: flex-start !important;
-  gap: 0 !important; /* Eliminato spazio */
+  gap: 0 !important;
   margin: 0 !important;
   margin-bottom: 2px !important;
   padding: 0 !important;
@@ -2347,7 +2348,7 @@ body {
 }
 
 .bracket-team img {
-  width: 16px !important; /* Leggermente più grande */
+  width: 16px !important;
   height: 16px !important;
   min-width: 16px !important;
   flex-shrink: 0 !important;
@@ -2355,25 +2356,27 @@ body {
   padding: 0 !important;
 }
 
+/* ✅ FIX: Nome squadra completo - permette wrapping */
 .bracket-team span {
   flex: 1 !important;
   max-width: none !important;
-  font-size: 10px !important; /* Leggermente più grande */
-  line-height: 1.1 !important;
-  white-space: nowrap !important;
-  overflow: hidden !important;
-  text-overflow: ellipsis !important;
+  font-size: 9px !important; /* Ridotto per far entrare nomi lunghi */
+  line-height: 1.15 !important;
+  white-space: normal !important; /* ✅ Permette andare a capo */
+  word-break: break-word !important; /* ✅ Spezza parole lunghe */
+  overflow: visible !important; /* ✅ Mostra tutto */
+  text-overflow: clip !important; /* ✅ No ellipsis */
   min-width: 0 !important;
   margin: 0 !important;
   padding: 0 !important;
-  padding-right: 1px !important; /* Spazio minimo prima del punteggio */
+  padding-right: 2px !important;
 }
 
 .bracket-score {
   margin: 0 !important;
-  margin-left: 0 !important; /* Eliminato spazio */
+  margin-left: 0 !important;
   padding: 0 !important;
-  font-size: 13px !important; /* Leggermente più grande */
+  font-size: 13px !important;
   font-weight: 900 !important;
   min-width: 14px !important;
   max-width: 22px !important;
