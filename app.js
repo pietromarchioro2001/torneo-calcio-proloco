@@ -2471,7 +2471,23 @@ function renderFinalStage(data) {
   container.innerHTML = `<div class="final-stage-page"><div id="finalBracketContainer"></div></div>`;
   renderFinalBracket(data);
   renderNextPhaseButton();
-  // ✅ RIMOSSO: controllo automatico del podio qui
+  
+  // 🔥 MOSTRA PODIO OGNI VOLTA (rimosso localStorage)
+  const finali = (data || []).filter(m =>
+    m.turno === "FINALE 1-2" || m.turno === "FINALE 3-4" ||
+    m.matchKey === "F" || m.matchKey === "TP"
+  );
+  const finaliFiniti = finali.filter(m => m.stato === "FINITA").length;
+  const finaliCreate = finali.length >= 2;
+  
+  // ✅ Mostra podio ogni volta che entri nella pagina (se finali concluse)
+  if (finaliCreate && finaliFiniti === 2) {
+    setTimeout(() => {
+      if (!document.getElementById('podiumPopupOverlay')) {
+        showTournamentPodium(data);
+      }
+    }, 500);
+  }
 }
 
 function renderFinalBracket(matches) {
@@ -2575,25 +2591,33 @@ function openNextPhasePopup(phase) {
   modal.querySelector(".modalBox").onclick = (e) => e.stopPropagation();
 }
 
-function showTournamentPodium(finalStageData, isAuto = false) {
+function showTournamentPodium(finalStageData) {
+  // ✅ VERIFICA DI ESSERE NELLA PAGINA FASE FINALE
   if (!document.querySelector('.final-stage-page') &&
       !(document.querySelector('.standings-page') && window.APP_STATE._activeStandingsTab === "fasefinale")) {
     console.warn('⚠️ showTournamentPodium chiamato fuori dalla pagina corretta');
     return;
   }
+  
+  // Rimuovi popup esistente se presente
   const existing = document.getElementById("podiumPopupOverlay");
   if (existing) existing.remove();
+  
   const finale1 = finalStageData.find(m => m.matchKey === "F");
   const finale3 = finalStageData.find(m => m.matchKey === "TP");
   if (!finale1 || !finale3) return;
   
+  // 🔥 Determina vincitori CON RIGORI
   let primo, secondo, terzo;
+  
+  // ✅ FINALE 1°-2°: controlla prima i rigori
   const rigoriCasaFinale = finale1.rigoriCasa ?? finale1.RIGORE_CASA ?? finale1.RIGORI_CASA ?? null;
   const rigoriTrasfFinale = finale1.rigoriTrasferta ?? finale1.RIGORE_TRASFERTA ?? finale1.RIGORI_TRASFERTA ?? null;
   const hasValidRigoriFinale = (
     rigoriCasaFinale !== null && rigoriCasaFinale !== undefined && rigoriCasaFinale !== "" &&
     rigoriTrasfFinale !== null && rigoriTrasfFinale !== undefined && rigoriTrasfFinale !== ""
   );
+  
   if (hasValidRigoriFinale) {
     if (Number(rigoriCasaFinale) > Number(rigoriTrasfFinale)) {
       primo = finale1.casa;
@@ -2611,12 +2635,15 @@ function showTournamentPodium(finalStageData, isAuto = false) {
       secondo = finale1.casa;
     }
   }
+  
+  // ✅ FINALE 3°-4°: stessa logica
   const rigoriCasa3 = finale3.rigoriCasa ?? finale3.RIGORE_CASA ?? finale3.RIGORI_CASA ?? null;
   const rigoriTrasf3 = finale3.rigoriTrasferta ?? finale3.RIGORE_TRASFERTA ?? finale3.RIGORI_TRASFERTA ?? null;
   const hasValidRigori3 = (
     rigoriCasa3 !== null && rigoriCasa3 !== undefined && rigoriCasa3 !== "" &&
     rigoriTrasf3 !== null && rigoriTrasf3 !== undefined && rigoriTrasf3 !== ""
   );
+  
   if (hasValidRigori3) {
     if (Number(rigoriCasa3) > Number(rigoriTrasf3)) {
       terzo = finale3.casa;
@@ -2630,18 +2657,14 @@ function showTournamentPodium(finalStageData, isAuto = false) {
       terzo = finale3.trasferta;
     }
   }
+  
   const popup = document.createElement("div");
   popup.className = "podium-popup-overlay";
   popup.id = "podiumPopupOverlay";
   popup.onclick = (e) => {
-    if (e.target === popup) {
-      popup.remove();
-      // ✅ Se era automatico, segna come mostrato
-      if (isAuto) {
-        window.APP_STATE._podiumAutoShownThisSession = true;
-      }
-    }
+    if (e.target === popup) popup.remove();
   };
+  
   popup.innerHTML = `
     <div class="podium-container" onclick="event.stopPropagation()">
       <div class="podium-header">
@@ -2680,6 +2703,7 @@ function showTournamentPodium(finalStageData, isAuto = false) {
       </div>
     </div>
   `;
+  
   document.body.appendChild(popup);
 }
 
