@@ -2543,11 +2543,11 @@ body {
   display: grid !important;
   grid-template-columns: 1fr 1fr !important;
   gap: 4px 4px !important;
-  row-gap: 25px !important; /* ✅ Aumentato da 15px a 25px */
+  row-gap: 25px !important; /* ✅ Gap aumentato tra le righe */
   height: auto !important;
   min-height: auto !important;
   overflow: visible !important;
-  margin: 10px auto 0 !important;
+  margin: 25px auto 0 !important; /* ✅ Aumentato margine top da 10px a 25px per far entrare le etichette */
   padding: 0 4px !important;
   box-sizing: border-box !important;
   max-width: 100% !important;
@@ -2555,13 +2555,14 @@ body {
   position: relative !important;
 }
 
-/* ✅ ETICHETTE FASE - aggiunte con pseudo-elementi sulle prime card di ogni riga */
-.qf1::before,
-.qf3::before {
+/* ✅ ETICHETTE FASE - Tutte allineate a sinistra */
+
+/* Quarti riga 1 (qf1, qf2) */
+.qf1::before {
   content: "QUARTI DI FINALE" !important;
   position: absolute !important;
   top: -18px !important;
-  left: 0 !important;
+  left: 0 !important; /* ✅ Allineato a sinistra */
   font-size: 9px !important;
   font-weight: 600 !important;
   color: #999 !important;
@@ -2569,13 +2570,17 @@ body {
   text-transform: uppercase !important;
 }
 
-.sf1::before,
-.sf2::before {
+/* Quarti riga 1 (qf2 non ha etichetta perché la mette qf1 per la riga) */
+.qf2::before {
+  content: none !important;
+}
+
+/* Semifinale riga 2 (sf1) */
+.sf1::before {
   content: "SEMIFINALE" !important;
   position: absolute !important;
   top: -18px !important;
-  left: 50% !important;
-  transform: translateX(-50%) !important;
+  left: 0 !important; /* ✅ Allineato a sinistra */
   font-size: 9px !important;
   font-weight: 600 !important;
   color: #999 !important;
@@ -2583,16 +2588,53 @@ body {
   text-transform: uppercase !important;
 }
 
+/* Finale riga 3 (final-match) */
 .final-match::before {
   content: "FINALE" !important;
   position: absolute !important;
   top: -18px !important;
-  left: 0 !important;
+  left: 0 !important; /* ✅ Allineato a sinistra */
   font-size: 9px !important;
   font-weight: 600 !important;
   color: #999 !important;
   letter-spacing: 1px !important;
   text-transform: uppercase !important;
+}
+
+/* Third place (third-place) - non ha etichetta perché finale-match copre la riga */
+.third-place::before {
+  content: none !important;
+}
+
+/* Semifinale riga 4 (sf2) */
+.sf2::before {
+  content: "SEMIFINALE" !important;
+  position: absolute !important;
+  top: -18px !important;
+  left: 0 !important; /* ✅ Allineato a sinistra */
+  font-size: 9px !important;
+  font-weight: 600 !important;
+  color: #999 !important;
+  letter-spacing: 1px !important;
+  text-transform: uppercase !important;
+}
+
+/* Quarti riga 5 (qf3, qf4) */
+.qf3::before {
+  content: "QUARTI DI FINALE" !important;
+  position: absolute !important;
+  top: -18px !important;
+  left: 0 !important; /* ✅ Allineato a sinistra */
+  font-size: 9px !important;
+  font-weight: 600 !important;
+  color: #999 !important;
+  letter-spacing: 1px !important;
+  text-transform: uppercase !important;
+}
+
+/* Quarti riga 5 (qf4 non ha etichetta) */
+.qf4::before {
+  content: none !important;
 }
 
 /* Card bracket */
