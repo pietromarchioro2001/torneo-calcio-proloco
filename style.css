@@ -2270,7 +2270,7 @@ body {
   width: 100% !important;
 }
 
-/* Card molto più piccole */
+/* Card leggermente più grandi */
 .bracket-match,
 .bracket-placeholder {
   position: relative !important;
@@ -2280,11 +2280,11 @@ body {
   margin: 0 !important;
   margin-left: 0 !important;
   width: 100% !important;
-  max-width: 120px !important;
-  height: 55px !important;
-  min-height: 55px !important;
+  max-width: 135px !important; /* Aumentato da 120px */
+  height: 60px !important; /* Aumentato da 55px */
+  min-height: 60px !important;
   min-width: 0 !important;
-  padding: 4px 6px !important;
+  padding: 5px 6px !important;
   border-radius: 8px !important;
   box-sizing: border-box !important;
 }
@@ -2298,8 +2298,8 @@ body {
   grid-column: 1 / -1 !important;
   grid-row: 2 !important;
   justify-self: center !important;
-  width: 50% !important;
-  max-width: 140px !important;
+  width: 55% !important;
+  max-width: 160px !important;
 }
 
 /* Finale e 3° posto - riga 3 */
@@ -2323,22 +2323,22 @@ body {
   grid-column: 1 / -1 !important;
   grid-row: 4 !important;
   justify-self: center !important;
-  width: 50% !important;
-  max-width: 140px !important;
+  width: 55% !important;
+  max-width: 160px !important;
 }
 
 /* Quarti - riga 5 */
 .qf3 { grid-column: 1 !important; grid-row: 5 !important; justify-self: end !important; }
 .qf4 { grid-column: 2 !important; grid-row: 5 !important; justify-self: start !important; }
 
-/* Layout interno forzato */
+/* Layout interno - spazio minimo tra nome e punteggio */
 .bracket-team {
   display: flex !important;
   align-items: center !important;
   justify-content: flex-start !important;
-  gap: 2px !important;
+  gap: 0 !important; /* Eliminato spazio */
   margin: 0 !important;
-  margin-bottom: 1px !important;
+  margin-bottom: 2px !important;
   padding: 0 !important;
   flex: 1 !important;
   min-width: 0 !important;
@@ -2347,9 +2347,9 @@ body {
 }
 
 .bracket-team img {
-  width: 14px !important;
-  height: 14px !important;
-  min-width: 14px !important;
+  width: 16px !important; /* Leggermente più grande */
+  height: 16px !important;
+  min-width: 16px !important;
   flex-shrink: 0 !important;
   margin: 0 !important;
   padding: 0 !important;
@@ -2358,7 +2358,7 @@ body {
 .bracket-team span {
   flex: 1 !important;
   max-width: none !important;
-  font-size: 9px !important;
+  font-size: 10px !important; /* Leggermente più grande */
   line-height: 1.1 !important;
   white-space: nowrap !important;
   overflow: hidden !important;
@@ -2366,16 +2366,17 @@ body {
   min-width: 0 !important;
   margin: 0 !important;
   padding: 0 !important;
+  padding-right: 1px !important; /* Spazio minimo prima del punteggio */
 }
 
 .bracket-score {
   margin: 0 !important;
-  margin-left: 2px !important;
+  margin-left: 0 !important; /* Eliminato spazio */
   padding: 0 !important;
-  font-size: 12px !important;
+  font-size: 13px !important; /* Leggermente più grande */
   font-weight: 900 !important;
-  min-width: 12px !important;
-  max-width: 20px !important;
+  min-width: 14px !important;
+  max-width: 22px !important;
   text-align: right !important;
   flex-shrink: 0 !important;
   line-height: 1 !important;
