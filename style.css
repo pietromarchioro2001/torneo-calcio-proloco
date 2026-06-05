@@ -2062,11 +2062,10 @@ body {
   width: 70px !important;
   height: 70px !important;
   flex-shrink: 0 !important;
-  cursor: default !important; /* ✅ Disattiva click */
-  pointer-events: none !important; /* ✅ Disattiva click */
+  cursor: default !important;
+  pointer-events: none !important;
 }
 
-/* ✅ Disattiva click su nome squadra */
 .team-name-display {
   font-size: 20px !important;
   letter-spacing: 3px !important;
@@ -2076,7 +2075,6 @@ body {
   pointer-events: none !important;
 }
 
-/* ✅ Disattiva click su girone */
 .team-girone-display {
   font-size: 11px !important;
   letter-spacing: 2px !important;
@@ -2090,7 +2088,7 @@ body {
   width: 85% !important;
   max-width: 280px !important;
   margin: 15px auto 20px !important;
-  cursor: pointer !important; /* ✅ Mantieni click per vedere foto grande */
+  cursor: pointer !important;
 }
 
 .team-photo-view {
@@ -2103,7 +2101,7 @@ body {
   aspect-ratio: 16/9 !important;
   border-radius: 12px !important;
   margin: 0 auto !important;
-  pointer-events: none !important; /* ✅ Disattiva upload */
+  pointer-events: none !important;
 }
 
 /* ✅ Titolo GIOCATORI */
@@ -2214,31 +2212,11 @@ body {
 .player-row {
   padding: 6px 8px !important;
   margin-bottom: 4px !important;
-  cursor: pointer !important; /* ✅ Mantieni click per vedere profilo */
+  cursor: pointer !important;
 }
 
 .players-list {
   gap: 4px !important;
-}
-
-/* ✅ Bottone indietro VISIBILE */
-.back-btn-wrapper {
-  margin-top: 30px !important;
-  padding: 15px 0 !important;
-  display: flex !important; /* ✅ Assicurati che sia visibile */
-  justify-content: flex-end !important;
-}
-
-.back-btn {
-  padding: 10px 20px !important;
-  font-size: 12px !important;
-  letter-spacing: 2px !important;
-  background: var(--granata) !important;
-  color: white !important;
-  border-radius: 8px !important;
-  border: none !important;
-  cursor: pointer !important;
-  display: inline-block !important;
 }
 
 /* ✅ Nascondi pulsanti di modifica nei popup */
@@ -2252,7 +2230,6 @@ body {
   display: none !important;
 }
 
-/* ✅ Popup giocatore: nascondi form di modifica */
 .player-modal .player-form {
   pointer-events: none !important;
 }
@@ -2263,7 +2240,6 @@ body {
   pointer-events: none !important;
 }
 
-/* ✅ Popup foto squadra: nascondi upload */
 .team-photo-wrapper .uploadBox,
 .team-photo-wrapper .modern-upload {
   display: none !important;
@@ -2669,9 +2645,29 @@ body {
 
   /* === BACK BUTTON MOBILE === */
   .back-btn-wrapper {
-    margin-top: 40px;
-    padding: 15px 0;
+    margin-top: 20px !important; /* ✅ Ridotto da 100px/40px */
+    padding: 10px 0 !important;
+    display: flex !important;
+    justify-content: flex-end !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
   }
+
+  .back-btn {
+    padding: 10px 20px !important;
+    font-size: 12px !important;
+    letter-spacing: 2px !important;
+    background: var(--granata) !important;
+    color: white !important;
+    border-radius: 8px !important;
+    border: none !important;
+    cursor: pointer !important;
+    display: inline-block !important;
+    font-family: 'Oswald', sans-serif !important;
+    font-weight: 600 !important;
+    text-transform: uppercase !important;
+  }
+
   .small-btn {
     padding: 8px 16px;
     font-size: 12px;
