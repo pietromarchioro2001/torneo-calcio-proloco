@@ -2277,8 +2277,8 @@ body {
   right: auto !important;
   top: auto !important;
   margin-left: 0 !important;
-  width: 95% !important;
-  max-width: 120px !important;
+  width: 80% !important;
+  max-width: 100px !important;
   height: 65px !important;
   min-height: 60px !important;
   padding: 6px 8px !important;
