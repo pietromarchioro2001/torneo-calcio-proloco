@@ -2256,11 +2256,11 @@ body {
   display: none !important;
 }
 
-/* Tournament wrapper: grid layout */
+/* Tournament wrapper: grid 2 colonne */
 .tournament-wrapper {
   display: grid !important;
   grid-template-columns: 1fr 1fr;
-  gap: 10px !important;
+  gap: 8px !important;
   height: auto !important;
   min-height: auto !important;
   overflow: visible !important;
@@ -2269,7 +2269,7 @@ body {
   box-sizing: border-box;
 }
 
-/* Reset posizioni absolute */
+/* Reset posizioni absolute - TUTTE le card uguali */
 .bracket-match,
 .bracket-placeholder {
   position: relative !important;
@@ -2279,28 +2279,19 @@ body {
   margin-left: 0 !important;
   width: 100% !important;
   max-width: none !important;
-  height: auto !important;
+  height: 70px !important;
   min-height: 70px !important;
-  padding: 10px 12px !important;
+  padding: 8px 10px !important;
 }
 
-/* Quarti di finale - colonna singola */
-.qf1 { 
-  grid-column: 1; 
-  grid-row: 1; 
-}
-.qf2 { 
-  grid-column: 2; 
-  grid-row: 1; 
-}
+/* Quarti di finale */
+.qf1 { grid-column: 1; grid-row: 1; }
+.qf2 { grid-column: 2; grid-row: 1; }
 
-/* Semifinale 1 - tutta la larghezza, centrata */
+/* Semifinale 1 - stessa dimensione, colonna 1 */
 .sf1 { 
-  grid-column: 1 / -1; 
+  grid-column: 1; 
   grid-row: 2; 
-  justify-self: center; 
-  width: 90% !important;
-  max-width: 340px !important;
 }
 
 /* Finale e Terzo Posto - affiancate */
@@ -2317,35 +2308,34 @@ body {
   border: 1.5px solid #fdba74 !important;
 }
 
-/* Semifinale 2 - tutta la larghezza, centrata */
+/* Semifinale 2 - stessa dimensione, colonna 2 */
 .sf2 { 
-  grid-column: 1 / -1; 
-  grid-row: 4; 
-  justify-self: center; 
-  width: 90% !important;
-  max-width: 340px !important;
-}
-
-/* Quarti di finale - colonna singola */
-.qf3 { 
-  grid-column: 1; 
-  grid-row: 5; 
-}
-.qf4 { 
   grid-column: 2; 
-  grid-row: 5; 
+  grid-row: 2; 
 }
 
-/* Card bracket dimensioni mobile */
+/* Quarti di finale */
+.qf3 { grid-column: 1; grid-row: 4; }
+.qf4 { grid-column: 2; grid-row: 4; }
+
+/* Card bracket dimensioni uniformi */
+.bracket-team {
+  gap: 6px !important;
+}
 .bracket-team span {
-  font-size: 11px !important;
+  font-size: 10px !important;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 .bracket-team img {
-  width: 22px !important;
-  height: 22px !important;
+  width: 20px !important;
+  height: 20px !important;
+  flex-shrink: 0;
 }
 .bracket-score {
-  font-size: 15px !important;
+  font-size: 14px !important;
+  min-width: 20px !important;
 }
 
 /* Placeholder */
