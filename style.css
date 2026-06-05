@@ -2044,7 +2044,7 @@ body {
 
 /* Nascondi pulsante NUOVO GIOCATORE */
 .team-editor .small-btn,
-.team-editor .phase-btn {
+.team-editor .players-header .phase-btn {
   display: none !important;
 }
 
@@ -2234,21 +2234,15 @@ body {
   pointer-events: none !important;
 }
 
-.player-modal .player-input {
-  border: none !important;
-  background: transparent !important;
-  pointer-events: none !important;
-}
-
 .team-photo-wrapper .uploadBox,
 .team-photo-wrapper .modern-upload {
   display: none !important;
 }
 
 .player-modal {
-  padding: 30px 20px !important;
-  min-width: 280px !important;
-  max-width: 90% !important;
+  padding: 25px 20px !important;
+  min-width: 220px !important;
+  max-width: 75% !important; /* ✅ Ridotto da 90% */
   text-align: center !important;
 }
 
@@ -2271,12 +2265,12 @@ body {
 }
 
 .player-modal .player-input {
-  font-size: 22px !important;
-  font-weight: 700 !important;
+  font-size: 18px !important;
+  font-weight: 400 !important; /* ✅ Cambiato da 700 a 400 */
   text-align: center !important;
   border: none !important;
   background: transparent !important;
-  padding: 10px 0 !important;
+  padding: 8px 0 !important;
   margin: 0 !important;
   letter-spacing: 2px !important;
   width: 100% !important;
@@ -2293,6 +2287,12 @@ body {
   object-fit: cover !important;
   border: 3px solid var(--granata) !important;
   margin: 0 auto !important;
+}
+
+   .team-editor .back-btn-wrapper .phase-btn {
+  display: inline-block !important; /* ✅ Sovrascrive il display:none */
+  visibility: visible !important;
+  opacity: 1 !important;
 }
    
   /* === DETTAGLIO PARTITA MOBILE === */
