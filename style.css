@@ -2342,55 +2342,66 @@ body {
     width: 100% !important;
     padding: 0 10px !important;
     box-sizing: border-box !important;
+    overflow-x: hidden !important; /* ✅ Evita scroll orizzontale */
   }
 
-  /* ✅ HEADER PARTITA: layout in linea come PC */
+  /* ✅ HEADER PARTITA: più spazio sopra */
   .match-header-big {
     display: flex !important;
     flex-direction: row !important;
     align-items: center !important;
     justify-content: space-between !important;
     min-height: auto !important;
-    gap: 8px !important;
-    margin-top: 15px !important;
+    gap: 4px !important;
+    margin-top: 20px !important; /* ✅ Aumentato spazio bianco sopra */
     margin-bottom: 5px !important;
     position: relative !important;
   }
 
+  /* ✅ SQUADRE: larghezza ridotta per evitare tagli */
   .team-big {
     position: static !important;
-    width: 30% !important;
+    width: 30% !important; /* ✅ Ridotto da 32% a 30% */
     padding: 0 !important;
     display: flex !important;
     align-items: center !important;
-    gap: 8px !important;
+    gap: 5px !important;
+    min-width: 0 !important;
   }
 
+  /* ✅ SQUADRA SINISTRA: [logo] NOME */
   .team-big.left {
-    justify-content: flex-end !important;
-    text-align: right !important;
-    flex-direction: row-reverse !important;
-  }
-
-  .team-big.right {
     justify-content: flex-start !important;
     text-align: left !important;
+    flex-direction: row !important; /* ✅ Logo a sinistra del nome */
+  }
+
+  /* ✅ SQUADRA DESTRA: NOME [logo] */
+  .team-big.right {
+    justify-content: flex-end !important;
+    text-align: right !important;
+    flex-direction: row-reverse !important; /* ✅ Nome a sinistra, logo a destra */
   }
 
   .team-big img {
-    width: 45px !important;
-    height: 45px !important;
+    width: 32px !important; /* ✅ Ridotto per stare nello spazio */
+    height: 32px !important;
     object-fit: contain !important;
+    flex-shrink: 0 !important;
   }
 
   .team-big-name {
-    font-size: 13px !important;
-    letter-spacing: 1px !important;
+    font-size: 10px !important; /* ✅ Ridotto per evitare tagli */
+    letter-spacing: 0.5px !important;
     line-height: 1.1 !important;
     font-weight: 700 !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    flex: 1 !important;
+    min-width: 0 !important;
   }
 
-  /* ✅ CENTRO: risultato + stato */
   .match-header-big .match-center {
     flex: 1 !important;
     display: flex !important;
@@ -2401,13 +2412,12 @@ body {
     padding: 0 !important;
   }
 
-  /* ✅ NASCONDI pulsanti INIZIA/CONCLUDI/SUPP/RIGORI */
   .match-controls-top {
     display: none !important;
   }
 
   .score-big {
-    font-size: 36px !important;
+    font-size: 30px !important;
     font-weight: 800 !important;
     letter-spacing: 2px !important;
     line-height: 1 !important;
@@ -2416,9 +2426,8 @@ body {
     width: auto !important;
   }
 
-  /* ✅ STATO PARTITA sotto il risultato */
   .match-status {
-    font-size: 11px !important;
+    font-size: 10px !important;
     font-weight: 700 !important;
     letter-spacing: 2px !important;
     margin-top: 4px !important;
@@ -2426,7 +2435,7 @@ body {
   }
 
   .match-status.live {
-    font-size: 11px !important;
+    font-size: 10px !important;
     font-weight: 800 !important;
     color: #e53935 !important;
     display: flex !important;
@@ -2486,11 +2495,10 @@ body {
     display: none !important;
   }
 
-  /* ✅ TIMELINE con linea centrale */
   .events-timeline {
     position: relative !important;
     width: 100% !important;
-    padding: 15px 0 !important;
+    padding: 10px 0 !important;
     min-height: 200px !important;
   }
 
@@ -2506,20 +2514,20 @@ body {
     opacity: 0.3 !important;
   }
 
-  /* ✅ EVENTI in due colonne distinte */
+  /* ✅ EVENTI: sinistra a sinistra, destra a destra */
   .event-line {
     width: 100% !important;
     display: flex !important;
     position: relative !important;
-    margin: 8px 0 !important;
+    margin: 6px 0 !important;
   }
 
   .event-line.left {
-    justify-content: flex-start !important;
+    justify-content: flex-start !important; /* ✅ Allineato a sinistra */
   }
 
   .event-line.right {
-    justify-content: flex-end !important;
+    justify-content: flex-end !important; /* ✅ Allineato a destra */
   }
 
   .event-content {
@@ -2533,15 +2541,15 @@ body {
   }
 
   .event-line.left .event-content {
-    justify-content: flex-end !important;
-    text-align: right !important;
-    padding-right: 15px !important;
+    justify-content: flex-start !important; /* ✅ Allineato a sinistra */
+    text-align: left !important;
+    padding-left: 5px !important;
   }
 
   .event-line.right .event-content {
-    justify-content: flex-start !important;
-    text-align: left !important;
-    padding-left: 15px !important;
+    justify-content: flex-end !important; /* ✅ Allineato a destra */
+    text-align: right !important;
+    padding-right: 5px !important;
   }
 
   .event-minute {
@@ -2566,7 +2574,6 @@ body {
     font-size: 11px !important;
   }
 
-  /* ✅ NASCONDI tre puntini eventi */
   .event-options {
     display: none !important;
   }
@@ -2644,19 +2651,43 @@ body {
 
   /* ✅ MVP BANNER mobile */
   #mvpBanner {
-    top: 50px !important;
-    min-width: 160px !important;
+    position: relative !important; /* ✅ Cambiato da absolute a relative */
+    left: auto !important;
+    top: auto !important;
+    transform: none !important;
+    z-index: 10 !important;
+    min-width: 200px !important;
     max-width: 80% !important;
-    padding: 8px 14px !important;
+    padding: 10px 16px !important;
+    margin: 10px auto 15px !important; /* ✅ Centrato con margine */
+    background: #fffbeb !important;
+    border: 2px solid #fbbf24 !important;
+    border-radius: 12px !important;
+    box-shadow: 0 4px 16px rgba(251, 191, 36, 0.25) !important;
+    /* display: none rimane dal CSS base, .show lo sovrascrive */
+  }
+
+  #mvpBanner.show {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: center !important;
   }
 
   #mvpBanner .mvp-title {
-    font-size: 8px !important;
-    letter-spacing: 1.5px !important;
+    font-size: 9px !important;
+    color: #b45309 !important;
+    font-weight: 700 !important;
+    letter-spacing: 2px !important;
+    text-transform: uppercase !important;
+    margin-bottom: 4px !important;
   }
 
   #mvpBanner .mvp-name {
-    font-size: 14px !important;
+    font-size: 16px !important;
+    color: #78350f !important;
+    font-weight: 800 !important;
+    text-transform: uppercase !important;
   }
 
   /* ✅ BACK BUTTON */
