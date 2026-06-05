@@ -1605,7 +1605,7 @@ body {
 
   /* Titolo più piccolo e più in alto */
   .title-wrapper {
-    top: 48% !important;
+    top: 50% !important;
     left: 50%;
     transform: translate(-50%, -50%);
     width: 95%;
@@ -1645,7 +1645,7 @@ body {
   /* Cerchio e linea PIÙ PICCOLI e più in BASSO */
   .field-lines .center {
     top: 57% !important;
-    width: 90% !important;
+    width:100% !important;
     height: 2px !important;
     background: linear-gradient(to right, 
       rgba(122,30,44,0) 0%, 
