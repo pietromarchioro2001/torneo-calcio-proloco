@@ -1735,7 +1735,7 @@ body {
    }
   .matches-scroll {
     width: 100%;
-    padding-right: 4px !important;
+    padding-right: 8px !important;
   }
 
   /* Pulsante inserisci partite più piccolo */
@@ -1785,7 +1785,7 @@ body {
   /* Card partite più piccole */
   .match-card {
      padding: 6px 8px !important;
-     margin: 3px 0 !important;
+     margin: 3px 2px !important;
      border-radius: 8px !important;
      min-height: 48px;
    }
@@ -1820,12 +1820,22 @@ body {
      letter-spacing: 0.5px;
    }
 
-   .match-fase-badge {
+ .match-fase-badge,
+.status.fase {
   font-size: 7px !important;
   font-weight: 600 !important;
   letter-spacing: 0.5px !important;
   margin-top: 2px !important;
+  text-transform: uppercase;
 }
+
+/* Se "FINALE 3-4" è in un elemento diverso */
+.match-center .status:nth-child(3),
+.match-center div:last-child {
+  font-size: 7px !important;
+  line-height: 1.2;
+}
+
    
    .match-day-title {
      font-size: 10px !important;
