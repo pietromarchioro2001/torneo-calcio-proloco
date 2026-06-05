@@ -2516,11 +2516,34 @@ body {
   display: none !important;
 }
 
+/* Mostra solo VEDI PODIO (aggiungeremo classe JS) */
+.next-phase-button.podio-ready {
+  display: flex !important;
+  justify-content: center !important;
+  margin-top: 30px !important;
+  margin-bottom: 20px !important;
+}
+
+.next-phase-button.podio-ready .next-phase-btn {
+  background-color: var(--granata) !important;
+  color: white !important;
+  padding: 14px 30px !important;
+  border-radius: 8px !important;
+  font-weight: 700 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 2px !important;
+  border: none !important;
+  font-size: 14px !important;
+  box-shadow: 0 4px 12px rgba(122, 30, 44, 0.3) !important;
+  font-family: 'Oswald', sans-serif !important;
+  cursor: pointer !important;
+}
+
 .tournament-wrapper {
   display: grid !important;
   grid-template-columns: 1fr 1fr !important;
-  gap: 4px 4px !important; /* column-gap row-gap */
-  row-gap: 15px !important; /* ✅ Gap aumentato tra le righe */
+  gap: 4px 4px !important;
+  row-gap: 25px !important; /* ✅ Aumentato da 15px a 25px */
   height: auto !important;
   min-height: auto !important;
   overflow: visible !important;
@@ -2529,9 +2552,50 @@ body {
   box-sizing: border-box !important;
   max-width: 100% !important;
   width: 100% !important;
+  position: relative !important;
 }
 
-/* Card leggermente più grandi per ospitare nomi lunghi */
+/* ✅ ETICHETTE FASE - aggiunte con pseudo-elementi sulle prime card di ogni riga */
+.qf1::before,
+.qf3::before {
+  content: "QUARTI DI FINALE" !important;
+  position: absolute !important;
+  top: -18px !important;
+  left: 0 !important;
+  font-size: 9px !important;
+  font-weight: 600 !important;
+  color: #999 !important;
+  letter-spacing: 1px !important;
+  text-transform: uppercase !important;
+}
+
+.sf1::before,
+.sf2::before {
+  content: "SEMIFINALE" !important;
+  position: absolute !important;
+  top: -18px !important;
+  left: 50% !important;
+  transform: translateX(-50%) !important;
+  font-size: 9px !important;
+  font-weight: 600 !important;
+  color: #999 !important;
+  letter-spacing: 1px !important;
+  text-transform: uppercase !important;
+}
+
+.final-match::before {
+  content: "FINALE" !important;
+  position: absolute !important;
+  top: -18px !important;
+  left: 0 !important;
+  font-size: 9px !important;
+  font-weight: 600 !important;
+  color: #999 !important;
+  letter-spacing: 1px !important;
+  text-transform: uppercase !important;
+}
+
+/* Card bracket */
 .bracket-match,
 .bracket-placeholder {
   position: relative !important;
@@ -2541,7 +2605,7 @@ body {
   margin: 0 !important;
   margin-left: 0 !important;
   width: 100% !important;
-  max-width: 145px !important; /* ✅ Aumentato per nomi lunghi */
+  max-width: 145px !important;
   height: 62px !important;
   min-height: 62px !important;
   min-width: 0 !important;
@@ -2616,16 +2680,15 @@ body {
   padding: 0 !important;
 }
 
-/* ✅ FIX: Nome squadra completo - permette wrapping */
 .bracket-team span {
   flex: 1 !important;
   max-width: none !important;
-  font-size: 9px !important; /* Ridotto per far entrare nomi lunghi */
+  font-size: 9px !important;
   line-height: 1.15 !important;
-  white-space: normal !important; /* ✅ Permette andare a capo */
-  word-break: break-word !important; /* ✅ Spezza parole lunghe */
-  overflow: visible !important; /* ✅ Mostra tutto */
-  text-overflow: clip !important; /* ✅ No ellipsis */
+  white-space: normal !important;
+  word-break: break-word !important;
+  overflow: visible !important;
+  text-overflow: clip !important;
   min-width: 0 !important;
   margin: 0 !important;
   padding: 0 !important;
