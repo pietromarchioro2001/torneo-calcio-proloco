@@ -2269,7 +2269,6 @@ body {
   box-sizing: border-box;
 }
 
-/* Card più strette e compatte */
 .bracket-match,
 .bracket-placeholder {
   position: relative !important;
@@ -2277,12 +2276,12 @@ body {
   right: auto !important;
   top: auto !important;
   margin-left: 0 !important;
-  width: 100% !important;
-  max-width: 140px !important;
-  height: 55px !important;
-  min-height: 55px !important;
-  padding: 4px 6px !important;
-  border-radius: 8px !important;
+  width: 80% !important;
+  max-width: 100px !important;
+  height: 65px !important;
+  min-height: 60px !important;
+  padding: 6px 8px !important;
+  border-radius: 12px !important;
 }
    
 /* Quarti - riga 1 */
@@ -2331,11 +2330,10 @@ body {
   margin-bottom: 2px !important;
 }
 .bracket-team span {
-  font-size: 9px !important;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  flex: none !important;
+  max-width: 60px !important;
 }
+   
 .bracket-team img {
   width: 18px !important;
   height: 18px !important;
