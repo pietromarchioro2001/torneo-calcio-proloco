@@ -2256,20 +2256,20 @@ body {
   display: none !important;
 }
 
-/* Tournament wrapper: grid 2 colonne */
+/* Grid 2 colonne strette */
 .tournament-wrapper {
   display: grid !important;
   grid-template-columns: 1fr 1fr;
-  gap: 8px !important;
+  gap: 6px !important;
   height: auto !important;
   min-height: auto !important;
   overflow: visible !important;
   margin: 20px auto 0 !important;
-  padding: 0 10px;
+  padding: 0 8px;
   box-sizing: border-box;
 }
 
-/* Reset posizioni absolute - TUTTE le card uguali */
+/* Tutte le card: dimensioni compatte uniformi */
 .bracket-match,
 .bracket-placeholder {
   position: relative !important;
@@ -2279,71 +2279,78 @@ body {
   margin-left: 0 !important;
   width: 100% !important;
   max-width: none !important;
-  height: 70px !important;
-  min-height: 70px !important;
-  padding: 8px 10px !important;
+  height: 65px !important;
+  min-height: 65px !important;
+  padding: 6px 8px !important;
+  border-radius: 12px !important;
 }
 
-/* Quarti di finale */
+/* Quarti - riga 1 */
 .qf1 { grid-column: 1; grid-row: 1; }
 .qf2 { grid-column: 2; grid-row: 1; }
 
-/* Semifinale 1 - stessa dimensione, colonna 1 */
-.sf1 { 
-  grid-column: 1; 
-  grid-row: 2; 
+/* SF1 - riga 2, centrata e più stretta */
+.sf1 {
+  grid-column: 1 / -1;
+  grid-row: 2;
+  justify-self: center;
+  width: 52% !important;
+  max-width: 180px !important;
 }
 
-/* Finale e Terzo Posto - affiancate */
-.final-match { 
-  grid-column: 1; 
-  grid-row: 3; 
+/* Finale e 3° posto - riga 3 */
+.final-match {
+  grid-column: 1;
+  grid-row: 3;
   background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%) !important;
   border: 1.5px solid #fde047 !important;
 }
-.third-place { 
-  grid-column: 2; 
-  grid-row: 3; 
+.third-place {
+  grid-column: 2;
+  grid-row: 3;
   background: linear-gradient(135deg, #fff8f0 0%, #fed7aa 100%) !important;
   border: 1.5px solid #fdba74 !important;
 }
 
-/* Semifinale 2 - stessa dimensione, colonna 2 */
-.sf2 { 
-  grid-column: 2; 
-  grid-row: 2; 
+/* SF2 - riga 4, centrata e più stretta */
+.sf2 {
+  grid-column: 1 / -1;
+  grid-row: 4;
+  justify-self: center;
+  width: 52% !important;
+  max-width: 180px !important;
 }
 
-/* Quarti di finale */
-.qf3 { grid-column: 1; grid-row: 4; }
-.qf4 { grid-column: 2; grid-row: 4; }
+/* Quarti - riga 5 */
+.qf3 { grid-column: 1; grid-row: 5; }
+.qf4 { grid-column: 2; grid-row: 5; }
 
-/* Card bracket dimensioni uniformi */
+/* Contenuti card più compatti */
 .bracket-team {
-  gap: 6px !important;
+  gap: 4px !important;
+  margin-bottom: 2px !important;
 }
 .bracket-team span {
-  font-size: 10px !important;
+  font-size: 9px !important;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 .bracket-team img {
-  width: 20px !important;
-  height: 20px !important;
+  width: 18px !important;
+  height: 18px !important;
   flex-shrink: 0;
 }
 .bracket-score {
-  font-size: 14px !important;
-  min-width: 20px !important;
+  font-size: 13px !important;
+  min-width: 18px !important;
 }
 
-/* Placeholder */
 .bracket-placeholder {
   opacity: 0.7 !important;
 }
 
-/* === PULSANTE VEDI PODIO === */
+/* VEDI PODIO */
 .standings-page .phase-btn:not(.standings-tab) {
   display: block !important;
   margin: 30px auto 20px !important;
