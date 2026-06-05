@@ -1592,7 +1592,7 @@ body {
     overflow: hidden;
   }
 
-  /* Sponsor in alto visibili e più piccoli */
+  /* Sponsor in alto visibili e più grandi */
   .home-sponsors {
     top: 16px;
     gap: 32px;
@@ -1603,33 +1603,33 @@ body {
     width: auto;
   }
 
-  /* Titolo più centrato */
+  /* Titolo più piccolo e più in alto */
   .title-wrapper {
-    top: 41%;
+    top: 36% !important;
     left: 50%;
     transform: translate(-50%, -50%);
     width: 95%;
     max-width: 100%;
   }
   .main-title {
-    font-size: 32px;
+    font-size: 26px !important;
     letter-spacing: 3px;
     line-height: 1.1;
   }
   .sub-title {
-    font-size: 14px;
+    font-size: 12px !important;
     letter-spacing: 4px;
-    margin-top: 8px;
+    margin-top: 6px;
     gap: 10px;
   }
   .sub-title::before,
   .sub-title::after {
-    width: 30px;
+    width: 25px;
   }
 
-  /* Campanili più grandi */
+  /* Campanili PIÙ ALTI e più grandi */
   .camp {
-    height: min(95vh, 850px);
+    height: min(110vh, 950px) !important;
     opacity: 0.25;
   }
   .camp-left {
@@ -1641,10 +1641,11 @@ body {
     max-width: 55vw !important;
   }
 
+  /* Cerchio e linea PIÙ PICCOLI e più in BASSO */
   .field-lines .center {
-    top: 42% !important;
-    width: 60% !important;
-    height: 3px !important;
+    top: 53% !important;
+    width: 50% !important;
+    height: 2px !important;
     background: linear-gradient(to right, 
       rgba(122,30,44,0) 0%, 
       rgba(122,30,44,0.3) 15%, 
@@ -1658,11 +1659,11 @@ body {
       rgba(122,30,44,0) 100%) !important;
   }
   .field-lines .circle {
-    top: 44% !important;
-    width: 450px !important;
-    height: 450px !important;
-    border-width: 3px !important;
-    border-color: rgba(122,30,44,0.15) !important;
+    top: 56% !important;
+    width: 320px !important;
+    height: 320px !important;
+    border-width: 2px !important;
+    border-color: rgba(122,30,44,0.12) !important;
   }
 
   /* Card partita sotto più piccola */
@@ -1691,7 +1692,7 @@ body {
     font-size: 9px;
   }
 
-  /* Card campione */
+  /* Card campione più stretta */
   .home-next-match.winner-card {
     min-width: 160px !important;
     max-width: 220px !important;
@@ -2322,75 +2323,5 @@ body {
     padding: 8px 16px;
     font-size: 12px;
     margin-bottom: 20px;
-  }
-}
-
-/* === MOBILE PICCOLO (max 480px) === */
-@media (max-width: 480px) {
-  .main-title {
-    font-size: 26px;
-  }
-  .sub-title {
-    font-size: 12px;
-  }
-  .camp {
-    height: min(60vh, 500px);
-  }
-  .field-lines .circle {
-    width: 300px;
-    height: 300px;
-  }
-  .home-next-match {
-    max-width: 280px;
-    padding: 8px 10px;
-  }
-  .home-team {
-    font-size: 11px;
-  }
-  .home-team-logo,
-  .home-team-block img {
-    width: 24px;
-    height: 24px;
-  }
-  .date-item {
-    width: 48px;
-    min-height: 36px;
-  }
-  .date-day {
-    font-size: 12px;
-  }
-  .match-card {
-    padding: 8px 10px;
-  }
-  .team-block img {
-    width: 28px;
-    height: 28px;
-  }
-  .team-name {
-    font-size: 11px;
-  }
-  .score {
-    font-size: 14px;
-  }
-  .teams-table td {
-    padding: 5px 8px;
-  }
-  .teams-team-name {
-    font-size: 12px;
-  }
-  .team-mini-logo {
-    width: 38px;
-    height: 38px;
-  }
-  .standings-table td {
-    padding: 5px 4px;
-    font-size: 11px;
-  }
-  .standings-logo {
-    width: 28px;
-    height: 28px;
-  }
-  .standings-team-name {
-    font-size: 11px;
   }
 }
