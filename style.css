@@ -1605,7 +1605,7 @@ body {
 
   /* Titolo più piccolo e più in alto */
   .title-wrapper {
-    top: 36% !important;
+    top: 52% !important;
     left: 50%;
     transform: translate(-50%, -50%);
     width: 95%;
@@ -1629,6 +1629,7 @@ body {
 
   /* Campanili PIÙ ALTI e più grandi */
   .camp {
+    top: 42% !important;
     height: min(110vh, 950px) !important;
     opacity: 0.25;
   }
@@ -1643,8 +1644,8 @@ body {
 
   /* Cerchio e linea PIÙ PICCOLI e più in BASSO */
   .field-lines .center {
-    top: 53% !important;
-    width: 50% !important;
+    top: 54% !important;
+    width: 75% !important;
     height: 2px !important;
     background: linear-gradient(to right, 
       rgba(122,30,44,0) 0%, 
@@ -1659,7 +1660,7 @@ body {
       rgba(122,30,44,0) 100%) !important;
   }
   .field-lines .circle {
-    top: 56% !important;
+    top: 57% !important;
     width: 320px !important;
     height: 320px !important;
     border-width: 2px !important;
