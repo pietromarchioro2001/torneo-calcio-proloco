@@ -1636,7 +1636,7 @@ body {
   .camp-left {
     left: -12% !important;
     max-width: 55vw !important;
-    clip-path: inset(0 0 18% 0) !important;
+    clip-path: inset(0 0 20% 0) !important;
   }
   .camp-right {
     right: -12% !important;
@@ -1723,79 +1723,98 @@ body {
 
   /* === PARTITE MOBILE === */
   .matches-page {
-    width: 100%;
-    padding: 0 10px;
-  }
-  .matches-header {
-    padding: 10px 0;
-  }
+     width: 100%;
+     padding: 0 10px;
+   }
+   .matches-header {
+     padding: 0;
+     margin-top: 10px;
+   }
   .matches-actions {
-    width: 100%;
-    margin: 0 0 15px;
-  }
+     display: none !important;
+   }
   .matches-scroll {
     width: 100%;
   }
 
   /* Pulsante inserisci partite più piccolo */
   .phase-btn {
-    padding: 8px 14px;
-    font-size: 11px;
-    letter-spacing: 1px;
-  }
-  .phase-btn.small {
-    padding: 6px 12px;
-    font-size: 10px;
-  }
+     padding: 6px 12px;
+     font-size: 10px;
+     letter-spacing: 1px;
+   }
+   .phase-btn.small {
+     padding: 5px 10px;
+     font-size: 9px;
+   }
 
   /* Toolbar date più piccola */
   .dates-toolbar {
-    gap: 6px;
-    padding: 6px 10px;
-  }
-  .date-item {
-    width: 55px;
-    min-height: 40px;
-    padding: 4px 0;
-    border-radius: 10px;
-  }
-  .date-day {
-    font-size: 13px;
-  }
-  .date-month {
-    font-size: 8px;
-  }
+     margin-top: 10px !important;
+     gap: 8px;
+     padding: 8px 10px;
+     overflow-x: auto !important;
+     scroll-behavior: smooth;
+     -webkit-overflow-scrolling: touch;
+     scrollbar-width: none;
+     -ms-overflow-style: none;
+   }
+   .dates-toolbar::-webkit-scrollbar {
+     display: none;
+   }
+   .date-item {
+     flex: 0 0 auto;
+     width: 50px;
+     min-height: 42px;
+     padding: 6px 0;
+     border-radius: 10px;
+     margin: 0 2px;
+   }
+   .date-day {
+     font-size: 14px;
+     font-weight: 800;
+   }
+   .date-month {
+     font-size: 8px;
+   }
 
   /* Card partite più piccole */
   .match-card {
-    padding: 10px 12px;
-    margin: 6px 0;
-    border-radius: 10px;
-  }
-  .team-block {
-    width: 40%;
-    gap: 6px;
-  }
-  .team-block img {
-    width: 32px;
-    height: 32px;
-  }
-  .team-name {
-    font-size: 12px;
-    letter-spacing: 0.5px;
-  }
-  .match-center {
-    width: 20%;
-  }
-  .score {
-    font-size: 16px;
-  }
-  .vs {
-    font-size: 14px;
-  }
-  .time {
-    font-size: 10px;
-  }
+     padding: 8px 10px !important;
+     margin: 4px 0 !important;
+     border-radius: 8px !important;
+     min-height: 55px;
+   }
+   .team-block {
+     width: 42%;
+     gap: 5px;
+   }
+   .team-block img {
+     width: 28px !important;
+     height: 28px !important;
+   }
+   .team-name {
+     font-size: 11px !important;
+     letter-spacing: 0.3px;
+   }
+   .match-center {
+     width: 16% !important;
+     padding: 0 2px;
+   }
+   .score {
+     font-size: 14px !important;
+     font-weight: 800;
+   }
+   .vs {
+     font-size: 12px !important;
+   }
+   .time, .status {
+     font-size: 9px !important;
+   }
+   .match-day-title {
+     font-size: 11px !important;
+     margin: 12px 5px 8px !important;
+   }
 
   /* Popup Nuova Partita sistemato */
   .match-modal {
