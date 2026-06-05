@@ -2324,25 +2324,25 @@ body {
 .qf3 { grid-column: 1; grid-row: 5; }
 .qf4 { grid-column: 2; grid-row: 5; }
 
-/* Contenuti card più compatti */
+/* FIX DEFINITIVO: togliere gap e flex dallo span */
 .bracket-team {
-  gap: 4px !important;
-  margin-bottom: 2px !important;
+  gap: 0 !important;
+  justify-content: space-between !important;
 }
 .bracket-team span {
-  flex: none !important;
-  max-width: 60px !important;
+  flex: 0 0 auto !important;
+  max-width: none !important;
+  white-space: nowrap;
 }
-   
 .bracket-team img {
   width: 18px !important;
   height: 18px !important;
   flex-shrink: 0;
+  margin-right: 4px !important;
 }
-
 .bracket-score {
- font-size: 13px !important;
   margin-left: auto !important;
+  font-size: 13px !important;
 }
 
 .bracket-placeholder {
