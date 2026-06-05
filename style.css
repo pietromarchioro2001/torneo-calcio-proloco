@@ -2339,9 +2339,10 @@ body {
   height: 18px !important;
   flex-shrink: 0;
 }
+
 .bracket-score {
-  font-size: 13px !important;
-  min-width: 18px !important;
+ font-size: 13px !important;
+  margin-left: auto !important;
 }
 
 .bracket-placeholder {
