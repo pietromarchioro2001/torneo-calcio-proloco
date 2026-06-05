@@ -2244,6 +2244,80 @@ body {
 .team-photo-wrapper .modern-upload {
   display: none !important;
 }
+
+.player-modal {
+  padding: 30px 20px !important;
+  min-width: 280px !important;
+  max-width: 90% !important;
+  text-align: center !important;
+}
+
+.player-modal .player-form {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  gap: 20px !important;
+  margin-top: 15px !important;
+}
+
+.player-modal .player-input {
+  font-size: 18px !important;
+  font-weight: 700 !important;
+  text-align: center !important;
+  border: none !important;
+  background: transparent !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  letter-spacing: 2px !important;
+}
+
+.player-modal .player-upload {
+  display: none !important;
+}
+
+.player-modal .playerPhotoBig {
+  width: 150px !important;
+  height: 150px !important;
+  border-radius: 50% !important;
+  object-fit: cover !important;
+  border: 3px solid var(--granata) !important;
+  margin: 0 auto !important;
+}
+
+/* ✅ Forza visibilità pulsante INDIETRO */
+.team-editor .back-btn-wrapper {
+  margin-top: 30px !important;
+  padding: 15px 0 !important;
+  display: flex !important;
+  justify-content: flex-end !important;
+  width: 100% !important;
+  box-sizing: border-box !important;
+  position: relative !important;
+  z-index: 10 !important;
+}
+
+.team-editor .back-btn {
+  padding: 10px 20px !important;
+  font-size: 12px !important;
+  letter-spacing: 2px !important;
+  background: var(--granata) !important;
+  color: white !important;
+  border-radius: 8px !important;
+  border: none !important;
+  cursor: pointer !important;
+  display: inline-block !important;
+  font-family: 'Oswald', sans-serif !important;
+  font-weight: 600 !important;
+  text-transform: uppercase !important;
+  box-shadow: 0 2px 8px rgba(122, 30, 44, 0.3) !important;
+}
+
+.team-editor .back-btn:hover {
+  background: var(--granata-light) !important;
+  transform: translateY(-1px) !important;
+  box-shadow: 0 4px 12px rgba(122, 30, 44, 0.4) !important;
+}
+   
   /* === DETTAGLIO PARTITA MOBILE === */
   .match-page {
     width: 100%;
