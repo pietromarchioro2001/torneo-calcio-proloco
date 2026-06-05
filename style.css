@@ -2077,11 +2077,11 @@ body {
   margin: 0 !important;
 }
 
-/* ✅ Riquadro foto squadra PIÙ PICCOLO e centrato */
+/* ✅ Riquadro foto squadra */
 .team-photo-wrapper {
-  width: 85% !important; /* ✅ Ridotto da 100% */
-  max-width: 280px !important; /* ✅ Ridotto da 320px */
-  margin: 15px auto 20px !important; /* ✅ Centrato con auto */
+  width: 85% !important;
+  max-width: 280px !important;
+  margin: 15px auto 20px !important;
 }
 
 .team-photo-view {
@@ -2090,10 +2090,10 @@ body {
 
 .team-photo-empty {
   width: 100% !important;
-  max-width: 280px !important; /* ✅ Ridotto */
+  max-width: 280px !important;
   aspect-ratio: 16/9 !important;
   border-radius: 12px !important;
-  margin: 0 auto !important; /* ✅ Centrato */
+  margin: 0 auto !important;
 }
 
 /* ✅ Titolo GIOCATORI */
@@ -2108,53 +2108,64 @@ body {
   margin-top: 5px !important;
 }
 
-/* ✅ Tabella giocatori: più margine a destra, colonne dati compatte, nomi più larghi */
+/* ✅ Tabella giocatori: meno spazio foto-nome, più margine destro */
 .playersTable {
   font-size: 12px !important;
   width: 100% !important;
-  table-layout: fixed !important; /* ✅ Permette controllo colonne */
+  table-layout: fixed !important;
 }
 
 .playersTable th {
-  padding: 8px 4px !important; /* ✅ Ridotto */
-  font-size: 9px !important; /* ✅ Ridotto */
+  padding: 8px 4px !important;
+  font-size: 9px !important;
   letter-spacing: 1px !important;
 }
 
 .playersTable td {
-  padding: 8px 4px !important; /* ✅ Ridotto */
+  padding: 8px 4px !important;
   font-size: 12px !important;
   text-align: center !important;
 }
 
-/* ✅ Colonna NOME: molto più spazio */
+/* ✅ Prima colonna (foto giocatore): riduci larghezza */
+.playersTable th:first-child,
+.playersTable td:first-child {
+  width: 35px !important; /* ✅ Ridotto da 40px */
+  padding: 8px 2px !important; /* ✅ Ridotto padding */
+  text-align: center !important;
+}
+
+/* ✅ Colonna NOME: riduci spazio dalla foto */
 .playersTable th:nth-child(2),
 .playersTable td:nth-child(2) {
   width: auto !important;
-  min-width: 100px !important; /* ✅ Molto più spazio per i nomi */
+  min-width: 90px !important; /* ✅ Ridotto da 100px */
   text-align: left !important;
-  padding-left: 8px !important; /* ✅ Margine sinistro */
-  padding-right: 12px !important; /* ✅ Spazio prima dei dati */
+  padding-left: 4px !important; /* ✅ Ridotto da 8px - meno spazio dalla foto */
+  padding-right: 8px !important; /* ✅ Spazio prima dei dati */
 }
 
 .playersTable th:nth-child(2) {
   text-align: left !important;
 }
 
-/* ✅ Colonne dati (GOL, ASS, AMM, ESP, MVP): molto compatte */
-.playersTable th:nth-child(n+3),
-.playersTable td:nth-child(n+3) {
-  width: 35px !important; /* ✅ Ridotto da 45px */
-  text-align: center !important;
-  padding: 8px 2px !important; /* ✅ Molto compatto */
-}
-
-.playersTable td:last-child {
+/* ✅ Colonne dati (GOL, ASS, AMM, ESP): compatte */
+.playersTable th:nth-child(n+3):nth-child(-n+6),
+.playersTable td:nth-child(n+3):nth-child(-n+6) {
   width: 35px !important;
-  padding-right: 8px !important; /* ✅ Margine destro */
+  text-align: center !important;
+  padding: 8px 2px !important;
 }
 
-/* ✅ Nomi giocatori: permetti wrapping per nomi lunghi */
+/* ✅ Ultima colonna (MVP): più margine destro */
+.playersTable th:last-child,
+.playersTable td:last-child {
+  width: 40px !important; /* ✅ Aumentato da 35px */
+  padding-right: 12px !important; /* ✅ Margine destro aumentato */
+  text-align: center !important;
+}
+
+/* ✅ Nomi giocatori */
 .playersTable td:nth-child(2) {
   font-size: 11px !important;
   letter-spacing: 0.5px !important;
