@@ -2168,349 +2168,341 @@ function closeRigoriPopup() { const popup = document.getElementById('rigoriPopup
 // 📊 STANDINGS
 // ============================================================================
 let standingsRefreshTimer = null;
+
 function refreshStandingsDebounced(delay = 1200) {
-    clearTimeout(standingsRefreshTimer); standingsRefreshTimer = setTimeout(() => {
-        ApiClient.getStandings().then(data => { if (data) { window.APP_CACHE.standings = data; CacheManager.save(window.APP_CACHE); } if (document.querySelector(".standings-page")) renderStandings(data || window.APP_CACHE.standings); }).catch(console.error);
-    }, delay);
+  clearTimeout(standingsRefreshTimer); 
+  standingsRefreshTimer = setTimeout(() => {
+    ApiClient.getStandings().then(data => { 
+      if (data) { 
+        window.APP_CACHE.standings = data; 
+        CacheManager.save(window.APP_CACHE); 
+      } 
+      if (document.querySelector(".standings-page")) 
+        renderStandings(data || window.APP_CACHE.standings); 
+    }).catch(console.error);
+  }, delay);
 }
-function stopStandingsLiveRefresh() { window.APP_STATE._standingsActive = false; if (window.APP_STATE._standingsInterval) { clearInterval(window.APP_STATE._standingsInterval); window.APP_STATE._standingsInterval = null; } }
+
+function stopStandingsLiveRefresh() { 
+  window.APP_STATE._standingsActive = false; 
+  if (window.APP_STATE._standingsInterval) { 
+    clearInterval(window.APP_STATE._standingsInterval); 
+    window.APP_STATE._standingsInterval = null; 
+  } 
+}
+
 function startStandingsLiveRefresh() {
-    if (window.APP_STATE._standingsActive) return; window.APP_STATE._standingsActive = true;
-    if (window.APP_STATE._standingsInterval) clearInterval(window.APP_STATE._standingsInterval);
-    window.APP_STATE._standingsInterval = setInterval(() => {
-        const page = document.querySelector(".standings-page"); if (!page) { stopStandingsLiveRefresh(); return; } if (document.hidden) return;
-        const activeTab = window.APP_STATE._activeStandingsTab;
-        if (activeTab === "gironi") { ApiClient.getStandings().then(data => { if (data) { window.APP_CACHE.standings = data; CacheManager.save(window.APP_CACHE); } if (window.APP_STATE._activeStandingsTab === "gironi") { renderStandings(data); } }).catch(console.error); }
-        else if (activeTab === "fasefinale") { ApiClient.getFinalStageMatches().then(data => { if (data) { window.APP_CACHE.finalStage = data || []; CacheManager.save(window.APP_CACHE); } if (window.APP_STATE._activeStandingsTab === "fasefinale") { renderFinalStage(data || window.APP_CACHE.finalStage); } }).catch(console.error); }
-    }, 3000);
+  if (window.APP_STATE._standingsActive) return; 
+  window.APP_STATE._standingsActive = true;
+  if (window.APP_STATE._standingsInterval) clearInterval(window.APP_STATE._standingsInterval);
+  window.APP_STATE._standingsInterval = setInterval(() => {
+    const page = document.querySelector(".standings-page"); 
+    if (!page) { stopStandingsLiveRefresh(); return; } 
+    if (document.hidden) return;
+    const activeTab = window.APP_STATE._activeStandingsTab;
+    if (activeTab === "gironi") { 
+      ApiClient.getStandings().then(data => { 
+        if (data) { 
+          window.APP_CACHE.standings = data; 
+          CacheManager.save(window.APP_CACHE); 
+        } 
+        if (window.APP_STATE._activeStandingsTab === "gironi") { 
+          renderStandings(data); 
+        } 
+      }).catch(console.error); 
+    }
+    else if (activeTab === "fasefinale") { 
+      ApiClient.getFinalStageMatches().then(data => { 
+        if (data) { 
+          window.APP_CACHE.finalStage = data || []; 
+          CacheManager.save(window.APP_CACHE); 
+        } 
+        if (window.APP_STATE._activeStandingsTab === "fasefinale") { 
+          renderFinalStage(data || window.APP_CACHE.finalStage); 
+        } 
+      }).catch(console.error); 
+    }
+  }, 3000);
 }
 
 // 🔥 POLLING PER PARTITE LIVE - Aggiorna risultati in tempo reale
 let matchLiveRefreshInterval = null;
-let currentPollingMatchId = null; // 🔥 Tracciamo quale partita stiamo monitorando
+let currentPollingMatchId = null;
 
 function startMatchLiveRefresh() {
-    if (matchLiveRefreshInterval) return;
-    
-    matchLiveRefreshInterval = setInterval(async () => {
-        const liveMatches = (window.APP_CACHE.matches || []).filter(m =>
-            ["LIVE", "SUPP", "RIGORI"].includes(m.STATO_PARTITA)
-        );
-        
-        if (liveMatches.length === 0) {
-            stopMatchLiveRefresh();
-            return;
-        }
-        
-        for (const match of liveMatches) {
+  if (matchLiveRefreshInterval) return;
+  matchLiveRefreshInterval = setInterval(async () => {
+    const liveMatches = (window.APP_CACHE.matches || []).filter(m =>
+      ["LIVE", "SUPP", "RIGORI"].includes(m.STATO_PARTITA)
+    );
+    if (liveMatches.length === 0) {
+      stopMatchLiveRefresh();
+      return;
+    }
+    for (const match of liveMatches) {
+      try {
+        const freshData = await ApiClient.getMatchFull(match.MATCH_ID);
+        const freshEvents = await ApiClient.getEventsAdmin(match.MATCH_ID);
+        if (freshData?.match) {
+          const mergedEvents = mergeEventsWithLocal(freshEvents, match.MATCH_ID);
+          const calculatedScore = calculateMatchScore(freshData.match, mergedEvents);
+          const idx = window.APP_CACHE.matches.findIndex(m => String(m.MATCH_ID) === String(match.MATCH_ID));
+          if (idx < 0) continue;
+          let safeData = window.APP_CACHE.matches[idx]?.DATA;
+          if (freshData.match.DATA) {
             try {
-                const freshData = await ApiClient.getMatchFull(match.MATCH_ID);
-                const freshEvents = await ApiClient.getEventsAdmin(match.MATCH_ID);
-                
-                if (freshData?.match) {
-                    // 1️⃣ MERGE EVENTI: Preserva gli eventi temporanei locali se non sono ancora nel backend
-                    const mergedEvents = mergeEventsWithLocal(freshEvents, match.MATCH_ID);
-                    
-                    // 2️⃣ CALCOLA PUNTEGGIO: Usa gli eventi mergiati (include i gol temporanei!)
-                    const calculatedScore = calculateMatchScore(freshData.match, mergedEvents);
-                    
-                    // 3️⃣ NORMALIZZAZIONE DATA ROBUSTA (Timezone-proof, no new Date())
-                    const idx = window.APP_CACHE.matches.findIndex(m => String(m.MATCH_ID) === String(match.MATCH_ID));
-                    if (idx < 0) continue;
-                    
-                    // Fallback alla data già corretta in cache per massima sicurezza
-                    let safeData = window.APP_CACHE.matches[idx]?.DATA; 
-                    
-                    if (freshData.match.DATA) {
-                        try {
-                            const str = String(freshData.match.DATA).trim();
-                            // 1. Prova formato YYYY-MM-DD (anche con orario tipo "2026-08-15T12:00:00")
-                            const matchDateStr = str.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/);
-                            if (matchDateStr) {
-                                safeData = `${matchDateStr[1]}-${String(matchDateStr[2]).padStart(2, '0')}-${String(matchDateStr[3]).padStart(2, '0')}`;
-                            } else {
-                                // 2. Prova formato DD/MM/YYYY o DD-MM-YYYY
-                                const matchDateStr2 = str.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})/);
-                                if (matchDateStr2) {
-                                    safeData = `${matchDateStr2[3]}-${String(matchDateStr2[2]).padStart(2, '0')}-${String(matchDateStr2[1]).padStart(2, '0')}`;
-                                }
-                            }
-                        } catch(e) {
-                            console.warn('⚠️ Errore normalizzazione data:', e, freshData.match.DATA);
-                        }
-                    }
-
-                    const updatedMatch = {
-                        ...window.APP_CACHE.matches[idx],
-                        ...freshData.match,
-                        ...calculatedScore,
-                        DATA: safeData // ✅ Forza la data normalizzata YYYY-MM-DD
-                    };
-                    window.APP_CACHE.matches[idx] = updatedMatch;
-                    
-                    // ✅ Aggiorna eventi in cache con la versione mergiata
-                    window.APP_CACHE.eventsByMatch[match.MATCH_ID] = mergedEvents;
-                    
-                    // ✅ Salva cache (debounce 300ms)
-                    CacheManager.save(window.APP_CACHE);
-                    
-                    // ✅ Aggiorna APP_STATE.matchesById
-                    if (window.APP_STATE.matchesById[match.MATCH_ID]) {
-                        window.APP_STATE.matchesById[match.MATCH_ID] = {
-                            ...window.APP_STATE.matchesById[match.MATCH_ID],
-                            ...updatedMatch,
-                            DATA: safeData
-                        };
-                    }
-                    
-                    // 🔥 ✅ AGGIORNAMENTO ISTANTANEO TABELLONE FASE FINALE
-                    if (document.querySelector('.standings-page') && window.APP_STATE._activeStandingsTab === 'fasefinale') {
-                        const fsIndex = (window.APP_CACHE.finalStage || []).findIndex(m => String(m.matchId) === String(match.MATCH_ID));
-                        if (fsIndex >= 0) {
-                            window.APP_CACHE.finalStage[fsIndex].stato = updatedMatch.STATO_PARTITA;
-                            window.APP_CACHE.finalStage[fsIndex].golCasa = updatedMatch.GOL_CASA;
-                            window.APP_CACHE.finalStage[fsIndex].golTrasferta = updatedMatch.GOL_TRASFERTA;
-                            CacheManager.save(window.APP_CACHE);
-                        }
-                        renderFinalBracket(window.APP_CACHE.finalStage);
-                    }
-                    
-                    // ✅ Aggiorna UI: pagina match detail
-                    if (document.querySelector('.match-page') && String(window.APP_STATE.currentMatchId) === String(match.MATCH_ID)) {
-                        renderMatchPage(updatedMatch);
-                        loadPlayersForMatch(updatedMatch);
-                    }
-                    
-                    // ✅ Aggiorna UI: pagina lista partite
-                    if (document.querySelector('.matches-page')) {
-                        const selectedDate = window.APP_STATE.selectedDate;
-                        if (selectedDate) {
-                            renderMatchesByDate(selectedDate);
-                        } else {
-                            renderMatches();
-                        }
-                    }
-                    
-                    // ✅ Aggiorna UI: home card
-                    if (document.querySelector('.home-container')) {
-                        const nextCardHtml = getNextMatchCard();
-                        const existing = document.querySelector('.home-next-match');
-                        if (existing && nextCardHtml) {
-                            existing.outerHTML = nextCardHtml;
-                        }
-                    }
+              const str = String(freshData.match.DATA).trim();
+              const matchDateStr = str.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/);
+              if (matchDateStr) {
+                safeData = `${matchDateStr[1]}-${String(matchDateStr[2]).padStart(2, '0')}-${String(matchDateStr[3]).padStart(2, '0')}`;
+              } else {
+                const matchDateStr2 = str.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})/);
+                if (matchDateStr2) {
+                  safeData = `${matchDateStr2[3]}-${String(matchDateStr2[2]).padStart(2, '0')}-${String(matchDateStr2[1]).padStart(2, '0')}`;
                 }
-            } catch (error) {
-                console.error(`❌ Errore refresh match ${match.MATCH_ID}:`, error);
+              }
+            } catch(e) {
+              console.warn('⚠️ Errore normalizzazione data:', e, freshData.match.DATA);
             }
+          }
+          const updatedMatch = {
+            ...window.APP_CACHE.matches[idx],
+            ...freshData.match,
+            ...calculatedScore,
+            DATA: safeData
+          };
+          window.APP_CACHE.matches[idx] = updatedMatch;
+          window.APP_CACHE.eventsByMatch[match.MATCH_ID] = mergedEvents;
+          CacheManager.save(window.APP_CACHE);
+          if (window.APP_STATE.matchesById[match.MATCH_ID]) {
+            window.APP_STATE.matchesById[match.MATCH_ID] = {
+              ...window.APP_STATE.matchesById[match.MATCH_ID],
+              ...updatedMatch,
+              DATA: safeData
+            };
+          }
+          if (document.querySelector('.standings-page') && window.APP_STATE._activeStandingsTab === 'fasefinale') {
+            const fsIndex = (window.APP_CACHE.finalStage || []).findIndex(m => String(m.matchId) === String(match.MATCH_ID));
+            if (fsIndex >= 0) {
+              window.APP_CACHE.finalStage[fsIndex].stato = updatedMatch.STATO_PARTITA;
+              window.APP_CACHE.finalStage[fsIndex].golCasa = updatedMatch.GOL_CASA;
+              window.APP_CACHE.finalStage[fsIndex].golTrasferta = updatedMatch.GOL_TRASFERTA;
+              CacheManager.save(window.APP_CACHE);
+            }
+            renderFinalBracket(window.APP_CACHE.finalStage);
+          }
+          if (document.querySelector('.match-page') && String(window.APP_STATE.currentMatchId) === String(match.MATCH_ID)) {
+            renderMatchPage(updatedMatch);
+            loadPlayersForMatch(updatedMatch);
+          }
+          if (document.querySelector('.matches-page')) {
+            const selectedDate = window.APP_STATE.selectedDate;
+            if (selectedDate) {
+              renderMatchesByDate(selectedDate);
+            } else {
+              renderMatches();
+            }
+          }
+          if (document.querySelector('.home-container')) {
+            const nextCardHtml = getNextMatchCard();
+            const existing = document.querySelector('.home-next-match');
+            if (existing && nextCardHtml) {
+              existing.outerHTML = nextCardHtml;
+            }
+          }
         }
-    }, 2000);
+      } catch (error) {
+        console.error(`❌ Errore refresh match ${match.MATCH_ID}:`, error);
+      }
+    }
+  }, 2000);
 }
 
-
 function stopMatchLiveRefresh() {
-    if (matchLiveRefreshInterval) {
-        clearInterval(matchLiveRefreshInterval);
-        matchLiveRefreshInterval = null;
-    }
+  if (matchLiveRefreshInterval) {
+    clearInterval(matchLiveRefreshInterval);
+    matchLiveRefreshInterval = null;
+  }
 }
 
 function showStandings() {
-    window.location.hash = '#standings';
-    renderToolbar("standings");
-    
-    // ✅ CHECK IMMEDIATO: se fase finale attiva, imposta tab corretta SUBITO
-    const isFinalStage = window.APP_CACHE.meta?.finalStageStarted === true;
-    window.APP_STATE._activeStandingsTab = isFinalStage ? "fasefinale" : "gironi";
-    window.APP_STATE._finalStageLoaded = !isFinalStage; // Se è finale, forza reload
-    
-    // Renderizza struttura base con tab già evidenziati correttamente
-    document.getElementById("app").innerHTML = `
+  window.location.hash = '#standings';
+  renderToolbar("standings");
+  
+  const isFinalStage = window.APP_CACHE.meta?.finalStageStarted === true;
+  window.APP_STATE._activeStandingsTab = isFinalStage ? "fasefinale" : "gironi";
+  window.APP_STATE._finalStageLoaded = !isFinalStage;
+  
+  // ✅ Inizializza variabile per podio automatico (solo sessione corrente)
+  if (window.APP_STATE._podiumAutoShownThisSession === undefined) {
+    window.APP_STATE._podiumAutoShownThisSession = false;
+  }
+  
+  // ✅ Rileva se siamo su mobile
+  const isMobile = window.innerWidth <= 768;
+  
+  // ✅ Su mobile: mostra tab FASE FINALE solo se bracket già creato
+  // Su desktop: mostra sempre entrambi i tab
+  const showFaseFinaleTab = isMobile ? isFinalStage : true;
+  
+  // ✅ Renderizza struttura base con tab FASE FINALE condizionale
+  document.getElementById("app").innerHTML = `
     <div class="page-container standings-page">
-        <div class="page-title">CLASSIFICHE</div>
-        <div class="standings-tabs">
-            <div class="standings-tab ${!isFinalStage ? 'active' : ''}" data-tab="gironi">GIRONI</div>
-            <div class="standings-tab ${isFinalStage ? 'active' : ''}" data-tab="fasefinale">FASE FINALE</div>
-        </div>
-        <div id="standingsContent"></div>
+      <div class="page-title">CLASSIFICHE</div>
+      <div class="standings-tabs">
+        <div class="standings-tab ${!isFinalStage ? 'active' : ''}" data-tab="gironi">GIRONI</div>
+        ${showFaseFinaleTab ? `<div class="standings-tab ${isFinalStage ? 'active' : ''}" data-tab="fasefinale">FASE FINALE</div>` : ''}
+      </div>
+      <div id="standingsContent"></div>
     </div>`;
-    
-    // ✅ RENDERIZZA SUBITO in base allo stato
-    if (isFinalStage) {
-        // Mostra placeholder mentre carica
-        document.getElementById("standingsContent").innerHTML = 
-            `<div style="text-align:center;padding:40px;color:#888">Caricamento fase finale...</div>`;
-        loadFinalStage(); // Carica da backend
-    } else {
-        // Mostra cache immediata
+  
+  if (isFinalStage) {
+    document.getElementById("standingsContent").innerHTML =
+      `<div style="text-align:center;padding:40px;color:#888">Caricamento fase finale...</div>`;
+    loadFinalStage();
+  } else {
+    renderStandings(window.APP_CACHE.standings || {});
+    ApiClient.getStandings().then(data => {
+      if (data) {
+        window.APP_CACHE.standings = data;
+        CacheManager.save(window.APP_CACHE);
+      }
+      if (window.APP_STATE._activeStandingsTab === "gironi") {
+        renderStandings(data);
+      }
+    }).catch(console.error);
+  }
+  
+  document.querySelectorAll(".standings-tab").forEach(tab => {
+    tab.onclick = () => {
+      document.querySelectorAll(".standings-tab").forEach(t => t.classList.remove("active"));
+      tab.classList.add("active");
+      const type = tab.dataset.tab;
+      window.APP_STATE._activeStandingsTab = type;
+      if (type === "gironi") {
         renderStandings(window.APP_CACHE.standings || {});
-        // Poi aggiorna dal backend
         ApiClient.getStandings().then(data => {
-            if (data) { 
-                window.APP_CACHE.standings = data; 
-                CacheManager.save(window.APP_CACHE); 
-            }
-            if (window.APP_STATE._activeStandingsTab === "gironi") {
-                renderStandings(data);
-            }
+          if (data) {
+            window.APP_CACHE.standings = data;
+            CacheManager.save(window.APP_CACHE);
+          }
+          if (window.APP_STATE._activeStandingsTab === "gironi") {
+            renderStandings(data);
+          }
         }).catch(console.error);
-    }
-    
-    // ✅ GESTIONE CLICK TAB
-    document.querySelectorAll(".standings-tab").forEach(tab => {
-        tab.onclick = () => {
-            // Rimuovi active da tutti
-            document.querySelectorAll(".standings-tab").forEach(t => t.classList.remove("active"));
-            // Attiva il tab cliccato
-            tab.classList.add("active");
-            
-            const type = tab.dataset.tab;
-            window.APP_STATE._activeStandingsTab = type;
-            
-            if (type === "gironi") {
-                renderStandings(window.APP_CACHE.standings || {});
-                // Refresh dati
-                ApiClient.getStandings().then(data => {
-                    if (data) { 
-                        window.APP_CACHE.standings = data; 
-                        CacheManager.save(window.APP_CACHE); 
-                    }
-                    if (window.APP_STATE._activeStandingsTab === "gironi") {
-                        renderStandings(data);
-                    }
-                }).catch(console.error);
-            }
-            else if (type === "fasefinale") {
-                if (!window.APP_STATE._finalStageLoaded) {
-                    loadFinalStage();
-                    window.APP_STATE._finalStageLoaded = true;
-                } else {
-                    renderFinalStage(window.APP_CACHE.finalStage || []);
-                }
-                // ✅ ASSICURA CHE IL POLLING SIA ATTIVO ANCHE PER FASE FINALE
-                startStandingsLiveRefresh();
-            }
-        };
-    });
-    
-    // ✅ AVVIA REFRESH LIVE (solo se non siamo già in fase finale con polling attivo)
-    if (!isFinalStage) {
+      }
+      else if (type === "fasefinale") {
+        if (!window.APP_STATE._finalStageLoaded) {
+          loadFinalStage();
+          window.APP_STATE._finalStageLoaded = true;
+        } else {
+          renderFinalStage(window.APP_CACHE.finalStage || []);
+        }
+        
+        // ✅ Mostra podio automatico solo al primo accesso in questa sessione (mobile)
+        if (!window.APP_STATE._podiumAutoShownThisSession) {
+          const finali = (window.APP_CACHE.finalStage || []).filter(m =>
+            m.turno === "FINALE 1-2" || m.turno === "FINALE 3-4" ||
+            m.matchKey === "F" || m.matchKey === "TP"
+          );
+          const finaliFiniti = finali.filter(m => m.stato === "FINITA").length;
+          const finaliCreate = finali.length >= 2;
+          
+          if (finaliCreate && finaliFiniti === 2) {
+            setTimeout(() => {
+              if (!document.getElementById('podiumPopupOverlay')) {
+                showTournamentPodium(window.APP_CACHE.finalStage, true);
+                window.APP_STATE._podiumAutoShownThisSession = true;
+              }
+            }, 500);
+          } else {
+            window.APP_STATE._podiumAutoShownThisSession = true;
+          }
+        }
+        
         startStandingsLiveRefresh();
-    }
+      }
+    };
+  });
+  
+  if (!isFinalStage) {
+    startStandingsLiveRefresh();
+  }
 }
 
 function renderStandings(data) {
-    const container = document.getElementById("standingsContent"); if (!container) return;
-    const A = data?.A || [], B = data?.B || []; let html = renderGironeTable("GIRONE A", A) + renderGironeTable("GIRONE B", B); container.innerHTML = html;
+  const container = document.getElementById("standingsContent"); 
+  if (!container) return;
+  const A = data?.A || [], B = data?.B || []; 
+  let html = renderGironeTable("GIRONE A", A) + renderGironeTable("GIRONE B", B); 
+  container.innerHTML = html;
 }
 
 function renderGironeTable(title, teams) {
-    const finalStageStarted = window.APP_CACHE.meta?.finalStageStarted || false;
-    let html = `<div class="girone-block"><div class="girone-title">${Sanitizer.html(title)}</div><table class="standings-table"><thead><tr><th></th><th class="team-col">SQUADRA</th><th>PT</th><th>PG</th><th>V</th><th>P</th><th>S</th><th>GF</th><th>GS</th><th>DR</th></tr></thead><tbody>`;
-    (teams||[]).forEach((t, idx) => {
-        const logoHtml = t.logo ? `<img src="${getCachedImage(t.logo, 48)}" class="standings-logo" alt="${t.nome}" onerror="this.style.display='none'">` : `<div style="font-size:1.2rem">⚽</div>`;
-        const showLive = t.live && !finalStageStarted;
-        html += `<tr class="${idx<2?"qualified":""} ${showLive?"live-team-row":""}"><td class="pos-col">${idx+1}</td><td class="team-col"><div class="standings-team" onclick="openTeamEditor('${Sanitizer.attr(t.id)}')"><div class="standings-logo-wrap">${logoHtml}</div><div class="standings-team-name ${showLive?"live-team-name":""}">${Sanitizer.html(t.nome)}</div>${showLive?`<div class="live-dot"></div>`:""}</div></td><td class="pts ${showLive?"live-pts":""}">${t.pt}</td><td>${t.pg}</td><td>${t.v}</td><td>${t.p}</td><td>${t.s}</td><td>${t.gf}</td><td>${t.gs}</td><td>${t.dr}</td></tr>`;
-    });
-    html += `</tbody></table></div>`; return html;
+  const finalStageStarted = window.APP_CACHE.meta?.finalStageStarted || false;
+  let html = `<div class="girone-block"><div class="girone-title">${Sanitizer.html(title)}</div><table class="standings-table"><thead><tr><th></th><th class="team-col">SQUADRA</th><th>PT</th><th>PG</th><th>V</th><th>P</th><th>S</th><th>GF</th><th>GS</th><th>DR</th></tr></thead><tbody>`;
+  (teams||[]).forEach((t, idx) => {
+    const logoHtml = t.logo ? `<img src="${getCachedImage(t.logo, 48)}" class="standings-logo" alt="${t.nome}" onerror="this.style.display='none'">` : `<div style="font-size:1.2rem">⚽</div>`;
+    const showLive = t.live && !finalStageStarted;
+    html += `<tr class="${idx<2?"qualified":""} ${showLive?"live-team-row":""}"><td class="pos-col">${idx+1}</td><td class="team-col"><div class="standings-team" onclick="openTeamEditor('${Sanitizer.attr(t.id)}')"><div class="standings-logo-wrap">${logoHtml}</div><div class="standings-team-name ${showLive?"live-team-name":""}">${Sanitizer.html(t.nome)}</div>${showLive?`<div class="live-dot"></div>`:""}</div></td><td class="pts ${showLive?"live-pts":""}">${t.pt}</td><td>${t.pg}</td><td>${t.v}</td><td>${t.p}</td><td>${t.s}</td><td>${t.gf}</td><td>${t.gs}</td><td>${t.dr}</td></tr>`;
+  });
+  html += `</tbody></table></div>`; 
+  return html;
 }
 
 function loadFinalStage() {
-    const cached = window.APP_CACHE.finalStage || []; renderFinalStage(cached);
-    ApiClient.getFinalStageMatches().then(data => { window.APP_CACHE.finalStage = data || []; CacheManager.save(window.APP_CACHE); if (window.APP_STATE._activeStandingsTab === "fasefinale") renderFinalStage(data); }).catch(() => {});
+  const cached = window.APP_CACHE.finalStage || []; 
+  renderFinalStage(cached);
+  ApiClient.getFinalStageMatches().then(data => { 
+    window.APP_CACHE.finalStage = data || []; 
+    CacheManager.save(window.APP_CACHE); 
+    if (window.APP_STATE._activeStandingsTab === "fasefinale") 
+      renderFinalStage(data); 
+  }).catch(() => {});
 }
 
 function renderFinalStage(data) {
-    const container = document.getElementById("standingsContent");
-    if (!container) return;
-    if (!data?.length) {
-        container.innerHTML = `<div class="final-empty"><div class="final-empty-icon">🏆</div><div class="final-empty-title">FASE FINALE</div><div class="final-empty-line"></div><div class="final-empty-text">Crea la fase finale per visualizzare il tabellone del torneo.</div><div class="phase-btn" onclick="createFinalStage()">CREA FASE FINALE</div></div>`;
-        return;
-    }
-    container.innerHTML = `<div class="final-stage-page"><div id="finalBracketContainer"></div></div>`;
-    renderFinalBracket(data);
-    renderNextPhaseButton();
-    
-    // 🔥 MOSTRA AUTOMATICAMENTE IL PODIO SE LE FINALI SONO CONCLUSE
-    const finali = (data || []).filter(m =>
-        m.turno === "FINALE 1-2" || m.turno === "FINALE 3-4" ||
-        m.matchKey === "F" || m.matchKey === "TP"
-    );
-    const finaliFiniti = finali.filter(m => m.stato === "FINITA").length;
-    const finaliCreate = finali.length >= 2;
-    
-    // ✅ Controlla se il podio è già stato mostrato (usa localStorage per persistenza)
-    const podiumAlreadyShown = localStorage.getItem('podiumShown_' + new Date().getFullYear());
-    
-    if (finaliCreate && finaliFiniti === 2 && !podiumAlreadyShown) {
-        // Aspetta un attimo per assicurarsi che il DOM sia pronto
-        setTimeout(() => {
-            // Controlla se il popup non è già visibile
-            if (!document.getElementById('podiumPopupOverlay')) {
-                showTournamentPodium(data);
-                // ✅ Segna che il podio è stato mostrato
-                localStorage.setItem('podiumShown_' + new Date().getFullYear(), 'true');
-            }
-        }, 500);
-    }
+  const container = document.getElementById("standingsContent");
+  if (!container) return;
+  if (!data?.length) {
+    container.innerHTML = `<div class="final-empty"><div class="final-empty-icon">🏆</div><div class="final-empty-title">FASE FINALE</div><div class="final-empty-line"></div><div class="final-empty-text">Crea la fase finale per visualizzare il tabellone del torneo.</div><div class="phase-btn" onclick="createFinalStage()">CREA FASE FINALE</div></div>`;
+    return;
+  }
+  container.innerHTML = `<div class="final-stage-page"><div id="finalBracketContainer"></div></div>`;
+  renderFinalBracket(data);
+  renderNextPhaseButton();
+  // ✅ RIMOSSO: controllo automatico del podio qui
 }
 
 function renderFinalBracket(matches) {
-    const container = document.getElementById("finalBracketContainer");
-    if (!container) return;
-
-    const matchMap = {};
-
-    (matches || []).forEach(m => {
-        const key =
-            m.matchKey ||
-            m.TURNO ||
-            m.turno;
-
-        if (key) {
-            matchMap[key] = m;
-        }
-    });
-
-    const sf1Match = matchMap["SF1"];
-    const sf2Match = matchMap["SF2"];
-
-    // QUI FUORI DAL TEMPLATE
-    const finalMatch = matchMap["F"];
-    const thirdPlaceMatch = matchMap["TP"];
-
-    container.innerHTML = `
+  const container = document.getElementById("finalBracketContainer");
+  if (!container) return;
+  const matchMap = {};
+  (matches || []).forEach(m => {
+    const key = m.matchKey || m.TURNO || m.turno;
+    if (key) {
+      matchMap[key] = m;
+    }
+  });
+  const sf1Match = matchMap["SF1"];
+  const sf2Match = matchMap["SF2"];
+  const finalMatch = matchMap["F"];
+  const thirdPlaceMatch = matchMap["TP"];
+  container.innerHTML = `
     <div class="tournament-wrapper">
-        ${renderBracketMatch(matchMap["Q1"], "qf1")}
-        ${renderBracketMatch(matchMap["Q2"], "qf2")}
-        ${renderBracketMatch(matchMap["Q3"], "qf3")}
-        ${renderBracketMatch(matchMap["Q4"], "qf4")}
-
-        ${sf1Match
-            ? renderBracketMatch(sf1Match, "sf1")
-            : renderPlaceholderCard("SF1", "sf1")
-        }
-
-        ${sf2Match
-            ? renderBracketMatch(sf2Match, "sf2")
-            : renderPlaceholderCard("SF2", "sf2")
-        }
-
-        ${finalMatch
-            ? renderBracketMatch(finalMatch, "final-match")
-            : renderPlaceholderCard("FINALE 1°-2°", "final-match")
-        }
-
-        ${thirdPlaceMatch
-            ? renderBracketMatch(thirdPlaceMatch, "third-place")
-            : renderPlaceholderCard("FINALE 3°-4°", "third-place")
-        }
+      ${renderBracketMatch(matchMap["Q1"], "qf1")}
+      ${renderBracketMatch(matchMap["Q2"], "qf2")}
+      ${renderBracketMatch(matchMap["Q3"], "qf3")}
+      ${renderBracketMatch(matchMap["Q4"], "qf4")}
+      ${sf1Match ? renderBracketMatch(sf1Match, "sf1") : renderPlaceholderCard("SF1", "sf1")}
+      ${sf2Match ? renderBracketMatch(sf2Match, "sf2") : renderPlaceholderCard("SF2", "sf2")}
+      ${finalMatch ? renderBracketMatch(finalMatch, "final-match") : renderPlaceholderCard("FINALE 1°-2°", "final-match")}
+      ${thirdPlaceMatch ? renderBracketMatch(thirdPlaceMatch, "third-place") : renderPlaceholderCard("FINALE 3°-4°", "third-place")}
     </div>
-    `;
+  `;
 }
 
 function renderNextPhaseButton() {
-  // ✅ ASSICURATI DI ESSERE NELLA PAGINA FASE FINALE
   if (!document.querySelector('.final-stage-page') &&
       !(document.querySelector('.standings-page') && window.APP_STATE._activeStandingsTab === "fasefinale")) {
     return;
@@ -2548,7 +2540,6 @@ function renderNextPhaseButton() {
   }
   const btnWrapper = document.createElement("div");
   btnWrapper.className = "next-phase-button";
-  // ✅ AGGIUNGI classe podio-ready solo se è PODIO (per mobile)
   if (action === "PODIO") {
     btnWrapper.classList.add("podio-ready");
   }
@@ -2559,7 +2550,7 @@ function renderNextPhaseButton() {
   if (isReady) {
     btn.onclick = () => {
       if (action === "PODIO") {
-        showTournamentPodium(finalStageData);
+        showTournamentPodium(finalStageData, false);
       } else {
         openNextPhasePopup(action);
       }
@@ -2573,146 +2564,139 @@ function renderNextPhaseButton() {
 }
 
 function openNextPhasePopup(phase) {
-    const modal = document.createElement("div"); modal.className = "modalOverlay";
-    const title = phase === "SEMIFINALI" ? "CREA SEMIFINALI" : "CREA FINALI";
-    const match1Label = phase === "SEMIFINALI" ? "SEMIFINALE 1" : "FINALE 1°-2°";
-    const match2Label = phase === "SEMIFINALI" ? "SEMIFINALE 2" : "FINALE 3°-4°";
-    modal.innerHTML = `<div class="modalBox" style="max-width:500px;"><div class="modalTitle">${title}</div><div class="match-form"><div style="margin-bottom:20px;"><div style="font-weight:700;margin-bottom:8px;">${match1Label}</div><input type="date" id="date1" class="match-input" style="margin-right:10px;"><input type="time" id="time1" class="match-input"></div><div><div style="font-weight:700;margin-bottom:8px;">${match2Label}</div><input type="date" id="date2" class="match-input" style="margin-right:10px;"><input type="time" id="time2" class="match-input"></div><div class="modalActions" style="margin-top:20px;"><div class="phase-btn" onclick="saveNextPhase('${phase}')">CREA PARTITE</div><div class="phase-btn secondary" onclick="this.closest('.modalOverlay').remove()">ANNULLA</div></div></div></div>`;
-    document.body.appendChild(modal); modal.onclick = (e) => { if (e.target === modal) modal.remove(); }; modal.querySelector(".modalBox").onclick = (e) => e.stopPropagation();
+  const modal = document.createElement("div"); 
+  modal.className = "modalOverlay";
+  const title = phase === "SEMIFINALI" ? "CREA SEMIFINALI" : "CREA FINALI";
+  const match1Label = phase === "SEMIFINALI" ? "SEMIFINALE 1" : "FINALE 1°-2°";
+  const match2Label = phase === "SEMIFINALI" ? "SEMIFINALE 2" : "FINALE 3°-4°";
+  modal.innerHTML = `<div class="modalBox" style="max-width:500px;"><div class="modalTitle">${title}</div><div class="match-form"><div style="margin-bottom:20px;"><div style="font-weight:700;margin-bottom:8px;">${match1Label}</div><input type="date" id="date1" class="match-input" style="margin-right:10px;"><input type="time" id="time1" class="match-input"></div><div><div style="font-weight:700;margin-bottom:8px;">${match2Label}</div><input type="date" id="date2" class="match-input" style="margin-right:10px;"><input type="time" id="time2" class="match-input"></div><div class="modalActions" style="margin-top:20px;"><div class="phase-btn" onclick="saveNextPhase('${phase}')">CREA PARTITE</div><div class="phase-btn secondary" onclick="this.closest('.modalOverlay').remove()">ANNULLA</div></div></div></div>`;
+  document.body.appendChild(modal); 
+  modal.onclick = (e) => { if (e.target === modal) modal.remove(); }; 
+  modal.querySelector(".modalBox").onclick = (e) => e.stopPropagation();
 }
 
-function showTournamentPodium(finalStageData) {
-    // ✅ VERIFICA DI ESSERE NELLA PAGINA FASE FINALE
-    if (!document.querySelector('.final-stage-page') && 
-        !(document.querySelector('.standings-page') && window.APP_STATE._activeStandingsTab === "fasefinale")) {
-        console.warn('⚠️ showTournamentPodium chiamato fuori dalla pagina corretta');
-        return;
-    }
-    
-    // Rimuovi popup esistente se presente
-    const existing = document.getElementById("podiumPopupOverlay");
-    if (existing) existing.remove();
-    
-    const finale1 = finalStageData.find(m => m.matchKey === "F");
-    const finale3 = finalStageData.find(m => m.matchKey === "TP");
-    if (!finale1 || !finale3) return;
-    
-    // 🔥 Determina vincitori CON RIGORI
-    let primo, secondo, terzo;
-    
-    // ✅ FINALE 1°-2°: controlla prima i rigori
-    const rigoriCasaFinale = finale1.rigoriCasa ?? finale1.RIGORE_CASA ?? finale1.RIGORI_CASA ?? null;
-    const rigoriTrasfFinale = finale1.rigoriTrasferta ?? finale1.RIGORE_TRASFERTA ?? finale1.RIGORI_TRASFERTA ?? null;
-    const hasValidRigoriFinale = (
-        rigoriCasaFinale !== null && rigoriCasaFinale !== undefined && rigoriCasaFinale !== "" &&
-        rigoriTrasfFinale !== null && rigoriTrasfFinale !== undefined && rigoriTrasfFinale !== ""
-    );
-    
-    if (hasValidRigoriFinale) {
-        // ✅ Deciso ai rigori
-        if (Number(rigoriCasaFinale) > Number(rigoriTrasfFinale)) {
-            primo = finale1.casa;
-            secondo = finale1.trasferta;
-        } else {
-            primo = finale1.trasferta;
-            secondo = finale1.casa;
-        }
+function showTournamentPodium(finalStageData, isAuto = false) {
+  if (!document.querySelector('.final-stage-page') &&
+      !(document.querySelector('.standings-page') && window.APP_STATE._activeStandingsTab === "fasefinale")) {
+    console.warn('⚠️ showTournamentPodium chiamato fuori dalla pagina corretta');
+    return;
+  }
+  const existing = document.getElementById("podiumPopupOverlay");
+  if (existing) existing.remove();
+  const finale1 = finalStageData.find(m => m.matchKey === "F");
+  const finale3 = finalStageData.find(m => m.matchKey === "TP");
+  if (!finale1 || !finale3) return;
+  
+  let primo, secondo, terzo;
+  const rigoriCasaFinale = finale1.rigoriCasa ?? finale1.RIGORE_CASA ?? finale1.RIGORI_CASA ?? null;
+  const rigoriTrasfFinale = finale1.rigoriTrasferta ?? finale1.RIGORE_TRASFERTA ?? finale1.RIGORI_TRASFERTA ?? null;
+  const hasValidRigoriFinale = (
+    rigoriCasaFinale !== null && rigoriCasaFinale !== undefined && rigoriCasaFinale !== "" &&
+    rigoriTrasfFinale !== null && rigoriTrasfFinale !== undefined && rigoriTrasfFinale !== ""
+  );
+  if (hasValidRigoriFinale) {
+    if (Number(rigoriCasaFinale) > Number(rigoriTrasfFinale)) {
+      primo = finale1.casa;
+      secondo = finale1.trasferta;
     } else {
-        // Deciso nei tempi regolamentari
-        if (finale1.golCasa > finale1.golTrasferta) {
-            primo = finale1.casa;
-            secondo = finale1.trasferta;
-        } else {
-            primo = finale1.trasferta;
-            secondo = finale1.casa;
-        }
+      primo = finale1.trasferta;
+      secondo = finale1.casa;
     }
-    
-    // ✅ FINALE 3°-4°: stessa logica
-    const rigoriCasa3 = finale3.rigoriCasa ?? finale3.RIGORE_CASA ?? finale3.RIGORI_CASA ?? null;
-    const rigoriTrasf3 = finale3.rigoriTrasferta ?? finale3.RIGORE_TRASFERTA ?? finale3.RIGORI_TRASFERTA ?? null;
-    const hasValidRigori3 = (
-        rigoriCasa3 !== null && rigoriCasa3 !== undefined && rigoriCasa3 !== "" &&
-        rigoriTrasf3 !== null && rigoriTrasf3 !== undefined && rigoriTrasf3 !== ""
-    );
-    
-    if (hasValidRigori3) {
-        if (Number(rigoriCasa3) > Number(rigoriTrasf3)) {
-            terzo = finale3.casa;
-        } else {
-            terzo = finale3.trasferta;
-        }
+  } else {
+    if (finale1.golCasa > finale1.golTrasferta) {
+      primo = finale1.casa;
+      secondo = finale1.trasferta;
     } else {
-        if (finale3.golCasa > finale3.golTrasferta) {
-            terzo = finale3.casa;
-        } else {
-            terzo = finale3.trasferta;
-        }
+      primo = finale1.trasferta;
+      secondo = finale1.casa;
     }
-    
-    const popup = document.createElement("div");
-    popup.className = "podium-popup-overlay";
-    popup.id = "podiumPopupOverlay";
-    popup.onclick = (e) => {
-        if (e.target === popup) popup.remove();
-    };
-    
-    popup.innerHTML = `
-        <div class="podium-container" onclick="event.stopPropagation()">
-            <div class="podium-header">
-                <h2>TORNEO CONCLUSO</h2>
-                <div class="podium-subtitle">Classifica Finale</div>
-            </div>
-            <div class="podium-wrapper">
-                <div class="podium-position second-place">
-                    <div class="position-number">2°</div>
-                    <div class="team-info">
-                        ${secondo.logo ? `<img src="${getCachedImage(secondo.logo, 80)}" class="podium-logo" alt="${secondo.nome}">` : '<div class="podium-logo-placeholder">⚽</div>'}
-                        <div class="team-name">${(secondo.nome || "").toUpperCase()}</div>
-                    </div>
-                    <div class="podium-step step-2"></div>
-                </div>
-                <div class="podium-position first-place">
-                    <div class="crown">👑</div>
-                    <div class="position-number">1°</div>
-                    <div class="team-info">
-                        ${primo.logo ? `<img src="${getCachedImage(primo.logo, 100)}" class="podium-logo winner" alt="${primo.nome}">` : '<div class="podium-logo-placeholder winner">⚽</div>'}
-                        <div class="team-name winner">${(primo.nome || "").toUpperCase()}</div>
-                    </div>
-                    <div class="podium-step step-1"></div>
-                </div>
-                <div class="podium-position third-place">
-                    <div class="position-number">3°</div>
-                    <div class="team-info">
-                        ${terzo.logo ? `<img src="${getCachedImage(terzo.logo, 80)}" class="podium-logo" alt="${terzo.nome}">` : '<div class="podium-logo-placeholder">⚽</div>'}
-                        <div class="team-name">${(terzo.nome || "").toUpperCase()}</div>
-                    </div>
-                    <div class="podium-step step-3"></div>
-                </div>
-            </div>
-            <div class="podium-footer">
-                <div class="phase-btn" onclick="document.getElementById('podiumPopupOverlay')?.remove()">CHIUDI</div>
-            </div>
+  }
+  const rigoriCasa3 = finale3.rigoriCasa ?? finale3.RIGORE_CASA ?? finale3.RIGORI_CASA ?? null;
+  const rigoriTrasf3 = finale3.rigoriTrasferta ?? finale3.RIGORE_TRASFERTA ?? finale3.RIGORI_TRASFERTA ?? null;
+  const hasValidRigori3 = (
+    rigoriCasa3 !== null && rigoriCasa3 !== undefined && rigoriCasa3 !== "" &&
+    rigoriTrasf3 !== null && rigoriTrasf3 !== undefined && rigoriTrasf3 !== ""
+  );
+  if (hasValidRigori3) {
+    if (Number(rigoriCasa3) > Number(rigoriTrasf3)) {
+      terzo = finale3.casa;
+    } else {
+      terzo = finale3.trasferta;
+    }
+  } else {
+    if (finale3.golCasa > finale3.golTrasferta) {
+      terzo = finale3.casa;
+    } else {
+      terzo = finale3.trasferta;
+    }
+  }
+  const popup = document.createElement("div");
+  popup.className = "podium-popup-overlay";
+  popup.id = "podiumPopupOverlay";
+  popup.onclick = (e) => {
+    if (e.target === popup) {
+      popup.remove();
+      // ✅ Se era automatico, segna come mostrato
+      if (isAuto) {
+        window.APP_STATE._podiumAutoShownThisSession = true;
+      }
+    }
+  };
+  popup.innerHTML = `
+    <div class="podium-container" onclick="event.stopPropagation()">
+      <div class="podium-header">
+        <h2>TORNEO CONCLUSO</h2>
+        <div class="podium-subtitle">Classifica Finale</div>
+      </div>
+      <div class="podium-wrapper">
+        <div class="podium-position second-place">
+          <div class="position-number">2°</div>
+          <div class="team-info">
+            ${secondo.logo ? `<img src="${getCachedImage(secondo.logo, 80)}" class="podium-logo" alt="${secondo.nome}">` : '<div class="podium-logo-placeholder">⚽</div>'}
+            <div class="team-name">${(secondo.nome || "").toUpperCase()}</div>
+          </div>
+          <div class="podium-step step-2"></div>
         </div>
-    `;
-    
-    document.body.appendChild(popup);
+        <div class="podium-position first-place">
+          <div class="crown">👑</div>
+          <div class="position-number">1°</div>
+          <div class="team-info">
+            ${primo.logo ? `<img src="${getCachedImage(primo.logo, 100)}" class="podium-logo winner" alt="${primo.nome}">` : '<div class="podium-logo-placeholder winner">⚽</div>'}
+            <div class="team-name winner">${(primo.nome || "").toUpperCase()}</div>
+          </div>
+          <div class="podium-step step-1"></div>
+        </div>
+        <div class="podium-position third-place">
+          <div class="position-number">3°</div>
+          <div class="team-info">
+            ${terzo.logo ? `<img src="${getCachedImage(terzo.logo, 80)}" class="podium-logo" alt="${terzo.nome}">` : '<div class="podium-logo-placeholder">⚽</div>'}
+            <div class="team-name">${(terzo.nome || "").toUpperCase()}</div>
+          </div>
+          <div class="podium-step step-3"></div>
+        </div>
+      </div>
+      <div class="podium-footer">
+        <div class="phase-btn" onclick="document.getElementById('podiumPopupOverlay')?.remove()">CHIUDI</div>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(popup);
 }
 
 function closeTournamentPodium() {
-    const popup = document.getElementById('podiumPopupOverlay');
-    if (popup) {
-        popup.remove();
-        podiumDismissed = true; 
-        localStorage.setItem('podiumDismissed', 'true');
-    }
+  const popup = document.getElementById('podiumPopupOverlay');
+  if (popup) {
+    popup.remove();
+    podiumDismissed = true;
+    localStorage.setItem('podiumDismissed', 'true');
+  }
 }
 
 function closePodium() {
-    const modal = document.getElementById("podiumModal");
-    if (modal) {
-        modal.remove();
-    }
+  const modal = document.getElementById("podiumModal");
+  if (modal) {
+    modal.remove();
+  }
 }
 
 async function saveNextPhase(phase) {
