@@ -1576,7 +1576,7 @@ body {
 
   /* Titolo più piccolo e più in alto */
   .title-wrapper {
-    top: 50% !important;
+    top: 42% !important;
     left: 50%;
     transform: translate(-50%, -50%);
     width: 95%;
@@ -1600,7 +1600,7 @@ body {
 
   /* Campanili PIÙ ALTI e più grandi */
   .camp {
-    top: 35% !important;
+    top: 28% !important;
     height: min(110vh, 950px) !important;
     opacity: 0.25;
   }
@@ -1615,7 +1615,7 @@ body {
   }
 
   .field-lines .center {
-     top: 57% !important;
+     top: 49% !important;
      width: 100% !important;
      height: 1px !important;
      background: linear-gradient(to right, 
@@ -1635,7 +1635,7 @@ body {
    }
    
   .field-lines .circle {
-    top: 57% !important;
+    top: 49% !important;
     width: 320px !important;
     height: 320px !important;
     border-width: 2px !important;
@@ -1674,7 +1674,7 @@ body {
     max-width: 220px !important;
     width: 70% !important;
     padding: 8px 14px !important;
-    bottom: 85px !important;
+    bottom: 100px !important;
   }
   .home-next-match.winner-card .champion-label {
     font-size: 9px !important;
