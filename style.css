@@ -1898,6 +1898,15 @@ body {
   min-width: 100px;
 }
 
+.match-options {
+  display: none !important;
+}
+
+.match-card .match-options,
+.match-card div[onclick*="openMatchMenu"] {
+  display: none !important;
+}
+
   /* === SQUADRE MOBILE === */
 .teams-page {
   width: 100% !important;
@@ -2005,6 +2014,10 @@ body {
     padding: 10px 20px;
     font-size: 13px;
   }
+
+   .teams-table .delete-btn {
+  display: none !important;
+}
 
   /* === CLASSIFICHE MOBILE === */
   .standings-page {
