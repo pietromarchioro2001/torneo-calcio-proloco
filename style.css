@@ -1767,34 +1767,63 @@ body {
 
 /* Card partite - leggermente più alte per elementi più grandi */
 .match-card {
-   padding: 8px 10px !important;
-   margin: 4px 0 !important;
-   border-radius: 10px !important;
-   min-height: 56px !important;
-   box-sizing: border-box !important;
- }
- .team-block {
-   width: 38%;
-   gap: 5px;
- }
- .team-block img {
-   width: 28px !important; /* ✅ Aumentato da 24px */
-   height: 28px !important;
- }
- .team-name {
-   font-size: 12px !important; /* ✅ Aumentato da 10px */
-   letter-spacing: 0.5px;
- }
- .match-center {
-   width: 24% !important;
-   padding: 0 2px;
- }
- .score {
-   font-size: 14px !important; /* ✅ Aumentato da 11px */
-   font-weight: 800;
-   line-height: 1.1;
-   white-space: nowrap;
- }
+  padding: 8px 10px !important;
+  margin: 4px 0 !important;
+  border-radius: 10px !important;
+  min-height: 60px !important; /* ✅ Aumentato per migliore centratura */
+  box-sizing: border-box !important;
+  display: flex !important; /* ✅ Assicura flexbox */
+  align-items: center !important; /* ✅ Centra verticalmente tutto */
+}
+
+.team-block {
+  width: 38%;
+  gap: 5px;
+  display: flex !important; /* ✅ Assicura flexbox */
+  align-items: center !important; /* ✅ Centra verticalmente */
+}
+
+.team-block.left {
+  justify-content: flex-start !important;
+}
+
+.team-block.right {
+  justify-content: flex-end !important;
+  text-align: right !important;
+  padding-right: 0 !important; /* ✅ Rimosso padding extra */
+}
+
+.team-block img {
+  width: 28px !important;
+  height: 28px !important;
+  flex-shrink: 0 !important; /* ✅ Evita che l'immagine si rimpicciolisca */
+}
+
+.team-name {
+  font-size: 12px !important;
+  letter-spacing: 0.5px;
+  line-height: 1.2 !important; /* ✅ Migliore allineamento testo */
+}
+
+.match-center {
+  width: 24% !important;
+  padding: 0 2px;
+  display: flex !important; /* ✅ Assicura flexbox */
+  flex-direction: column !important;
+  align-items: center !important; /* ✅ Centra orizzontalmente */
+  justify-content: center !important; /* ✅ Centra verticalmente */
+  text-align: center !important;
+}
+
+.score {
+  font-size: 14px !important;
+  font-weight: 800;
+  line-height: 1.1;
+  white-space: nowrap;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
  .vs {
    font-size: 12px !important;
  }
@@ -2698,9 +2727,9 @@ body {
   .back-btn-wrapper {
     margin-top: 15px !important;
     margin-bottom: 10px !important;
-    padding: 10px 0 !important;
+    padding: 10px 0 10px 15px !important; /* ✅ Aggiunto padding-left: 15px */
     display: flex !important;
-    justify-content: flex-end !important;
+    justify-content: flex-start !important; /* ✅ Cambiato da flex-end a flex-start */
     align-items: center !important;
     width: 100% !important;
     box-sizing: border-box !important;
