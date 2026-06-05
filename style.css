@@ -2038,47 +2038,135 @@ body {
 
   /* === EDITORE GIOCATORE MOBILE === */
   .team-editor {
-    width: 100%;
-    padding: 0 10px;
-  }
-  .team-header {
-    flex-direction: column;
-    gap: 10px;
-  }
-  .team-header-logo {
-    width: 100px;
-    height: 100px;
-  }
-  .team-name-display {
-    font-size: 20px;
-    letter-spacing: 3px;
-  }
-  .team-photo-wrapper {
-    width: 100%;
-  }
-  .players-title {
-    font-size: 18px;
-    letter-spacing: 3px;
-    margin: 25px 0 14px;
-  }
-  .playersTable {
-    font-size: 12px;
-  }
-  .playersTable th {
-    padding: 8px 10px;
-    font-size: 10px;
-  }
-  .playersTable td {
-    padding: 8px 10px;
-  }
-  .playerPhoto {
-    width: 32px;
-    height: 32px;
-  }
-  .playerPhotoEmpty {
-    width: 32px;
-    height: 32px;
-  }
+  width: 100%;
+  padding: 0 10px;
+}
+
+/* Nascondi pulsante NUOVO GIOCATORE */
+.team-editor .small-btn,
+.team-editor .phase-btn {
+  display: none !important;
+}
+
+.team-header {
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 0;
+}
+
+.team-header-logo {
+  width: 80px !important; /* ✅ Ridotto da 100px */
+  height: 80px !important;
+}
+
+.team-name-display {
+  font-size: 18px !important; /* ✅ Ridotto da 20px */
+  letter-spacing: 2px;
+}
+
+.team-girone-display {
+  font-size: 11px !important;
+  letter-spacing: 2px;
+}
+
+.team-photo-wrapper {
+  width: 100%;
+  max-width: 280px; /* ✅ Ridotto */
+  margin: 10px auto 15px;
+}
+
+.team-photo-view {
+  border-radius: 10px;
+}
+
+.players-title {
+  font-size: 16px !important; /* ✅ Ridotto da 18px */
+  letter-spacing: 2px;
+  margin: 20px 0 12px;
+}
+
+.players-title::after {
+  width: 40px; /* ✅ Ridotto */
+  margin-top: 4px;
+}
+
+/* Tabella giocatori più compatta */
+.playersTable {
+  font-size: 11px !important; /* ✅ Ridotto da 12px */
+}
+
+.playersTable th {
+  padding: 6px 4px !important; /* ✅ Ridotto */
+  font-size: 9px !important; /* ✅ Ridotto */
+  letter-spacing: 1px;
+}
+
+.playersTable td {
+  padding: 6px 4px !important; /* ✅ Ridotto */
+  font-size: 11px !important;
+}
+
+.playersTable th:nth-child(n+3),
+.playersTable td:nth-child(n+3) {
+  width: 40px !important; /* ✅ Ridotto da 70px */
+}
+
+.playersTable td:last-child {
+  width: 40px !important;
+}
+
+.playerPhoto {
+  width: 28px !important; /* ✅ Ridotto da 32px */
+  height: 28px !important;
+  border-radius: 6px;
+}
+
+.playerPhotoEmpty {
+  width: 28px !important;
+  height: 28px !important;
+}
+
+.player-avatar {
+  width: 28px !important;
+  height: 28px !important;
+  min-width: 28px !important;
+}
+
+.player-avatar img {
+  width: 28px !important;
+  height: 28px !important;
+}
+
+.player-name {
+  font-size: 11px !important; /* ✅ Ridotto */
+  letter-spacing: 0.5px;
+}
+
+.player-badges {
+  font-size: 10px !important; /* ✅ Ridotto */
+}
+
+/* Player rows più compatte */
+.player-row {
+  padding: 4px 6px !important; /* ✅ Ridotto */
+  margin-bottom: 4px !important;
+}
+
+.players-list {
+  gap: 4px !important; /* ✅ Ridotto */
+}
+
+/* Bottone indietro più piccolo */
+.back-btn-wrapper {
+  margin-top: 30px !important; /* ✅ Ridotto */
+  padding: 10px 0 !important;
+}
+
+.back-btn {
+  padding: 8px 16px !important;
+  font-size: 11px !important;
+  letter-spacing: 1px;
+}
 
   /* === DETTAGLIO PARTITA MOBILE === */
   .match-page {
