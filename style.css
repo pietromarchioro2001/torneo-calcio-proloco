@@ -2037,7 +2037,6 @@ body {
   }
 
   /* === EDITORE GIOCATORE MOBILE === */
- /* === EDITORE GIOCATORE MOBILE === */
 .team-editor {
   width: 100%;
   padding: 0 10px;
@@ -2051,7 +2050,7 @@ body {
 
 /* ✅ Header squadra: logo a sinistra, nome a fianco */
 .team-header {
-  flex-direction: row !important; /* ✅ Cambia da column a row */
+  flex-direction: row !important;
   align-items: center !important;
   justify-content: flex-start !important;
   gap: 12px !important;
@@ -2060,21 +2059,13 @@ body {
 }
 
 .team-header-logo {
-  width: 70px !important; /* ✅ Ridotto */
+  width: 70px !important;
   height: 70px !important;
   flex-shrink: 0 !important;
 }
 
-/* Container per nome e girone */
-.team-header-info {
-  display: flex !important;
-  flex-direction: column !important;
-  justify-content: center !important;
-  gap: 2px !important;
-}
-
 .team-name-display {
-  font-size: 20px !important; /* ✅ Aumentato per leggibilità */
+  font-size: 20px !important;
   letter-spacing: 3px !important;
   line-height: 1.1 !important;
   margin: 0 !important;
@@ -2086,11 +2077,11 @@ body {
   margin: 0 !important;
 }
 
-/* ✅ Riquadro foto squadra ridotto */
+/* ✅ Riquadro foto squadra PIÙ PICCOLO e centrato */
 .team-photo-wrapper {
-  width: 100% !important;
-  max-width: 320px !important; /* ✅ Ridotto da 380px */
-  margin: 15px auto 20px !important;
+  width: 85% !important; /* ✅ Ridotto da 100% */
+  max-width: 280px !important; /* ✅ Ridotto da 320px */
+  margin: 15px auto 20px !important; /* ✅ Centrato con auto */
 }
 
 .team-photo-view {
@@ -2099,9 +2090,10 @@ body {
 
 .team-photo-empty {
   width: 100% !important;
-  max-width: 320px !important; /* ✅ Ridotto */
+  max-width: 280px !important; /* ✅ Ridotto */
   aspect-ratio: 16/9 !important;
   border-radius: 12px !important;
+  margin: 0 auto !important; /* ✅ Centrato */
 }
 
 /* ✅ Titolo GIOCATORI */
@@ -2116,63 +2108,82 @@ body {
   margin-top: 5px !important;
 }
 
-/* ✅ Tabella giocatori più compatta */
+/* ✅ Tabella giocatori: più margine a destra, colonne dati compatte, nomi più larghi */
 .playersTable {
   font-size: 12px !important;
   width: 100% !important;
+  table-layout: fixed !important; /* ✅ Permette controllo colonne */
 }
 
 .playersTable th {
-  padding: 8px 6px !important; /* ✅ Ridotto */
-  font-size: 10px !important;
+  padding: 8px 4px !important; /* ✅ Ridotto */
+  font-size: 9px !important; /* ✅ Ridotto */
   letter-spacing: 1px !important;
 }
 
 .playersTable td {
-  padding: 8px 6px !important; /* ✅ Ridotto */
+  padding: 8px 4px !important; /* ✅ Ridotto */
   font-size: 12px !important;
-}
-
-.playersTable th:nth-child(n+3),
-.playersTable td:nth-child(n+3) {
-  width: 45px !important; /* ✅ Ridotto da 70px */
   text-align: center !important;
 }
 
+/* ✅ Colonna NOME: molto più spazio */
+.playersTable th:nth-child(2),
+.playersTable td:nth-child(2) {
+  width: auto !important;
+  min-width: 100px !important; /* ✅ Molto più spazio per i nomi */
+  text-align: left !important;
+  padding-left: 8px !important; /* ✅ Margine sinistro */
+  padding-right: 12px !important; /* ✅ Spazio prima dei dati */
+}
+
+.playersTable th:nth-child(2) {
+  text-align: left !important;
+}
+
+/* ✅ Colonne dati (GOL, ASS, AMM, ESP, MVP): molto compatte */
+.playersTable th:nth-child(n+3),
+.playersTable td:nth-child(n+3) {
+  width: 35px !important; /* ✅ Ridotto da 45px */
+  text-align: center !important;
+  padding: 8px 2px !important; /* ✅ Molto compatto */
+}
+
 .playersTable td:last-child {
-  width: 45px !important;
+  width: 35px !important;
+  padding-right: 8px !important; /* ✅ Margine destro */
 }
 
 /* ✅ Nomi giocatori: permetti wrapping per nomi lunghi */
 .playersTable td:nth-child(2) {
   font-size: 11px !important;
-  letter-spacing: 1px !important;
-  line-height: 1.2 !important;
-  white-space: normal !important; /* ✅ Permette a capo */
+  letter-spacing: 0.5px !important;
+  line-height: 1.3 !important;
+  white-space: normal !important;
   word-break: break-word !important;
 }
 
 .playerPhoto {
-  width: 30px !important;
-  height: 30px !important;
+  width: 28px !important;
+  height: 28px !important;
   border-radius: 6px !important;
 }
 
 .playerPhotoEmpty {
-  width: 30px !important;
-  height: 30px !important;
+  width: 28px !important;
+  height: 28px !important;
   border-radius: 6px !important;
 }
 
 .player-avatar {
-  width: 30px !important;
-  height: 30px !important;
-  min-width: 30px !important;
+  width: 28px !important;
+  height: 28px !important;
+  min-width: 28px !important;
 }
 
 .player-avatar img {
-  width: 30px !important;
-  height: 30px !important;
+  width: 28px !important;
+  height: 28px !important;
 }
 
 .player-name {
