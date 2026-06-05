@@ -1735,7 +1735,7 @@ body {
    }
   .matches-scroll {
     width: 100%;
-    padding-right: 2px !important;
+    padding-right: 4px !important;
   }
 
   /* Pulsante inserisci partite più piccolo */
@@ -1753,7 +1753,7 @@ body {
   .dates-toolbar {
      margin-top: 10px !important;
      gap: 6px !important;
-     padding: 8px 10px !important;
+     padding: 8px 12px !important;
      overflow-x: auto !important;
      overflow-y: hidden !important;
      scroll-behavior: auto;
@@ -1819,6 +1819,14 @@ body {
      line-height: 1.2;
      letter-spacing: 0.5px;
    }
+
+   .match-fase-badge {
+  font-size: 7px !important;
+  font-weight: 600 !important;
+  letter-spacing: 0.5px !important;
+  margin-top: 2px !important;
+}
+   
    .match-day-title {
      font-size: 10px !important;
      margin: 10px 5px 6px !important;
