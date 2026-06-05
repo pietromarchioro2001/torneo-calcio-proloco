@@ -1642,35 +1642,9 @@ body {
     border-color: rgba(122,30,44,0.12) !important;
   }
 
-  /* Card partita sotto più piccola */
-  .home-next-match {
-    bottom: 90px;
-    width: 90%;
-    max-width: 320px;
-    padding: 10px 14px;
-    min-height: 50px;
-  }
-  .home-team {
-    font-size: 12px;
-  }
-  .home-team-logo,
-  .home-team-block img {
-    width: 28px;
-    height: 28px;
-  }
-  .home-score {
-    font-size: 14px;
-  }
-  .home-match-time {
-    font-size: 12px;
-  }
-  .home-match-date {
-    font-size: 9px;
-  }
-
  /* Card normale - z-index sopra toolbar */
   .home-next-match {
-    bottom: 75px !important;
+    bottom: 120px !important;
     z-index: 1001 !important;
     width: 90%;
     max-width: 320px;
@@ -1697,7 +1671,7 @@ body {
 
   /* Card campione - z-index sopra toolbar + distanza fissa da toolbar */
   .home-next-match.winner-card {
-    bottom: 75px !important;
+    bottom: 120px !important;
     z-index: 1001 !important;
     min-width: 160px !important;
     max-width: 220px !important;
