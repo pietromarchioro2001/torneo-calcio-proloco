@@ -2252,11 +2252,12 @@ body {
 
   /* === BRACKET MOBILE === */
 
+
 .next-phase-button {
   display: none !important;
 }
 
-/* Grid 2 colonne strette */
+/* Grid 2 colonne */
 .tournament-wrapper {
   display: grid !important;
   grid-template-columns: 1fr 1fr;
@@ -2269,6 +2270,7 @@ body {
   box-sizing: border-box;
 }
 
+/* Card dimensioni compatte */
 .bracket-match,
 .bracket-placeholder {
   position: relative !important;
@@ -2276,24 +2278,24 @@ body {
   right: auto !important;
   top: auto !important;
   margin-left: 0 !important;
-  width: 80% !important;
-  max-width: 100px !important;
+  width: 100% !important;
+  max-width: 150px !important;
   height: 65px !important;
-  min-height: 60px !important;
+  min-height: 65px !important;
   padding: 6px 8px !important;
   border-radius: 12px !important;
 }
-   
-/* Quarti - riga 1 */
-.qf1 { grid-column: 1; grid-row: 1; }
-.qf2 { grid-column: 2; grid-row: 1; }
 
-/* SF1 - riga 2, centrata e più stretta */
+/* Quarti - riga 1 */
+.qf1 { grid-column: 1; grid-row: 1; justify-self: end; }
+.qf2 { grid-column: 2; grid-row: 1; justify-self: start; }
+
+/* SF1 - riga 2, centrata */
 .sf1 {
   grid-column: 1 / -1;
   grid-row: 2;
   justify-self: center;
-  width: 52% !important;
+  width: 55% !important;
   max-width: 180px !important;
 }
 
@@ -2301,48 +2303,56 @@ body {
 .final-match {
   grid-column: 1;
   grid-row: 3;
+  justify-self: end;
   background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%) !important;
   border: 1.5px solid #fde047 !important;
 }
 .third-place {
   grid-column: 2;
   grid-row: 3;
+  justify-self: start;
   background: linear-gradient(135deg, #fff8f0 0%, #fed7aa 100%) !important;
   border: 1.5px solid #fdba74 !important;
 }
 
-/* SF2 - riga 4, centrata e più stretta */
+/* SF2 - riga 4, centrata */
 .sf2 {
   grid-column: 1 / -1;
   grid-row: 4;
   justify-self: center;
-  width: 52% !important;
+  width: 55% !important;
   max-width: 180px !important;
 }
 
 /* Quarti - riga 5 */
-.qf3 { grid-column: 1; grid-row: 5; }
-.qf4 { grid-column: 2; grid-row: 5; }
+.qf3 { grid-column: 1; grid-row: 5; justify-self: end; }
+.qf4 { grid-column: 2; grid-row: 5; justify-self: start; }
 
-/* FIX DEFINITIVO: togliere gap e flex dallo span */
+/* ✅ SOLUZIONE: togliere space-between e usare flex-end + auto margin */
 .bracket-team {
-  gap: 0 !important;
-  justify-content: space-between !important;
-}
-.bracket-team span {
-  flex: 0 0 auto !important;
-  max-width: none !important;
-  white-space: nowrap;
+  gap: 3px !important;
+  justify-content: flex-start !important; /* ✅ Cambio da space-between a flex-start */
+  align-items: center;
 }
 .bracket-team img {
   width: 18px !important;
   height: 18px !important;
   flex-shrink: 0;
-  margin-right: 4px !important;
+}
+.bracket-team span {
+  flex: none !important;
+  max-width: 55px !important;
+  font-size: 10px !important;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 .bracket-score {
-  margin-left: auto !important;
-  font-size: 13px !important;
+  margin-left: auto !important; /* ✅ Spinge il risultato a destra */
+  font-size: 14px !important;
+  font-weight: 900 !important;
+  min-width: 18px !important;
+  text-align: right;
 }
 
 .bracket-placeholder {
