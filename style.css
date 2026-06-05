@@ -2269,7 +2269,7 @@ body {
   box-sizing: border-box;
 }
 
-/* Tutte le card: dimensioni compatte uniformi */
+/* Card più strette e compatte */
 .bracket-match,
 .bracket-placeholder {
   position: relative !important;
@@ -2277,10 +2277,10 @@ body {
   right: auto !important;
   top: auto !important;
   margin-left: 0 !important;
-  width: 100% !important;
-  max-width: none !important;
+  width: 95% !important;
+  max-width: 170px !important;
   height: 65px !important;
-  min-height: 65px !important;
+  min-height: 60px !important;
   padding: 6px 8px !important;
   border-radius: 12px !important;
 }
