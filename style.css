@@ -2338,69 +2338,337 @@ body {
 }
    
   /* === DETTAGLIO PARTITA MOBILE === */
-  .match-page {
-    width: 100%;
-    padding: 0 10px;
+ .match-page {
+    width: 100% !important;
+    padding: 0 10px !important;
+    box-sizing: border-box !important;
   }
-  .team-big {
-    position: relative;
-    width: 100%;
-    padding: 0;
-  }
-  .team-big.left,
-  .team-big.right {
-    left: auto;
-    right: auto;
-    justify-content: center;
-    text-align: center;
-  }
-  .team-big img {
-    width: 60px;
-    height: 60px;
-  }
-  .team-big-name {
-    font-size: 16px;
-  }
-  .score-big {
-    font-size: 42px;
-  }
+
+  /* ✅ HEADER PARTITA: layout in linea come PC */
   .match-header-big {
-    flex-direction: column;
-    min-height: auto;
-    gap: 10px;
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    min-height: auto !important;
+    gap: 8px !important;
+    margin-top: 15px !important;
+    margin-bottom: 5px !important;
+    position: relative !important;
   }
+
+  .team-big {
+    position: static !important;
+    width: 30% !important;
+    padding: 0 !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 8px !important;
+  }
+
+  .team-big.left {
+    justify-content: flex-end !important;
+    text-align: right !important;
+    flex-direction: row-reverse !important;
+  }
+
+  .team-big.right {
+    justify-content: flex-start !important;
+    text-align: left !important;
+  }
+
+  .team-big img {
+    width: 45px !important;
+    height: 45px !important;
+    object-fit: contain !important;
+  }
+
+  .team-big-name {
+    font-size: 13px !important;
+    letter-spacing: 1px !important;
+    line-height: 1.1 !important;
+    font-weight: 700 !important;
+  }
+
+  /* ✅ CENTRO: risultato + stato */
+  .match-header-big .match-center {
+    flex: 1 !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: center !important;
+    min-width: 0 !important;
+    padding: 0 !important;
+  }
+
+  /* ✅ NASCONDI pulsanti INIZIA/CONCLUDI/SUPP/RIGORI */
+  .match-controls-top {
+    display: none !important;
+  }
+
+  .score-big {
+    font-size: 36px !important;
+    font-weight: 800 !important;
+    letter-spacing: 2px !important;
+    line-height: 1 !important;
+    margin: 0 !important;
+    position: static !important;
+    width: auto !important;
+  }
+
+  /* ✅ STATO PARTITA sotto il risultato */
+  .match-status {
+    font-size: 11px !important;
+    font-weight: 700 !important;
+    letter-spacing: 2px !important;
+    margin-top: 4px !important;
+    text-transform: uppercase !important;
+  }
+
+  .match-status.live {
+    font-size: 11px !important;
+    font-weight: 800 !important;
+    color: #e53935 !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 5px !important;
+  }
+
+  .match-status.live::before {
+    width: 6px !important;
+    height: 6px !important;
+  }
+
+  /* ✅ TOOLBAR TAB */
   .match-toolbar {
-    gap: 15px;
+    display: flex !important;
+    justify-content: center !important;
+    gap: 20px !important;
+    margin: 8px 0 10px !important;
+  }
+
+  .match-toolbar .mt-btn {
+    font-size: 11px !important;
+    letter-spacing: 2px !important;
+  }
+
+  /* ✅ CONTENUTO MATCH */
+  .match-content {
+    flex: 1 !important;
+    overflow-y: auto !important;
   }
 
   /* === CRONACA MOBILE === */
   .teams-events {
-    flex-direction: column;
+    flex-direction: column !important;
+    width: 100% !important;
   }
-  .team-events {
-    width: 100%;
+
+  /* ✅ NASCONDI pulsanti + EVENTO CASA/TRASFERTA */
+  .events-actions {
+    display: none !important;
   }
-  .events-timeline::before {
-    left: 20px;
+
+  /* ✅ CRONACA titolo più piccolo */
+  .cronaca-title.center {
+    font-size: 14px !important;
+    letter-spacing: 3px !important;
+    margin: 5px 0 8px !important;
   }
-  .event-line {
-    justify-content: flex-start !important;
-  }
-  .event-content {
-    width: 80%;
-    margin-left: 40px;
-  }
-  .event-line.right .event-content {
-    justify-content: flex-start;
-    text-align: left;
-  }
+
   .cronaca-title.center::before,
   .cronaca-title.center::after {
-    display: none;
+    display: none !important;
+  }
+
+  .cronaca-title.center span::after {
+    display: none !important;
+  }
+
+  /* ✅ TIMELINE con linea centrale */
+  .events-timeline {
+    position: relative !important;
+    width: 100% !important;
+    padding: 15px 0 !important;
+    min-height: 200px !important;
+  }
+
+  .events-timeline::before {
+    content: "" !important;
+    position: absolute !important;
+    left: 50% !important;
+    top: 0 !important;
+    transform: translateX(-50%) !important;
+    width: 2px !important;
+    height: 100% !important;
+    background: var(--granata) !important;
+    opacity: 0.3 !important;
+  }
+
+  /* ✅ EVENTI in due colonne distinte */
+  .event-line {
+    width: 100% !important;
+    display: flex !important;
+    position: relative !important;
+    margin: 8px 0 !important;
+  }
+
+  .event-line.left {
+    justify-content: flex-start !important;
+  }
+
+  .event-line.right {
+    justify-content: flex-end !important;
+  }
+
+  .event-content {
+    width: 45% !important;
+    font-family: 'Oswald', sans-serif !important;
+    font-size: 12px !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 5px !important;
+    position: relative !important;
+  }
+
+  .event-line.left .event-content {
+    justify-content: flex-end !important;
+    text-align: right !important;
+    padding-right: 15px !important;
+  }
+
+  .event-line.right .event-content {
+    justify-content: flex-start !important;
+    text-align: left !important;
+    padding-left: 15px !important;
+  }
+
+  .event-minute {
+    font-weight: 700 !important;
+    opacity: 0.8 !important;
+    font-size: 12px !important;
+    min-width: 28px !important;
+  }
+
+  .event-icon {
+    font-size: 13px !important;
+  }
+
+  .event-player {
+    letter-spacing: 0.3px !important;
+    font-size: 12px !important;
+  }
+
+  .assist {
+    color: #888 !important;
+    font-weight: 400 !important;
+    font-size: 11px !important;
+  }
+
+  /* ✅ NASCONDI tre puntini eventi */
+  .event-options {
+    display: none !important;
+  }
+
+  /* ✅ EMPTY STATES cronaca */
+  .empty-events-grid {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr !important;
+    width: 100% !important;
+    margin-top: 15px !important;
+  }
+
+  .empty-team-events {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: center !important;
+    opacity: 0.45 !important;
+    padding-top: 20px !important;
+  }
+
+  .empty-events-text {
+    font-size: 12px !important;
+    letter-spacing: 1px !important;
+    margin-bottom: 6px !important;
+  }
+
+  .empty-events-icon {
+    font-size: 24px !important;
+  }
+
+  /* ✅ SEQUENZA RIGORI ridotta e centrata */
+  .penalty-indicators-container {
+    width: 90% !important;
+    max-width: 280px !important;
+    margin: 15px auto 20px !important;
+    padding: 10px !important;
+    border-radius: 10px !important;
+  }
+
+  .penalty-header-label {
+    font-size: 9px !important;
+    letter-spacing: 1px !important;
+    margin-bottom: 8px !important;
+  }
+
+  .penalty-dots-row {
+    gap: 10px !important;
+    flex-wrap: nowrap !important;
+  }
+
+  .penalty-team-block {
+    min-width: 80px !important;
+    gap: 5px !important;
+  }
+
+  .penalty-team-name {
+    font-size: 10px !important;
+    letter-spacing: 0.5px !important;
+  }
+
+  .penalty-dots {
+    gap: 4px !important;
+  }
+
+  .penalty-dot {
+    width: 12px !important;
+    height: 12px !important;
+  }
+
+  .penalty-vs-score {
+    font-size: 16px !important;
+    min-width: 35px !important;
+  }
+
+  /* ✅ MVP BANNER mobile */
+  #mvpBanner {
+    top: 50px !important;
+    min-width: 160px !important;
+    max-width: 80% !important;
+    padding: 8px 14px !important;
+  }
+
+  #mvpBanner .mvp-title {
+    font-size: 8px !important;
+    letter-spacing: 1.5px !important;
+  }
+
+  #mvpBanner .mvp-name {
+    font-size: 14px !important;
+  }
+
+  /* ✅ BACK BUTTON */
+  .match-page .back-btn-wrapper {
+    margin-top: 20px !important;
+    padding: 10px 0 !important;
+    display: flex !important;
+    justify-content: flex-end !important;
   }
 
   /* === PODIO MOBILE === */
-  .podium-container {
+.podium-container {
   padding: 20px 15px;
 }
 .podium-header h2 {
@@ -2412,13 +2680,13 @@ body {
 }
 .podium-step {
   width: 70px;
-  border: none !important; /* ✅ Rimuove eventuali bordi */
-  outline: none !important; /* ✅ Rimuove outline */
-  box-shadow: none !important; /* ✅ Rimuove ombre indesiderate */
+  border: none !important;
+  outline: none !important;
+  box-shadow: none !important;
 }
 .step-1 { height: 60px; }
 .step-2 { height: 40px; }
-.step-3 { height: 30px; }
+.step-3 { height: 25px; }
 .podium-container .podium-logo {
   width: 50px;
   height: 50px;
@@ -2438,7 +2706,7 @@ body {
   font-size: 28px !important;
 }
 
-/* ✅ FIX: Rimuove bordi/outline su tutte le posizioni del podio mobile */
+/* ✅ FIX COMPLETO: Rimuove TUTTI i bordi e background indesiderati dal podio mobile */
 .podium-position,
 .podium-position.first-place,
 .podium-position.second-place,
@@ -2446,11 +2714,36 @@ body {
   border: none !important;
   outline: none !important;
   box-shadow: none !important;
+  background: transparent !important;
 }
 
-/* ✅ FIX: Nome squadra 3° posto leggibile (bronzo scuro invece di bianco) */
+/* ✅ FIX SPECIFICO per il 3° posto - rimuove il rettangolo bianco */
+.podium-position.third-place {
+  border: none !important;
+  outline: none !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+.podium-position.third-place .podium-step {
+  border: none !important;
+  outline: none !important;
+  box-shadow: none !important;
+  background: linear-gradient(180deg, #e8a85c 0%, #cd7f32 50%, #a0652a 100%) !important;
+}
+
+.podium-position.third-place .team-info {
+  border: none !important;
+  background: transparent !important;
+}
+
+.podium-position.third-place .position-number {
+  color: #cd7f32 !important;
+}
+
+/* ✅ FIX: Nome squadra 3° posto leggibile */
 .podium-position.third-place .team-name {
-  color: #78350f !important; /* ✅ Bronzo scuro per leggibilità */
+  color: #78350f !important;
   font-weight: 700 !important;
 }
   /* === RIGORI MOBILE === */
