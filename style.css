@@ -2559,10 +2559,10 @@ body {
   /* ✅ CONTENUTO EVENTO: flex con due sotto-colonne */
   .event-content {
     display: flex !important;
-    align-items: flex-start !important; /* ✅ Cambiato da center a flex-start per gestire assist a capo */
+    align-items: flex-start !important; /* ✅ Allinea in alto per gestire nomi a capo */
     gap: 4px !important;
     width: 45% !important;
-    flex-wrap: wrap !important; /* ✅ Permette all'assist di andare a capo */
+    flex-wrap: nowrap !important; /* ✅ Rimuove wrap che causava il disordine */
   }
 
   .event-line.left .event-content {
@@ -2572,10 +2572,9 @@ body {
   }
 
   .event-line.right .event-content {
-    justify-content: flex-end !important;
+    justify-content: flex-end !important; /* Allinea tutto a destra */
     text-align: right !important;
     padding-right: 5px !important;
-    flex-direction: row-reverse !important; /* ✅ Inverte ordine per colonna destra: nome-icona-minuto */
   }
 
   /* ✅ COLONNA STRETTA: minuto (larghezza fissa per allineamento) */
@@ -2588,8 +2587,41 @@ body {
     margin-top: 2px !important; /* ✅ Allinea con la prima riga del nome */
   }
 
+  .event-line.right .event-player {
+    flex: 1 !important;
+    min-width: 0 !important;
+    text-align: right !important; /* ✅ Nome allineato a destra */
+    white-space: normal !important;
+    word-break: break-word !important;
+    line-height: 1.3 !important;
+    display: inline !important; /* Permette all'assist di andare a capo */
+  }
+
+   .event-line.right .assist {
+    display: block !important;
+    text-align: right !important;
+  }
+
+  /* Icon e minuto: colonna fissa, non si rimpiccioliscono */
+  .event-line.right .event-icon {
+    flex-shrink: 0 !important;
+    margin: 0 !important;
+    font-size: 14px !important;
+    line-height: 1 !important;
+    margin-top: 2px !important;
+  }
+
   .event-line.right .event-minute {
-    text-align: left !important; /* ✅ Nella colonna destra il minuto è a sinistra del blocco */
+    flex-shrink: 0 !important;
+    min-width: 30px !important;
+    text-align: left !important;
+    font-weight: 700 !important;
+    font-size: 12px !important;
+    margin-top: 2px !important;
+  }
+
+  .event-options {
+    display: none !important;
   }
 
   /* ✅ ICONA (pallone/sticker) */
@@ -2618,10 +2650,6 @@ body {
     display: block !important; /* ✅ Forza l'assist a capo */
     margin-top: 2px !important;
     text-align: inherit !important;
-  }
-
-  .event-options {
-    display: none !important;
   }
 
   /* ✅ EMPTY STATES */
