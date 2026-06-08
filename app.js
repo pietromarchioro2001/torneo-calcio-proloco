@@ -1256,6 +1256,8 @@ function openMatch(id) {
     
     window.APP_STATE._matchLoading = true;
     setTimeout(() => { window.APP_STATE._matchLoading = false; }, 10000);
+
+    window.APP_STATE.activeMatchTab = 'diretta';
     
     const cachedMatch = window.APP_CACHE.matches?.find(m => String(m.MATCH_ID) === String(id));
     
@@ -3239,20 +3241,52 @@ function renderPlayersTab(casaData, trasfData, match) {
     }
   });
 
+  // ✅ FUNZIONE HELPER: raggruppa eventi e crea badge compatti
+  const renderCompactBadges = (playerEvents) => {
+    if (!playerEvents.length) return "";
+    
+    const counts = { GOAL: 0, AMMONIZIONE: 0, ESPULSIONE: 0 };
+    playerEvents.forEach(t => {
+      if (counts[t] !== undefined) counts[t]++;
+    });
+    
+    let html = "";
+    
+    // ✅ Gol con conteggio (es: ⚽x5)
+    if (counts.GOAL > 0) {
+      const goalText = counts.GOAL > 1 ? `⚽x${counts.GOAL}` : "⚽";
+      html += `<span class="player-badges" style="font-size:12px;">${goalText}</span>`;
+    }
+    
+    // ✅ Ammonizioni/Espulsioni su riga sotto
+    const cards = [];
+    if (counts.AMMONIZIONE > 0) {
+      cards.push(counts.AMMONIZIONE > 1 ? `🟨x${counts.AMMONIZIONE}` : "🟨");
+    }
+    if (counts.ESPULSIONE > 0) {
+      cards.push(counts.ESPULSIONE > 1 ? `🟥x${counts.ESPULSIONE}` : "🟥");
+    }
+    
+    if (cards.length > 0) {
+      html += `<br><span class="player-badges" style="font-size:11px;opacity:0.8;">${cards.join(" ")}</span>`;
+    }
+    
+    return html;
+  };
+
   const renderPlayerList = (players, teamName) => {
     if (!players.length) return `<div style="text-align:center;padding:20px;color:#888">Nessun giocatore</div>`;
     let html = "<div class='players-list'>";
     players.forEach(p => {
       const playerEvents = eventMap[p.PLAYER_ID] || [];
-      const badges = playerEvents.map(t => t === "GOAL" ? "⚽" : t === "AMMONIZIONE" ? "🟨" : "🟥").join(" ");
+      const badgesHtml = renderCompactBadges(playerEvents);
       const isMVP = isFinished && p.NOME === mvpName;
       const mvpClass = isMVP ? "mvp-player-row" : "";
       const crownHtml = isMVP ? '<div class="mvp-crown">👑</div>' : '';
       const photoHtml = p.FOTO_ID ? `<img src="${getCachedImage(p.FOTO_ID, 40)}" alt="${p.NOME}" class="${isMVP ? 'mvp-player-photo' : ''}" onerror="this.style.display='none'">` : `<div class="player-avatar-fallback ${isMVP ? 'mvp-player-avatar' : ''}">👤</div>`;
-      // ✅ USA formatPlayerName SENZA forceBreak (va a capo solo se necessario)
       html += `<div class="player-row ${mvpClass}" onclick="openPlayerPopup('${p.PLAYER_ID}'); event.stopPropagation();" style="cursor:pointer;">
         <div class="player-avatar ${isMVP ? 'mvp-player-avatar-wrapper' : ''}">${photoHtml}${crownHtml}</div>
-        <div class="player-name">${formatPlayerName(p.NOME)}${badges ? `<span class="player-badges">${badges}</span>` : ""}</div>
+        <div class="player-name">${(p.NOME || "").toUpperCase()}${badgesHtml}</div>
       </div>`;
     });
     html += "</div>";
