@@ -273,7 +273,7 @@ window.APP_STATE = {
     _currentOpenTeam: null, _pendingFinalMatches: null, _standingsInterval: null,
     _activeStandingsTab: "gironi", _finalStageLoaded: false, _standingsActive: false,
     _currentPlayerPreviewUrl: null, _matchRequestNonce: 0,
-    activeMatchTab: 'diretta'
+    activeMatchTab: 'diretta',
     _podiumShownThisSession: false
 };
 
