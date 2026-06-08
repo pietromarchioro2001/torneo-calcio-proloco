@@ -2327,12 +2327,10 @@ body {
 }
    
   /* === DETTAGLIO PARTITA MOBILE === */
-   .match-content {
-    padding-top: 20px !important;
-  } 
    
  .match-page {
     width: 100% !important;
+    padding-top: 20px !important;
     padding: 0 4px !important;
     box-sizing: border-box !important;
     overflow-x: hidden !important;
