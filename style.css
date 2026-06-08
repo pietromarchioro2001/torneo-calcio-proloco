@@ -3319,8 +3319,45 @@ body {
   }
 
   .players-col {
-    padding: 0 4px !important;
-  }
+  padding: 0 8px 0 4px !important;
+  overflow: hidden !important; /* taglia il nome se serve, ma protegge il bordo */
+}
+
+   .players-col:last-child {
+  padding: 0 10px 0 4px !important;
+}
+
+   .player-row.mvp-player-row .mvp-crown {
+  font-size: 13px !important;
+  width: 18px !important;
+  height: 18px !important;
+  top: -5px !important;
+  right: -5px !important;
+  padding: 1px !important;
+}
+
+   .player-row.mvp-player-row .player-avatar,
+.player-row.mvp-player-row .player-avatar img {
+  width: 30px !important;
+  height: 30px !important;
+  min-width: 30px !important;
+  min-height: 30px !important;
+  max-width: 30px !important;
+  max-height: 30px !important;
+}
+
+/* 5. Nome MVP: forza il taglio con ellipsis se troppo lungo */
+.player-row.mvp-player-row .player-name {
+  max-width: calc(100% - 44px) !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+}
+
+   .player-row.mvp-player-row {
+  padding: 4px 6px !important;
+  overflow: hidden !important;
+}
 
   .players-team {
     font-size: 12px !important;
