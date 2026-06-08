@@ -2989,7 +2989,7 @@ function bootAdminApp() {
   Object.defineProperty(window.APP_STATE, 'lastMatch', {
     set(value) {
       if (value && (!value.CASA_ID || !value.TRASFERTA_ID)) {
-        console.error(' TENTATIVO DI SALVARE lastMatch INCOMPLETO:', value);
+        console.error('⚠️ TENTATIVO DI SALVARE lastMatch INCOMPLETO:', value);
       }
       this._lastMatch = value;
     },
@@ -3000,120 +3000,93 @@ function bootAdminApp() {
   
   // 1. Carica cache istantaneamente
   window.APP_CACHE = CacheManager.load();
+  
   const loader = document.getElementById("startupLoader");
-  const LOADER_MIN_TIME = 500;
+  const LOADER_MIN_TIME = 200; // ✅ RIDOTTO da 500ms a 200ms
   const loaderStartTime = Date.now();
+  
   if (loader) loader.style.display = "flex";
   
   let dataLoaded = false;
   let initialRouteHandled = false;
   
+  // ✅ TIMEOUT RIDOTTO da 5000ms a 3000ms
   const maxTimeout = setTimeout(() => {
     if (!dataLoaded) {
-      console.warn('️ Timeout caricamento dati - mostro UI comunque');
+      console.warn('⏱️ Timeout caricamento dati - mostro UI comunque');
       hideLoader();
       if (!initialRouteHandled) {
         showHome();
         initialRouteHandled = true;
       }
     }
-  }, 5000);
+  }, 3000);
   
   function hideLoader() {
     clearTimeout(maxTimeout);
     const elapsed = Date.now() - loaderStartTime;
     const remaining = Math.max(0, LOADER_MIN_TIME - elapsed);
+    
+    // ✅ RIMOSSA la transizione CSS lunga - nascondi subito
     setTimeout(() => {
       if (loader) {
-        loader.classList.add("hide");
-        setTimeout(() => { loader.style.display = "none"; }, 300);
+        loader.style.display = "none"; // ✅ DIRETTO, niente classe "hide"
       }
     }, remaining);
   }
   
-  //  FIX: async nella callback del .then()
+  // ✅ MOSTRA UI IMMEDIATA CON CACHE (se disponibile)
+  if (window.APP_CACHE.teams?.length > 0 || window.APP_CACHE.matches?.length > 0) {
+    console.log('📦 Dati cache disponibili, mostro UI immediata');
+    setTimeout(() => {
+      hideLoader();
+      if (!initialRouteHandled) {
+        initialRouteHandled = true;
+        showHome();
+        // ✅ Carica dati freschi in background DOPO aver mostrato la UI
+        loadFreshDataInBackground();
+      }
+    }, 100);
+  }
+  
+  // FIX: async nella callback del .then()
   Promise.all([
     ApiClient.getInitialData(),
     ApiClient.isFinalStageStarted().catch(() => false)
   ])
   .then(async ([initialData, finalStageStarted]) => {
     dataLoaded = true;
+    
+    // ✅ Se UI già mostrata, aggiorna solo i dati
+    if (initialRouteHandled) {
+      console.log('🔄 UI già visibile, aggiorno dati in background');
+      updateAppData(initialData, finalStageStarted);
+      return;
+    }
+    
+    // Primo caricamento
     clearTimeout(maxTimeout);
     hideLoader();
     
     if (initialData) {
-      window.APP_CACHE = {
-        ...window.APP_CACHE,
-        teams: initialData.teams || window.APP_CACHE.teams,
-        matches: initialData.matches || window.APP_CACHE.matches,
-        standings: initialData.standings || window.APP_CACHE.standings,
-        fullTeams: initialData.fullTeams || window.APP_CACHE.fullTeams,
-        playersMap: initialData.playersMap || window.APP_CACHE.playersMap,
-        meta: {
-          ...window.APP_CACHE.meta,
-          initialized: true,
-          finalStageStarted: finalStageStarted
-        }
-      };
-      
-      hydrateMatches(window.APP_CACHE.matches || []);
-      preloadRecentEvents();
-      CacheManager.save(window.APP_CACHE);
-      
-      // 🔥 Carica fase finale se attiva
-      if (finalStageStarted) {
-        try {
-          const finalData = await ApiClient.getFinalStageMatches();
-          if (finalData) {
-            window.APP_CACHE.finalStage = finalData;
-            
-            // 🔥 Sincronizza rigori nei matches (chiave per il bug TAIO/FONDO!)
-            if (window.APP_CACHE.matches) {
-              finalData.forEach(fm => {
-                const idx = window.APP_CACHE.matches.findIndex(m => 
-                  String(m.MATCH_ID) === String(fm.matchId)
-                );
-                if (idx >= 0) {
-                  window.APP_CACHE.matches[idx] = {
-                    ...window.APP_CACHE.matches[idx],
-                    RIGORE_CASA: fm.rigoriCasa,
-                    RIGORE_TRASFERTA: fm.rigoriTrasferta,
-                    RIGORI_CASA: fm.rigoriCasa,
-                    RIGORI_TRASFERTA: fm.rigoriTrasferta
-                  };
-                }
-              });
-            }
-            CacheManager.save(window.APP_CACHE);
-          }
-        } catch (err) {
-          console.error('Errore caricamento fase finale:', err);
-        }
-      }
-      
-      const hasLiveMatch = (window.APP_CACHE.matches || []).some(m =>
-        m.STATO_PARTITA === "LIVE" || m.STATO_PARTITA === "SUPP" || m.STATO_PARTITA === "RIGORI"
-      );
-      
-      if (hasLiveMatch) {
-        startMatchLiveRefresh();
-      }
+      updateAppData(initialData, finalStageStarted);
     }
     
     if (!initialRouteHandled) {
       initialRouteHandled = true;
       showHome();
+      
       if (finalStageStarted) {
         window.APP_STATE._activeStandingsTab = "fasefinale";
         window.APP_STATE._finalStageLoaded = false;
       }
     }
-
-      if (localStorage.getItem('podiumDismissed') === 'true') {
-        podiumDismissed = true;
+    
+    if (localStorage.getItem('podiumDismissed') === 'true') {
+      podiumDismissed = true;
     }
     
-    // ✅ Segnala caricamento completato DENTRO il then
+    // ✅ Segnala caricamento completato
     window.APP_STATE._initialLoadComplete = true;
     const queue = window.APP_STATE._apiCallQueue || [];
     queue.forEach(item => {
@@ -3139,6 +3112,93 @@ function bootAdminApp() {
     Cleanup.releaseAll();
     CacheManager.save(window.APP_CACHE, 0);
   });
+}
+
+function updateAppData(initialData, finalStageStarted) {
+  window.APP_CACHE = {
+    ...window.APP_CACHE,
+    teams: initialData.teams || window.APP_CACHE.teams,
+    matches: initialData.matches || window.APP_CACHE.matches,
+    standings: initialData.standings || window.APP_CACHE.standings,
+    fullTeams: initialData.fullTeams || window.APP_CACHE.fullTeams,
+    playersMap: initialData.playersMap || window.APP_CACHE.playersMap,
+    meta: {
+      ...window.APP_CACHE.meta,
+      initialized: true,
+      finalStageStarted: finalStageStarted
+    }
+  };
+  
+  hydrateMatches(window.APP_CACHE.matches || []);
+  preloadRecentEvents();
+  CacheManager.save(window.APP_CACHE);
+  
+  // 🔥 Carica fase finale se attiva
+  if (finalStageStarted) {
+    ApiClient.getFinalStageMatches().then(finalData => {
+      if (finalData) {
+        window.APP_CACHE.finalStage = finalData;
+        // 🔥 Sincronizza rigori nei matches
+        if (window.APP_CACHE.matches) {
+          finalData.forEach(fm => {
+            const idx = window.APP_CACHE.matches.findIndex(m =>
+              String(m.MATCH_ID) === String(fm.matchId)
+            );
+            if (idx >= 0) {
+              window.APP_CACHE.matches[idx] = {
+                ...window.APP_CACHE.matches[idx],
+                RIGORE_CASA: fm.rigoriCasa,
+                RIGORE_TRASFERTA: fm.rigoriTrasferta,
+                RIGORI_CASA: fm.rigoriCasa,
+                RIGORI_TRASFERTA: fm.rigoriTrasferta
+              };
+            }
+          });
+        }
+        CacheManager.save(window.APP_CACHE);
+      }
+    }).catch(err => console.error('Errore caricamento fase finale:', err));
+  }
+  
+  const hasLiveMatch = (window.APP_CACHE.matches || []).some(m =>
+    m.STATO_PARTITA === "LIVE" || m.STATO_PARTITA === "SUPP" || m.STATO_PARTITA === "RIGORI"
+  );
+  
+  if (hasLiveMatch) {
+    startMatchLiveRefresh();
+  }
+}
+
+// ✅ NUOVA FUNZIONE: Carica dati freschi in background dopo UI
+function loadFreshDataInBackground() {
+  console.log('🔄 Caricamento dati in background...');
+  
+  Promise.all([
+    ApiClient.getInitialData().catch(err => {
+      console.warn('⚠️ Errore refresh dati:', err);
+      return null;
+    }),
+    ApiClient.isFinalStageStarted().catch(() => false)
+  ])
+  .then(([freshData, finalStageStarted]) => {
+    if (freshData) {
+      updateAppData(freshData, finalStageStarted);
+      
+      // ✅ Aggiorna UI se necessario
+      if (document.querySelector(".home-container")) {
+        const nextCard = getNextMatchCard();
+        const existing = document.querySelector(".home-next-match");
+        if (existing && nextCard) {
+          existing.outerHTML = nextCard;
+        }
+      }
+      
+      if (document.querySelector(".matches-page")) {
+        renderMatches();
+      }
+    }
+  })
+  .catch(err => console.error('❌ Errore background load:', err));
 }
 
 function preloadRecentEvents() {
