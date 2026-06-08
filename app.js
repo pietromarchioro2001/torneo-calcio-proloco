@@ -3002,7 +3002,7 @@ function bootAdminApp() {
   window.APP_CACHE = CacheManager.load();
   
   const loader = document.getElementById("startupLoader");
-  const LOADER_MIN_TIME = 200; // ✅ RIDOTTO da 500ms a 200ms
+  const LOADER_MIN_TIME = 500; // ✅ MANTIENI 500ms originali
   const loaderStartTime = Date.now();
   
   if (loader) loader.style.display = "flex";
@@ -3010,46 +3010,45 @@ function bootAdminApp() {
   let dataLoaded = false;
   let initialRouteHandled = false;
   
-  // ✅ TIMEOUT RIDOTTO da 5000ms a 3000ms
   const maxTimeout = setTimeout(() => {
     if (!dataLoaded) {
-      console.warn('⏱️ Timeout caricamento dati - mostro UI comunque');
+      console.warn('⏱️ Timeout caricamento dati');
       hideLoader();
       if (!initialRouteHandled) {
         showHome();
         initialRouteHandled = true;
       }
     }
-  }, 3000);
+  }, 5000);
   
   function hideLoader() {
     clearTimeout(maxTimeout);
     const elapsed = Date.now() - loaderStartTime;
     const remaining = Math.max(0, LOADER_MIN_TIME - elapsed);
     
-    // ✅ RIMOSSA la transizione CSS lunga - nascondi subito
     setTimeout(() => {
       if (loader) {
-        loader.style.display = "none"; // ✅ DIRETTO, niente classe "hide"
+        loader.classList.add("hide");
+        setTimeout(() => { loader.style.display = "none"; }, 300);
       }
     }, remaining);
   }
   
-  // ✅ MOSTRA UI IMMEDIATA CON CACHE (se disponibile)
+  // ✅ MOSTRA HOME IMMEDIATAMENTE se c'è cache
   if (window.APP_CACHE.teams?.length > 0 || window.APP_CACHE.matches?.length > 0) {
-    console.log('📦 Dati cache disponibili, mostro UI immediata');
+    console.log('📦 Cache disponibile, mostro home subito');
     setTimeout(() => {
       hideLoader();
       if (!initialRouteHandled) {
         initialRouteHandled = true;
-        showHome();
-        // ✅ Carica dati freschi in background DOPO aver mostrato la UI
+        showHome(); // ✅ HOME SUBITO dopo il loader
+        // Carica dati freschi in background SENZA bloccare
         loadFreshDataInBackground();
       }
     }, 100);
   }
   
-  // FIX: async nella callback del .then()
+  // Fetch dati dal backend (in background)
   Promise.all([
     ApiClient.getInitialData(),
     ApiClient.isFinalStageStarted().catch(() => false)
@@ -3057,9 +3056,9 @@ function bootAdminApp() {
   .then(async ([initialData, finalStageStarted]) => {
     dataLoaded = true;
     
-    // ✅ Se UI già mostrata, aggiorna solo i dati
+    // ✅ Se home già mostrata, aggiorna solo i dati
     if (initialRouteHandled) {
-      console.log('🔄 UI già visibile, aggiorno dati in background');
+      console.log('🔄 Home già visibile, aggiorno dati');
       updateAppData(initialData, finalStageStarted);
       return;
     }
@@ -3074,7 +3073,7 @@ function bootAdminApp() {
     
     if (!initialRouteHandled) {
       initialRouteHandled = true;
-      showHome();
+      showHome(); // ✅ HOME SUBITO
       
       if (finalStageStarted) {
         window.APP_STATE._activeStandingsTab = "fasefinale";
@@ -3086,7 +3085,6 @@ function bootAdminApp() {
       podiumDismissed = true;
     }
     
-    // ✅ Segnala caricamento completato
     window.APP_STATE._initialLoadComplete = true;
     const queue = window.APP_STATE._apiCallQueue || [];
     queue.forEach(item => {
@@ -3114,6 +3112,7 @@ function bootAdminApp() {
   });
 }
 
+// ✅ NUOVA FUNZIONE: Aggiorna dati app
 function updateAppData(initialData, finalStageStarted) {
   window.APP_CACHE = {
     ...window.APP_CACHE,
@@ -3138,7 +3137,7 @@ function updateAppData(initialData, finalStageStarted) {
     ApiClient.getFinalStageMatches().then(finalData => {
       if (finalData) {
         window.APP_CACHE.finalStage = finalData;
-        // 🔥 Sincronizza rigori nei matches
+        // Sincronizza rigori
         if (window.APP_CACHE.matches) {
           finalData.forEach(fm => {
             const idx = window.APP_CACHE.matches.findIndex(m =>
@@ -3169,7 +3168,7 @@ function updateAppData(initialData, finalStageStarted) {
   }
 }
 
-// ✅ NUOVA FUNZIONE: Carica dati freschi in background dopo UI
+// ✅ NUOVA FUNZIONE: Carica dati freschi in background DOPO aver mostrato la UI
 function loadFreshDataInBackground() {
   console.log('🔄 Caricamento dati in background...');
   
@@ -3184,7 +3183,7 @@ function loadFreshDataInBackground() {
     if (freshData) {
       updateAppData(freshData, finalStageStarted);
       
-      // ✅ Aggiorna UI se necessario
+      // Aggiorna UI se necessario
       if (document.querySelector(".home-container")) {
         const nextCard = getNextMatchCard();
         const existing = document.querySelector(".home-next-match");
