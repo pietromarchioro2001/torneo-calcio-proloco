@@ -2866,6 +2866,7 @@ body {
   .rigori-score-center {
     padding: 0 10px !important;
     flex: 0 0 auto !important;
+    transform: translateY(-15px) !important;
   }
 
   .rigori-score {
