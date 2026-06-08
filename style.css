@@ -2246,12 +2246,6 @@ body {
   font-size: 11px !important;
 }
 
-.player-row {
-  padding: 6px 8px !important;
-  margin-bottom: 4px !important;
-  cursor: pointer !important;
-}
-
 .players-list {
   gap: 4px !important;
 }
@@ -3165,12 +3159,14 @@ body {
 
   /* === PLAYER ROWS MOBILE === */
   .player-row {
-    padding: 6px 8px !important;
+    padding: 4px 2px !important; /* ✅ Ridotto per shiftare a sinistra */
     margin-bottom: 4px !important;
-    gap: 8px !important;
+    gap: 6px !important; /* ✅ Ridotto gap */
     display: flex !important;
-    flex-direction: row !important; /* ✅ Forza ordine: avatar → nome → badges */
+    flex-direction: row !important;
     align-items: center !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
   }
 
   .player-avatar {
@@ -3213,15 +3209,15 @@ body {
   }
 
   .player-name {
-  font-size: 11px !important; /* ✅ Aumentato da 10px a 11px */
-  line-height: 1.2 !important;
-  letter-spacing: 0.3px !important;
-  flex: 1 !important;
-  min-width: 0 !important;
-  white-space: nowrap !important; /* ✅ Di default non va a capo */
-  overflow: hidden !important;
-  text-overflow: ellipsis !important;
-}
+    font-size: 11px !important;
+    line-height: 1.2 !important;
+    font-weight: 700 !important;
+    flex: 1 !important;
+    min-width: 0 !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important; /* ✅ Tre puntini se non ci sta */
+  }
 
    .player-name-full {
   white-space: nowrap !important;
@@ -3238,19 +3234,19 @@ body {
 }
 
   .player-badges {
-    font-size: 12px !important; /* ✅ Aumentato per visibilità emoji 🟨 */
-    flex-shrink: 0 !important; /* ✅ Non si comprime mai */
-    margin-left: 4px !important; /* ✅ Spazio fisso, non "auto" che spingeva a destra */
+    font-size: 11px !important;
+    flex-shrink: 0 !important; /* ✅ Non si schiacciano mai */
+    margin-left: 4px !important;
     line-height: 1 !important;
+    display: inline-block !important;
   }
 
   /* ✅ MVP player row - layout corretto con avatar a SINISTRA */
-  .player-row.mvp-player-row {
-    padding: 6px 8px !important;
+  player-row.mvp-player-row {
+    padding: 4px 2px !important;
     background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%) !important;
     border: 1px solid #fbbf24 !important;
-    border-radius: 10px !important;
-    flex-direction: row !important; /* ✅ Forza avatar a sinistra */
+    border-radius: 8px !important;
   }
 
   .player-row.mvp-player-row .player-avatar,
