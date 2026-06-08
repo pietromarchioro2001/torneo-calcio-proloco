@@ -2242,11 +2242,6 @@ body {
   height: 28px !important;
 }
 
-.player-name {
-  font-size: 12px !important;
-  letter-spacing: 0.5px !important;
-}
-
 .player-badges {
   font-size: 11px !important;
 }
@@ -3214,15 +3209,29 @@ body {
   }
 
   .player-name {
-    font-size: 10px !important; /* ✅ Ridotto da 12px */
-    line-height: 1.15 !important;
-    letter-spacing: 0.3px !important;
-    flex: 1 !important;
-    min-width: 0 !important;
-    word-break: break-word !important; /* ✅ Permette a capo */
-    overflow-wrap: break-word !important;
-    white-space: normal !important;
-  }
+  font-size: 11px !important; /* ✅ Aumentato da 10px a 11px */
+  line-height: 1.2 !important;
+  letter-spacing: 0.3px !important;
+  flex: 1 !important;
+  min-width: 0 !important;
+  white-space: nowrap !important; /* ✅ Di default non va a capo */
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+}
+
+   .player-name-full {
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  display: block !important;
+}
+
+/* ✅ Nome split su due righe (quando necessario) */
+.player-name-split {
+  display: block !important;
+  line-height: 1.15 !important;
+  white-space: normal !important; /* ✅ Permette a capo */
+}
 
   .player-badges {
     font-size: 10px !important; /* ✅ Emoji più piccole */
@@ -3248,9 +3257,9 @@ body {
   }
 
   .player-row.mvp-player-row .player-name {
-    font-size: 11px !important;
-    font-weight: 800 !important;
-  }
+  font-size: 11px !important;
+  font-weight: 700 !important;
+}
 
   /* ✅ MVP winner card - fix avatar tondo */
   .mvp-winner-card {
@@ -3270,12 +3279,13 @@ body {
     object-fit: cover !important;
   }
 
-  .mvp-winner-name {
-    font-size: 13px !important;
-    word-break: break-word !important;
-    overflow-wrap: break-word !important;
-    line-height: 1.2 !important;
-  }
+ .mvp-winner-name {
+  font-size: 14px !important; /* ✅ Aumentato */
+  font-weight: 800 !important;
+  line-height: 1.2 !important;
+  word-break: break-word !important;
+  overflow-wrap: break-word !important;
+}
 
   .mvp-winner-badge {
     font-size: 11px !important;
