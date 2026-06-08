@@ -2801,40 +2801,119 @@ body {
   font-weight: 700 !important;
 }
   /* === RIGORI MOBILE === */
+  .rigori-popup-overlay {
+    align-items: center !important;
+    padding: 10px !important;
+  }
+
   .rigori-popup {
     width: 95% !important;
-    padding: 20px !important;
+    max-width: 380px !important;
+    padding: 20px 15px 25px !important;
+    max-height: 85vh !important;
+    border-radius: 16px !important;
   }
+
+  /* Header più compatto */
+  .rigori-header {
+    margin-bottom: 15px !important;
+    padding-bottom: 10px !important;
+  }
+
   .rigori-title {
-    font-size: 20px;
+    font-size: 22px !important;
+    letter-spacing: 2px !important;
   }
+
+  /* Pulsante X chiusura - posizionamento corretto */
+  .rigori-header > div:first-child {
+    right: 10px !important;
+    top: 10px !important;
+    width: 36px !important;
+    height: 36px !important;
+    font-size: 32px !important;
+  }
+
+  /* Squadre: layout orizzontale compatto con punteggio al centro */
   .rigori-teams {
-    flex-direction: column;
-    gap: 15px;
-    padding: 10px;
+    flex-direction: row !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    gap: 8px !important;
+    padding: 10px 5px !important;
+    margin-bottom: 15px !important;
   }
+
   .rigori-team {
-    width: 100%;
-    justify-content: center !important;
+    width: auto !important;
+    flex: 1 !important;
+    flex-direction: column !important;
+    gap: 6px !important;
   }
+
   .rigori-team img {
-    width: 40px;
-    height: 40px;
+    width: 50px !important;
+    height: 50px !important;
   }
+
+  .rigori-team .team-name {
+    font-size: 11px !important;
+    letter-spacing: 1px !important;
+    text-align: center !important;
+  }
+
+  /* Punteggio centrale più grande e prominente */
+  .rigori-score-center {
+    padding: 0 10px !important;
+    flex: 0 0 auto !important;
+  }
+
   .rigori-score {
-    font-size: 32px;
+    font-size: 36px !important;
+    letter-spacing: 2px !important;
   }
-  .rigori-btn {
-    width: 70px;
-    height: 70px;
+
+  /* Indicatore centrale più piccolo */
+  .rigori-center {
+    margin: 15px 0 !important;
   }
-  .rigori-controls {
-    gap: 20px;
-    margin: 20px 0;
-  }
+
   .rigori-indicator {
-    width: 70px;
-    height: 70px;
+    width: 80px !important;
+    height: 80px !important;
+    margin: 0 auto 10px !important;
+  }
+
+  .rigori-current {
+    font-size: 14px !important;
+    letter-spacing: 1px !important;
+  }
+
+  /* Nascondi pulsanti su mobile (viewer mode) */
+  .rigori-controls,
+  .rigori-finish {
+    display: none !important;
+  }
+
+  /* Nascondi anche la schermata di selezione "Chi calcia per primo" */
+  #rigori-selezione {
+    display: none !important;
+  }
+
+  /* Mostra sempre la sezione tiri */
+  #rigori-tiri {
+    display: block !important;
+  }
+
+  /* Bollini tiri sotto le squadre */
+  .rigori-kicks {
+    gap: 4px !important;
+    min-height: 20px !important;
+  }
+
+  .kick-indicator {
+    width: 14px !important;
+    height: 14px !important;
   }
 
   /* === FASE FINALE MOBILE === */
