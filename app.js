@@ -3203,42 +3203,54 @@ function loadPlayersForMatch(match) {
 }
 
 function renderPlayersTab(casaData, trasfData, match) {
-    const container = document.getElementById("playersColumns"); 
-    if (!container) return;
-    const casaPlayers = casaData?.players || []; 
-    const trasfPlayers = trasfData?.players || [];
-    const isFinished = match.STATO_PARTITA === "FINITA"; 
-    const mvpName = match.MVP;
-    const events = window.APP_CACHE.eventsByMatch?.[match.MATCH_ID] || [];
-    const eventMap = {}; 
-    events.forEach(e => { 
-        if (e.PLAYER_ID) { 
-            if (!eventMap[e.PLAYER_ID]) eventMap[e.PLAYER_ID] = []; 
-            eventMap[e.PLAYER_ID].push(e.TIPO); 
-        } 
+  const container = document.getElementById("playersColumns");
+  if (!container) return;
+  const casaPlayers = casaData?.players || [];
+  const trasfPlayers = trasfData?.players || [];
+  const isFinished = match.STATO_PARTITA === "FINITA";
+  const mvpName = match.MVP;
+  const events = window.APP_CACHE.eventsByMatch?.[match.MATCH_ID] || [];
+  const eventMap = {};
+  events.forEach(e => {
+    if (e.PLAYER_ID) {
+      if (!eventMap[e.PLAYER_ID]) eventMap[e.PLAYER_ID] = [];
+      eventMap[e.PLAYER_ID].push(e.TIPO);
+    }
+  });
+
+  // ✅ FUNZIONE HELPER: split nome/cognome con <br>
+  const formatPlayerName = (fullName) => {
+    const name = (fullName || "").toUpperCase().trim();
+    const parts = name.split(/\s+/);
+    if (parts.length >= 2) {
+      // Prima parola = nome, resto = cognome
+      const nome = parts[0];
+      const cognome = parts.slice(1).join(" ");
+      return `${nome}<br>${cognome}`;
+    }
+    return name;
+  };
+
+  const renderPlayerList = (players, teamName) => {
+    if (!players.length) return `<div style="text-align:center;padding:20px;color:#888">Nessun giocatore</div>`;
+    let html = "<div class='players-list'>";
+    players.forEach(p => {
+      const playerEvents = eventMap[p.PLAYER_ID] || [];
+      const badges = playerEvents.map(t => t === "GOAL" ? "⚽" : t === "AMMONIZIONE" ? "🟨" : "🟥").join(" ");
+      const isMVP = isFinished && p.NOME === mvpName;
+      const mvpClass = isMVP ? "mvp-player-row" : "";
+      const crownHtml = isMVP ? '<div class="mvp-crown">👑</div>' : '';
+      const photoHtml = p.FOTO_ID ? `<img src="${getCachedImage(p.FOTO_ID, 40)}" alt="${p.NOME}" class="${isMVP ? 'mvp-player-photo' : ''}" onerror="this.style.display='none'">` : `<div class="player-avatar-fallback ${isMVP ? 'mvp-player-avatar' : ''}">👤</div>`;
+      // ✅ USA formatPlayerName per nome su due righe
+      html += `<div class="player-row ${mvpClass}" onclick="openPlayerPopup('${p.PLAYER_ID}'); event.stopPropagation();" style="cursor:pointer;">
+        <div class="player-avatar ${isMVP ? 'mvp-player-avatar-wrapper' : ''}">${photoHtml}${crownHtml}</div>
+        <div class="player-name">${formatPlayerName(p.NOME)}${badges ? `<span class="player-badges">${badges}</span>` : ""}</div>
+      </div>`;
     });
-    
-    const renderPlayerList = (players, teamName) => {
-        if (!players.length) return `<div style="text-align:center;padding:20px;color:#888">Nessun giocatore</div>`;
-        let html = "<div class='players-list'>";
-        players.forEach(p => {
-            const playerEvents = eventMap[p.PLAYER_ID] || [];
-            const badges = playerEvents.map(t => t === "GOAL" ? "⚽" : t === "AMMONIZIONE" ? "🟨" : "🟥").join(" ");
-            const isMVP = isFinished && p.NOME === mvpName; 
-            const mvpClass = isMVP ? "mvp-player-row" : ""; 
-            const crownHtml = isMVP ? '<div class="mvp-crown">👑</div>' : '';
-            const photoHtml = p.FOTO_ID ? `<img src="${getCachedImage(p.FOTO_ID, 40)}" alt="${p.NOME}" class="${isMVP ? 'mvp-player-photo' : ''}" onerror="this.style.display='none'">` : `<div class="player-avatar-fallback ${isMVP ? 'mvp-player-avatar' : ''}">👤</div>`;
-            // ✅ AGGIUNTO: onclick per aprire il popup del giocatore
-            html += `<div class="player-row ${mvpClass}" onclick="openPlayerPopup('${p.PLAYER_ID}'); event.stopPropagation();" style="cursor:pointer;">
-                <div class="player-avatar ${isMVP ? 'mvp-player-avatar-wrapper' : ''}">${photoHtml}${crownHtml}</div>
-                <div class="player-name">${(p.NOME || "").toUpperCase()}${badges ? `<span class="player-badges">${badges}</span>` : ""}</div>
-            </div>`;
-        });
-        html += "</div>"; 
-        return html;
-    };
-    
-    container.innerHTML = `<div class="players-col"><div class="players-team">${(casaData?.team?.NOME_SQUADRA || match.SQUADRA_CASA || "").toUpperCase()}</div>${renderPlayerList(casaPlayers, match.SQUADRA_CASA)}</div><div class="players-col"><div class="players-team">${(trasfData?.team?.NOME_SQUADRA || match.SQUADRA_TRASFERTA || "").toUpperCase()}</div>${renderPlayerList(trasfPlayers, match.SQUADRA_TRASFERTA)}</div>`;
+    html += "</div>";
+    return html;
+  };
+  container.innerHTML = `<div class="players-col"><div class="players-team">${(casaData?.team?.NOME_SQUADRA || match.SQUADRA_CASA || "").toUpperCase()}</div>${renderPlayerList(casaPlayers, match.SQUADRA_CASA)}</div><div class="players-col"><div class="players-team">${(trasfData?.team?.NOME_SQUADRA || match.SQUADRA_TRASFERTA || "").toUpperCase()}</div>${renderPlayerList(trasfPlayers, match.SQUADRA_TRASFERTA)}</div>`;
 }
 
 function renderMVPTab(casaData, trasfData, match) {
@@ -3256,11 +3268,12 @@ function renderMVPTab(casaData, trasfData, match) {
     }
     
     if (isFinished && currentMVP) {
-        const renderMVPWinner = (players, teamName) => { 
-            const mvpPlayer = players.find(p => String(p.NOME || "").toUpperCase() === String(currentMVP).toUpperCase()); 
-            if (!mvpPlayer) return ""; 
-            const photoHtml = mvpPlayer.FOTO_ID ? `<img src="${getCachedImage(mvpPlayer.FOTO_ID, 80)}" alt="${mvpPlayer.NOME}" class="mvp-winner-photo">` : `<div class="player-avatar-fallback mvp-winner-avatar">👑</div>`; 
-            return `<div class="mvp-winner-card"><div class="mvp-winner-badge">🏆 MVP DEL MATCH</div>${photoHtml}<div class="mvp-winner-name">${(mvpPlayer.NOME || "").toUpperCase()}</div><div class="mvp-winner-team">${(teamName || "").toUpperCase()}</div></div>`; 
+        const renderMVPWinner = (players, teamName) => {
+          const mvpPlayer = players.find(p => String(p.NOME || "").toUpperCase() === String(currentMVP).toUpperCase());
+          if (!mvpPlayer) return "";
+          const photoHtml = mvpPlayer.FOTO_ID ? `<img src="${getCachedImage(mvpPlayer.FOTO_ID, 80)}" alt="${mvpPlayer.NOME}" class="mvp-winner-photo">` : `<div class="player-avatar-fallback mvp-winner-avatar">👑</div>`;
+          // ✅ USA formatPlayerName anche qui
+          return `<div class="mvp-winner-card"><div class="mvp-winner-badge">🏆 MVP DEL MATCH</div>${photoHtml}<div class="mvp-winner-name">${formatPlayerName(mvpPlayer.NOME)}</div><div class="mvp-winner-team">${(teamName || "").toUpperCase()}</div></div>`;
         };
         const casaHasMVP = casaPlayers.some(p => String(p.NOME || "").toUpperCase() === String(currentMVP).toUpperCase()); 
         const trasfHasMVP = trasfPlayers.some(p => String(p.NOME || "").toUpperCase() === String(currentMVP).toUpperCase());
