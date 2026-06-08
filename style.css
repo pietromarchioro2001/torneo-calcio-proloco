@@ -2371,7 +2371,7 @@ body {
   .team-big.left {
     justify-content: flex-end !important; /* ✅ Spinge il blocco verso il centro */
     text-align: right !important;
-    flex-direction: row-reverse !important;
+    flex-direction: row !important;
   }
 
   /* ✅ SQUADRA DESTRA: NOME [logo] - spinto verso sinistra (vicino al risultato) */
@@ -2389,7 +2389,7 @@ body {
   }
 
   .team-big-name {
-    font-size: 10px !important;
+    font-size: 12px !important;
     letter-spacing: 0.2px !important;
     line-height: 1.1 !important;
     font-weight: 700 !important;
@@ -2415,7 +2415,7 @@ body {
   }
 
   .score-big {
-    font-size: 30px !important;
+    font-size: 26px !important;
     font-weight: 800 !important;
     letter-spacing: 2px !important;
     line-height: 1 !important;
