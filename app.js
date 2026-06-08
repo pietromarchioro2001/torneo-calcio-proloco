@@ -3202,6 +3202,27 @@ function loadPlayersForMatch(match) {
     }).catch(err => console.error('Error loading players:', err));
 }
 
+// ✅ AGGIUNGI QUESTA FUNZIONE HELPER PRIMA DI renderPlayersTab
+function formatPlayerName(fullName, forceBreak = false) {
+  const name = (fullName || "").toUpperCase().trim();
+  const parts = name.split(/\s+/);
+  
+  if (parts.length >= 2) {
+    const nome = parts[0];
+    const cognome = parts.slice(1).join(" ");
+    
+    // ✅ Vai a capo SOLO se:
+    // 1. forceBreak è true (MVP che ha poco spazio)
+    // 2. OPPURE il nome completo è troppo lungo (> 18 caratteri)
+    if (forceBreak || name.length > 18) {
+      return `<span class="player-name-split">${nome}<br>${cognome}</span>`;
+    }
+    // Altrimenti mostra su una riga sola
+    return `<span class="player-name-full">${name}</span>`;
+  }
+  return `<span class="player-name-full">${name}</span>`;
+}
+
 function renderPlayersTab(casaData, trasfData, match) {
   const container = document.getElementById("playersColumns");
   if (!container) return;
@@ -3218,19 +3239,6 @@ function renderPlayersTab(casaData, trasfData, match) {
     }
   });
 
-  // ✅ FUNZIONE HELPER: split nome/cognome con <br>
-  const formatPlayerName = (fullName) => {
-    const name = (fullName || "").toUpperCase().trim();
-    const parts = name.split(/\s+/);
-    if (parts.length >= 2) {
-      // Prima parola = nome, resto = cognome
-      const nome = parts[0];
-      const cognome = parts.slice(1).join(" ");
-      return `${nome}<br>${cognome}`;
-    }
-    return name;
-  };
-
   const renderPlayerList = (players, teamName) => {
     if (!players.length) return `<div style="text-align:center;padding:20px;color:#888">Nessun giocatore</div>`;
     let html = "<div class='players-list'>";
@@ -3241,7 +3249,7 @@ function renderPlayersTab(casaData, trasfData, match) {
       const mvpClass = isMVP ? "mvp-player-row" : "";
       const crownHtml = isMVP ? '<div class="mvp-crown">👑</div>' : '';
       const photoHtml = p.FOTO_ID ? `<img src="${getCachedImage(p.FOTO_ID, 40)}" alt="${p.NOME}" class="${isMVP ? 'mvp-player-photo' : ''}" onerror="this.style.display='none'">` : `<div class="player-avatar-fallback ${isMVP ? 'mvp-player-avatar' : ''}">👤</div>`;
-      // ✅ USA formatPlayerName per nome su due righe
+      // ✅ USA formatPlayerName SENZA forceBreak (va a capo solo se necessario)
       html += `<div class="player-row ${mvpClass}" onclick="openPlayerPopup('${p.PLAYER_ID}'); event.stopPropagation();" style="cursor:pointer;">
         <div class="player-avatar ${isMVP ? 'mvp-player-avatar-wrapper' : ''}">${photoHtml}${crownHtml}</div>
         <div class="player-name">${formatPlayerName(p.NOME)}${badges ? `<span class="player-badges">${badges}</span>` : ""}</div>
@@ -3254,52 +3262,46 @@ function renderPlayersTab(casaData, trasfData, match) {
 }
 
 function renderMVPTab(casaData, trasfData, match) {
-    const container = document.getElementById("mvpColumns"); if (!container) return;
-    const casaPlayers = casaData?.players || []; const trasfPlayers = trasfData?.players || [];
-    
-    // 🔥 FIX: Accetta LIVE, SUPP e RIGORI
-    const isLive = ["LIVE", "SUPP", "RIGORI"].includes(match.STATO_PARTITA);
-    const isFinished = match.STATO_PARTITA === "FINITA"; 
-    const currentMVP = match.MVP;
-    
-    if (!isLive && !isFinished) { 
-        container.innerHTML = `<div style="text-align:center;padding:40px;color:#888;grid-column:1/-1"><div style="font-size:3rem;margin-bottom:16px">🎫</div><div>La votazione MVP sarà disponibile durante la partita</div></div>`; 
-        return; 
-    }
-    
-    if (isFinished && currentMVP) {
-        const renderMVPWinner = (players, teamName) => {
-          const mvpPlayer = players.find(p => String(p.NOME || "").toUpperCase() === String(currentMVP).toUpperCase());
-          if (!mvpPlayer) return "";
-          const photoHtml = mvpPlayer.FOTO_ID ? `<img src="${getCachedImage(mvpPlayer.FOTO_ID, 80)}" alt="${mvpPlayer.NOME}" class="mvp-winner-photo">` : `<div class="player-avatar-fallback mvp-winner-avatar">👑</div>`;
-          // ✅ USA formatPlayerName anche qui
-          return `<div class="mvp-winner-card"><div class="mvp-winner-badge">🏆 MVP DEL MATCH</div>${photoHtml}<div class="mvp-winner-name">${formatPlayerName(mvpPlayer.NOME)}</div><div class="mvp-winner-team">${(teamName || "").toUpperCase()}</div></div>`;
-        };
-        const casaHasMVP = casaPlayers.some(p => String(p.NOME || "").toUpperCase() === String(currentMVP).toUpperCase()); 
-        const trasfHasMVP = trasfPlayers.some(p => String(p.NOME || "").toUpperCase() === String(currentMVP).toUpperCase());
-        container.innerHTML = `<div class="players-col"><div class="players-team">${(casaData?.team?.NOME_SQUADRA || match.SQUADRA_CASA || "").toUpperCase()}</div>${casaHasMVP ? renderMVPWinner(casaPlayers, match.SQUADRA_CASA) : ''}</div><div class="players-col"><div class="players-team">${(trasfData?.team?.NOME_SQUADRA || match.SQUADRA_TRASFERTA || "").toUpperCase()}</div>${trasfHasMVP ? renderMVPWinner(trasfPlayers, match.SQUADRA_TRASFERTA) : ''}</div>`;
-        return;
-    }
-    
-    if (isFinished && !currentMVP) { 
-        container.innerHTML = `<div style="text-align:center;padding:40px;color:#888;grid-column:1/-1"><div style="font-size:3rem;margin-bottom:16px">⏳</div><div>Calcolo MVP in corso...</div><div style="font-size:12px;margin-top:8px;opacity:0.7">Attendere prego</div></div>`; 
-        return; 
-    }
-    
-    const renderMVPVoteList = (players, teamId) => {
-        if (!players.length) return `<div style="text-align:center;padding:20px;color:#888">Nessun giocatore</div>`;
-        const savedVote = localStorage.getItem(`mvp_vote_${match.MATCH_ID}`); let selectedPlayerId = null;
-        if (savedVote) { try { const voteData = JSON.parse(savedVote); if (voteData.playerId) { selectedPlayerId = voteData.playerId; } } catch(e) {} }
-        let html = "<div class='players-list'>";
-        players.forEach(p => {
-            const photoHtml = p.FOTO_ID ? `<img src="${getCachedImage(p.FOTO_ID, 40)}" alt="${p.NOME}">` : `<div class="player-avatar-fallback">👤</div>`;
-            const isSelected = String(p.PLAYER_ID) === String(selectedPlayerId); const bgStyle = isSelected ? 'background:#fef3c7;opacity:1;' : ''; const checkOpacity = isSelected ? 'opacity:1' : 'opacity:0';
-            html += `<div class="player-row mvp-vote-row" onclick="voteMVP('${p.PLAYER_ID}', '${p.NOME.replace(/'/g, "\\'")}', event); event.stopPropagation();" style="cursor:pointer;transition:all 0.3s;${bgStyle}"><div class="player-avatar">${photoHtml}</div><div class="player-name">${(p.NOME || "").toUpperCase()}</div><div class="vote-check" style="${checkOpacity};font-size:1.2rem;color:#059669;font-weight:bold;">✓</div></div>`;
-        });
-        html += "</div>"; return html;
+  const container = document.getElementById("mvpColumns"); if (!container) return;
+  const casaPlayers = casaData?.players || []; const trasfPlayers = trasfData?.players || [];
+  const isLive = ["LIVE", "SUPP", "RIGORI"].includes(match.STATO_PARTITA);
+  const isFinished = match.STATO_PARTITA === "FINITA";
+  const currentMVP = match.MVP;
+  if (!isLive && !isFinished) {
+    container.innerHTML = `<div style="text-align:center;padding:40px;color:#888;grid-column:1/-1"><div style="font-size:3rem;margin-bottom:16px">🎫</div><div>La votazione MVP sarà disponibile durante la partita</div></div>`;
+    return;
+  }
+  if (isFinished && currentMVP) {
+    const renderMVPWinner = (players, teamName) => {
+      const mvpPlayer = players.find(p => String(p.NOME || "").toUpperCase() === String(currentMVP).toUpperCase());
+      if (!mvpPlayer) return "";
+      const photoHtml = mvpPlayer.FOTO_ID ? `<img src="${getCachedImage(mvpPlayer.FOTO_ID, 80)}" alt="${mvpPlayer.NOME}" class="mvp-winner-photo">` : `<div class="player-avatar-fallback mvp-winner-avatar">👑</div>`;
+      // ✅ USA formatPlayerName CON forceBreak=true (MVP ha meno spazio)
+      return `<div class="mvp-winner-card"><div class="mvp-winner-badge">🏆 MVP DEL MATCH</div>${photoHtml}<div class="mvp-winner-name">${formatPlayerName(mvpPlayer.NOME, true)}</div><div class="mvp-winner-team">${(teamName || "").toUpperCase()}</div></div>`;
     };
-    container.innerHTML = `<div class="players-col"><div class="players-team">${(casaData?.team?.NOME_SQUADRA || match.SQUADRA_CASA || "").toUpperCase()}</div>${renderMVPVoteList(casaPlayers, match.CASA_ID)}</div><div class="players-col"><div class="players-team">${(trasfData?.team?.NOME_SQUADRA || match.SQUADRA_TRASFERTA || "").toUpperCase()}</div>${renderMVPVoteList(trasfPlayers, match.TRASFERTA_ID)}</div>`;
-    setTimeout(() => loadExistingMVPVote(match.MATCH_ID), 50);
+    const casaHasMVP = casaPlayers.some(p => String(p.NOME || "").toUpperCase() === String(currentMVP).toUpperCase());
+    const trasfHasMVP = trasfPlayers.some(p => String(p.NOME || "").toUpperCase() === String(currentMVP).toUpperCase());
+    container.innerHTML = `<div class="players-col"><div class="players-team">${(casaData?.team?.NOME_SQUADRA || match.SQUADRA_CASA || "").toUpperCase()}</div>${casaHasMVP ? renderMVPWinner(casaPlayers, match.SQUADRA_CASA) : ''}</div><div class="players-col"><div class="players-team">${(trasfData?.team?.NOME_SQUADRA || match.SQUADRA_TRASFERTA || "").toUpperCase()}</div>${trasfHasMVP ? renderMVPWinner(trasfPlayers, match.SQUADRA_TRASFERTA) : ''}</div>`;
+    return;
+  }
+  if (isFinished && !currentMVP) {
+    container.innerHTML = `<div style="text-align:center;padding:40px;color:#888;grid-column:1/-1"><div style="font-size:3rem;margin-bottom:16px">⏳</div><div>Calcolo MVP in corso...</div><div style="font-size:12px;margin-top:8px;opacity:0.7">Attendere prego</div></div>`;
+    return;
+  }
+  const renderMVPVoteList = (players, teamId) => {
+    if (!players.length) return `<div style="text-align:center;padding:20px;color:#888">Nessun giocatore</div>`;
+    const savedVote = localStorage.getItem(`mvp_vote_${match.MATCH_ID}`); let selectedPlayerId = null;
+    if (savedVote) { try { const voteData = JSON.parse(savedVote); if (voteData.playerId) { selectedPlayerId = voteData.playerId; } } catch(e) {} }
+    let html = "<div class='players-list'>";
+    players.forEach(p => {
+      const photoHtml = p.FOTO_ID ? `<img src="${getCachedImage(p.FOTO_ID, 40)}" alt="${p.NOME}">` : `<div class="player-avatar-fallback">👤</div>`;
+      const isSelected = String(p.PLAYER_ID) === String(selectedPlayerId); const bgStyle = isSelected ? 'background:#fef3c7;opacity:1;' : ''; const checkOpacity = isSelected ? 'opacity:1' : 'opacity:0';
+      html += `<div class="player-row mvp-vote-row" onclick="voteMVP('${p.PLAYER_ID}', '${p.NOME.replace(/'/g, "\\'")}', event); event.stopPropagation();" style="cursor:pointer;transition:all 0.3s;${bgStyle}"><div class="player-avatar">${photoHtml}</div><div class="player-name">${formatPlayerName(p.NOME)}</div><div class="vote-check" style="${checkOpacity};font-size:1.2rem;color:#059669;font-weight:bold;">✓</div></div>`;
+    });
+    html += "</div>"; return html;
+  };
+  container.innerHTML = `<div class="players-col"><div class="players-team">${(casaData?.team?.NOME_SQUADRA || match.SQUADRA_CASA || "").toUpperCase()}</div>${renderMVPVoteList(casaPlayers, match.CASA_ID)}</div><div class="players-col"><div class="players-team">${(trasfData?.team?.NOME_SQUADRA || match.SQUADRA_TRASFERTA || "").toUpperCase()}</div>${renderMVPVoteList(trasfPlayers, match.TRASFERTA_ID)}</div>`;
+  setTimeout(() => loadExistingMVPVote(match.MATCH_ID), 50);
 }
 
 async function selectMVP(playerId, playerName) {
