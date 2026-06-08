@@ -3211,7 +3211,7 @@ body {
   .player-name {
     font-size: 11px !important;
     line-height: 1.2 !important;
-    font-weight: 700 !important;
+    font-weight: 400 !important;
     flex: 1 !important;
     min-width: 0 !important;
     white-space: nowrap !important;
@@ -3263,9 +3263,19 @@ body {
     background: white !important; /* ✅ Background bianco per contrasto con sfondo oro */
   }
 
+   .player-row:not(.mvp-player-row) .player-name {
+     font-weight: 400 !important; /* ✅ Normale, non grassetto */
+   }
+
+
   .player-row.mvp-player-row .player-name {
   font-size: 11px !important;
-  font-weight: 700 !important;
+  font-weight: 800 !important; /* ✅ Solo MVP in grassetto */
+  color: #92400e !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important; /* ✅ Tre puntini se non ci sta */
+  max-width: calc(100% - 40px) !important; /* ✅ Spazio per avatar e badges */
 }
 
   /* ✅ MVP winner card - fix avatar tondo */
