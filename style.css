@@ -2350,47 +2350,48 @@ body {
     display: flex !important;
     flex-direction: row !important;
     align-items: center !important;
-    justify-content: space-between !important;
+    justify-content: center !important; /* ✅ Centrato invece di space-between */
     min-height: auto !important;
-    gap: 4px !important;
-    margin-top: 25px !important; /* ✅ Aumentato da 15px a 25px */
+    gap: 8px !important; /* ✅ Gap ridotto tra elementi */
+    margin-top: 20px !important;
     margin-bottom: 5px !important;
     position: relative !important;
   }
 
   .team-big {
     position: static !important;
-    width: 30% !important;
+    width: auto !important; /* ✅ Larghezza automatica invece di 30% */
+    min-width: 0 !important;
+    max-width: 35% !important; /* ✅ Limite per non occupare troppo */
     padding: 0 !important;
     display: flex !important;
     align-items: center !important;
-    gap: 5px !important;
-    min-width: 0 !important;
+    gap: 6px !important; /* ✅ Gap aumentato tra logo e nome */
   }
 
   /* ✅ SQUADRA SINISTRA: [logo] NOME */
   .team-big.left {
-    justify-content: flex-start !important;
-    text-align: left !important;
+    justify-content: flex-end !important; /* ✅ Spinge verso il centro */
+    text-align: right !important;
     flex-direction: row !important;
   }
 
-  /* ✅ SQUADRA DESTRA: NOME [logo] - logo a destra del nome */
+  /* ✅ SQUADRA DESTRA: NOME [logo] */
   .team-big.right {
-    justify-content: flex-end !important;
-    text-align: right !important;
-    flex-direction: row !important; /* ✅ Cambiato da row-reverse a row */
+    justify-content: flex-start !important; /* ✅ Spinge verso il centro */
+    text-align: left !important;
+    flex-direction: row-reverse !important; /* ✅ Logo a destra del nome */
   }
 
   .team-big img {
-    width: 32px !important;
-    height: 32px !important;
+    width: 40px !important; /* ✅ Ingrandito da 32px a 40px */
+    height: 40px !important;
     object-fit: contain !important;
     flex-shrink: 0 !important;
   }
 
   .team-big-name {
-    font-size: 10px !important;
+    font-size: 12px !important; /* ✅ Ingrandito da 10px a 12px */
     letter-spacing: 0.5px !important;
     line-height: 1.1 !important;
     font-weight: 700 !important;
@@ -2402,13 +2403,13 @@ body {
   }
 
   .match-header-big .match-center {
-    flex: 1 !important;
+    flex: 0 0 auto !important; /* ✅ Non si espande */
     display: flex !important;
     flex-direction: column !important;
     align-items: center !important;
     justify-content: center !important;
-    min-width: 0 !important;
-    padding: 0 !important;
+    min-width: 80px !important; /* ✅ Larghezza minima per il risultato */
+    padding: 0 8px !important;
   }
 
   .match-controls-top {
