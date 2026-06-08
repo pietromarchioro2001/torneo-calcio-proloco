@@ -1941,7 +1941,14 @@ function renderEvents(events, match) {
         if (tipoDisplay) { playerText += `<span style="font-size:0.85em; color:#888">${tipoDisplay}</span>`; }
         if (e.ASSIST) { playerText += `<span class="assist">(${(e.ASSIST).toUpperCase()})</span>`; }
 
-        html += `<div class="event-line ${isCasa ? "left" : "right"}" data-event-id="${e.EVENT_ID || ''}"><div class="event-content"><span class="event-minute">${e.MINUTO}'</span><span class="event-icon">${icon}</span><span class="event-player">${playerText}</span>${deleteBtn}</div></div>`;
+        // 🔥 HTML DIVERSO per colonna sinistra e destra
+        if (isCasa) {
+          // SINISTRA: minuto - icon - player (da sinistra a destra)
+          html += `<div class="event-line left" data-event-id="${e.EVENT_ID || ''}"><div class="event-content"><span class="event-minute">${e.MINUTO}'</span><span class="event-icon">${icon}</span><span class="event-player">${playerText}</span>${deleteBtn}</div></div>`;
+        } else {
+          // DESTRA: player - icon - minuto (da sinistra a destra, allineato a destra)
+          html += `<div class="event-line right" data-event-id="${e.EVENT_ID || ''}"><div class="event-content"><span class="event-player">${playerText}</span><span class="event-icon">${icon}</span><span class="event-minute">${e.MINUTO}'</span>${deleteBtn}</div></div>`;
+        }
     });
     container.innerHTML = html;
 }
