@@ -3,7 +3,7 @@
 // ============================================================================
 const CONFIG = {
     // 🔥 SOSTITUISCI CON IL TUO URL APPS SCRIPT WEB APP
-    BACKEND_URL: 'https://script.google.com/macros/s/AKfycbyfElkdhU5mqMFVSXC5qf3JxCPGGB89OIJb_SoOpOOOwoJr3mPvFu5DnTDpPghL5ztH/exec',
+    BACKEND_URL: 'https://script.google.com/macros/s/AKfycbyuceDDTPzUwNf0CenxmPfbmYSpRuK58Q0EN36irKEo7tU4DlE34rNsc4jTYpvzidPc/exec',
     API_TIMEOUT: 30000,
     CACHE_VERSION: 'v3.0',
     CACHE_MAX_AGE: 5 * 60 * 1000
@@ -1380,7 +1380,7 @@ function openMatch(id) {
 }
 
 function renderMatchPage(match) {
-    // ✅ VALIDAZIONE INIZIALE
+  // ✅ VALIDAZIONE INIZIALE
   if (!match || !match.MATCH_ID) {
     console.error('❌ Match non valido', match);
     alert('Errore: dati partita non validi');
@@ -1390,8 +1390,7 @@ function renderMatchPage(match) {
   // ✅ CONTROLLA CHE GLI ID SQUADRA SIANO PRESENTI
   if (!match.CASA_ID || !match.TRASFERTA_ID) {
     console.error('❌ ID squadre mancanti!', match);
-    // Tenta recupero da cache
-    const cachedMatch = window.APP_CACHE.matches?.find(m => 
+    const cachedMatch = window.APP_CACHE.matches?.find(m =>
       String(m.MATCH_ID) === String(match.MATCH_ID)
     );
     if (cachedMatch?.CASA_ID && cachedMatch?.TRASFERTA_ID) {
@@ -1402,187 +1401,193 @@ function renderMatchPage(match) {
       return;
     }
   }
-
-    // 🔥 RECUPERA NOMI E LOGHI SE MANCANO
-    if (!match.SQUADRA_CASA || !match.LOGO_CASA) {
-        const casaData = window.APP_CACHE.fullTeams?.[String(match.CASA_ID)];
-        if (casaData?.team) {
-            match.SQUADRA_CASA = casaData.team.NOME_SQUADRA || "CASA";
-            match.LOGO_CASA = casaData.team.LOGO_ID || "";
-        }
+  
+  // 🔥 RECUPERA NOMI E LOGHI SE MANCANO
+  if (!match.SQUADRA_CASA || !match.LOGO_CASA) {
+    const casaData = window.APP_CACHE.fullTeams?.[String(match.CASA_ID)];
+    if (casaData?.team) {
+      match.SQUADRA_CASA = casaData.team.NOME_SQUADRA || "CASA";
+      match.LOGO_CASA = casaData.team.LOGO_ID || "";
     }
-    if (!match.SQUADRA_TRASFERTA || !match.LOGO_TRASFERTA) {
-        const trasfData = window.APP_CACHE.fullTeams?.[String(match.TRASFERTA_ID)];
-        if (trasfData?.team) {
-            match.SQUADRA_TRASFERTA = trasfData.team.NOME_SQUADRA || "TRASFERTA";
-            match.LOGO_TRASFERTA = trasfData.team.LOGO_ID || "";
-        }
+  }
+  
+  if (!match.SQUADRA_TRASFERTA || !match.LOGO_TRASFERTA) {
+    const trasfData = window.APP_CACHE.fullTeams?.[String(match.TRASFERTA_ID)];
+    if (trasfData?.team) {
+      match.SQUADRA_TRASFERTA = trasfData.team.NOME_SQUADRA || "TRASFERTA";
+      match.LOGO_TRASFERTA = trasfData.team.LOGO_ID || "";
     }
-
-    // 🔥 FORZA RICARICAMENTO EVENTI
-    const events = window.APP_CACHE.eventsByMatch?.[match.MATCH_ID] || [];
-
-    if (events.length === 0) {
-        ApiClient.getEventsAdmin(match.MATCH_ID).then(freshEvents => {
-            // 🔥 Applica il merge anche nel fallback per coerenza totale
-            const mergedEvents = mergeEventsWithLocal(freshEvents, match.MATCH_ID);
-            
-            window.APP_CACHE.eventsByMatch[match.MATCH_ID] = mergedEvents;
-            CacheManager.save(window.APP_CACHE);
-            
-            // 🔥 Ricalcola punteggio e renderizza con gli eventi mergiati
-            const calculatedScore = calculateMatchScore(match, mergedEvents);
-            const updatedMatch = { ...match, ...calculatedScore };
-            
-            renderEvents(mergedEvents, updatedMatch);
-            const scoreEl = document.querySelector(".score-big");
-            if (scoreEl) scoreEl.textContent = `${updatedMatch.GOL_CASA || 0} - ${updatedMatch.GOL_TRASFERTA || 0}`;
-        }).catch(err => {
-            console.error('❌ Errore caricamento eventi:', err);
-            renderEvents([], match);
-        });
-    } else {
-        renderEvents(events, match);
-    }
-
-    // 🔥 DEFINISCI LOGHI
-    const logoCasa = match.LOGO_CASA
-        ? `<img src="${getCachedImage(match.LOGO_CASA, 120)}" alt="${match.SQUADRA_CASA}" onerror="this.style.display='none'">`
-        : `<div style="width:100px;height:100px;border-radius:50%;background:#f0f0f0;display:flex;align-items:center;justify-content:center;font-size:1.5rem">⚽</div>`;
-    const logoTrasf = match.LOGO_TRASFERTA
-        ? `<img src="${getCachedImage(match.LOGO_TRASFERTA, 120)}" alt="${match.SQUADRA_TRASFERTA}" onerror="this.style.display='none'">`
-        : `<div style="width:100px;height:100px;border-radius:50%;background:#f0f0f0;display:flex;align-items:center;justify-content:center;font-size:1.5rem">⚽</div>`;
-
-    const nomeCasa = (match.SQUADRA_CASA || "CASA").toUpperCase();
-    const nomeTrasf = (match.SQUADRA_TRASFERTA || "TRASFERTA").toUpperCase();
-
-    // 🔥 GESTIONE STATI
-    const isLive = ["LIVE", "SUPP", "RIGORI"].includes(match.STATO_PARTITA);
-    const isFinished = match.STATO_PARTITA === "FINITA";
-    const finalStageStarted = window.APP_CACHE.meta?.finalStageStarted;
-
-    // 🔥 TAB ATTIVA DINAMICA
-    const currentTab = window.APP_STATE.activeMatchTab || 'diretta';
-
-    // Tab MVP con classe active dinamica
-    const isMVPDisabled = !isLive;
-    const mvpActiveClass = currentTab === 'mvp' ? 'active' : (isMVPDisabled ? 'disabled' : '');
-    const mvpTabHtml = `<div class="mt-btn ${mvpActiveClass}" data-tab="mvp">${isLive ? "MVP" : "🏆 MVP"}</div>`;
-
-    // Pulsanti evento
-    const canAddEvents = (match.STATO_PARTITA === "LIVE" || match.STATO_PARTITA === "SUPP") &&
-        (match.FASE === "FINALI" || !finalStageStarted);
-    const eventBtnDisabled = !canAddEvents
-        ? "style=\"opacity:0.5;pointer-events:none;cursor:not-allowed\""
-        : "";
-
-    // Pulsante inizia/concludi
-    const canToggleMatch = match.FASE === "FINALI" || !finalStageStarted || !isFinished;
-    const toggleBtnDisabled = !canToggleMatch
-        ? "style=\"opacity:0.5;pointer-events:none;cursor:not-allowed\""
-        : "";
-
-    // 🔥 TEMPLATE HTML CON CLASSI ACTIVE DINAMICHE
-    document.getElementById("app").innerHTML = `
-    <div class="match-page">
-        <div class="match-header-big">
-            <div class="team-big left">
-                ${logoCasa}
-                <div class="team-big-name">${nomeCasa}</div>
-            </div>
-            <div class="match-center">
-                <div class="match-controls-top">
-                    <div class="phase-btn start-btn ${isLive ? "active" : ""}"
-                        onclick="${canToggleMatch ? "toggleMatch()" : ""}"
-                        ${toggleBtnDisabled}>
-                        ${isLive ? "CONCLUDI" : "INIZIA"}
-                    </div>
-                    ${match.FASE === "FINALI" && isLive ? `
-                    <div class="phase-btn secondary-btn" onclick="toggleSupplementari()">SUPPLEMENTARI</div>
-                    <div class="phase-btn secondary-btn" onclick="openRigoriPopup()">RIGORI</div>
-                    ` : ''}
-                </div>
-                <div class="score-big">${match.GOL_CASA || 0} - ${match.GOL_TRASFERTA || 0}</div>
-                <div class="match-status" id="matchStatus"></div>
-            </div>
-            <div class="team-big right">
-                <div class="team-big-name">${nomeTrasf}</div>
-                ${logoTrasf}
-            </div>
-        </div>
-    
-        <div class="match-toolbar">
-            <div class="mt-btn ${currentTab === 'diretta' ? 'active' : ''}" data-tab="diretta">DIRETTA</div>
-            <div class="mt-btn ${currentTab === 'giocatori' ? 'active' : ''}" data-tab="giocatori">GIOCATORI</div>
-            ${mvpTabHtml}
-        </div>
-    
-        <div class="match-content">
-            <div class="tab-content ${currentTab === 'diretta' ? 'active' : ''}" id="tab-diretta">
-                <div class="teams-events">
-                    <div class="events-actions">
-                        <div class="left">
-                            <div class="phase-btn small" onclick="${canAddEvents ? "addEvent('casa')" : ""}" ${eventBtnDisabled}>
-                                + EVENTO CASA
-                            </div>
-                        </div>
-                        <div class="right">
-                            <div class="phase-btn small" onclick="${canAddEvents ? "addEvent('trasferta')" : ""}" ${eventBtnDisabled}>
-                                + EVENTO TRASFERTA
-                            </div>
-                        </div>
-                    </div>
-    
-                    <div class="match-banners-area">
-                        <div id="mvpBanner" class="mvp-banner"></div>
-                    </div>
-    
-                    <div class="cronaca-title center"><span>CRONACA</span></div>
-                    
-                    <div id="eventsTimeline" class="events-timeline">
-                        <div id="eventsContent"></div>
-                    </div>
-                </div>
-            </div>
-    
-            <div class="tab-content ${currentTab === 'giocatori' ? 'active' : ''}" id="tab-giocatori">
-                <div class="players-columns" id="playersColumns">
-                    <div style="text-align:center;padding:40px;color:#888;grid-column:1/-1">Caricamento giocatori...</div>
-                </div>
-            </div>
-    
-            <div class="tab-content ${currentTab === 'mvp' ? 'active' : ''}" id="tab-mvp">
-                <div class="players-columns" id="mvpColumns">
-                    <div style="text-align:center;padding:40px;color:#888;grid-column:1/-1">
-                        ${isLive ? "Vota il MVP" : isFinished ? "MVP della partita" : "Disponibile durante la partita"}
-                    </div>
-                </div>
-            </div>
-    
-            <div class="back-btn-wrapper">
-                <div class="phase-btn secondary" onclick="showMatches()">INDIETRO</div>
-            </div>
-        </div>
-    </div>
-    `;
-
-    // Aggiorna UI
-    updateMatchUI(match);
-
-    if (match.STATO_PARTITA === "FINITA" && match.MVP) {
-        updateMVPBanner(match);
-    }
-
-    // Renderizza eventi
+  }
+  
+  // 🔥 FORZA RICARICAMENTO EVENTI
+  const events = window.APP_CACHE.eventsByMatch?.[match.MATCH_ID] || [];
+  if (events.length === 0) {
+    ApiClient.getEventsAdmin(match.MATCH_ID).then(freshEvents => {
+      const mergedEvents = mergeEventsWithLocal(freshEvents, match.MATCH_ID);
+      window.APP_CACHE.eventsByMatch[match.MATCH_ID] = mergedEvents;
+      CacheManager.save(window.APP_CACHE);
+      const calculatedScore = calculateMatchScore(match, mergedEvents);
+      const updatedMatch = { ...match, ...calculatedScore };
+      renderEvents(mergedEvents, updatedMatch);
+      const scoreEl = document.querySelector(".score-big");
+      if (scoreEl) scoreEl.textContent = `${updatedMatch.GOL_CASA || 0} - ${updatedMatch.GOL_TRASFERTA || 0}`;
+    }).catch(err => {
+      console.error('❌ Errore caricamento eventi:', err);
+      renderEvents([], match);
+    });
+  } else {
     renderEvents(events, match);
-
-    // Carica giocatori
-    loadPlayersForMatch(match);
-    renderPenaltyIndicators(events, match);
-    
-
-    // Salva riferimento
-    window.APP_STATE.lastMatch = match;
+  }
+  
+  // 🔥 DEFINISCI LOGHI
+  const logoCasa = match.LOGO_CASA
+    ? `<img src="${getCachedImage(match.LOGO_CASA, 120)}" alt="${match.SQUADRA_CASA}" onerror="this.style.display='none'">`
+    : `<div style="width:100px;height:100px;border-radius:50%;background:#f0f0f0;display:flex;align-items:center;justify-content:center;font-size:1.5rem">⚽</div>`;
+  
+  const logoTrasf = match.LOGO_TRASFERTA
+    ? `<img src="${getCachedImage(match.LOGO_TRASFERTA, 120)}" alt="${match.SQUADRA_TRASFERTA}" onerror="this.style.display='none'">`
+    : `<div style="width:100px;height:100px;border-radius:50%;background:#f0f0f0;display:flex;align-items:center;justify-content:center;font-size:1.5rem">⚽</div>`;
+  
+  const nomeCasa = (match.SQUADRA_CASA || "CASA").toUpperCase();
+  const nomeTrasf = (match.SQUADRA_TRASFERTA || "TRASFERTA").toUpperCase();
+  
+  // 🔥 GESTIONE STATI
+  const isLive = ["LIVE", "SUPP", "RIGORI"].includes(match.STATO_PARTITA);
+  const isFinished = match.STATO_PARTITA === "FINITA";
+  const finalStageStarted = window.APP_CACHE.meta?.finalStageStarted;
+  
+  // 🔥 TAB ATTIVA DINAMICA
+  const currentTab = window.APP_STATE.activeMatchTab || 'diretta';
+  const isMVPDisabled = !isLive;
+  const mvpActiveClass = currentTab === 'mvp' ? 'active' : (isMVPDisabled ? 'disabled' : '');
+  const mvpTabHtml = `<div class="mt-btn ${mvpActiveClass}" data-tab="mvp">${isLive ? "MVP" : "🏆 MVP"}</div>`;
+  
+  // Pulsanti evento
+  const canAddEvents = (match.STATO_PARTITA === "LIVE" || match.STATO_PARTITA === "SUPP") &&
+    (match.FASE === "FINALI" || !finalStageStarted);
+  const eventBtnDisabled = !canAddEvents
+    ? "style=\"opacity:0.5;pointer-events:none;cursor:not-allowed\""
+    : "";
+  
+  // Pulsante inizia/concludi
+  const canToggleMatch = match.FASE === "FINALI" || !finalStageStarted || !isFinished;
+  const toggleBtnDisabled = !canToggleMatch
+    ? "style=\"opacity:0.5;pointer-events:none;cursor:not-allowed\""
+    : "";
+  
+  // 🔥 RECUPERA LINK DRIVE (colonna R del foglio PARTITE)
+  const linkDrive = match.LINK_DRIVE || match.linkDrive || '';
+  
+  // 🔥 PULSANTE MEDIA (solo se c'è il link)
+  const mediaButtonHtml = linkDrive ? `
+    <a href="${linkDrive}" target="_blank" rel="noopener noreferrer" class="media-button">
+      <svg viewBox="0 0 24 24" style="width: 20px; height: 20px; fill: white;">
+        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/>
+      </svg>
+      <span>MEDIA</span>
+    </a>
+  ` : '';
+  
+  // 🔥 TEMPLATE HTML CON PULSANTE MEDIA
+  document.getElementById("app").innerHTML = `
+    <div class="match-page">
+      <div class="match-header-big">
+        <div class="team-big left">
+          ${logoCasa}
+          <div class="team-big-name">${nomeCasa}</div>
+        </div>
+        <div class="match-center">
+          <div class="match-controls-top">
+            <div class="phase-btn start-btn ${isLive ? "active" : ""}"
+                 onclick="${canToggleMatch ? "toggleMatch()" : ""}"
+                 ${toggleBtnDisabled}>
+              ${isLive ? "CONCLUDI" : "INIZIA"}
+            </div>
+            ${match.FASE === "FINALI" && isLive ? `
+              <div class="phase-btn secondary-btn" onclick="toggleSupplementari()">SUPPLEMENTARI</div>
+              <div class="phase-btn secondary-btn" onclick="openRigoriPopup()">RIGORI</div>
+            ` : ''}
+          </div>
+          <div class="score-big">${match.GOL_CASA || 0} - ${match.GOL_TRASFERTA || 0}</div>
+          <div class="match-status" id="matchStatus"></div>
+        </div>
+        <div class="team-big right">
+          <div class="team-big-name">${nomeTrasf}</div>
+          ${logoTrasf}
+        </div>
+      </div>
+      
+      <div class="match-toolbar">
+        <div class="mt-btn ${currentTab === 'diretta' ? 'active' : ''}" data-tab="diretta">DIRETTA</div>
+        <div class="mt-btn ${currentTab === 'giocatori' ? 'active' : ''}" data-tab="giocatori">GIOCATORI</div>
+        ${mvpTabHtml}
+      </div>
+      
+      <div class="match-content">
+        <div class="tab-content ${currentTab === 'diretta' ? 'active' : ''}" id="tab-diretta">
+          <div class="teams-events">
+            <div class="events-actions">
+              <div class="left">
+                <div class="phase-btn small" onclick="${canAddEvents ? "addEvent('casa')" : ""}" ${eventBtnDisabled}>
+                  + EVENTO CASA
+                </div>
+              </div>
+              <div class="right">
+                <div class="phase-btn small" onclick="${canAddEvents ? "addEvent('trasferta')" : ""}" ${eventBtnDisabled}>
+                  + EVENTO TRASFERTA
+                </div>
+              </div>
+            </div>
+            
+            <div class="match-banners-area">
+              <div id="mvpBanner" class="mvp-banner"></div>
+            </div>
+            
+            <div class="cronaca-title center"><span>CRONACA</span></div>
+            <div id="eventsTimeline" class="events-timeline">
+              <div id="eventsContent"></div>
+            </div>
+          </div>
+        </div>
+        
+        <div class="tab-content ${currentTab === 'giocatori' ? 'active' : ''}" id="tab-giocatori">
+          <div class="players-columns" id="playersColumns">
+            <div style="text-align:center;padding:40px;color:#888;grid-column:1/-1">Caricamento giocatori...</div>
+          </div>
+        </div>
+        
+        <div class="tab-content ${currentTab === 'mvp' ? 'active' : ''}" id="tab-mvp">
+          <div class="players-columns" id="mvpColumns">
+            <div style="text-align:center;padding:40px;color:#888;grid-column:1/-1">
+              ${isLive ? "Vota il MVP" : isFinished ? "MVP della partita" : "Disponibile durante la partita"}
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      ${mediaButtonHtml}
+      
+      <div class="back-btn-wrapper">
+        <div class="phase-btn secondary" onclick="showMatches()">INDIETRO</div>
+      </div>
+    </div>
+  `;
+  
+  // Aggiorna UI
+  updateMatchUI(match);
+  if (match.STATO_PARTITA === "FINITA" && match.MVP) {
+    updateMVPBanner(match);
+  }
+  
+  // Renderizza eventi
+  renderEvents(events, match);
+  
+  // Carica giocatori
+  loadPlayersForMatch(match);
+  renderPenaltyIndicators(events, match);
+  
+  // Salva riferimento
+  window.APP_STATE.lastMatch = match;
 }
 
 function getSafeMatchData(matchId) {
