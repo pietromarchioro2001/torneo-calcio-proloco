@@ -2364,7 +2364,7 @@ body {
     padding: 0 !important;
     display: flex !important;
     align-items: center !important;
-    gap: 5px !important;
+    gap: 4px !important;
   }
 
   /* ✅ SQUADRA SINISTRA: [logo] NOME - spinto verso destra (vicino al risultato) */
@@ -2382,23 +2382,22 @@ body {
   }
 
   .team-big img {
-    width: 40px !important; /* ✅ Ingrandito da 32px a 40px */
-    height: 40px !important;
+    width: 42px !important; /* ✅ Ingrandito da 32px a 40px */
+    height: 42px !important;
     object-fit: contain !important;
     flex-shrink: 0 !important;
   }
 
   .team-big-name {
-    font-size: 11px !important; /* ✅ Ridotto per farci stare nomi lunghi */
+    font-size: 11px !important;
     letter-spacing: 0.3px !important;
     line-height: 1.1 !important;
     font-weight: 700 !important;
-    white-space: normal !important; /* ✅ Permette wrapping */
-    overflow: visible !important; /* ✅ Mostra tutto */
-    text-overflow: clip !important; /* ✅ No ellipsis */
+    white-space: nowrap !important; /* ✅ Forzato su una riga */
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
     flex: 1 !important;
     min-width: 0 !important;
-    word-break: break-word !important; /* ✅ Spezza parole lunghe */
   }
 
   .match-header-big .match-center {
