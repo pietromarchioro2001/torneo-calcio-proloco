@@ -274,6 +274,7 @@ window.APP_STATE = {
     _activeStandingsTab: "gironi", _finalStageLoaded: false, _standingsActive: false,
     _currentPlayerPreviewUrl: null, _matchRequestNonce: 0,
     activeMatchTab: 'diretta'
+    _podiumShownThisSession: false
 };
 
 // 🔥 AGGIUNGI in GLOBAL STATE (dopo window.APP_STATE)
@@ -2476,10 +2477,12 @@ function loadFinalStage() {
 function renderFinalStage(data) {
   const container = document.getElementById("standingsContent");
   if (!container) return;
+  
   if (!data?.length) {
-    container.innerHTML = `<div class="final-empty"><div class="final-empty-icon">🏆</div><div class="final-empty-title">FASE FINALE</div><div class="final-empty-line"></div><div class="final-empty-text">Crea la fase finale per visualizzare il tabellone del torneo.</div><div class="phase-btn" onclick="createFinalStage()">CREA FASE FINALE</div></div>`;
+    container.innerHTML = `<div class="final-empty"><div class="final-empty-icon"></div><div class="final-empty-title">FASE FINALE</div><div class="final-empty-line"></div><div class="final-empty-text">Crea la fase finale per visualizzare il tabellone del torneo.</div><div class="phase-btn" onclick="createFinalStage()">CREA FASE FINALE</div></div>`;
     return;
   }
+  
   container.innerHTML = `<div class="final-stage-page"><div id="finalBracketContainer"></div></div>`;
   renderFinalBracket(data);
   renderNextPhaseButton();
@@ -2492,8 +2495,10 @@ function renderFinalStage(data) {
   const finaliFiniti = finali.filter(m => m.stato === "FINITA").length;
   const finaliCreate = finali.length >= 2;
   
-  // ✅ Mostra podio ogni volta che entri nella pagina (se finali concluse)
-  if (finaliCreate && finaliFiniti === 2) {
+  // ✅ FIX: Mostra podio UNA SOLA VOLTA per sessione
+  // Usa un flag di sessione per evitare doppie apparizioni
+  if (finaliCreate && finaliFiniti === 2 && !window.APP_STATE._podiumShownThisSession) {
+    window.APP_STATE._podiumShownThisSession = true; // ✅ Segna come già mostrato
     setTimeout(() => {
       if (!document.getElementById('podiumPopupOverlay')) {
         showTournamentPodium(data);
