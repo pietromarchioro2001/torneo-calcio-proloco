@@ -2559,51 +2559,65 @@ body {
   /* ✅ CONTENUTO EVENTO: flex con due sotto-colonne */
   .event-content {
     display: flex !important;
-    align-items: center !important;
-    gap: 3px !important; /* ✅ Ridotto da 5px a 3px per avvicinare pallone al minuto */
+    align-items: flex-start !important; /* ✅ Cambiato da center a flex-start per gestire assist a capo */
+    gap: 4px !important;
     width: 45% !important;
+    flex-wrap: wrap !important; /* ✅ Permette all'assist di andare a capo */
   }
 
   .event-line.left .event-content {
     justify-content: flex-start !important;
+    text-align: left !important;
+    padding-left: 5px !important;
   }
 
   .event-line.right .event-content {
     justify-content: flex-end !important;
+    text-align: right !important;
+    padding-right: 5px !important;
+    flex-direction: row-reverse !important; /* ✅ Inverte ordine per colonna destra: nome-icona-minuto */
   }
 
   /* ✅ COLONNA STRETTA: minuto (larghezza fissa per allineamento) */
   .event-minute {
-    min-width: 30px !important; /* ✅ Larghezza fissa per allineare i minuti in colonna */
-    text-align: right !important; /* ✅ Minuti allineati a destra per squadra sinistra */
+    min-width: 30px !important;
+    text-align: right !important;
     font-weight: 700 !important;
     font-size: 12px !important;
     flex-shrink: 0 !important;
+    margin-top: 2px !important; /* ✅ Allinea con la prima riga del nome */
   }
 
   .event-line.right .event-minute {
-    text-align: left !important; /* ✅ Minuti allineati a sinistra per squadra destra */
+    text-align: left !important; /* ✅ Nella colonna destra il minuto è a sinistra del blocco */
   }
 
   /* ✅ ICONA (pallone/sticker) */
   .event-icon {
     flex-shrink: 0 !important;
-    margin: 0 1px !important; /* ✅ Margine minimo per avvicinare al minuto */
-    font-size: 13px !important;
+    margin: 0 !important;
+    font-size: 14px !important;
+    line-height: 1 !important;
+    margin-top: 2px !important;
   }
 
-  /* ✅ COLONNA LARGA: nome giocatore */
+  /* ✅ COLONNA LARGA: nome giocatore + assist a capo */
   .event-player {
-    flex: 1 !important;
+    flex: 0 1 auto !important; /* ✅ Cambiato da flex:1 per evitare spazi extra */
     min-width: 0 !important;
     letter-spacing: 0.3px !important;
     font-size: 12px !important;
+    line-height: 1.3 !important;
+    display: inline !important; /* ✅ Permette all'assist di andare a capo naturalmente */
   }
 
   .assist {
     color: #888 !important;
     font-weight: 400 !important;
     font-size: 11px !important;
+    display: block !important; /* ✅ Forza l'assist a capo */
+    margin-top: 2px !important;
+    text-align: inherit !important;
   }
 
   .event-options {
