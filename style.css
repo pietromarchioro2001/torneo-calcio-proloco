@@ -2342,10 +2342,10 @@ body {
     width: 100% !important;
     padding: 0 10px !important;
     box-sizing: border-box !important;
-    overflow-x: hidden !important; /* ✅ Evita scroll orizzontale */
+    overflow-x: hidden !important;
   }
 
-  /* ✅ HEADER PARTITA: più spazio sopra */
+  /* ✅ HEADER PARTITA: più spazio bianco sopra */
   .match-header-big {
     display: flex !important;
     flex-direction: row !important;
@@ -2353,15 +2353,14 @@ body {
     justify-content: space-between !important;
     min-height: auto !important;
     gap: 4px !important;
-    margin-top: 20px !important; /* ✅ Aumentato spazio bianco sopra */
+    margin-top: 25px !important; /* ✅ Aumentato da 15px a 25px */
     margin-bottom: 5px !important;
     position: relative !important;
   }
 
-  /* ✅ SQUADRE: larghezza ridotta per evitare tagli */
   .team-big {
     position: static !important;
-    width: 30% !important; /* ✅ Ridotto da 32% a 30% */
+    width: 30% !important;
     padding: 0 !important;
     display: flex !important;
     align-items: center !important;
@@ -2373,25 +2372,25 @@ body {
   .team-big.left {
     justify-content: flex-start !important;
     text-align: left !important;
-    flex-direction: row !important; /* ✅ Logo a sinistra del nome */
+    flex-direction: row !important;
   }
 
-  /* ✅ SQUADRA DESTRA: NOME [logo] */
+  /* ✅ SQUADRA DESTRA: NOME [logo] - logo a destra del nome */
   .team-big.right {
     justify-content: flex-end !important;
     text-align: right !important;
-    flex-direction: row-reverse !important; /* ✅ Nome a sinistra, logo a destra */
+    flex-direction: row !important; /* ✅ Cambiato da row-reverse a row */
   }
 
   .team-big img {
-    width: 32px !important; /* ✅ Ridotto per stare nello spazio */
+    width: 32px !important;
     height: 32px !important;
     object-fit: contain !important;
     flex-shrink: 0 !important;
   }
 
   .team-big-name {
-    font-size: 10px !important; /* ✅ Ridotto per evitare tagli */
+    font-size: 10px !important;
     letter-spacing: 0.5px !important;
     line-height: 1.1 !important;
     font-weight: 700 !important;
@@ -2449,7 +2448,6 @@ body {
     height: 6px !important;
   }
 
-  /* ✅ TOOLBAR TAB */
   .match-toolbar {
     display: flex !important;
     justify-content: center !important;
@@ -2462,24 +2460,7 @@ body {
     letter-spacing: 2px !important;
   }
 
-  /* ✅ CONTENUTO MATCH */
-  .match-content {
-    flex: 1 !important;
-    overflow-y: auto !important;
-  }
-
-  /* === CRONACA MOBILE === */
-  .teams-events {
-    flex-direction: column !important;
-    width: 100% !important;
-  }
-
-  /* ✅ NASCONDI pulsanti + EVENTO CASA/TRASFERTA */
-  .events-actions {
-    display: none !important;
-  }
-
-  /* ✅ CRONACA titolo più piccolo */
+  /* ✅ CRONACA titolo */
   .cronaca-title.center {
     font-size: 14px !important;
     letter-spacing: 3px !important;
@@ -2495,6 +2476,51 @@ body {
     display: none !important;
   }
 
+  .events-actions {
+    display: none !important;
+  }
+
+  /* ✅ MVP BANNER */
+  #mvpBanner {
+    position: relative !important;
+    left: auto !important;
+    top: auto !important;
+    transform: none !important;
+    z-index: 10 !important;
+    min-width: 200px !important;
+    max-width: 80% !important;
+    padding: 10px 16px !important;
+    margin: 10px auto 15px !important;
+    background: #fffbeb !important;
+    border: 2px solid #fbbf24 !important;
+    border-radius: 12px !important;
+    box-shadow: 0 4px 16px rgba(251, 191, 36, 0.25) !important;
+  }
+
+  #mvpBanner.show {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: center !important;
+  }
+
+  #mvpBanner .mvp-title {
+    font-size: 9px !important;
+    color: #b45309 !important;
+    font-weight: 700 !important;
+    letter-spacing: 2px !important;
+    text-transform: uppercase !important;
+    margin-bottom: 4px !important;
+  }
+
+  #mvpBanner .mvp-name {
+    font-size: 16px !important;
+    color: #78350f !important;
+    font-weight: 800 !important;
+    text-transform: uppercase !important;
+  }
+
+  /* ✅ TIMELINE EVENTI */
   .events-timeline {
     position: relative !important;
     width: 100% !important;
@@ -2514,7 +2540,7 @@ body {
     opacity: 0.3 !important;
   }
 
-  /* ✅ EVENTI: sinistra a sinistra, destra a destra */
+  /* ✅ EVENTI: due colonne per lato */
   .event-line {
     width: 100% !important;
     display: flex !important;
@@ -2523,47 +2549,53 @@ body {
   }
 
   .event-line.left {
-    justify-content: flex-start !important; /* ✅ Allineato a sinistra */
+    justify-content: flex-start !important;
   }
 
   .event-line.right {
-    justify-content: flex-end !important; /* ✅ Allineato a destra */
+    justify-content: flex-end !important;
   }
 
+  /* ✅ CONTENUTO EVENTO: flex con due sotto-colonne */
   .event-content {
-    width: 45% !important;
-    font-family: 'Oswald', sans-serif !important;
-    font-size: 12px !important;
     display: flex !important;
     align-items: center !important;
-    gap: 5px !important;
-    position: relative !important;
+    gap: 3px !important; /* ✅ Ridotto da 5px a 3px per avvicinare pallone al minuto */
+    width: 45% !important;
   }
 
   .event-line.left .event-content {
-    justify-content: flex-start !important; /* ✅ Allineato a sinistra */
-    text-align: left !important;
-    padding-left: 5px !important;
+    justify-content: flex-start !important;
   }
 
   .event-line.right .event-content {
-    justify-content: flex-end !important; /* ✅ Allineato a destra */
-    text-align: right !important;
-    padding-right: 5px !important;
+    justify-content: flex-end !important;
   }
 
+  /* ✅ COLONNA STRETTA: minuto (larghezza fissa per allineamento) */
   .event-minute {
+    min-width: 30px !important; /* ✅ Larghezza fissa per allineare i minuti in colonna */
+    text-align: right !important; /* ✅ Minuti allineati a destra per squadra sinistra */
     font-weight: 700 !important;
-    opacity: 0.8 !important;
     font-size: 12px !important;
-    min-width: 28px !important;
+    flex-shrink: 0 !important;
   }
 
+  .event-line.right .event-minute {
+    text-align: left !important; /* ✅ Minuti allineati a sinistra per squadra destra */
+  }
+
+  /* ✅ ICONA (pallone/sticker) */
   .event-icon {
+    flex-shrink: 0 !important;
+    margin: 0 1px !important; /* ✅ Margine minimo per avvicinare al minuto */
     font-size: 13px !important;
   }
 
+  /* ✅ COLONNA LARGA: nome giocatore */
   .event-player {
+    flex: 1 !important;
+    min-width: 0 !important;
     letter-spacing: 0.3px !important;
     font-size: 12px !important;
   }
@@ -2578,7 +2610,7 @@ body {
     display: none !important;
   }
 
-  /* ✅ EMPTY STATES cronaca */
+  /* ✅ EMPTY STATES */
   .empty-events-grid {
     display: grid !important;
     grid-template-columns: 1fr 1fr !important;
@@ -2605,7 +2637,7 @@ body {
     font-size: 24px !important;
   }
 
-  /* ✅ SEQUENZA RIGORI ridotta e centrata */
+  /* ✅ SEQUENZA RIGORI */
   .penalty-indicators-container {
     width: 90% !important;
     max-width: 280px !important;
@@ -2647,47 +2679,6 @@ body {
   .penalty-vs-score {
     font-size: 16px !important;
     min-width: 35px !important;
-  }
-
-  /* ✅ MVP BANNER mobile */
-  #mvpBanner {
-    position: relative !important; /* ✅ Cambiato da absolute a relative */
-    left: auto !important;
-    top: auto !important;
-    transform: none !important;
-    z-index: 10 !important;
-    min-width: 200px !important;
-    max-width: 80% !important;
-    padding: 10px 16px !important;
-    margin: 10px auto 15px !important; /* ✅ Centrato con margine */
-    background: #fffbeb !important;
-    border: 2px solid #fbbf24 !important;
-    border-radius: 12px !important;
-    box-shadow: 0 4px 16px rgba(251, 191, 36, 0.25) !important;
-    /* display: none rimane dal CSS base, .show lo sovrascrive */
-  }
-
-  #mvpBanner.show {
-    display: flex !important;
-    flex-direction: column !important;
-    align-items: center !important;
-    justify-content: center !important;
-  }
-
-  #mvpBanner .mvp-title {
-    font-size: 9px !important;
-    color: #b45309 !important;
-    font-weight: 700 !important;
-    letter-spacing: 2px !important;
-    text-transform: uppercase !important;
-    margin-bottom: 4px !important;
-  }
-
-  #mvpBanner .mvp-name {
-    font-size: 16px !important;
-    color: #78350f !important;
-    font-weight: 800 !important;
-    text-transform: uppercase !important;
   }
 
   /* ✅ BACK BUTTON */
