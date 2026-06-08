@@ -341,6 +341,43 @@ body {
 .match-card .team-block img[src=""] + .team-logo-placeholder, .match-card .team-block img:not([src]) + .team-logo-placeholder,
 .home-team-block img[src=""] + .home-team-logo, .home-team-block img:not([src]) + .home-team-logo { display: flex !important; }
 
+/* === PULSANTE RESET TORNEO (Admin only) === */
+.admin-reset-zone {
+  position: absolute;
+  top: 130px; /* Sotto gli sponsor */
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 50;
+}
+
+.admin-reset-btn {
+  background: rgba(122, 30, 44, 0.15);
+  border: 2px dashed rgba(122, 30, 44, 0.4);
+  color: #7a1e2c;
+  padding: 10px 24px;
+  border-radius: 8px;
+  font-family: 'Oswald', sans-serif;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 3px;
+  cursor: pointer;
+  transition: all 0.25s ease;
+  text-transform: uppercase;
+  backdrop-filter: blur(4px);
+}
+
+.admin-reset-btn:hover {
+  background: rgba(122, 30, 44, 0.9);
+  color: white;
+  border-color: #7a1e2c;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(122, 30, 44, 0.3);
+}
+
+.admin-reset-btn:active {
+  transform: translateY(0);
+}
+
 /* =============================================================================================
    4. SQUADRE & FORM
 =============================================================================================== */
@@ -1363,6 +1400,8 @@ body {
   .home-container { height: 100vh; width: 100vw; overflow: hidden; }
   .home-sponsors { top: 16px; gap: 32px; display: flex !important; }
   .home-sponsors img { height: 65px !important; width: auto; }
+
+  .admin-reset-zone { display: none !important; }
 
   .title-wrapper { top: 42% !important; left: 50%; transform: translate(-50%, -50%); width: 95%; max-width: 100%; }
   .main-title { font-size: 26px !important; letter-spacing: 3px; line-height: 1.1; }
