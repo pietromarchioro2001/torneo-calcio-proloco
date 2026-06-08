@@ -801,7 +801,7 @@ body {
   align-items: center;
   justify-content: center;
   min-width: 240px;
-  max-width: 90%;
+  max-width: 350px;
   padding: 14px 24px;
   background: #fffbeb;
   border: 2px solid #fbbf24;
@@ -1642,13 +1642,15 @@ body {
   .events-actions { display: none !important; }
 
   #mvpBanner {
-    position: absolute !important;
-    top: 60px !important; /* Regola questo valore per alzare/abbassare */
-    left: 50% !important;
-    transform: translateX(-50%) !important;
-    width: 90% !important;
-    z-index: 100 !important;
-  }
+     position: absolute !important;
+     top: 60px !important;
+     left: 50% !important;
+     transform: translateX(-50%) !important;
+     width: auto !important;  /* Cambia da 90% */
+     min-width: 200px !important;  /* Aggiungi */
+     max-width: 280px !important;  /* Aggiungi */
+     z-index: 100 !important;
+   }
   #mvpBanner.show { display: flex !important; flex-direction: column !important; align-items: center !important; justify-content: center !important; }
   #mvpBanner .mvp-title { font-size: 9px !important; color: #b45309 !important; font-weight: 700 !important; letter-spacing: 2px !important; text-transform: uppercase !important; margin-bottom: 4px !important; }
   #mvpBanner .mvp-name { font-size: 16px !important; color: #78350f !important; font-weight: 800 !important; text-transform: uppercase !important; }
@@ -1683,7 +1685,7 @@ body {
   .assist { color: #888 !important; font-weight: 400 !important; font-size: 11px !important; display: block !important; margin-top: 2px !important; text-align: inherit !important; }
 
    #eventsTimeline {
-    margin-top: 100px !important; /* Spazio per la card MVP */
+    margin-top: 20px !important; /* Spazio per la card MVP */
   }
 
   .empty-events-grid { display: grid !important; grid-template-columns: 1fr 1fr !important; width: 100% !important; margin-top: 15px !important; }
