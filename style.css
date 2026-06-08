@@ -2340,7 +2340,7 @@ body {
   /* === DETTAGLIO PARTITA MOBILE === */
  .match-page {
     width: 100% !important;
-    padding: 0 8px !important;
+    padding: 0 4px !important;
     box-sizing: border-box !important;
     overflow-x: hidden !important;
   }
@@ -2406,8 +2406,8 @@ body {
     flex-direction: column !important;
     align-items: center !important;
     justify-content: center !important;
-    min-width: 80px !important; /* ✅ Larghezza minima per il risultato */
-    padding: 0 8px !important;
+    min-width: 70px !important; /* ✅ Larghezza minima per il risultato */
+    padding: 0 4px !important;
   }
 
   .match-controls-top {
