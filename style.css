@@ -2364,7 +2364,7 @@ body {
     padding: 0 !important;
     display: flex !important;
     align-items: center !important;
-    gap: 2px !important;
+    gap: 0px !important;
   }
 
   /* ✅ SQUADRA SINISTRA: [logo] NOME - spinto verso destra (vicino al risultato) */
