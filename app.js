@@ -3255,10 +3255,10 @@ function renderPlayersTab(casaData, trasfData, match) {
     // ✅ Gol con conteggio (es: ⚽x5)
     if (counts.GOAL > 0) {
       const goalText = counts.GOAL > 1 ? `⚽x${counts.GOAL}` : "⚽";
-      html += `<span class="player-badges" style="font-size:12px;">${goalText}</span>`;
+      html += `<span class="player-badges">${goalText}</span>`;
     }
     
-    // ✅ Ammonizioni/Espulsioni su riga sotto
+    // ✅ Ammonizioni/Espulsioni - le mostriamo subito dopo i gol
     const cards = [];
     if (counts.AMMONIZIONE > 0) {
       cards.push(counts.AMMONIZIONE > 1 ? `🟨x${counts.AMMONIZIONE}` : "🟨");
@@ -3268,7 +3268,7 @@ function renderPlayersTab(casaData, trasfData, match) {
     }
     
     if (cards.length > 0) {
-      html += `<br><span class="player-badges" style="font-size:11px;opacity:0.8;">${cards.join(" ")}</span>`;
+      html += `<span class="player-badges" style="margin-left:2px;">${cards.join("")}</span>`;
     }
     
     return html;
@@ -3284,9 +3284,12 @@ function renderPlayersTab(casaData, trasfData, match) {
       const mvpClass = isMVP ? "mvp-player-row" : "";
       const crownHtml = isMVP ? '<div class="mvp-crown">👑</div>' : '';
       const photoHtml = p.FOTO_ID ? `<img src="${getCachedImage(p.FOTO_ID, 40)}" alt="${p.NOME}" class="${isMVP ? 'mvp-player-photo' : ''}" onerror="this.style.display='none'">` : `<div class="player-avatar-fallback ${isMVP ? 'mvp-player-avatar' : ''}">👤</div>`;
+      
+      // ✅ NOME GIOCATORE: text-overflow gestito dal CSS
       html += `<div class="player-row ${mvpClass}" onclick="openPlayerPopup('${p.PLAYER_ID}'); event.stopPropagation();" style="cursor:pointer;">
         <div class="player-avatar ${isMVP ? 'mvp-player-avatar-wrapper' : ''}">${photoHtml}${crownHtml}</div>
-        <div class="player-name">${(p.NOME || "").toUpperCase()}${badgesHtml}</div>
+        <div class="player-name">${(p.NOME || "").toUpperCase()}</div>
+        ${badgesHtml ? `<div style="flex-shrink:0; display:flex; align-items:center;">${badgesHtml}</div>` : ''}
       </div>`;
     });
     html += "</div>";
@@ -3294,7 +3297,6 @@ function renderPlayersTab(casaData, trasfData, match) {
   };
   container.innerHTML = `<div class="players-col"><div class="players-team">${(casaData?.team?.NOME_SQUADRA || match.SQUADRA_CASA || "").toUpperCase()}</div>${renderPlayerList(casaPlayers, match.SQUADRA_CASA)}</div><div class="players-col"><div class="players-team">${(trasfData?.team?.NOME_SQUADRA || match.SQUADRA_TRASFERTA || "").toUpperCase()}</div>${renderPlayerList(trasfPlayers, match.SQUADRA_TRASFERTA)}</div>`;
 }
-
 function renderMVPTab(casaData, trasfData, match) {
   const container = document.getElementById("mvpColumns"); if (!container) return;
   const casaPlayers = casaData?.players || []; const trasfPlayers = trasfData?.players || [];
