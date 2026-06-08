@@ -3165,9 +3165,12 @@ body {
 
   /* === PLAYER ROWS MOBILE === */
   .player-row {
-    padding: 4px 6px !important;
-    margin-bottom: 3px !important;
-    gap: 6px !important;
+    padding: 6px 8px !important;
+    margin-bottom: 4px !important;
+    gap: 8px !important;
+    display: flex !important;
+    flex-direction: row !important; /* ✅ Forza ordine: avatar → nome → badges */
+    align-items: center !important;
   }
 
   .player-avatar {
@@ -3180,7 +3183,8 @@ body {
     border-radius: 50% !important;
     overflow: hidden !important;
     flex-shrink: 0 !important;
-    aspect-ratio: 1 / 1 !important; /* ✅ Forza forma tonda */
+    aspect-ratio: 1 / 1 !important;
+    background: #e5e7eb !important; /* ✅ Background per avatar senza foto */
   }
 
   .player-avatar img {
@@ -3234,26 +3238,33 @@ body {
 }
 
   .player-badges {
-    font-size: 10px !important; /* ✅ Emoji più piccole */
-    flex-shrink: 0 !important;
-    margin-left: 2px !important;
+    font-size: 12px !important; /* ✅ Aumentato per visibilità emoji 🟨 */
+    flex-shrink: 0 !important; /* ✅ Non si comprime mai */
+    margin-left: 4px !important; /* ✅ Spazio fisso, non "auto" che spingeva a destra */
+    line-height: 1 !important;
   }
 
-  /* ✅ MVP player row - avatar più grande ma tondo */
+  /* ✅ MVP player row - layout corretto con avatar a SINISTRA */
   .player-row.mvp-player-row {
     padding: 6px 8px !important;
+    background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%) !important;
+    border: 1px solid #fbbf24 !important;
+    border-radius: 10px !important;
+    flex-direction: row !important; /* ✅ Forza avatar a sinistra */
   }
 
   .player-row.mvp-player-row .player-avatar,
   .player-row.mvp-player-row .player-avatar img {
-    width: 36px !important;
-    height: 36px !important;
-    min-width: 36px !important;
-    min-height: 36px !important;
-    max-width: 36px !important;
-    max-height: 36px !important;
+    width: 32px !important;
+    height: 32px !important;
+    min-width: 32px !important;
+    min-height: 32px !important;
+    max-width: 32px !important;
+    max-height: 32px !important;
     border-radius: 50% !important;
     aspect-ratio: 1 / 1 !important;
+    border: 2px solid #fbbf24 !important; /* ✅ Bordo oro visibile */
+    background: white !important; /* ✅ Background bianco per contrasto con sfondo oro */
   }
 
   .player-row.mvp-player-row .player-name {
