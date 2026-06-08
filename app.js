@@ -353,6 +353,9 @@ function renderToolbar(active) {
 
 function getNextMatchCard() {
   const matches = window.APP_CACHE.matches || [];
+    if (matches.length === 0 && !window.APP_STATE._dataReady) {
+    return renderLoadingNextMatch();
+  }
   const eventsByMatch = window.APP_CACHE.eventsByMatch || {};
   const now = new Date();
   const nowStr = formatLocalDate(now);
@@ -2984,6 +2987,38 @@ function createFinalStage() { if (!confirm("Confermi il passaggio alla FASE FINA
 // ============================================================================
 // ⚙️ UTILS & BOOT
 // ============================================================================
+// ✅ Card di caricamento elegante (mostrata quando la cache è vuota)
+function renderLoadingNextMatch() {
+  return `<div class="home-next-match" style="
+    opacity: 0.85;
+    pointer-events: none;
+    cursor: default;
+    border: 1px solid rgba(122, 30, 44, 0.15);
+    background: rgba(255,255,255,0.98);
+    padding: 18px 15px;
+    min-height: 60px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 12px;
+  ">
+    <div style="display:flex; align-items:center; gap:12px; width:100%; justify-content:center;">
+      <div style="width:22px; height:22px; border:2.5px solid #e5e5e5; border-top-color:#7a1e2c; border-radius:50%; animation: spinLoader 0.8s linear infinite;"></div>
+      <div style="color:#666; font-size:13px; letter-spacing:2px; font-weight:600; text-transform:uppercase;">
+        Caricamento partite...
+      </div>
+    </div>
+  </div>`;
+}
+
+// ✅ Keyframe per spinner (aggiungi se non esiste)
+if (!document.getElementById('spinLoaderStyle')) {
+  const style = document.createElement('style');
+  style.id = 'spinLoaderStyle';
+  style.textContent = `@keyframes spinLoader { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }`;
+  document.head.appendChild(style);
+}
+
 function bootAdminApp() {
   // 🔒 Protegge lastMatch da valori incompleti
   Object.defineProperty(window.APP_STATE, 'lastMatch', {
@@ -3001,8 +3036,11 @@ function bootAdminApp() {
   // 1. Carica cache istantaneamente
   window.APP_CACHE = CacheManager.load();
   
+  // ✅ Flag: i dati sono pronti? (false finché non arriva la prima risposta API)
+  window.APP_STATE._dataReady = (window.APP_CACHE.teams?.length > 0 || window.APP_CACHE.matches?.length > 0);
+  
   const loader = document.getElementById("startupLoader");
-  const LOADER_MIN_TIME = 500; // ✅ MANTIENI 500ms originali
+  const LOADER_MIN_TIME = 400; // ✅ Loader breve ma percettibile
   const loaderStartTime = Date.now();
   
   if (loader) loader.style.display = "flex";
@@ -3010,9 +3048,10 @@ function bootAdminApp() {
   let dataLoaded = false;
   let initialRouteHandled = false;
   
+  // Timeout di sicurezza
   const maxTimeout = setTimeout(() => {
     if (!dataLoaded) {
-      console.warn('⏱️ Timeout caricamento dati');
+      console.warn('⏱️ Timeout caricamento dati - mostro UI con dati parziali');
       hideLoader();
       if (!initialRouteHandled) {
         showHome();
@@ -3025,7 +3064,6 @@ function bootAdminApp() {
     clearTimeout(maxTimeout);
     const elapsed = Date.now() - loaderStartTime;
     const remaining = Math.max(0, LOADER_MIN_TIME - elapsed);
-    
     setTimeout(() => {
       if (loader) {
         loader.classList.add("hide");
@@ -3034,21 +3072,16 @@ function bootAdminApp() {
     }, remaining);
   }
   
-  // ✅ MOSTRA HOME IMMEDIATAMENTE se c'è cache
-  if (window.APP_CACHE.teams?.length > 0 || window.APP_CACHE.matches?.length > 0) {
-    console.log('📦 Cache disponibile, mostro home subito');
-    setTimeout(() => {
-      hideLoader();
-      if (!initialRouteHandled) {
-        initialRouteHandled = true;
-        showHome(); // ✅ HOME SUBITO dopo il loader
-        // Carica dati freschi in background SENZA bloccare
-        loadFreshDataInBackground();
-      }
-    }, 100);
-  }
+  // ✅ MOSTRA HOME SUBITO dopo loader breve (anche se cache vuota)
+  setTimeout(() => {
+    hideLoader();
+    if (!initialRouteHandled) {
+      initialRouteHandled = true;
+      showHome(); // Mostra home: con dati cache OPPURE card "Caricamento..."
+    }
+  }, 100);
   
-  // Fetch dati dal backend (in background)
+  // Fetch dati dal backend (in background, non blocca la UI)
   Promise.all([
     ApiClient.getInitialData(),
     ApiClient.isFinalStageStarted().catch(() => false)
@@ -3056,25 +3089,81 @@ function bootAdminApp() {
   .then(async ([initialData, finalStageStarted]) => {
     dataLoaded = true;
     
-    // ✅ Se home già mostrata, aggiorna solo i dati
-    if (initialRouteHandled) {
-      console.log('🔄 Home già visibile, aggiorno dati');
-      updateAppData(initialData, finalStageStarted);
-      return;
+    // ✅ Aggiorna cache
+    window.APP_CACHE = {
+      ...window.APP_CACHE,
+      teams: initialData.teams || window.APP_CACHE.teams,
+      matches: initialData.matches || window.APP_CACHE.matches,
+      standings: initialData.standings || window.APP_CACHE.standings,
+      fullTeams: initialData.fullTeams || window.APP_CACHE.fullTeams,
+      playersMap: initialData.playersMap || window.APP_CACHE.playersMap,
+      meta: {
+        ...window.APP_CACHE.meta,
+        initialized: true,
+        finalStageStarted: finalStageStarted
+      }
+    };
+    
+    hydrateMatches(window.APP_CACHE.matches || []);
+    preloadRecentEvents();
+    CacheManager.save(window.APP_CACHE);
+    
+    // ✅ Segnala che i dati sono pronti
+    window.APP_STATE._dataReady = true;
+    
+    // 🔥 Carica fase finale se attiva
+    if (finalStageStarted) {
+      ApiClient.getFinalStageMatches().then(finalData => {
+        if (finalData) {
+          window.APP_CACHE.finalStage = finalData;
+          if (window.APP_CACHE.matches) {
+            finalData.forEach(fm => {
+              const idx = window.APP_CACHE.matches.findIndex(m =>
+                String(m.MATCH_ID) === String(fm.matchId)
+              );
+              if (idx >= 0) {
+                window.APP_CACHE.matches[idx] = {
+                  ...window.APP_CACHE.matches[idx],
+                  RIGORE_CASA: fm.rigoriCasa,
+                  RIGORE_TRASFERTA: fm.rigoriTrasferta,
+                  RIGORI_CASA: fm.rigoriCasa,
+                  RIGORI_TRASFERTA: fm.rigoriTrasferta
+                };
+              }
+            });
+          }
+          CacheManager.save(window.APP_CACHE);
+        }
+      }).catch(err => console.error('Errore caricamento fase finale:', err));
     }
     
-    // Primo caricamento
-    clearTimeout(maxTimeout);
-    hideLoader();
+    const hasLiveMatch = (window.APP_CACHE.matches || []).some(m =>
+      m.STATO_PARTITA === "LIVE" || m.STATO_PARTITA === "SUPP" || m.STATO_PARTITA === "RIGORI"
+    );
+    if (hasLiveMatch) startMatchLiveRefresh();
     
-    if (initialData) {
-      updateAppData(initialData, finalStageStarted);
+    // ✅ Aggiorna UI se siamo su home (sostituisci card "Caricamento..." con dati reali)
+    if (document.querySelector(".home-container")) {
+      const nextCard = getNextMatchCard();
+      const existing = document.querySelector(".home-next-match");
+      if (existing && nextCard) {
+        existing.outerHTML = nextCard;
+      }
+    }
+    
+    // Aggiorna altre pagine se aperte
+    if (document.querySelector(".matches-page")) renderMatches();
+    if (document.querySelector(".standings-page")) {
+      if (window.APP_STATE._activeStandingsTab === "fasefinale") {
+        loadFinalStage();
+      } else {
+        renderStandings(window.APP_CACHE.standings);
+      }
     }
     
     if (!initialRouteHandled) {
       initialRouteHandled = true;
-      showHome(); // ✅ HOME SUBITO
-      
+      showHome();
       if (finalStageStarted) {
         window.APP_STATE._activeStandingsTab = "fasefinale";
         window.APP_STATE._finalStageLoaded = false;
@@ -3088,15 +3177,14 @@ function bootAdminApp() {
     window.APP_STATE._initialLoadComplete = true;
     const queue = window.APP_STATE._apiCallQueue || [];
     queue.forEach(item => {
-      if (Date.now() - item.timestamp < 5000) {
-        item.fn();
-      }
+      if (Date.now() - item.timestamp < 5000) item.fn();
     });
     window.APP_STATE._apiCallQueue = [];
   })
   .catch(error => {
     console.error('❌ Errore caricamento:', error);
     dataLoaded = true;
+    window.APP_STATE._dataReady = true; // ✅ Anche in errore, sblocca la UI
     hideLoader();
     if (!initialRouteHandled) {
       initialRouteHandled = true;
