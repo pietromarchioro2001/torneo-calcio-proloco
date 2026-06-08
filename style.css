@@ -826,6 +826,41 @@ body {
 .penalty-dot.miss { background: #ef4444; }
 .penalty-vs-score { font-size: 22px; font-weight: 900; color: var(--granata); min-width: 60px; text-align: center; letter-spacing: 1px; }
 
+/* === PULSANTE MEDIA PARTITA === */
+.media-button {
+  position: fixed;
+  bottom: 90px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 100;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  background: linear-gradient(135deg, #7a1e2c 0%, #9f2c3d 100%);
+  color: white;
+  padding: 14px 28px;
+  border-radius: 12px;
+  text-decoration: none;
+  font-weight: 700;
+  font-size: 14px;
+  letter-spacing: 2px;
+  font-family: 'Oswald', sans-serif;
+  text-transform: uppercase;
+  box-shadow: 0 4px 15px rgba(122, 30, 44, 0.4);
+  transition: all 0.3s ease;
+  border: 2px solid rgba(255, 255, 255, 0.1);
+}
+
+.media-button:hover {
+  transform: translateX(-50%) translateY(-3px);
+  box-shadow: 0 6px 20px rgba(122, 30, 44, 0.6);
+  background: linear-gradient(135deg, #9f2c3d 0%, #7a1e2c 100%);
+}
+
+.media-button:active {
+  transform: translateX(-50%) translateY(-1px);
+}
+
 /* =============================================================================================
    9. TAB GIOCATORI & MVP
 =============================================================================================== */
@@ -1722,6 +1757,19 @@ body {
   .penalty-vs-score { font-size: 16px !important; min-width: 35px !important; }
 
   .match-page .back-btn-wrapper { margin-top: 20px !important; padding: 10px 0 !important; display: flex !important; justify-content: flex-end !important; }
+
+   .media-button {
+    bottom: 80px;
+    padding: 12px 24px;
+    font-size: 13px;
+    letter-spacing: 1.5px;
+  }
+  
+  .media-button svg {
+    width: 18px !important;
+    height: 18px !important;
+  }
+   
   .back-btn-wrapper {
     margin-top: 15px !important; margin-bottom: 10px !important; padding: 10px 0 10px 15px !important;
     display: flex !important; justify-content: flex-start !important; align-items: center !important;
