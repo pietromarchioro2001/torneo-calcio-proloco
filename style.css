@@ -2359,28 +2359,26 @@ body {
   }
 
   .team-big {
-    position: static !important;
-    width: auto !important; /* ✅ Larghezza automatica invece di 30% */
+    flex: 1 !important; /* ✅ Spazio uguale per entrambe */
     min-width: 0 !important;
-    max-width: 35% !important; /* ✅ Limite per non occupare troppo */
     padding: 0 !important;
     display: flex !important;
     align-items: center !important;
-    gap: 6px !important; /* ✅ Gap aumentato tra logo e nome */
+    gap: 5px !important;
   }
 
-  /* ✅ SQUADRA SINISTRA: [logo] NOME */
+  /* ✅ SQUADRA SINISTRA: [logo] NOME - spinto verso destra (vicino al risultato) */
   .team-big.left {
-    justify-content: flex-end !important; /* ✅ Spinge verso il centro */
+    justify-content: flex-end !important; /* ✅ Spinge il blocco verso il centro */
     text-align: right !important;
     flex-direction: row !important;
   }
 
-  /* ✅ SQUADRA DESTRA: NOME [logo] */
+  /* ✅ SQUADRA DESTRA: NOME [logo] - spinto verso sinistra (vicino al risultato) */
   .team-big.right {
-    justify-content: flex-start !important; /* ✅ Spinge verso il centro */
+    justify-content: flex-start !important; /* ✅ Spinge il blocco verso il centro */
     text-align: left !important;
-    flex-direction: row-reverse !important; /* ✅ Logo a destra del nome */
+    flex-direction: row !important; /* ✅ NOME prima, LOGO dopo (a destra del nome) */
   }
 
   .team-big img {
