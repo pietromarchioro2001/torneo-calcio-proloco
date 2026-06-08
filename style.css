@@ -341,37 +341,37 @@ body {
 .match-card .team-block img[src=""] + .team-logo-placeholder, .match-card .team-block img:not([src]) + .team-logo-placeholder,
 .home-team-block img[src=""] + .home-team-logo, .home-team-block img:not([src]) + .home-team-logo { display: flex !important; }
 
-/* === PULSANTE RESET TORNEO (Admin only) === */
 .admin-reset-zone {
   position: absolute;
-  top: 130px; /* Sotto gli sponsor */
+  top: 170px; /* Abbassato da 130px a 170px */
   left: 50%;
   transform: translateX(-50%);
   z-index: 50;
 }
 
 .admin-reset-btn {
-  background: rgba(122, 30, 44, 0.15);
-  border: 2px dashed rgba(122, 30, 44, 0.4);
+  background: rgba(122, 30, 44, 0.08);
+  border: 1.5px solid rgba(122, 30, 44, 0.25); /* Bordo solido più sottile */
   color: #7a1e2c;
-  padding: 10px 24px;
-  border-radius: 8px;
+  padding: 12px 28px;
+  border-radius: 10px;
   font-family: 'Oswald', sans-serif;
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 700;
   letter-spacing: 3px;
   cursor: pointer;
   transition: all 0.25s ease;
   text-transform: uppercase;
   backdrop-filter: blur(4px);
+  box-shadow: 0 2px 8px rgba(122, 30, 44, 0.1);
 }
 
 .admin-reset-btn:hover {
-  background: rgba(122, 30, 44, 0.9);
+  background: rgba(122, 30, 44, 0.95);
   color: white;
   border-color: #7a1e2c;
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(122, 30, 44, 0.3);
+  box-shadow: 0 6px 16px rgba(122, 30, 44, 0.3);
 }
 
 .admin-reset-btn:active {
