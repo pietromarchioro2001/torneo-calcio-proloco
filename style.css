@@ -1642,20 +1642,40 @@ body {
   .events-actions { display: none !important; }
 
   #mvpBanner {
-     position: absolute !important;
-     top: 60px !important;
-     left: 50% !important;
-     transform: translateX(-50%) !important;
-     width: auto !important;  /* Cambia da 90% */
-     min-width: 200px !important;  /* Aggiungi */
-     max-width: 280px !important;  /* Aggiungi */
-     z-index: 100 !important;
-   }
-  #mvpBanner.show { display: flex !important; flex-direction: column !important; align-items: center !important; justify-content: center !important; }
-  #mvpBanner .mvp-title { font-size: 9px !important; color: #b45309 !important; font-weight: 700 !important; letter-spacing: 2px !important; text-transform: uppercase !important; margin-bottom: 4px !important; }
-  #mvpBanner .mvp-name { font-size: 16px !important; color: #78350f !important; font-weight: 800 !important; text-transform: uppercase !important; }
-  #mvpBanner .mvp-title { font-size: 9px !important; }
-  #mvpBanner .mvp-name { font-size: 16px !important; }
+  position: relative !important;  /* Cambiato da absolute */
+  top: auto !important;           /* Rimosso top: 60px */
+  left: auto !important;          /* Rimosso left: 50% */
+  transform: none !important;     /* Rimosso translateX */
+  width: auto !important;         /* Cambiato da 90% */
+  min-width: 200px !important;
+  max-width: 280px !important;
+  margin: 10px auto 15px !important;  /* Centrato con margine */
+  z-index: 10 !important;         /* Abbassato da 100 */
+  display: none !important;
+}
+
+#mvpBanner.show {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+#mvpBanner .mvp-title {
+  font-size: 9px !important;
+  color: #b45309 !important;
+  font-weight: 700 !important;
+  letter-spacing: 2px !important;
+  text-transform: uppercase !important;
+  margin-bottom: 4px !important;
+}
+
+#mvpBanner .mvp-name {
+  font-size: 16px !important;
+  color: #78350f !important;
+  font-weight: 800 !important;
+  text-transform: uppercase !important;
+}
 
   .events-timeline { position: relative !important; width: 100% !important; padding: 10px 0 !important; min-height: 200px !important; }
   .events-timeline::before {
@@ -1683,10 +1703,6 @@ body {
   .event-icon { flex-shrink: 0 !important; margin: 0 !important; font-size: 14px !important; line-height: 1 !important; margin-top: 2px !important; }
   .event-player { flex: 0 1 auto !important; min-width: 0 !important; letter-spacing: 0.3px !important; font-size: 12px !important; line-height: 1.3 !important; display: inline !important; }
   .assist { color: #888 !important; font-weight: 400 !important; font-size: 11px !important; display: block !important; margin-top: 2px !important; text-align: inherit !important; }
-
-   #eventsTimeline {
-    margin-top: 20px !important; /* Spazio per la card MVP */
-  }
 
   .empty-events-grid { display: grid !important; grid-template-columns: 1fr 1fr !important; width: 100% !important; margin-top: 15px !important; }
   .empty-team-events { display: flex !important; flex-direction: column !important; align-items: center !important; justify-content: center !important; opacity: 0.45 !important; padding-top: 20px !important; }
