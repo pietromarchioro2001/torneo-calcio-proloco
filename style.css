@@ -2340,7 +2340,7 @@ body {
   /* === DETTAGLIO PARTITA MOBILE === */
  .match-page {
     width: 100% !important;
-    padding: 0 10px !important;
+    padding: 0 8px !important;
     box-sizing: border-box !important;
     overflow-x: hidden !important;
   }
@@ -2352,7 +2352,7 @@ body {
     align-items: center !important;
     justify-content: center !important; /* ✅ Centrato invece di space-between */
     min-height: auto !important;
-    gap: 8px !important; /* ✅ Gap ridotto tra elementi */
+    gap: 2px !important; /* ✅ Gap ridotto tra elementi */
     margin-top: 20px !important;
     margin-bottom: 5px !important;
     position: relative !important;
@@ -2391,15 +2391,16 @@ body {
   }
 
   .team-big-name {
-    font-size: 12px !important; /* ✅ Ingrandito da 10px a 12px */
-    letter-spacing: 0.5px !important;
+    font-size: 11px !important; /* ✅ Ridotto per farci stare nomi lunghi */
+    letter-spacing: 0.3px !important;
     line-height: 1.1 !important;
     font-weight: 700 !important;
-    white-space: nowrap !important;
-    overflow: hidden !important;
-    text-overflow: ellipsis !important;
+    white-space: normal !important; /* ✅ Permette wrapping */
+    overflow: visible !important; /* ✅ Mostra tutto */
+    text-overflow: clip !important; /* ✅ No ellipsis */
     flex: 1 !important;
     min-width: 0 !important;
+    word-break: break-word !important; /* ✅ Spezza parole lunghe */
   }
 
   .match-header-big .match-center {
