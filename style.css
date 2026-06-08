@@ -3170,22 +3170,139 @@ body {
 
   /* === PLAYER ROWS MOBILE === */
   .player-row {
-    padding: 6px 8px;
+    padding: 4px 6px !important;
+    margin-bottom: 3px !important;
+    gap: 6px !important;
   }
+
   .player-avatar {
-    width: 32px;
-    height: 32px;
-    min-width: 32px;
+    width: 28px !important;
+    height: 28px !important;
+    min-width: 28px !important;
+    min-height: 28px !important;
+    max-width: 28px !important;
+    max-height: 28px !important;
+    border-radius: 50% !important;
+    overflow: hidden !important;
+    flex-shrink: 0 !important;
+    aspect-ratio: 1 / 1 !important; /* ✅ Forza forma tonda */
   }
+
   .player-avatar img {
-    width: 32px;
-    height: 32px;
+    width: 28px !important;
+    height: 28px !important;
+    min-width: 28px !important;
+    min-height: 28px !important;
+    max-width: 28px !important;
+    max-height: 28px !important;
+    border-radius: 50% !important;
+    object-fit: cover !important;
+    aspect-ratio: 1 / 1 !important;
   }
+
+  .player-avatar-fallback {
+    width: 28px !important;
+    height: 28px !important;
+    min-width: 28px !important;
+    min-height: 28px !important;
+    border-radius: 50% !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    font-size: 14px !important;
+    aspect-ratio: 1 / 1 !important;
+  }
+
   .player-name {
-    font-size: 12px;
+    font-size: 10px !important; /* ✅ Ridotto da 12px */
+    line-height: 1.15 !important;
+    letter-spacing: 0.3px !important;
+    flex: 1 !important;
+    min-width: 0 !important;
+    word-break: break-word !important; /* ✅ Permette a capo */
+    overflow-wrap: break-word !important;
+    white-space: normal !important;
   }
+
   .player-badges {
-    font-size: 11px;
+    font-size: 10px !important; /* ✅ Emoji più piccole */
+    flex-shrink: 0 !important;
+    margin-left: 2px !important;
+  }
+
+  /* ✅ MVP player row - avatar più grande ma tondo */
+  .player-row.mvp-player-row {
+    padding: 6px 8px !important;
+  }
+
+  .player-row.mvp-player-row .player-avatar,
+  .player-row.mvp-player-row .player-avatar img {
+    width: 36px !important;
+    height: 36px !important;
+    min-width: 36px !important;
+    min-height: 36px !important;
+    max-width: 36px !important;
+    max-height: 36px !important;
+    border-radius: 50% !important;
+    aspect-ratio: 1 / 1 !important;
+  }
+
+  .player-row.mvp-player-row .player-name {
+    font-size: 11px !important;
+    font-weight: 800 !important;
+  }
+
+  /* ✅ MVP winner card - fix avatar tondo */
+  .mvp-winner-card {
+    padding: 20px 12px !important;
+  }
+
+  .mvp-winner-photo,
+  .mvp-winner-avatar {
+    width: 60px !important;
+    height: 60px !important;
+    min-width: 60px !important;
+    min-height: 60px !important;
+    max-width: 60px !important;
+    max-height: 60px !important;
+    border-radius: 50% !important;
+    aspect-ratio: 1 / 1 !important;
+    object-fit: cover !important;
+  }
+
+  .mvp-winner-name {
+    font-size: 13px !important;
+    word-break: break-word !important;
+    overflow-wrap: break-word !important;
+    line-height: 1.2 !important;
+  }
+
+  .mvp-winner-badge {
+    font-size: 11px !important;
+  }
+
+  .mvp-winner-team {
+    font-size: 10px !important;
+  }
+
+  /* ✅ Players columns - riduzione padding */
+  .players-columns {
+    gap: 20px !important;
+    margin-top: 10px !important;
+  }
+
+  .players-col {
+    padding: 0 4px !important;
+  }
+
+  .players-team {
+    font-size: 12px !important;
+    margin-bottom: 8px !important;
+    letter-spacing: 1px !important;
+  }
+
+  .players-list {
+    gap: 2px !important;
   }
 
   /* === MVP BANNER MOBILE === */
