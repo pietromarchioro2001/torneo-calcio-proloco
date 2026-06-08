@@ -1939,7 +1939,7 @@ function renderEvents(events, match) {
         const deleteBtn = e.EVENT_ID ? `<span class="event-options" onclick="openEventMenu(event, '${e.EVENT_ID}', '${match.MATCH_ID}')">⋮</span>` : '';
         let playerText = (e.PLAYER || "").toUpperCase();
         if (tipoDisplay) { playerText += `<span style="font-size:0.85em; color:#888">${tipoDisplay}</span>`; }
-        if (e.ASSIST) { playerText += ` <span class="assist">(${(e.ASSIST).toUpperCase()})</span>`; }
+        if (e.ASSIST) { playerText += `<span class="assist">(${(e.ASSIST).toUpperCase()})</span>`; }
 
         html += `<div class="event-line ${isCasa ? "left" : "right"}" data-event-id="${e.EVENT_ID || ''}"><div class="event-content"><span class="event-minute">${e.MINUTO}'</span><span class="event-icon">${icon}</span><span class="event-player">${playerText}</span>${deleteBtn}</div></div>`;
     });
