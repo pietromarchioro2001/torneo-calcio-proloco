@@ -5,7 +5,16 @@
   <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
   <meta name="description" content="Admin Panel - Torneo dei Paesi Sarnonico">
   <meta name="theme-color" content="#7a1e2c">
-  <link rel="manifest" href="manifest.json">
+  
+  <!-- ✅ RIMOSSO: <link rel="manifest" href="manifest.json"> -->
+  <!-- ✅ AGGIUNTO: Meta tag per iOS (usa il tuo logo) -->
+  <link rel="apple-touch-icon" href="https://lh3.googleusercontent.com/d/1HVh1Suod5EmXv87lTRdXwk_ezqTGFlB7">
+  <meta name="apple-mobile-web-app-capable" content="no">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="Torneo">
+  <meta name="mobile-web-app-capable" content="no">
+  <link rel="icon" type="image/png" href="https://lh3.googleusercontent.com/d/1HVh1Suod5EmXv87lTRdXwk_ezqTGFlB7">
+  
   <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
   <link rel="preload" as="image" href="https://lh3.googleusercontent.com/d/1HVh1Suod5EmXv87lTRdXwk_ezqTGFlB7">
@@ -14,73 +23,73 @@
 <body>
 
   <div id="startupLoader">
-  <!-- Logo centrato (non full screen) -->
-  <img src="https://lh3.googleusercontent.com/d/1HVh1Suod5EmXv87lTRdXwk_ezqTGFlB7" 
-       alt="Logo Torneo" 
-       class="startup-logo">
-  
-  <!-- Spinner -->
-  <div class="startup-spinner"></div>
-</div>
+    <img src="https://lh3.googleusercontent.com/d/1HVh1Suod5EmXv87lTRdXwk_ezqTGFlB7" 
+         alt="Logo Torneo" 
+         class="startup-logo">
+    <div class="startup-spinner"></div>
+  </div>
 
-<style>
-#startupLoader {
-  position: fixed;
-  inset: 0;
-  background: white;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  z-index: 999999;
-  transition: opacity 0.3s ease; /* Più veloce */
-}
+  <style>
+  #startupLoader {
+    position: fixed;
+    inset: 0;
+    background: white;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    z-index: 999999;
+    transition: opacity 0.3s ease;
+  }
 
-.startup-logo {
-  width: min(400px, 70vw);  /* Massimo 300px o 70% viewport */
-  height: auto;
-  object-fit: contain;
-  margin-bottom: 30px;
-  animation: logoFadeIn 0.3s ease; /* Più veloce */
-}
+  .startup-logo {
+    width: min(400px, 70vw);
+    height: auto;
+    object-fit: contain;
+    margin-bottom: 30px;
+    animation: logoFadeIn 0.3s ease;
+  }
 
-@keyframes logoFadeIn {
-  from { opacity: 0; transform: scale(0.95); }
-  to { opacity: 1; transform: scale(1); }
-}
+  @keyframes logoFadeIn {
+    from { opacity: 0; transform: scale(0.95); }
+    to { opacity: 1; transform: scale(1); }
+  }
 
-.startup-spinner {
-  width: 50px;
-  height: 50px;
-  border: 4px solid #f3f3f3;
-  border-top: 4px solid #7a1e2c;
-  border-radius: 50%;
-  animation: spin 0.8s linear infinite; /* Più veloce */
-  margin-bottom: 20px;
-}
+  .startup-spinner {
+    width: 50px;
+    height: 50px;
+    border: 4px solid #f3f3f3;
+    border-top: 4px solid #7a1e2c;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    margin-bottom: 20px;
+  }
 
-@keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
-}
+  @keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+  }
 
-.startup-text {
-  font-family: 'Oswald', sans-serif;
-  font-size: 14px;
-  letter-spacing: 5px;
-  color: #7a1e2c;
-  font-weight: 600;
-}
+  .startup-text {
+    font-family: 'Oswald', sans-serif;
+    font-size: 14px;
+    letter-spacing: 5px;
+    color: #7a1e2c;
+    font-weight: 600;
+  }
 
-#startupLoader.hide {
-  opacity: 0;
-  pointer-events: none;
-}
-</style>
+  #startupLoader.hide {
+    opacity: 0;
+    pointer-events: none;
+  }
+  </style>
   
   <div id="app"></div>
   <div id="toolbar"></div>
 
+  <!-- ✅ RIMOSSO: registrazione service worker -->
+  <!-- Se avevi una riga tipo: navigator.serviceWorker.register('sw.js'), ELIMINALA -->
+  
   <script src="app.js"></script>
 
 </body>
