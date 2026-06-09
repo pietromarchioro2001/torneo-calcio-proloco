@@ -3,7 +3,7 @@
 // ============================================================================
 const CONFIG = {
     // 🔥 SOSTITUISCI CON IL TUO URL APPS SCRIPT WEB APP
-    BACKEND_URL: 'https://script.google.com/macros/s/AKfycbwB1CB9dq_2a3ngGlA69VKmKMwGax6aPM_WY-N4HjsXaITER40yuVLt36TuDXunEx0w/exec',
+    BACKEND_URL: 'https://script.google.com/macros/s/AKfycbwDwj9Bl5ZW_lXW8nv1chr2WYjQDRrIQD4kFw-IGoYL0T8N1QeypXnTwxAZK1J2GjdR/exec',
     API_TIMEOUT: 30000,
     CACHE_VERSION: 'v3.0',
     CACHE_MAX_AGE: 5 * 60 * 1000
@@ -806,7 +806,13 @@ function initPlayerUploadBox() {
 function loadPlayerData(player) {
     document.getElementById("playerNameInput").value = player?.NOME || "";
     const box = document.getElementById("playerPhotoUpload");
-    if (player?.FOTO_ID) { box.innerHTML = `<img src="${getCachedImage(player.FOTO_ID, 200)}" class="playerPhotoBig" alt="${player.NOME}">`; box.classList.add("has-photo"); } else { box.innerHTML = "FOTO GIOCATORE"; box.classList.remove("has-photo"); }
+    const photoId = player?.FOTO_ID || player?.FOTO_URL;
+
+if (photoId) {
+    box.innerHTML = `<img src="${getCachedImage(photoId, 200)}"
+                     class="playerPhotoBig"
+                     alt="${player.NOME}">`;
+} else { box.innerHTML = "FOTO GIOCATORE"; box.classList.remove("has-photo"); }
 }
 
 function renderPlayerTempPhoto() {
