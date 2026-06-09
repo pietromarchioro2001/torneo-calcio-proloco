@@ -1478,6 +1478,30 @@ body {
   .matches-header { padding: 0; margin-top: 10px; }
   .matches-actions { display: none !important; }
   .matches-scroll { width: 100% !important; max-width: 100% !important; margin: 0 !important; padding: 0 !important; box-sizing: border-box !important; }
+   .match-center .time { 
+    font-size: 14px !important; 
+    font-weight: 700; 
+  }
+
+  /* Mostra il girone solo per partite PROGRAMMATE */
+  .match-card[data-status="PROGRAMMATA"] .match-fase-badge,
+  .match-card.programmata .match-fase-badge {
+    display: block !important;
+    font-size: 10px !important;
+    font-weight: 600 !important;
+    margin-top: 4px !important;
+    color: #888 !important;
+    letter-spacing: 1px !important;
+    text-transform: uppercase !important;
+  }
+
+  /* Nascondi il girone per LIVE/FINITE */
+  .match-card[data-status="LIVE"] .match-fase-badge,
+  .match-card[data-status="FINITA"] .match-fase-badge,
+  .match-card.live .match-fase-badge,
+  .match-card.finita .match-fase-badge {
+    display: none !important;
+  }
 
   .phase-btn { padding: 6px 12px; font-size: 10px; letter-spacing: 1px; }
   .phase-btn.small { padding: 5px 10px; font-size: 9px; }
