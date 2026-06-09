@@ -1702,87 +1702,95 @@ body {
   .modalOverlay .delete-btn, .modalOverlay .phase-btn, .modalOverlay .modalBtn,
   .modalOverlay .form-actions, .modalOverlay .uploadBox, .modalOverlay .modern-upload,
   .modalOverlay .player-upload { display: none !important; }
-  .player-modal .player-form { pointer-events: none !important; }
   .team-photo-wrapper .uploadBox, .team-photo-wrapper .modern-upload { display: none !important; }
 
-  .player-modal { 
-  padding: 30px 20px !important; 
-  min-width: 280px !important; 
-  max-width: 85% !important; 
+  .player-modal {
+  padding: 30px 20px !important;
   text-align: center !important;
 }
 
-.player-modal .modalTitle { 
-  display: none !important; /* Nasconde "MODIFICA GIOCATORE" */
+/* Nascondi titolo MODIFICA GIOCATORE */
+.player-modal .modalTitle {
+  display: none !important;
 }
 
-.player-form label { 
-  display: none !important; 
+/* Nascondi label NOME */
+.player-modal .player-form label {
+  display: none !important;
 }
 
-.player-modal .player-form { 
-  display: flex !important; 
-  flex-direction: column !important; 
-  align-items: center !important; 
-  gap: 25px !important; 
-  margin-top: 0 !important;
+/* Nascondi pulsanti SALVA ed ELIMINA */
+.player-modal .modalActions {
+  display: none !important;
+}
+
+/* Centra il form */
+.player-modal .player-form {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  gap: 20px !important;
   pointer-events: none !important;
 }
 
+/* Centra e stile il nome giocatore */
 .player-modal .player-input {
-  font-size: 22px !important; 
-  font-weight: 700 !important; 
+  font-size: 24px !important;
+  font-weight: 700 !important;
   text-align: center !important;
-  border: none !important; 
-  background: transparent !important; 
+  border: none !important;
+  background: transparent !important;
   padding: 0 !important;
-  margin: 0 !important; 
-  letter-spacing: 3px !important; 
+  margin: 0 !important;
+  letter-spacing: 2px !important;
   width: 100% !important;
   color: #111 !important;
   text-transform: uppercase !important;
   pointer-events: none !important;
   user-select: none !important;
-  cursor: default !important;
 }
 
+/* Centra la foto */
 .player-modal .player-upload {
   display: flex !important;
   justify-content: center !important;
   align-items: center !important;
-  border: 2px dashed #ccc !important; /* Bordo tratteggiato per riquadro */
-  background: #fafafa !important;
+  margin: 0 auto !important;
+  border: none !important;
+  background: transparent !important;
   pointer-events: none !important;
-  width: 180px !important;
-  height: 180px !important;
-  border-radius: 12px !important; /* Angoli leggermente arrotondati ma quadrato */
-  overflow: hidden !important;
+  width: 200px !important;
+  height: 200px !important;
 }
 
+/* Foto quadrata centrata */
 .player-modal .playerPhotoBig {
-  width: 100% !important; 
-  height: 100% !important; 
-  border-radius: 0 !important; /* Foto quadrata, non rotonda */
-  object-fit: cover !important; 
+  width: 100% !important;
+  height: 100% !important;
+  border-radius: 12px !important;
+  object-fit: cover !important;
+  margin: 0 auto !important;
 }
 
-/* Nascondi i pulsanti SALVA ed ELIMINA */
-.player-modal .modalActions {
-  display: none !important;
-}
-
-/* Quando non c'è foto - mostra solo avatar centrato */
+/* Quando non c'è foto - mostra avatar centrato */
 .player-modal .player-upload:not(:has(img)) {
   border: 2px dashed #ccc !important;
   background: #f0f0f0 !important;
+  border-radius: 12px !important;
 }
 
 .player-modal .player-upload:not(:has(img))::before {
-  content: "👤";
+  content: "👤" !important;
   font-size: 80px !important;
-  opacity: 0.4;
+  opacity: 0.4 !important;
 }
 
+/* Nascondi testo "FOTO GIOCATORE" quando non c'è foto */
+.player-modal .player-upload:not(.has-photo) {
+  font-size: 0 !important;
+  color: transparent !important;
+}
+   
 /* Nascondi la scritta "FOTO GIOCATORE" che appare di default */
 .player-upload:not(.has-photo) {
   font-size: 0 !important;
