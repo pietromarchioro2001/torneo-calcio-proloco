@@ -3810,10 +3810,6 @@ function openMediaUploadModal(matchId, linkDrive) {
     <div class="modalBox" style="max-width:500px; padding:30px;">
       <div class="modalTitle" style="font-size:22px; margin-bottom:20px;">📤 CARICA MEDIA</div>
       
-      <div style="margin-bottom:15px; padding:12px; background:#f5f5f5; border-radius:8px; font-size:12px; color:#666; text-align:center;">
-        I file caricati saranno visibili a tutti nella cartella della partita
-      </div>
-      
       <div id="mediaDropZone" style="
         border: 2px dashed #7a1e2c;
         border-radius: 12px;
