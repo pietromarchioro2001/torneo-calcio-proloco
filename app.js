@@ -745,7 +745,7 @@ function teamLogoAction() {
     const teamId = window.APP_STATE.currentTeamId; const team = window.APP_CACHE.fullTeams?.[teamId]?.team;
     if (!team?.LOGO_ID) { uploadNewLogo(); return; }
     const modal = document.createElement("div"); modal.className = "modalOverlay";
-    modal.innerHTML = `<div class="modalBox"><div class="modalTitle">LOGO SQUADRA</div><img src="${getCachedImage(team.LOGO_ID, 400)}" style="max-width:100%;border-radius:12px;margin:20px 0;"><div class="modalActions"><div class="phase-btn secondary" onclick="window.open('https://drive.google.com/file/d/${team.LOGO_ID}/view', '_blank'); this.closest('.modalOverlay').remove()">APRI SU DRIVE</div><div class="phase-btn" onclick="this.closest('.modalOverlay').remove(); uploadNewLogo()">CAMBIA LOGO</div></div></div>`;
+    modal.innerHTML = `<div class="modalBox"><div class="modalTitle">LOGO SQUADRA</div><img src="${getCachedImage(team.LOGO_ID, 400)}" style="max-width:100%;border-radius:12px;margin:20px 0;"><div class="modalActions"><div class="phase-btn secondary" onclick="window.open('https://drive.google.com/file/d/${team.LOGO_ID}/view', '_blank'); this.closest('.modalOverlay').remove()">APRI</div><div class="phase-btn" onclick="this.closest('.modalOverlay').remove(); uploadNewLogo()">CAMBIA</div></div></div>`;
     document.body.appendChild(modal); modal.onclick = (e) => { if (e.target === modal) modal.remove(); };
 }
 
@@ -781,7 +781,7 @@ function teamPhotoAction() {
     const teamId = window.APP_STATE.currentTeamId; const team = window.APP_CACHE.fullTeams?.[teamId]?.team;
     if (!team?.FOTO_SQUADRA_FILE_ID) { uploadNewTeamPhoto(); return; }
     const modal = document.createElement("div"); modal.className = "modalOverlay";
-    modal.innerHTML = `<div class="modalBox" style="max-width:800px;"><div class="modalTitle">FOTO SQUADRA</div><img src="${getCachedImage(team.FOTO_SQUADRA_FILE_ID, 1200)}" style="max-width:100%;border-radius:12px;margin:20px 0;"><div class="modalActions"><div class="phase-btn secondary" onclick="window.open('https://drive.google.com/file/d/${team.FOTO_SQUADRA_FILE_ID}/view', '_blank'); this.closest('.modalOverlay').remove()">APRI SU DRIVE</div><div class="phase-btn" onclick="this.closest('.modalOverlay').remove(); uploadNewTeamPhoto()">CAMBIA FOTO</div></div></div>`;
+    modal.innerHTML = `<div class="modalBox" style="max-width:800px;"><div class="modalTitle">FOTO SQUADRA</div><img src="${getCachedImage(team.FOTO_SQUADRA_FILE_ID, 1200)}" style="max-width:100%;border-radius:12px;margin:20px 0;"><div class="modalActions"><div class="phase-btn secondary" onclick="window.open('https://drive.google.com/file/d/${team.FOTO_SQUADRA_FILE_ID}/view', '_blank'); this.closest('.modalOverlay').remove()">APRI</div><div class="phase-btn" onclick="this.closest('.modalOverlay').remove(); uploadNewTeamPhoto()">CAMBIA</div></div></div>`;
     document.body.appendChild(modal); modal.onclick = (e) => { if (e.target === modal) modal.remove(); };
 }
 
@@ -3811,33 +3811,30 @@ function openMediaUploadModal(matchId, linkDrive) {
   const modal = document.createElement('div');
   modal.id = 'mediaUploadModal';
   modal.className = 'modalOverlay';
-  
-  // 🔥 MODAL CON X IN ALTO A DESTRA (funziona su mobile e desktop)
   modal.innerHTML = `
     <div class="modalBox" style="max-width:500px; padding:30px; position:relative;">
-      
-      <!-- ✅ X CHIUDI IN ALTO A DESTRA -->
-      <div id="mediaModalCloseBtn" style="
-        position:absolute;
-        right:15px;
-        top:15px;
-        width:44px;
-        height:44px;
-        display:flex;
-        align-items:center;
-        justify-content:center;
-        cursor:pointer;
-        font-size:28px;
-        color:#7a1e2c;
-        border-radius:50%;
-        background:rgba(245,245,245,0.8);
-        z-index:10;
-        line-height:1;
-        font-weight:300;
+      <!-- ✅ X CHIUDI IN ALTO A DESTRA (visibile su desktop e mobile) -->
+      <div style="
+        position:absolute; 
+        right:15px; 
+        top:15px; 
+        cursor:pointer; 
+        font-size:28px; 
+        color:#7a1e2c; 
+        line-height:1; 
+        width:40px; 
+        height:40px; 
+        display:flex; 
+        align-items:center; 
+        justify-content:center; 
+        border-radius:8px; 
         transition:all 0.2s ease;
-        -webkit-tap-highlight-color:transparent;
-        user-select:none;
-      " onclick="closeMediaUploadModal()" onmouseover="this.style.background='#7a1e2c';this.style.color='#fff'" onmouseout="this.style.background='rgba(245,245,245,0.8)';this.style.color='#7a1e2c'">×</div>
+        font-weight:300;
+        z-index:10;
+      " 
+      onclick="closeMediaUploadModal()" 
+      onmouseover="this.style.background='#7a1e2c';this.style.color='#fff';this.style.transform='rotate(90deg)'" 
+      onmouseout="this.style.background='';this.style.color='#7a1e2c';this.style.transform='rotate(0deg)'">×</div>
       
       <div class="modalTitle" style="font-size:22px; margin-bottom:20px; text-align:center;">📤 CARICA MEDIA</div>
       
@@ -3866,7 +3863,9 @@ function openMediaUploadModal(matchId, linkDrive) {
       
       <input type="file" id="mediaFileInput" multiple accept="image/*,video/*" style="display:none;">
       <div id="mediaFileList" style="max-height:150px; overflow-y:auto; margin-bottom:15px;"></div>
-      <div id="mediaProgress" style="display:none; margin-bottom:15px;">
+      
+      <!-- ✅ NASCOSTO DI DEFAULT - Mostrato solo durante l'upload -->
+      <div id="mediaProgress" style="display:none !important; margin-bottom:15px;">
         <div style="font-size:12px; color:#666; margin-bottom:5px;">
           Caricamento... <span id="mediaProgressText">0/0</span>
         </div>
@@ -3875,18 +3874,16 @@ function openMediaUploadModal(matchId, linkDrive) {
         </div>
       </div>
       
-      <div class="modalActions" style="gap:10px;">
+      <!-- ✅ SOLO 2 PULSANTI: CARICA FILE e VEDI (rimosso ANNULLA) -->
+      <div class="modalActions" style="gap:10px; display:flex; justify-content:center;">
         <button id="mediaUploadBtn" class="phase-btn" disabled style="
           opacity:0.5; cursor:not-allowed; padding:10px 20px;
           font-family:'Oswald',sans-serif; letter-spacing:2px;
         ">CARICA FILE</button>
-        <div class="phase-btn secondary" onclick="closeMediaUploadModal()" style="padding:10px 20px;">
-          ANNULLA
-        </div>
         <a href="${validLink}" target="_blank" rel="noopener noreferrer" class="phase-btn" style="
           padding:10px 20px; background:white; color:#7a1e2c;
           border:2px solid #7a1e2c; text-decoration:none;
-        ">VEDI</a>
+        ">👁️ VEDI</a>
       </div>
     </div>
   `;
