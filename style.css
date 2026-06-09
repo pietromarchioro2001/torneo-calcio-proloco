@@ -2128,4 +2128,38 @@ body {
      /* Oppure rimuovi completamente il bordo: */
      /* border: none !important; */
    }
+
+   .modalOverlay #mediaUploadBtn {
+  display: inline-block !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  pointer-events: auto !important;
+}
+
+.modalOverlay #mediaUploadBtn:disabled {
+  opacity: 0.5 !important;
+  cursor: not-allowed !important;
+}
+
+/* Nascondi gli altri pulsanti nel modal (tranne media upload) */
+.modalOverlay .phase-btn:not(#mediaUploadBtn),
+.modalOverlay .modalBtn,
+.modalOverlay .form-actions,
+.modalOverlay .uploadBox,
+.modalOverlay .modern-upload,
+.modalOverlay .player-upload {
+  display: none !important;
+}
+
+/* ✅ ASSICURATI CHE IL DROPZONE SIA VISIBILE */
+#mediaDropZone {
+  display: block !important;
+  visibility: visible !important;
+  pointer-events: auto !important;
+}
+
+/* ✅ ASSICURATI CHE IL FILE INPUT SIA VISIBILE */
+#mediaFileInput {
+  display: none !important; /* Rimane nascosto, si attiva tramite dropzone */
+}
 }
