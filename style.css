@@ -1549,7 +1549,33 @@ body {
   .match-select, .match-input { padding: 10px; font-size: 13px; width: 100%; }
   .vs-big { font-size: 14px; }
   .time-row { flex-direction: row; gap: 10px; }
-  .modalActions { gap: 12px; }
+  .modalActions {
+     display: flex !important;
+     flex-direction: column !important;
+     gap: 10px !important;
+     margin-top: 15px !important;
+   }
+
+   .modalActions .phase-btn,
+.modalActions .phase-btn.secondary,
+.modalActions a.phase-btn {
+  display: block !important;
+  width: 100% !important;
+  padding: 10px !important;
+  font-size: 12px !important;
+  text-align: center !important;
+  box-sizing: border-box !important;
+}
+
+/* Nascondi il drop zone dopo aver selezionato i file su mobile */
+#mediaFileList {
+  max-height: 100px !important;
+  margin-bottom: 10px !important;
+}
+
+#mediaProgress {
+  margin-bottom: 10px !important;
+}
   .modalBtn { padding: 10px 18px; font-size: 13px; min-width: 100px; }
 
   .match-options { display: none !important; }
@@ -1570,8 +1596,34 @@ body {
   .team-mini-logo { width: 45px; height: 45px; }
   .teams-table .delete-btn { display: none !important; }
 
-  .modalBox { min-width: 0; width: 90%; max-width: 340px; padding: 24px; border-radius: 14px; }
-  .modalTitle { font-size: 24px; letter-spacing: 2px; margin-bottom: 20px; }
+  .modalBox {
+     padding: 20px !important;
+     max-width: 95% !important;
+   }
+   
+   .modalTitle {
+     font-size: 18px !important;
+     letter-spacing: 2px !important;
+     margin-bottom: 15px !important;
+   }
+
+   #mediaDropZone {
+  padding: 25px 15px !important;
+  margin-bottom: 12px !important;
+}
+
+#mediaDropZone > div:first-child {
+  font-size: 36px !important;
+  margin-bottom: 8px !important;
+}
+
+#mediaDropZone > div:nth-child(2) {
+  font-size: 12px !important;
+}
+
+#mediaDropZone > div:nth-child(3) {
+  font-size: 10px !important;
+}
   .form-wrapper { width: 100%; margin: 0; }
   .form-input, .form-select { padding: 10px; font-size: 13px; letter-spacing: 2px; }
   .form-group label { font-size: 11px; letter-spacing: 3px; margin-bottom: 6px; }
