@@ -3777,6 +3777,19 @@ function pollForMVPUpdate(matchId) {
 // ============================================================================
 
 function openMediaUploadModal(matchId, linkDrive) {
+  // ✅ VALIDA L'URL PRIMA DI USARLO
+  if (!linkDrive || typeof linkDrive !== 'string') {
+    alert('Errore: Link Drive non valido');
+    return;
+  }
+  
+  // ✅ ASSICURATI CHE L'URL SIA CORRETTO
+  let validLink = linkDrive.trim();
+  if (!validLink.startsWith('http://') && !validLink.startsWith('https://')) {
+    // Se manca il protocollo, aggiungilo
+    validLink = 'https://' + validLink;
+  }
+  
   // Rimuovi modale esistente se presente
   const existing = document.getElementById('mediaUploadModal');
   if (existing) existing.remove();
@@ -3786,7 +3799,11 @@ function openMediaUploadModal(matchId, linkDrive) {
   modal.className = 'modalOverlay';
   modal.innerHTML = `
     <div class="modalBox" style="max-width:500px; padding:30px;">
-      <div class="modalTitle" style="font-size:22px; margin-bottom:20px;">CARICA MEDIA</div>
+      <div class="modalTitle" style="font-size:22px; margin-bottom:20px;">📤 CARICA MEDIA</div>
+      
+      <div style="margin-bottom:15px; padding:12px; background:#f5f5f5; border-radius:8px; font-size:12px; color:#666; text-align:center;">
+        I file caricati saranno visibili a tutti nella cartella della partita
+      </div>
       
       <div id="mediaDropZone" style="
         border: 2px dashed #7a1e2c;
@@ -3828,17 +3845,16 @@ function openMediaUploadModal(matchId, linkDrive) {
         <div class="phase-btn secondary" onclick="closeMediaUploadModal()" style="padding:10px 20px;">
           ANNULLA
         </div>
-        <a href="${linkDrive}" target="_blank" rel="noopener noreferrer" class="phase-btn" style="
+        <a href="${validLink}" target="_blank" rel="noopener noreferrer" class="phase-btn" style="
           padding:10px 20px; background:white; color:#7a1e2c; 
           border:2px solid #7a1e2c; text-decoration:none;
-        ">VEDI</a>
+        ">👁️ VEDI</a>
       </div>
     </div>
   `;
   
   document.body.appendChild(modal);
   modal.onclick = (e) => { if (e.target === modal) closeMediaUploadModal(); };
-  
   setupMediaUploadModal(matchId);
 }
 
