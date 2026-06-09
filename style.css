@@ -1759,23 +1759,23 @@ body {
   .match-page .back-btn-wrapper { margin-top: 20px !important; padding: 10px 0 !important; display: flex !important; justify-content: flex-end !important; }
 
    .media-button {
-  position: static !important; /* Cambiato da fixed a static */
-  bottom: auto !important;
-  left: auto !important;
+  position: static !important;
   transform: none !important;
-  padding: 10px 20px !important; /* Stesse dimensioni di INDIETRO */
+  padding: 10px 30px !important; /* Più corto */
   font-size: 12px !important;
   letter-spacing: 2px !important;
-  background: white !important; /* Sfondo bianco */
-  color: var(--granata) !important; /* Testo granata */
-  border: 2px solid var(--granata) !important; /* Bordo granata */
+  background: white !important;
+  color: var(--granata) !important;
+  border: 2px solid var(--granata) !important;
+  border-radius: 8px !important;
   box-shadow: 0 2px 8px rgba(122, 30, 44, 0.2) !important;
-  min-width: 100px !important; /* Stessa larghezza minima */
-  text-align: center !important;
+  width: auto !important; /* Larghezza automatica */
+  min-width: auto !important;
   display: inline-flex !important;
   align-items: center !important;
   justify-content: center !important;
   gap: 8px !important;
+  margin: 0 !important;
 }
 
 .media-button:hover {
@@ -1787,7 +1787,7 @@ body {
 .media-button svg {
   width: 16px !important;
   height: 16px !important;
-  fill: var(--granata) !important; /* Icona granata */
+  fill: var(--granata) !important;
 }
    
   .back-btn-wrapper {
