@@ -2189,9 +2189,20 @@ body {
      /* border: none !important; */
    }
 
-   .modalOverlay .modalBox > * {
-     display: none !important;
-   }
+   /* ✅ Mostra tutti gli elementi del modal TRANNE il progress bar */
+.modalOverlay .modalBox > *:not(#mediaProgress) {
+  display: block !important;
+}
+
+/* ✅ Il progress bar rimane nascosto finché non serve */
+#mediaProgress {
+  display: none !important;
+}
+
+/* ✅ Quando si attiva l'upload, mostra il progress */
+#mediaProgress.active {
+  display: block !important;
+}
    
    /* 2. Mostra SOLO gli elementi specifici del modal upload media */
    .modalOverlay .modalBox .modalTitle,
