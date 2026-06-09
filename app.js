@@ -19,19 +19,30 @@ if (!CONFIG.BACKEND_URL || CONFIG.BACKEND_URL.includes('DEPLOYMENT_ID')) {
 // 🔐 SECURITY UTILITIES
 // ============================================================================
 const Sanitizer = {
-    html: (str) => {
-        if (typeof str !== 'string') return '';
-        const div = document.createElement('div');
-        div.textContent = str;
-        return div.innerHTML;
-    },
-    attr: (str) => {
-        if (typeof str !== 'string') return '';
-        return str.replace(/[^a-zA-Z0-9\-_\s.]/g, '');
-    },
-    json: (str) => {
-        try { return JSON.parse(str); } catch { return null; }
+  html: (str) => {
+    if (typeof str !== 'string') return '';
+    const div = document.createElement('div');
+    div.textContent = str;
+    return div.innerHTML;
+  },
+  attr: (str) => {
+    if (typeof str !== 'string') return '';
+    return str.replace(/[^a-zA-Z0-9\-_\s.]/g, '');
+  },
+  // ✅ NUOVA FUNZIONE per URL - mantiene i caratteri validi degli URL
+  url: (str) => {
+    if (typeof str !== 'string') return '';
+    // Permetti solo URL che iniziano con http:// o https://
+    const trimmed = str.trim();
+    if (!trimmed.match(/^https?:\/\//i)) {
+      return ''; // Blocca URL non validi
     }
+    // Rimuovi caratteri pericolosi ma mantieni quelli validi per URL
+    return trimmed.replace(/[<>"'`\s]/g, '');
+  },
+  json: (str) => {
+    try { return JSON.parse(str); } catch { return null; }
+  }
 };
 
 // ============================================================================
@@ -1483,16 +1494,14 @@ function renderMatchPage(match) {
     : "";
   
   // 🔥 RECUPERA LINK DRIVE (colonna R del foglio PARTITE)
-  const linkDrive = (match.LINK_DRIVE || match.linkDrive || '');
+  // 🔥 RECUPERA LINK DRIVE (colonna R del foglio PARTITE)
+const linkDrive = (match.LINK_DRIVE || match.linkDrive || '');
 
-console.log('🔗 Link Drive recuperato:', linkDrive);
-console.log('📊 Match object:', match);
-    
-// 🔥 PULSANTE MEDIA - Apre modale di upload (non link diretto a Drive)
+// 🔥 PULSANTE MEDIA - Apre modale di upload
 const mediaButtonHtml = linkDrive && linkDrive.trim() !== '' ? `
-<a href="${Sanitizer.attr(linkDrive)}" target="_blank" rel="noopener noreferrer" class="media-button">
-<span>MEDIA</span>
-</a>
+<button class="media-button" onclick="openMediaUploadModal('${Sanitizer.attr(match.MATCH_ID)}', '${Sanitizer.url(linkDrive).replace(/'/g, "\\'")}'); event.stopPropagation();">
+<span>📤 MEDIA</span>
+</button>
 ` : '';
   
   // 🔥 TEMPLATE HTML CON PULSANTE MEDIA
