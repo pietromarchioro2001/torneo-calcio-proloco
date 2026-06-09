@@ -3,7 +3,7 @@
 // ============================================================================
 const CONFIG = {
     // 🔥 SOSTITUISCI CON IL TUO URL APPS SCRIPT WEB APP
-    BACKEND_URL: 'https://script.google.com/macros/s/AKfycbw6grxWaK71O_4hFGWloGgQO3XTjZE038YSusBofBleRyDy9_8J7RR2N_0HIJEtrKjG/exec',
+    BACKEND_URL: 'https://script.google.com/macros/s/AKfycbznBZLIZHjHV__eZqPXR2QvTMGz9tGF9hYH8QhPG_MFhLV8jbY1oQAsq_LhvWybN_1k/exec',
     API_TIMEOUT: 30000,
     CACHE_VERSION: 'v3.0',
     CACHE_MAX_AGE: 5 * 60 * 1000
@@ -165,47 +165,39 @@ function createPreviewUrl(file) {
 // 🌐 API CLIENT
 // ============================================================================
 const ApiClient = {
-    async call(action, payload = null, retryCount = 0) {
-  const controller = new AbortController();
-  // ✅ Timeout più lungo per primo caricamento (10s invece di 30s)
-  const timeoutMs = retryCount === 0 ? 15000 : CONFIG.API_TIMEOUT;
-  const timeout = setTimeout(() => controller.abort(), timeoutMs);
+    async call(action, payload = null) {
+  const url = 'https://script.google.com/macros/s/AKfycbw6grxWaK71O_4hFGWloGgQO3XTjZE038YSusBofBleRyDy9_8J7RR2N_0HIJEtrKjG/exec';
   
   try {
-    const response = await fetch(CONFIG.BACKEND_URL, {
-        method: 'POST',
-        body: JSON.stringify({ action, payload }),
-        signal: controller.signal
+    const response = await fetch(url, {
+      method: 'POST',
+      mode: 'cors', // ✅ Esplicitamente CORS
+      headers: {
+        'Content-Type': 'text/plain;charset=utf-8', // ✅ Usa text/plain invece di application/json
+      },
+      body: JSON.stringify({
+        action: action,
+        payload: payload
+      }),
+      redirect: 'follow' // ✅ Segui i redirect di Apps Script
     });
-    clearTimeout(timeout);
     
     if (!response.ok) {
-      // ✅ Retry automatico per errori 429 (rate limit) o 5xx
-      if ((response.status === 429 || response.status >= 500) && retryCount < 2) {
-        const delay = Math.pow(2, retryCount) * 1000; // Backoff esponenziale
-        console.log(`🔄 Retry ${retryCount + 1} per ${action} tra ${delay}ms...`);
-        await new Promise(res => setTimeout(res, delay));
-        return this.call(action, payload, retryCount + 1);
-      }
+      const errorText = await response.text();
+      console.error(`❌ HTTP ${response.status}:`, errorText);
       throw new Error(`HTTP ${response.status}: ${response.statusText}`);
     }
     
-    const result = await response.json();
-    if (result?.error || result?.success === false) {
-      throw new Error(result.error || 'Backend error');
+    const data = await response.json();
+    
+    if (!data.success) {
+      throw new Error(data.error || 'Unknown API error');
     }
-    return result?.data ?? result;
+    
+    return data.data;
     
   } catch (error) {
-    clearTimeout(timeout);
-    // ✅ Gestione elegante degli abort (timeout)
-    if (error.name === 'AbortError') {
-      console.warn(`⏱️ Timeout per ${action}, retry ${retryCount < 2 ? 'possibile' : 'fallito'}`);
-      if (retryCount < 2) {
-        return this.call(action, payload, retryCount + 1);
-      }
-    }
-    console.error(`API Error [${action}]:`, error);
+    console.error(`❌ API Error [${action}]:`, error);
     throw error;
   }
 },
