@@ -838,7 +838,7 @@ body {
   gap: 10px;
   background: linear-gradient(135deg, #7a1e2c 0%, #9f2c3d 100%);
   color: white;
-  padding: 14px 28px;
+  padding: 12px 24px; /* Ridotto da 14px 28px */
   border-radius: 12px;
   text-decoration: none;
   font-weight: 700;
@@ -849,6 +849,9 @@ body {
   box-shadow: 0 4px 15px rgba(122, 30, 44, 0.4);
   transition: all 0.3s ease;
   border: 2px solid rgba(255, 255, 255, 0.1);
+  width: auto; /* Aggiunto */
+  min-width: auto; /* Aggiunto */
+  white-space: nowrap; /* Aggiunto */
 }
 
 .media-button:hover {
@@ -1759,77 +1762,74 @@ body {
   .match-page .back-btn-wrapper { margin-top: 20px !important; padding: 10px 0 !important; display: flex !important; justify-content: flex-end !important; }
 
    .media-button {
-  position: static !important;
-  transform: none !important;
-  padding: 10px 30px !important; /* Più corto */
-  font-size: 12px !important;
-  letter-spacing: 2px !important;
-  background: white !important;
-  color: var(--granata) !important;
-  border: 2px solid var(--granata) !important;
-  border-radius: 8px !important;
-  box-shadow: 0 2px 8px rgba(122, 30, 44, 0.2) !important;
-  width: auto !important; /* Larghezza automatica */
-  min-width: auto !important;
-  display: inline-flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-  gap: 8px !important;
-  margin: 0 !important;
-}
+    position: static !important;
+    left: auto !important;
+    transform: none !important;
+    padding: 10px 20px !important;
+    font-size: 12px !important;
+    letter-spacing: 2px !important;
+    background: white !important;
+    color: var(--granata) !important;
+    border: 2px solid var(--granata) !important;
+    border-radius: 8px !important;
+    box-shadow: 0 2px 8px rgba(122, 30, 44, 0.2) !important;
+    width: auto !important;
+    min-width: auto !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 8px !important;
+    margin: 0 !important;
+    white-space: nowrap !important;
+  }
 
-.media-button:hover {
-  background: #f9f9f9 !important;
-  transform: translateY(-2px) !important;
-  box-shadow: 0 4px 12px rgba(122, 30, 44, 0.3) !important;
-}
+  .media-button:hover {
+    background: #f9f9f9 !important;
+    transform: translateY(-2px) !important;
+    box-shadow: 0 4px 12px rgba(122, 30, 44, 0.3) !important;
+  }
 
-.media-button svg {
-  width: 16px !important;
-  height: 16px !important;
-  fill: var(--granata) !important;
-}
+  .media-button svg {
+    width: 16px !important;
+    height: 16px !important;
+    fill: var(--granata) !important;
+  }
    
   .back-btn-wrapper {
-  margin-top: 15px !important; 
-  margin-bottom: 10px !important; 
-  padding: 10px 0 !important;
-  display: flex !important; 
-  justify-content: center !important; /* Cambiato da flex-start a center */
-  align-items: center !important;
-  width: 100% !important; 
-  box-sizing: border-box !important; 
-  position: relative !important;
-  z-index: 10 !important; 
-  visibility: visible !important; 
-  opacity: 1 !important;
-  gap: 15px !important; /* Spazio tra i due pulsanti */
-}
+    margin-top: 20px !important;
+    margin-bottom: 10px !important;
+    padding: 0 20px !important;
+    display: flex !important;
+    justify-content: center !important;
+    align-items: center !important;
+    gap: 15px !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+  }
 
-.back-btn {
-  padding: 10px 20px !important; 
-  font-size: 12px !important; 
-  letter-spacing: 2px !important;
-  background: var(--granata) !important; 
-  color: white !important; 
-  border-radius: 8px !important;
-  border: none !important; 
-  cursor: pointer !important; 
-  display: inline-block !important;
-  visibility: visible !important; 
-  opacity: 1 !important; 
-  font-family: 'Oswald', sans-serif !important;
-  font-weight: 600 !important; 
-  text-transform: uppercase !important;
-  box-shadow: 0 2px 8px rgba(122, 30, 44, 0.3) !important; 
-  white-space: nowrap !important;
-  min-width: 100px !important; /* Larghezza minima */
-  text-align: center !important;
-}
+  /* Pulsante INDIETRO */
+  .back-btn {
+    padding: 10px 20px !important;
+    font-size: 12px !important;
+    letter-spacing: 2px !important;
+    background: var(--granata) !important;
+    color: white !important;
+    border-radius: 8px !important;
+    border: 2px solid var(--granata) !important;
+    cursor: pointer !important;
+    display: inline-block !important;
+    font-family: 'Oswald', sans-serif !important;
+    font-weight: 600 !important;
+    text-transform: uppercase !important;
+    box-shadow: 0 2px 8px rgba(122, 30, 44, 0.3) !important;
+    white-space: nowrap !important;
+    width: auto !important;
+    min-width: auto !important;
+  }
 
-.back-btn:hover { 
-  background: var(--granata-light) !important; 
-}
+  .back-btn:hover {
+    background: var(--granata-light) !important;
+  }
   .small-btn { padding: 8px 16px; font-size: 12px; margin-bottom: 20px; }
 
   .podium-container { padding: 20px 15px; }
