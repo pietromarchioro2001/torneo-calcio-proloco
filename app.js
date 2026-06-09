@@ -1500,7 +1500,7 @@ const linkDrive = (match.LINK_DRIVE || match.linkDrive || '');
 // 🔥 PULSANTE MEDIA - Apre modale di upload
 const mediaButtonHtml = linkDrive && linkDrive.trim() !== '' ? `
 <button class="media-button" onclick="openMediaUploadModal('${Sanitizer.attr(match.MATCH_ID)}', '${Sanitizer.url(linkDrive).replace(/'/g, "\\'")}'); event.stopPropagation();">
-<span>📤 MEDIA</span>
+<span>MEDIA</span>
 </button>
 ` : '';
   
@@ -3857,7 +3857,7 @@ function openMediaUploadModal(matchId, linkDrive) {
         <a href="${validLink}" target="_blank" rel="noopener noreferrer" class="phase-btn" style="
           padding:10px 20px; background:white; color:#7a1e2c; 
           border:2px solid #7a1e2c; text-decoration:none;
-        ">👁️ VEDI</a>
+        ">VEDI</a>
       </div>
     </div>
   `;
