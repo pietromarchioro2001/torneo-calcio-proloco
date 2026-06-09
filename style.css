@@ -1916,17 +1916,15 @@ body {
   .penalty-dot { width: 12px !important; height: 12px !important; }
   .penalty-vs-score { font-size: 16px !important; min-width: 35px !important; }
 
-  .match-page .back-btn-wrapper { 
-    display: flex !important;
-    flex-direction: row !important;
-    align-items: center !important;
-    justify-content: flex-end !important;
-    width: 100% !important;
-    padding: 10px 20px !important;
-    box-sizing: border-box !important;
-    margin-top: 10px !important;
-    margin-bottom: 10px !important;
-    position: relative !important;
+  .match-page .back-btn-wrapper {
+    position: fixed !important;
+    bottom: 75px !important; /* Stessa altezza di MEDIA */
+    right: 15px !important;
+    left: auto !important;
+    width: auto !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    z-index: 999 !important;
   }
 
    .media-button {
@@ -1934,7 +1932,6 @@ body {
     display: inline-flex !important;
     align-items: center !important;
     justify-content: center !important;
-    gap: 6px !important;
     padding: 8px 16px !important;
     border: 2px solid var(--granata) !important;
     border-radius: 8px !important;
@@ -1945,19 +1942,14 @@ body {
     font-family: 'Oswald', sans-serif !important;
     letter-spacing: 1.5px !important;
     text-transform: uppercase !important;
-    text-decoration: none !important;
     cursor: pointer !important;
     box-shadow: 0 2px 8px rgba(122, 30, 44, 0.2) !important;
-    width: fit-content !important;
-    min-width: 0 !important;
-    max-width: 120px !important;
-    flex: none !important;
-    white-space: nowrap !important;
-    position: absolute !important;
+    /* POSIZIONE FIXED */
+    position: fixed !important;
+    bottom: 75px !important; /* Sopra la toolbar (~60px) + 15px margine */
     left: 50% !important;
     transform: translateX(-50%) !important;
-    top: auto !important;
-    bottom: auto !important;
+    z-index: 999 !important;
   }
 
   .media-button:hover {
@@ -2009,15 +2001,14 @@ body {
     text-transform: uppercase !important;
     cursor: pointer !important;
     box-shadow: 0 2px 8px rgba(122, 30, 44, 0.3) !important;
-    width: fit-content !important;
-    min-width: 0 !important;
-    max-width: 120px !important;
-    flex: none !important;
-    white-space: nowrap !important;
   }
 
   .back-btn:hover {
     background: var(--granata-light) !important;
+  }
+
+   .match-content {
+    padding-bottom: 50px !important;
   }
    
   .small-btn { padding: 8px 16px; font-size: 12px; margin-bottom: 20px; }
