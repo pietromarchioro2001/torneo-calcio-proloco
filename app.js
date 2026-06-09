@@ -3945,56 +3945,57 @@ function setupMediaUploadModal(matchId) {
   }
   
   uploadBtn.onclick = async () => {
-    if (selectedFiles.length === 0) return;
-    
-    uploadBtn.disabled = true;
-    uploadBtn.textContent = 'CARICAMENTO...';
-    document.getElementById('mediaProgress').style.display = 'block';
-    
-    let successCount = 0;
-    let errorCount = 0;
-    
-    for (let i = 0; i < selectedFiles.length; i++) {
-      const file = selectedFiles[i];
+      if (selectedFiles.length === 0) return;
+      uploadBtn.disabled = true;
+      uploadBtn.textContent = 'CARICAMENTO...';
       
-      document.getElementById('mediaProgressText').textContent = `${i+1}/${selectedFiles.length}`;
-      document.getElementById('mediaProgressBar').style.width = `${((i+1)/selectedFiles.length)*100}%`;
+      // ✅ Mostra il progress bar aggiungendo la classe 'active'
+      const progressEl = document.getElementById('mediaProgress');
+      progressEl.classList.add('active');
+      progressEl.style.display = 'block';
       
-      try {
-        const base64 = await fileToBase64(file);
+      let successCount = 0;
+      let errorCount = 0;
+      
+      for (let i = 0; i < selectedFiles.length; i++) {
+        const file = selectedFiles[i];
+        document.getElementById('mediaProgressText').textContent = `${i+1}/${selectedFiles.length}`;
+        document.getElementById('mediaProgressBar').style.width = `${((i+1)/selectedFiles.length)*100}%`;
         
-        const result = await ApiClient.uploadMediaFile(
-          matchId,
-          file.name,
-          file.type,
-          base64
-        );
-        
-        if (result?.success) {
-          successCount++;
-          console.log(`✅ Caricato: ${file.name}`);
-        } else {
+        try {
+          const base64 = await fileToBase64(file);
+          const result = await ApiClient.uploadMediaFile(
+            matchId,
+            file.name,
+            file.type,
+            base64
+          );
+          
+          if (result?.success) {
+            successCount++;
+            console.log(`✅ Caricato: ${file.name}`);
+          } else {
+            errorCount++;
+            console.error(`❌ Errore ${file.name}:`, result?.error);
+          }
+        } catch (error) {
           errorCount++;
-          console.error(`❌ Errore ${file.name}:`, result?.error);
+          console.error(`❌ Errore upload ${file.name}:`, error);
         }
-      } catch (error) {
-        errorCount++;
-        console.error(`❌ Errore upload ${file.name}:`, error);
+        
+        await new Promise(r => setTimeout(r, 200));
       }
       
-      await new Promise(r => setTimeout(r, 200));
-    }
-    
-    let message = '';
-    if (errorCount === 0) {
-      message = `✅ ${successCount} file caricati con successo!`;
-    } else {
-      message = `⚠️ ${successCount} caricati, ${errorCount} errori`;
-    }
-    
-    alert(message);
-    closeMediaUploadModal();
-  };
+      let message = '';
+      if (errorCount === 0) {
+        message = `✅ ${successCount} file caricati con successo!`;
+      } else {
+        message = `⚠️ ${successCount} caricati, ${errorCount} errori`;
+      }
+      
+      alert(message);
+      closeMediaUploadModal();
+    };
 }
 
 function closeMediaUploadModal() {
