@@ -1759,32 +1759,77 @@ body {
   .match-page .back-btn-wrapper { margin-top: 20px !important; padding: 10px 0 !important; display: flex !important; justify-content: flex-end !important; }
 
    .media-button {
-    bottom: 80px;
-    padding: 12px 24px;
-    font-size: 13px;
-    letter-spacing: 1.5px;
-  }
-  
-  .media-button svg {
-    width: 18px !important;
-    height: 18px !important;
-  }
+  position: static !important; /* Cambiato da fixed a static */
+  bottom: auto !important;
+  left: auto !important;
+  transform: none !important;
+  padding: 10px 20px !important; /* Stesse dimensioni di INDIETRO */
+  font-size: 12px !important;
+  letter-spacing: 2px !important;
+  background: white !important; /* Sfondo bianco */
+  color: var(--granata) !important; /* Testo granata */
+  border: 2px solid var(--granata) !important; /* Bordo granata */
+  box-shadow: 0 2px 8px rgba(122, 30, 44, 0.2) !important;
+  min-width: 100px !important; /* Stessa larghezza minima */
+  text-align: center !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 8px !important;
+}
+
+.media-button:hover {
+  background: #f9f9f9 !important;
+  transform: translateY(-2px) !important;
+  box-shadow: 0 4px 12px rgba(122, 30, 44, 0.3) !important;
+}
+
+.media-button svg {
+  width: 16px !important;
+  height: 16px !important;
+  fill: var(--granata) !important; /* Icona granata */
+}
    
   .back-btn-wrapper {
-    margin-top: 15px !important; margin-bottom: 10px !important; padding: 10px 0 10px 15px !important;
-    display: flex !important; justify-content: flex-start !important; align-items: center !important;
-    width: 100% !important; box-sizing: border-box !important; position: relative !important;
-    z-index: 10 !important; visibility: visible !important; opacity: 1 !important;
-  }
-  .back-btn {
-    padding: 10px 20px !important; font-size: 12px !important; letter-spacing: 2px !important;
-    background: var(--granata) !important; color: white !important; border-radius: 8px !important;
-    border: none !important; cursor: pointer !important; display: inline-block !important;
-    visibility: visible !important; opacity: 1 !important; font-family: 'Oswald', sans-serif !important;
-    font-weight: 600 !important; text-transform: uppercase !important;
-    box-shadow: 0 2px 8px rgba(122, 30, 44, 0.3) !important; white-space: nowrap !important;
-  }
-  .back-btn:hover { background: var(--granata-light) !important; }
+  margin-top: 15px !important; 
+  margin-bottom: 10px !important; 
+  padding: 10px 0 !important;
+  display: flex !important; 
+  justify-content: center !important; /* Cambiato da flex-start a center */
+  align-items: center !important;
+  width: 100% !important; 
+  box-sizing: border-box !important; 
+  position: relative !important;
+  z-index: 10 !important; 
+  visibility: visible !important; 
+  opacity: 1 !important;
+  gap: 15px !important; /* Spazio tra i due pulsanti */
+}
+
+.back-btn {
+  padding: 10px 20px !important; 
+  font-size: 12px !important; 
+  letter-spacing: 2px !important;
+  background: var(--granata) !important; 
+  color: white !important; 
+  border-radius: 8px !important;
+  border: none !important; 
+  cursor: pointer !important; 
+  display: inline-block !important;
+  visibility: visible !important; 
+  opacity: 1 !important; 
+  font-family: 'Oswald', sans-serif !important;
+  font-weight: 600 !important; 
+  text-transform: uppercase !important;
+  box-shadow: 0 2px 8px rgba(122, 30, 44, 0.3) !important; 
+  white-space: nowrap !important;
+  min-width: 100px !important; /* Larghezza minima */
+  text-align: center !important;
+}
+
+.back-btn:hover { 
+  background: var(--granata-light) !important; 
+}
   .small-btn { padding: 8px 16px; font-size: 12px; margin-bottom: 20px; }
 
   .podium-container { padding: 20px 15px; }
