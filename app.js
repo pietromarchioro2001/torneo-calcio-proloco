@@ -1484,11 +1484,15 @@ function renderMatchPage(match) {
   
   // 🔥 RECUPERA LINK DRIVE (colonna R del foglio PARTITE)
   const linkDrive = (match.LINK_DRIVE || match.linkDrive || '');
+
+console.log('🔗 Link Drive recuperato:', linkDrive);
+console.log('📊 Match object:', match);
+    
 // 🔥 PULSANTE MEDIA - Apre modale di upload (non link diretto a Drive)
 const mediaButtonHtml = linkDrive && linkDrive.trim() !== '' ? `
-<button class="media-button" onclick="openMediaUploadModal('${Sanitizer.attr(match.MATCH_ID)}', '${Sanitizer.attr(linkDrive)}')">
+<a href="${Sanitizer.attr(linkDrive)}" target="_blank" rel="noopener noreferrer" class="media-button">
 <span>MEDIA</span>
-</button>
+</a>
 ` : '';
   
   // 🔥 TEMPLATE HTML CON PULSANTE MEDIA
