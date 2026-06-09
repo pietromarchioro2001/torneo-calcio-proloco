@@ -1487,7 +1487,7 @@ function renderMatchPage(match) {
 // 🔥 PULSANTE MEDIA - Apre modale di upload (non link diretto a Drive)
 const mediaButtonHtml = linkDrive && linkDrive.trim() !== '' ? `
 <button class="media-button" onclick="openMediaUploadModal('${Sanitizer.attr(match.MATCH_ID)}', '${Sanitizer.attr(linkDrive)}')">
-<span>📤 MEDIA</span>
+<span>MEDIA</span>
 </button>
 ` : '';
   
@@ -3782,12 +3782,7 @@ function openMediaUploadModal(matchId, linkDrive) {
   modal.className = 'modalOverlay';
   modal.innerHTML = `
     <div class="modalBox" style="max-width:500px; padding:30px;">
-      <div class="modalTitle" style="font-size:22px; margin-bottom:20px;">📤 CARICA MEDIA</div>
-      
-      <div style="margin-bottom:15px; padding:12px; background:#f5f5f5; border-radius:8px; font-size:12px; color:#666; text-align:center;">
-        I file caricati saranno visibili a tutti nella cartella della partita.<br>
-        <strong>Nessuno potrà eliminare i file caricati.</strong>
-      </div>
+      <div class="modalTitle" style="font-size:22px; margin-bottom:20px;">CARICA MEDIA</div>
       
       <div id="mediaDropZone" style="
         border: 2px dashed #7a1e2c;
@@ -3832,7 +3827,7 @@ function openMediaUploadModal(matchId, linkDrive) {
         <a href="${linkDrive}" target="_blank" rel="noopener noreferrer" class="phase-btn" style="
           padding:10px 20px; background:white; color:#7a1e2c; 
           border:2px solid #7a1e2c; text-decoration:none;
-        ">👁️ VEDI</a>
+        ">VEDI</a>
       </div>
     </div>
   `;
