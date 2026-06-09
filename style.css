@@ -2162,4 +2162,25 @@ body {
 #mediaFileInput {
   display: none !important; /* Rimane nascosto, si attiva tramite dropzone */
 }
+
+/* Mostra SOLO i pulsanti del modal upload media */
+.modalOverlay #mediaUploadBtn,
+.modalOverlay .modalActions .phase-btn.secondary,
+.modalOverlay .modalActions a.phase-btn {
+  display: block !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  pointer-events: auto !important;
+}
+
+/* Nascondi gli altri pulsanti nel modal (tranne upload media) */
+.modalOverlay .phase-btn:not(#mediaUploadBtn):not(.secondary),
+.modalOverlay .modalBtn,
+.modalOverlay .form-actions,
+.modalOverlay .uploadBox,
+.modalOverlay .modern-upload,
+.modalOverlay .player-upload {
+  display: none !important;
+}
+   
 }
