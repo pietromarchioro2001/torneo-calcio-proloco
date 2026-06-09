@@ -3797,14 +3797,11 @@ function openMediaUploadModal(matchId, linkDrive) {
     alert('Errore: Link Drive non valido');
     return;
   }
-  
   // ✅ ASSICURATI CHE L'URL SIA CORRETTO
   let validLink = linkDrive.trim();
   if (!validLink.startsWith('http://') && !validLink.startsWith('https://')) {
-    // Se manca il protocollo, aggiungilo
     validLink = 'https://' + validLink;
   }
-  
   // Rimuovi modale esistente se presente
   const existing = document.getElementById('mediaUploadModal');
   if (existing) existing.remove();
@@ -3813,9 +3810,35 @@ function openMediaUploadModal(matchId, linkDrive) {
   modal.id = 'mediaUploadModal';
   modal.className = 'modalOverlay';
   modal.innerHTML = `
-    <div class="modalBox" style="max-width:500px; padding:30px;">
-      <div class="modalTitle" style="font-size:22px; margin-bottom:20px;">📤 CARICA MEDIA</div>
+    <div class="modalBox" style="max-width:500px; padding:30px; position:relative;">
+      <!-- ✅ X CHIUDI IN ALTO A DESTRA -->
+      <div style="
+        position:absolute; 
+        right:20px; 
+        top:20px; 
+        cursor:pointer; 
+        font-size:28px; 
+        color:#7a1e2c; 
+        line-height:1; 
+        width:40px; 
+        height:40px; 
+        display:flex; 
+        align-items:center; 
+        justify-content:center; 
+        border-radius:8px; 
+        transition:all 0.2s ease;
+        font-weight:300;
+      " 
+      onclick="closeMediaUploadModal()" 
+      onmouseover="this.style.background='#7a1e2c';this.style.color='#fff';this.style.transform='rotate(90deg)'" 
+      onmouseout="this.style.background='';this.style.color='#7a1e2c';this.style.transform='rotate(0deg)'">
+        ×
+      </div>
       
+      <div class="modalTitle" style="font-size:22px; margin-bottom:20px; text-align:center;">📤 CARICA MEDIA</div>
+      <div style="margin-bottom:15px; padding:12px; background:#f5f5f5; border-radius:8px; font-size:12px; color:#666; text-align:center;">
+        I file caricati saranno visibili a tutti nella cartella della partita
+      </div>
       <div id="mediaDropZone" style="
         border: 2px dashed #7a1e2c;
         border-radius: 12px;
@@ -3834,11 +3857,8 @@ function openMediaUploadModal(matchId, linkDrive) {
           Foto e video (max 50MB per file)
         </div>
       </div>
-      
       <input type="file" id="mediaFileInput" multiple accept="image/*,video/*" style="display:none;">
-      
       <div id="mediaFileList" style="max-height:150px; overflow-y:auto; margin-bottom:15px;"></div>
-      
       <div id="mediaProgress" style="display:none; margin-bottom:15px;">
         <div style="font-size:12px; color:#666; margin-bottom:5px;">
           Caricamento... <span id="mediaProgressText">0/0</span>
@@ -3847,19 +3867,18 @@ function openMediaUploadModal(matchId, linkDrive) {
           <div id="mediaProgressBar" style="width:0%; height:100%; background:#7a1e2c; transition:width 0.3s;"></div>
         </div>
       </div>
-      
-      <div class="modalActions" style="gap:10px;">
+      <!-- ✅ RIMOSSO PULSANTE ANNULLA - ORA SOLO 2 PULSANTI -->
+      <div class="modalActions" style="gap:10px; display:flex; justify-content:center;">
         <button id="mediaUploadBtn" class="phase-btn" disabled style="
-          opacity:0.5; cursor:not-allowed; padding:10px 20px;
+          opacity:0.5; cursor:not-allowed; padding:12px 24px;
           font-family:'Oswald',sans-serif; letter-spacing:2px;
+          flex:1; max-width:200px;
         ">CARICA FILE</button>
-        <div class="phase-btn secondary" onclick="closeMediaUploadModal()" style="padding:10px 20px;">
-          ANNULLA
-        </div>
         <a href="${validLink}" target="_blank" rel="noopener noreferrer" class="phase-btn" style="
-          padding:10px 20px; background:white; color:#7a1e2c; 
+          padding:12px 24px; background:white; color:#7a1e2c;
           border:2px solid #7a1e2c; text-decoration:none;
-        ">VEDI</a>
+          flex:1; max-width:200px; text-align:center;
+        ">👁️ VEDI</a>
       </div>
     </div>
   `;
