@@ -1705,24 +1705,76 @@ body {
   .player-modal .player-form { pointer-events: none !important; }
   .team-photo-wrapper .uploadBox, .team-photo-wrapper .modern-upload { display: none !important; }
 
-  .player-modal { padding: 25px 20px !important; min-width: 220px !important; max-width: 75% !important; text-align: center !important; }
-  .player-modal .modalTitle { display: none !important; }
-  .player-form label { display: none !important; }
-  .player-modal .player-form { display: flex !important; flex-direction: column !important; align-items: center !important; gap: 20px !important; margin-top: 0 !important; }
-  .player-modal .player-input {
-    font-size: 18px !important; font-weight: 400 !important; text-align: center !important;
-    border: none !important; background: transparent !important; padding: 8px 0 !important;
-    margin: 0 !important; letter-spacing: 2px !important; width: 100% !important;
-  }
-  .player-modal .player-upload {
-    display: flex !important;
-    justify-content: center;
-    align-items: center;
+  .player-modal { 
+  padding: 30px 20px !important; 
+  min-width: 280px !important; 
+  max-width: 85% !important; 
+  text-align: center !important;
 }
-  .player-modal .playerPhotoBig {
-    width: 150px !important; height: 150px !important; border-radius: 50% !important;
-    object-fit: cover !important; border: 3px solid var(--granata) !important; margin: 0 auto !important;
-  }
+
+.player-modal .modalTitle { 
+  display: none !important; 
+}
+
+.player-form label { 
+  display: none !important; 
+}
+
+.player-modal .player-form { 
+  display: flex !important; 
+  flex-direction: column !important; 
+  align-items: center !important; 
+  gap: 25px !important; 
+  margin-top: 0 !important;
+  pointer-events: none !important; /* Disabilita interazione */
+}
+
+.player-modal .player-input {
+  font-size: 22px !important; 
+  font-weight: 700 !important; 
+  text-align: center !important;
+  border: none !important; 
+  background: transparent !important; 
+  padding: 0 !important;
+  margin: 0 !important; 
+  letter-spacing: 3px !important; 
+  width: 100% !important;
+  color: #111 !important;
+  text-transform: uppercase !important;
+  pointer-events: none !important; /* Non modificabile */
+  user-select: none !important; /* Non selezionabile */
+  cursor: default !important;
+}
+
+.player-modal .player-upload {
+  display: flex !important;
+  justify-content: center !important;
+  align-items: center !important;
+  border: none !important;
+  background: transparent !important;
+  pointer-events: none !important;
+}
+
+.player-modal .playerPhotoBig {
+  width: 180px !important; 
+  height: 180px !important; 
+  border-radius: 50% !important;
+  object-fit: cover !important; 
+  border: 4px solid var(--granata) !important; 
+  margin: 0 auto !important;
+  box-shadow: 0 8px 24px rgba(122, 30, 44, 0.2) !important;
+}
+
+   .player-modal .modalActions {
+  display: none !important;
+}
+
+/* Fallback se non c'è foto */
+.player-modal .player-upload:not(:has(img))::before {
+  content: "👤";
+  font-size: 80px !important;
+  opacity: 0.3;
+}
 
   .team-editor .back-btn-wrapper .phase-btn { display: inline-block !important; visibility: visible !important; opacity: 1 !important; }
 
