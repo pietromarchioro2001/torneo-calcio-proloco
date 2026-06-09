@@ -3,7 +3,7 @@
 // ============================================================================
 const CONFIG = {
     // 🔥 SOSTITUISCI CON IL TUO URL APPS SCRIPT WEB APP
-    BACKEND_URL: 'https://script.google.com/macros/s/AKfycbyF6OOL0vvUGfApi0XquxdBBPyvd-9s8-vyW1-jJn-UVyvhI-ZuOyOdnAp7vckYIioA/exec',
+    BACKEND_URL: 'https://script.google.com/macros/s/AKfycbzBq41u17DMN6Yssfx-iOZI88EcVmRAlP3AT6AmkNtZwpSPXh3VI9JH_89YBHg1P3Oa/exec',
     API_TIMEOUT: 30000,
     CACHE_VERSION: 'v3.0',
     CACHE_MAX_AGE: 5 * 60 * 1000
@@ -3630,12 +3630,110 @@ async function selectMVP(playerId, playerName) {
     try { await ApiClient.saveMVPFinal(match.MATCH_ID, playerId); match.MVP = playerName; window.APP_STATE.lastMatch = match; updateMVPBanner(match); renderMVPTab(window.APP_CACHE.fullTeams?.[match.CASA_ID], window.APP_CACHE.fullTeams?.[match.TRASFERTA_ID], match); console.log('✅ MVP salvato:', playerName); } catch (error) { console.error('Error saving MVP:', error); alert('Errore salvataggio MVP: ' + error.message); }
 }
 
+function getDeviceFingerprint() {
+  // Combina più parametri per identificare il dispositivo
+  const params = [
+    navigator.userAgent,
+    navigator.language,
+    screen.width + 'x' + screen.height,
+    new Date().getTimezoneOffset(),
+    navigator.hardwareConcurrency || 'unknown',
+    navigator.platform || 'unknown'
+  ];
+  
+  // Crea hash semplice
+  const str = params.join('|');
+  let hash = 0;
+  for (let i = 0; i < str.length; i++) {
+    const char = str.charCodeAt(i);
+    hash = ((hash << 5) - hash) + char;
+    hash |= 0;
+  }
+  return 'fp_' + Math.abs(hash).toString(36);
+}
+
 async function voteMVP(playerId, playerName, event) {
-    const match = window.APP_STATE.lastMatch; if (!match || match.STATO_PARTITA !== "LIVE") { return; }
-    let voterId = localStorage.getItem('mvp_voter_id'); if (!voterId) { voterId = 'voter_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9); localStorage.setItem('mvp_voter_id', voterId); }
-    const voteData = { matchId: match.MATCH_ID, playerId: playerId, playerName: playerName, voterId: voterId, timestamp: Date.now() };
-    localStorage.setItem(`mvp_vote_${match.MATCH_ID}`, JSON.stringify(voteData)); updateMVPVoteUI(playerId);
-    ApiClient.saveMVPVote(match.MATCH_ID, voterId, playerId).then(() => console.log(`✅ Voto salvato backend: ${playerName}`)).catch(err => console.warn('⚠️ Errore backend (voto locale ok):', err));
+  const match = window.APP_STATE.lastMatch;
+  if (!match || match.STATO_PARTITA !== "LIVE") {
+    return;
+  }
+  
+  // 🔒 Genera/recupera fingerprint del dispositivo
+  const fingerprint = getDeviceFingerprint();
+  
+  // 🔒 Recupera o crea voterId
+  let voterId = localStorage.getItem('mvp_voter_id');
+  const savedFingerprint = localStorage.getItem('mvp_fingerprint');
+  
+  // ✅ CONTROLLO ANTI-DOPPIO VOTO
+  if (voterId && savedFingerprint !== fingerprint) {
+    // Fingerprint diverso = dispositivo/browser diverso
+    showToast('⚠️ Hai già votato da un altro dispositivo');
+    return;
+  }
+  
+  if (!voterId) {
+    voterId = fingerprint + '_' + Date.now();
+    localStorage.setItem('mvp_voter_id', voterId);
+    localStorage.setItem('mvp_fingerprint', fingerprint);
+  }
+  
+  // ✅ Salva voto in localStorage (con flag "sent")
+  const voteData = {
+    matchId: match.MATCH_ID,
+    playerId: playerId,
+    playerName: playerName,
+    voterId: voterId,
+    timestamp: Date.now(),
+    sent: false
+  };
+  
+  localStorage.setItem(`mvp_vote_${match.MATCH_ID}`, JSON.stringify(voteData));
+  updateMVPVoteUI(playerId);
+  
+  // 🔥 Invia con retry automatico
+  await sendVoteWithRetry(voteData, 3);
+}
+
+async function sendVoteWithRetry(voteData, maxRetries) {
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      await ApiClient.saveMVPVote(
+        voteData.matchId,
+        voteData.voterId,
+        voteData.playerId
+      );
+      
+      // Segna come inviato
+      voteData.sent = true;
+      localStorage.setItem(
+        `mvp_vote_${voteData.matchId}`,
+        JSON.stringify(voteData)
+      );
+      
+      console.log(`✅ Voto inviato al tentativo ${attempt}`);
+      return true;
+      
+    } catch (error) {
+      console.warn(`⚠️ Tentativo ${attempt} fallito:`, error.message);
+      
+      if (attempt < maxRetries) {
+        // Attendi prima di riprovare (backoff esponenziale)
+        await new Promise(r => setTimeout(r, 1000 * attempt));
+      }
+    }
+  }
+  
+  // Tutti i tentativi falliti - il voto rimane in localStorage
+  console.error('❌ Voto non inviato dopo', maxRetries, 'tentativi');
+  
+  // 🔥 Mostra notifica all'utente
+  showToast('⚠️ Voto salvato localmente. Riproveremo automaticamente.');
+  
+  // Programma retry in background
+  setTimeout(() => sendVoteWithRetry(voteData, 2), 30000);
+  
+  return false;
 }
 
 function updateMVPVoteUI(selectedPlayerId) {
