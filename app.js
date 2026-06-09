@@ -166,41 +166,45 @@ function createPreviewUrl(file) {
 // ============================================================================
 const ApiClient = {
     async call(action, payload = null) {
-  const url = 'https://script.google.com/macros/s/AKfycbw6grxWaK71O_4hFGWloGgQO3XTjZE038YSusBofBleRyDy9_8J7RR2N_0HIJEtrKjG/exec';
-  
-  try {
-    const response = await fetch(url, {
-      method: 'POST',
-      mode: 'cors', // ✅ Esplicitamente CORS
-      headers: {
-        'Content-Type': 'text/plain;charset=utf-8', // ✅ Usa text/plain invece di application/json
-      },
-      body: JSON.stringify({
-        action: action,
-        payload: payload
-      }),
-      redirect: 'follow' // ✅ Segui i redirect di Apps Script
-    });
+    // ✅ USA CONFIG.BACKEND_URL invece dell'URL hardcoded
+    const url = CONFIG.BACKEND_URL;
     
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error(`❌ HTTP ${response.status}:`, errorText);
-      throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+    if (!url || url.includes('DEPLOYMENT_ID')) {
+      throw new Error('Backend URL non configurato. Controlla CONFIG in app.js');
     }
     
-    const data = await response.json();
-    
-    if (!data.success) {
-      throw new Error(data.error || 'Unknown API error');
+    try {
+      const response = await fetch(url, {
+        method: 'POST',
+        mode: 'cors',
+        headers: {
+          'Content-Type': 'text/plain;charset=utf-8',
+        },
+        body: JSON.stringify({
+          action: action,
+          payload: payload
+        }),
+        redirect: 'follow'
+      });
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error(`❌ HTTP ${response.status}:`, errorText);
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+      
+      const data = await response.json();
+      
+      if (!data.success) {
+        throw new Error(data.error || 'Unknown API error');
+      }
+      
+      return data.data;
+    } catch (error) {
+      console.error(`❌ API Error [${action}]:`, error);
+      throw error;
     }
-    
-    return data.data;
-    
-  } catch (error) {
-    console.error(`❌ API Error [${action}]:`, error);
-    throw error;
-  }
-},
+  },
     getInitialData: () => ApiClient.call('getInitialAdminData'),
     getMatches: () => ApiClient.call('getMatchesAdmin'),
     getStandings: () => ApiClient.call('getStandingsGironiCached'),
