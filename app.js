@@ -3,7 +3,7 @@
 // ============================================================================
 const CONFIG = {
     // 🔥 SOSTITUISCI CON IL TUO URL APPS SCRIPT WEB APP
-    BACKEND_URL: 'https://script.google.com/macros/s/AKfycbz8VWElECi7CeUM8wNg0hQZfxsQCi_K-rk5_QhK4O2hkJ4UVlf_ny3ifFzXR67JViep/exec',
+    BACKEND_URL: 'https://script.google.com/macros/s/AKfycbx8umt9jZek8p-WQKAO_KIu0Vwd_cfdk-x_bvS83KdciQ3b_JmnIuUpdU5lNx131WKZ/exec',
     API_TIMEOUT: 30000,
     CACHE_VERSION: 'v3.0',
     CACHE_MAX_AGE: 5 * 60 * 1000
@@ -1126,16 +1126,25 @@ function renderMatchesByDate(date) {
 
         // 🔥 BADGE FASE (Quarti, Semifinali, Finale)
         let faseBadge = "";
-        const turnoVal = m.TURNO || m.turno || m.matchKey || "";
-        if (turnoVal && !["LIVE", "SUPP", "RIGORI"].includes(m.STATO_PARTITA)) {
-            const turnoMap = { 
-                "Q1": "QUARTI", "Q2": "QUARTI", "Q3": "QUARTI", "Q4": "QUARTI", 
-                "SF1": "SEMIFINALE", "SF2": "SEMIFINALE", 
-                "F": "FINALE", "TP": "FINALE 3°-4°" 
-            };
-            const turno = turnoMap[turnoVal] || turnoVal;
-            faseBadge = `<div style="font-size:10px;color:#888;text-transform:uppercase;letter-spacing:1px;margin-top:4px">${Sanitizer.html(turno)}</div>`;
-        }
+            const turnoVal = m.TURNO || m.turno || m.matchKey || "";
+            const faseVal = m.FASE || "";
+            
+            if (turnoVal && !["LIVE", "SUPP", "RIGORI"].includes(m.STATO_PARTITA)) {
+              const turnoMap = {
+                "Q1": "QUARTI", "Q2": "QUARTI", "Q3": "QUARTI", "Q4": "QUARTI",
+                "SF1": "SEMIFINALE", "SF2": "SEMIFINALE",
+                "F": "FINALE", "TP": "FINALE 3°-4°"
+              };
+              const turno = turnoMap[turnoVal] || turnoVal;
+              
+              // ✅ MOSTRA "GIRONE X" se FASE = GIRONI
+              let badgeText = turno;
+              if (faseVal === "GIRONI" && turnoVal) {
+                badgeText = `GIRONE ${turnoVal}`;
+              }
+              
+              faseBadge = `<div style="font-size:10px;color:#888;text-transform:uppercase;letter-spacing:1px;margin-top:4px">${Sanitizer.html(badgeText)}</div>`;
+            }
 
         // 🔥 CENTRO CARD: punteggio, stato, badge fase
         let center = "";
