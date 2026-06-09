@@ -3,7 +3,7 @@
 // ============================================================================
 const CONFIG = {
     // 🔥 SOSTITUISCI CON IL TUO URL APPS SCRIPT WEB APP
-    BACKEND_URL: 'https://script.google.com/macros/s/AKfycbzBq41u17DMN6Yssfx-iOZI88EcVmRAlP3AT6AmkNtZwpSPXh3VI9JH_89YBHg1P3Oa/exec',
+    BACKEND_URL: 'https://script.google.com/macros/s/AKfycbzpnexR1Pqgr8SwgQhmE3Kd1OGoMn8YrYAHQnMMTMkgSaPWOgX7TEqH0k371U9S0ZGF/exec',
     API_TIMEOUT: 30000,
     CACHE_VERSION: 'v3.0',
     CACHE_MAX_AGE: 5 * 60 * 1000
@@ -240,6 +240,8 @@ const ApiClient = {
     finalizeMVP: (matchId) => ApiClient.call('finalizeMVP', [matchId]),
     getTeamsByGironeSimple: (girone) => ApiClient.call('getTeamsByGironeSimple', [girone]),
     resetTournament: () => ApiClient.call('resetTournament'),
+    uploadMediaFile: (matchId, fileName, fileType, base64) => 
+      ApiClient.call('uploadMediaFile', [matchId, fileName, fileType, base64]),
 };
 
 // ============================================================================
@@ -1482,13 +1484,12 @@ function renderMatchPage(match) {
   
   // 🔥 RECUPERA LINK DRIVE (colonna R del foglio PARTITE)
   const linkDrive = (match.LINK_DRIVE || match.linkDrive || '');
-    
-    // 🔥 PULSANTE MEDIA (solo se c'è il link)
-    const mediaButtonHtml = linkDrive && linkDrive.trim() !== '' ? `
-    <a href="${linkDrive}" target="_blank" rel="noopener noreferrer" class="media-button">
-        <span>MEDIA</span>
-    </a>
-    ` : '';
+// 🔥 PULSANTE MEDIA - Apre modale di upload (non link diretto a Drive)
+const mediaButtonHtml = linkDrive && linkDrive.trim() !== '' ? `
+<button class="media-button" onclick="openMediaUploadModal('${Sanitizer.attr(match.MATCH_ID)}', '${Sanitizer.attr(linkDrive)}')">
+<span>📤 MEDIA</span>
+</button>
+` : '';
   
   // 🔥 TEMPLATE HTML CON PULSANTE MEDIA
   document.getElementById("app").innerHTML = `
@@ -3765,4 +3766,188 @@ function pollForMVPUpdate(matchId) {
     let attempts = 0; const maxAttempts = 20;
     const check = async () => { attempts++; try { const data = await ApiClient.getMatchFull(matchId); if (data?.match?.MVP) { console.log('🏆 MVP trovato:', data.match.MVP); window.APP_STATE.lastMatch = data.match; updateMVPBanner(data.match); loadPlayersForMatch(data.match); refreshStandingsDebounced(500); } else if (attempts < maxAttempts) { setTimeout(check, 1000); } } catch (e) { console.error('Errore polling MVP', e); } };
     setTimeout(check, 1000);
+}
+
+// ============================================================================
+// 📤 MODALE UPLOAD MEDIA
+// ============================================================================
+
+function openMediaUploadModal(matchId, linkDrive) {
+  // Rimuovi modale esistente se presente
+  const existing = document.getElementById('mediaUploadModal');
+  if (existing) existing.remove();
+  
+  const modal = document.createElement('div');
+  modal.id = 'mediaUploadModal';
+  modal.className = 'modalOverlay';
+  modal.innerHTML = `
+    <div class="modalBox" style="max-width:500px; padding:30px;">
+      <div class="modalTitle" style="font-size:22px; margin-bottom:20px;">📤 CARICA MEDIA</div>
+      
+      <div style="margin-bottom:15px; padding:12px; background:#f5f5f5; border-radius:8px; font-size:12px; color:#666; text-align:center;">
+        I file caricati saranno visibili a tutti nella cartella della partita.<br>
+        <strong>Nessuno potrà eliminare i file caricati.</strong>
+      </div>
+      
+      <div id="mediaDropZone" style="
+        border: 2px dashed #7a1e2c;
+        border-radius: 12px;
+        padding: 40px 20px;
+        text-align: center;
+        cursor: pointer;
+        transition: all 0.3s;
+        background: #fafafa;
+        margin-bottom: 15px;
+      ">
+        <div style="font-size:48px; margin-bottom:10px;">📁</div>
+        <div style="font-size:14px; color:#333; font-weight:600; letter-spacing:1px;">
+          Clicca o trascina qui i file
+        </div>
+        <div style="font-size:11px; color:#888; margin-top:8px;">
+          Foto e video (max 50MB per file)
+        </div>
+      </div>
+      
+      <input type="file" id="mediaFileInput" multiple accept="image/*,video/*" style="display:none;">
+      
+      <div id="mediaFileList" style="max-height:150px; overflow-y:auto; margin-bottom:15px;"></div>
+      
+      <div id="mediaProgress" style="display:none; margin-bottom:15px;">
+        <div style="font-size:12px; color:#666; margin-bottom:5px;">
+          Caricamento... <span id="mediaProgressText">0/0</span>
+        </div>
+        <div style="width:100%; height:6px; background:#e0e0e0; border-radius:3px; overflow:hidden;">
+          <div id="mediaProgressBar" style="width:0%; height:100%; background:#7a1e2c; transition:width 0.3s;"></div>
+        </div>
+      </div>
+      
+      <div class="modalActions" style="gap:10px;">
+        <button id="mediaUploadBtn" class="phase-btn" disabled style="
+          opacity:0.5; cursor:not-allowed; padding:10px 20px;
+          font-family:'Oswald',sans-serif; letter-spacing:2px;
+        ">CARICA FILE</button>
+        <div class="phase-btn secondary" onclick="closeMediaUploadModal()" style="padding:10px 20px;">
+          ANNULLA
+        </div>
+        <a href="${linkDrive}" target="_blank" rel="noopener noreferrer" class="phase-btn" style="
+          padding:10px 20px; background:white; color:#7a1e2c; 
+          border:2px solid #7a1e2c; text-decoration:none;
+        ">👁️ VEDI</a>
+      </div>
+    </div>
+  `;
+  
+  document.body.appendChild(modal);
+  modal.onclick = (e) => { if (e.target === modal) closeMediaUploadModal(); };
+  
+  setupMediaUploadModal(matchId);
+}
+
+function setupMediaUploadModal(matchId) {
+  const dropZone = document.getElementById('mediaDropZone');
+  const fileInput = document.getElementById('mediaFileInput');
+  const fileList = document.getElementById('mediaFileList');
+  const uploadBtn = document.getElementById('mediaUploadBtn');
+  let selectedFiles = [];
+  
+  dropZone.onclick = () => fileInput.click();
+  
+  dropZone.ondragover = (e) => {
+    e.preventDefault();
+    dropZone.style.background = '#fff5f7';
+    dropZone.style.borderColor = '#9f2c3d';
+  };
+  dropZone.ondragleave = () => {
+    dropZone.style.background = '#fafafa';
+    dropZone.style.borderColor = '#7a1e2c';
+  };
+  dropZone.ondrop = (e) => {
+    e.preventDefault();
+    dropZone.style.background = '#fafafa';
+    dropZone.style.borderColor = '#7a1e2c';
+    handleFiles(e.dataTransfer.files);
+  };
+  
+  fileInput.onchange = () => handleFiles(fileInput.files);
+  
+  function handleFiles(files) {
+    selectedFiles = Array.from(files);
+    renderFileList();
+    uploadBtn.disabled = selectedFiles.length === 0;
+    uploadBtn.style.opacity = selectedFiles.length === 0 ? '0.5' : '1';
+    uploadBtn.style.cursor = selectedFiles.length === 0 ? 'not-allowed' : 'pointer';
+  }
+  
+  function renderFileList() {
+    fileList.innerHTML = selectedFiles.map((f, i) => `
+      <div style="
+        display:flex; align-items:center; gap:10px; padding:8px 12px;
+        background:#f5f5f5; border-radius:6px; margin-bottom:6px; font-size:12px;
+      ">
+        <span style="flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
+          ${f.type.startsWith('image/') ? '🖼️' : '🎬'} ${f.name}
+        </span>
+        <span style="color:#888; font-size:10px;">
+          ${(f.size / 1024 / 1024).toFixed(2)} MB
+        </span>
+      </div>
+    `).join('');
+  }
+  
+  uploadBtn.onclick = async () => {
+    if (selectedFiles.length === 0) return;
+    
+    uploadBtn.disabled = true;
+    uploadBtn.textContent = 'CARICAMENTO...';
+    document.getElementById('mediaProgress').style.display = 'block';
+    
+    let successCount = 0;
+    let errorCount = 0;
+    
+    for (let i = 0; i < selectedFiles.length; i++) {
+      const file = selectedFiles[i];
+      
+      document.getElementById('mediaProgressText').textContent = `${i+1}/${selectedFiles.length}`;
+      document.getElementById('mediaProgressBar').style.width = `${((i+1)/selectedFiles.length)*100}%`;
+      
+      try {
+        const base64 = await fileToBase64(file);
+        
+        const result = await ApiClient.uploadMediaFile(
+          matchId,
+          file.name,
+          file.type,
+          base64
+        );
+        
+        if (result?.success) {
+          successCount++;
+          console.log(`✅ Caricato: ${file.name}`);
+        } else {
+          errorCount++;
+          console.error(`❌ Errore ${file.name}:`, result?.error);
+        }
+      } catch (error) {
+        errorCount++;
+        console.error(`❌ Errore upload ${file.name}:`, error);
+      }
+      
+      await new Promise(r => setTimeout(r, 200));
+    }
+    
+    let message = '';
+    if (errorCount === 0) {
+      message = `✅ ${successCount} file caricati con successo!`;
+    } else {
+      message = `⚠️ ${successCount} caricati, ${errorCount} errori`;
+    }
+    
+    alert(message);
+    closeMediaUploadModal();
+  };
+}
+
+function closeMediaUploadModal() {
+  const modal = document.getElementById('mediaUploadModal');
+  if (modal) modal.remove();
 }
