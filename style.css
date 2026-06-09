@@ -1785,10 +1785,11 @@ body {
     max-width: 120px !important;
     flex: none !important;
     white-space: nowrap !important;
-    /* POSIZIONAMENTO CENTRALE */
+    /* POSIZIONAMENTO: centrato orizzontalmente, stessa altezza di INDIETRO */
     position: absolute !important;
     left: 50% !important;
-    transform: translateX(-50%) !important;
+    top: 50% !important; /* Centrato verticalmente nel wrapper */
+    transform: translate(-50%, -50%) !important;
   }
 
   .media-button:hover {
@@ -1812,14 +1813,14 @@ body {
     display: flex !important;
     flex-direction: row !important;
     align-items: center !important;
-    justify-content: flex-end !important; /* Spinge INDIETRO a destra */
+    justify-content: flex-end !important;
     width: 100% !important;
     padding: 15px 20px !important;
     box-sizing: border-box !important;
     margin: 0 !important;
     margin-top: auto !important;
     margin-bottom: 10px !important;
-    position: relative !important; /* Necessario per posizionare MEDIA al centro */
+    position: relative !important;
   }
 
   /* Pulsante INDIETRO */
