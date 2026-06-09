@@ -2137,58 +2137,77 @@ body {
      /* border: none !important; */
    }
 
-   .modalOverlay #mediaUploadBtn {
-  display: inline-block !important;
-  visibility: visible !important;
-  opacity: 1 !important;
-  pointer-events: auto !important;
-}
-
-.modalOverlay #mediaUploadBtn:disabled {
-  opacity: 0.5 !important;
-  cursor: not-allowed !important;
-}
-
-/* Nascondi gli altri pulsanti nel modal (tranne media upload) */
-.modalOverlay .phase-btn:not(#mediaUploadBtn),
-.modalOverlay .modalBtn,
-.modalOverlay .form-actions,
-.modalOverlay .uploadBox,
-.modalOverlay .modern-upload,
-.modalOverlay .player-upload {
-  display: none !important;
-}
-
-/* ✅ ASSICURATI CHE IL DROPZONE SIA VISIBILE */
-#mediaDropZone {
-  display: block !important;
-  visibility: visible !important;
-  pointer-events: auto !important;
-}
-
-/* ✅ ASSICURATI CHE IL FILE INPUT SIA VISIBILE */
-#mediaFileInput {
-  display: none !important; /* Rimane nascosto, si attiva tramite dropzone */
-}
-
-/* Mostra SOLO i pulsanti del modal upload media */
-.modalOverlay #mediaUploadBtn,
-.modalOverlay .modalActions .phase-btn.secondary,
-.modalOverlay .modalActions a.phase-btn {
-  display: block !important;
-  visibility: visible !important;
-  opacity: 1 !important;
-  pointer-events: auto !important;
-}
-
-/* Nascondi gli altri pulsanti nel modal (tranne upload media) */
-.modalOverlay .phase-btn:not(#mediaUploadBtn):not(.secondary),
-.modalOverlay .modalBtn,
-.modalOverlay .form-actions,
-.modalOverlay .uploadBox,
-.modalOverlay .modern-upload,
-.modalOverlay .player-upload {
-  display: none !important;
-}
+   .modalOverlay .modalBox > * {
+     display: none !important;
+   }
    
+   /* 2. Mostra SOLO gli elementi specifici del modal upload media */
+   .modalOverlay .modalBox .modalTitle,
+   .modalOverlay .modalBox #mediaDropZone,
+   .modalOverlay .modalBox #mediaFileList,
+   .modalOverlay .modalBox #mediaProgress,
+   .modalOverlay .modalBox .modalActions {
+     display: block !important;
+   }
+   
+   /* 3. Mostra i pulsanti dentro modalActions */
+   .modalOverlay .modalBox .modalActions > * {
+     display: inline-block !important;
+     visibility: visible !important;
+     opacity: 1 !important;
+     pointer-events: auto !important;
+   }
+   
+   /* 4. Stile specifico per i pulsanti del modal upload */
+   .modalOverlay .modalBox .modalActions #mediaUploadBtn,
+   .modalOverlay .modalBox .modalActions .phase-btn.secondary,
+   .modalOverlay .modalBox .modalActions a.phase-btn {
+     display: inline-block !important;
+     padding: 10px 20px !important;
+     font-size: 12px !important;
+     text-align: center !important;
+     box-sizing: border-box !important;
+     cursor: pointer !important;
+   }
+   
+   /* 5. Stile per il pulsante VEDI (link) */
+   .modalOverlay .modalBox .modalActions a.phase-btn {
+     background: white !important;
+     color: var(--granata) !important;
+     border: 2px solid var(--granata) !important;
+     text-decoration: none !important;
+   }
+   
+   /* 6. Stile per il pulsante ANNULLA */
+   .modalOverlay .modalBox .modalActions .phase-btn.secondary {
+     background: var(--granata) !important;
+     color: white !important;
+     border: 2px solid var(--granata) !important;
+   }
+   
+   /* 7. Stile per il pulsante CARICA FILE */
+   .modalOverlay .modalBox .modalActions #mediaUploadBtn {
+     background: var(--granata) !important;
+     color: white !important;
+     border: 2px solid var(--granata) !important;
+     font-family: 'Oswald', sans-serif !important;
+     letter-spacing: 2px !important;
+   }
+   
+   .modalOverlay .modalBox .modalActions #mediaUploadBtn:disabled {
+     opacity: 0.5 !important;
+     cursor: not-allowed !important;
+   }
+   
+   /* 8. Assicurati che il dropzone sia visibile */
+   #mediaDropZone {
+     display: block !important;
+     visibility: visible !important;
+     pointer-events: auto !important;
+   }
+   
+   /* 9. Nascondi il file input (si attiva tramite dropzone) */
+   #mediaFileInput {
+     display: none !important;
+   }
 }
