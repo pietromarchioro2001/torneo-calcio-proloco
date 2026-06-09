@@ -1713,7 +1713,7 @@ body {
 }
 
 .player-modal .modalTitle { 
-  display: none !important; 
+  display: none !important; /* Nasconde "MODIFICA GIOCATORE" */
 }
 
 .player-form label { 
@@ -1726,7 +1726,7 @@ body {
   align-items: center !important; 
   gap: 25px !important; 
   margin-top: 0 !important;
-  pointer-events: none !important; /* Disabilita interazione */
+  pointer-events: none !important;
 }
 
 .player-modal .player-input {
@@ -1741,8 +1741,8 @@ body {
   width: 100% !important;
   color: #111 !important;
   text-transform: uppercase !important;
-  pointer-events: none !important; /* Non modificabile */
-  user-select: none !important; /* Non selezionabile */
+  pointer-events: none !important;
+  user-select: none !important;
   cursor: default !important;
 }
 
@@ -1750,30 +1750,43 @@ body {
   display: flex !important;
   justify-content: center !important;
   align-items: center !important;
-  border: none !important;
-  background: transparent !important;
+  border: 2px dashed #ccc !important; /* Bordo tratteggiato per riquadro */
+  background: #fafafa !important;
   pointer-events: none !important;
+  width: 180px !important;
+  height: 180px !important;
+  border-radius: 12px !important; /* Angoli leggermente arrotondati ma quadrato */
+  overflow: hidden !important;
 }
 
 .player-modal .playerPhotoBig {
-  width: 180px !important; 
-  height: 180px !important; 
-  border-radius: 50% !important;
+  width: 100% !important; 
+  height: 100% !important; 
+  border-radius: 0 !important; /* Foto quadrata, non rotonda */
   object-fit: cover !important; 
-  border: 4px solid var(--granata) !important; 
-  margin: 0 auto !important;
-  box-shadow: 0 8px 24px rgba(122, 30, 44, 0.2) !important;
 }
 
-   .player-modal .modalActions {
+/* Nascondi i pulsanti SALVA ed ELIMINA */
+.player-modal .modalActions {
   display: none !important;
 }
 
-/* Fallback se non c'è foto */
+/* Quando non c'è foto - mostra solo avatar centrato */
+.player-modal .player-upload:not(:has(img)) {
+  border: 2px dashed #ccc !important;
+  background: #f0f0f0 !important;
+}
+
 .player-modal .player-upload:not(:has(img))::before {
   content: "👤";
   font-size: 80px !important;
-  opacity: 0.3;
+  opacity: 0.4;
+}
+
+/* Nascondi la scritta "FOTO GIOCATORE" che appare di default */
+.player-upload:not(.has-photo) {
+  font-size: 0 !important;
+  color: transparent !important;
 }
 
   .team-editor .back-btn-wrapper .phase-btn { display: inline-block !important; visibility: visible !important; opacity: 1 !important; }
