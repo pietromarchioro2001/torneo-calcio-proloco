@@ -1628,6 +1628,14 @@ body {
   .match-options { display: none !important; }
   .match-card .match-options, .match-card div[onclick*="openMatchMenu"] { display: none !important; }
 
+   /* 🔥 Badge fase (QUARTI, SEMI, FINALE) più piccolo su mobile */
+.match-fase-badge-text {
+  font-size: 8px !important;
+  font-weight: 600 !important;
+  letter-spacing: 0.5px !important;
+  margin-top: 2px !important;
+}
+
   .teams-page { width: 100% !important; padding: 0 10px !important; box-sizing: border-box !important; margin: 0 !important; }
   .teams-scroll { width: 100% !important; max-width: 100% !important; margin: 0 !important; padding: 0 !important; box-sizing: border-box !important; height: calc(100vh - 140px); }
   .teams-header { padding: 10px 0; }
