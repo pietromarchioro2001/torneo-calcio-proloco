@@ -1547,6 +1547,16 @@ body {
   .vs { font-size: 12px !important; }
 
   .status { display: none !important; }
+
+.status.live { 
+  display: block !important; 
+  font-size: 10px !important;
+  font-weight: 800 !important;
+  color: var(--granata) !important;
+  letter-spacing: 1px !important;
+  margin-top: 2px !important;
+  animation: liveTextPulse 2s infinite;
+}
   .match-fase-badge, .status.fase { display: none !important; }
   .match-center .status:nth-child(3), .match-center div:last-child { display: none !important; }
   .time { font-size: 8px !important; line-height: 1.2; letter-spacing: 0.5px; }
