@@ -1124,6 +1124,28 @@ body {
 .placeholder-match { display: flex; align-items: center; justify-content: center; text-align: center; }
 .placeholder-center { font-size: 20px; font-weight: 800; line-height: 1.3; color: #9c9c9c; letter-spacing: .04em; }
 
+/* 🔥 Indicatore stato partita nel bracket (S/R) */
+.bracket-status-indicator {
+  display: inline-block;
+  font-size: 9px;
+  font-weight: 800;
+  margin-left: 4px;
+  padding: 1px 4px;
+  border-radius: 3px;
+  letter-spacing: 0.5px;
+  line-height: 1;
+  vertical-align: middle;
+}
+.bracket-status-indicator.supp {
+  color: #fff;
+  background: #8c1d2c;
+}
+.bracket-status-indicator.rigori {
+  color: #fff;
+  background: #7a1e2c;
+  animation: liveDotPulse 1.5s infinite;
+}
+
 /* =============================================================================================
    11. POPUP RIGORI
 =============================================================================================== */
@@ -1558,7 +1580,7 @@ body {
   animation: liveTextPulse 2s infinite;
 }
   .match-fase-badge, .status.fase { display: none !important; }
-  .match-center .status:nth-child(3), .match-center div:last-child { display: none !important; }
+  .match-center .match-fase-badge { display: none !important; }
   .time { font-size: 8px !important; line-height: 1.2; letter-spacing: 0.5px; }
   .match-day-title { font-size: 10px !important; margin: 10px 5px 6px !important; }
 
@@ -2151,6 +2173,14 @@ body {
     text-align: right !important; flex-shrink: 0 !important; line-height: 1 !important;
   }
   .bracket-placeholder { opacity: 0.7 !important; }
+
+/* 🔥 Indicatore S/R più piccolo su mobile */
+.bracket-status-indicator {
+  font-size: 7px !important;
+  padding: 1px 3px !important;
+  margin-left: 2px !important;
+  border-radius: 2px !important;
+}
 
   #toolbar { padding: 6px 0; }
   .toolbar-btn { font-size: 9px; gap: 3px; }
