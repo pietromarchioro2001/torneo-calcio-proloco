@@ -3020,7 +3020,13 @@ trasfClass = "winner";
 }
 }
 
-const statusIndicator = isSupp ? '<span style="font-size:9px;color:#8c1d2c;font-weight:700;margin-left:4px">SUPP</span>' : '';
+// 🔥 Indicatore compatto: S = Supplementari, R = Rigori
+let statusIndicator = '';
+if (isSupp) {
+  statusIndicator = '<span class="bracket-status-indicator supp">S</span>';
+} else if (isLive && match.stato === "RIGORI") {
+  statusIndicator = '<span class="bracket-status-indicator rigori">R</span>';
+}
 
 let liveClass = "";
 if (isLive) {
