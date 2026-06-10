@@ -1834,10 +1834,10 @@ body {
   .match-status.live { font-size: 10px !important; font-weight: 800 !important; color: #e53935 !important; display: flex !important; align-items: center !important; justify-content: center !important; gap: 5px !important; }
   .match-status.live::before { width: 6px !important; height: 6px !important; }
 
-  .match-toolbar { display: flex !important; justify-content: center !important; gap: 20px !important; margin: 8px 0 10px !important; }
+  .match-toolbar { display: flex !important; justify-content: center !important; gap: 20px !important; margin: 12px 0 18px !important; }
   .match-toolbar .mt-btn { font-size: 14px !important; letter-spacing: 2px !important; }
 
-  .cronaca-title.center { font-size: 12px !important; letter-spacing: 3px !important; margin: 5px 0 8px !important; }
+  .cronaca-title.center { font-size: 12px !important; letter-spacing: 2px !important; margin: 13px 0 8px !important; }
   .cronaca-title.center::before, .cronaca-title.center::after { display: none !important; }
   .cronaca-title.center span::after { display: none !important; }
   .events-actions { display: none !important; }
