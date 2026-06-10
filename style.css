@@ -1134,7 +1134,7 @@ body {
   border-radius: 3px;
   letter-spacing: 0.5px;
   line-height: 1;
-  vertical-align: middle;
+  vertical-align: super !important; /* ✅ Cambiato da "middle" a "super" */
 }
 .bracket-status-indicator.supp {
   color: var(--granata);
@@ -1572,7 +1572,7 @@ body {
 
 .match-card .status.live { 
   display: inline-block !important; 
-  font-size: 10px !important;
+  font-size: 8px !important;
   font-weight: 800 !important;
   color: var(--granata) !important;
   letter-spacing: 1px !important;
@@ -2155,6 +2155,42 @@ body {
   .sf2 { grid-column: 1 / -1 !important; grid-row: 4 !important; justify-self: center !important; width: 55% !important; max-width: 170px !important; }
   .qf3 { grid-column: 1 !important; grid-row: 5 !important; justify-self: end !important; }
   .qf4 { grid-column: 2 !important; grid-row: 5 !important; justify-self: start !important; }
+
+   .qf1::before, .qf3::before { 
+  content: "QUARTI" !important; 
+  position: absolute !important; 
+  top: -16px !important; 
+  left: 0 !important; 
+  font-size: 7px !important; /* Ridotto da 9px */
+  font-weight: 600 !important; 
+  color: #999 !important; 
+  letter-spacing: 1px !important; 
+  text-transform: uppercase !important; 
+}
+
+.sf1::before, .sf2::before { 
+  content: "SEMI" !important; /* Accorciato */
+  position: absolute !important; 
+  top: -16px !important; 
+  left: 0 !important; 
+  font-size: 7px !important; /* Ridotto da 9px */
+  font-weight: 600 !important; 
+  color: #999 !important; 
+  letter-spacing: 1px !important; 
+  text-transform: uppercase !important; 
+}
+
+.final-match::before { 
+  content: "FINALE" !important; 
+  position: absolute !important; 
+  top: -16px !important; 
+  left: 0 !important; 
+  font-size: 7px !important; /* Ridotto da 9px */
+  font-weight: 600 !important; 
+  color: #999 !important; 
+  letter-spacing: 1px !important; 
+  text-transform: uppercase !important; 
+}
 
   .bracket-team {
     display: flex !important; align-items: center !important; justify-content: flex-start !important;
