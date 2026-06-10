@@ -1139,7 +1139,7 @@ body {
   height: 14px;
   vertical-align: baseline !important;
   position: relative;
-  top: -1px; /* Compensa l'altezza del flex */
+  top: 0px; /* Compensa l'altezza del flex */
 }
 .bracket-status-indicator.supp {
   color: var(--granata);
