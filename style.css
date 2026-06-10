@@ -1835,7 +1835,7 @@ body {
   .match-status.live::before { width: 6px !important; height: 6px !important; }
 
   .match-toolbar { display: flex !important; justify-content: center !important; gap: 20px !important; margin: 12px 0 18px !important; }
-  .match-toolbar .mt-btn { font-size: 14px !important; letter-spacing: 2px !important; }
+  .match-toolbar .mt-btn { font-size: 13px !important; letter-spacing: 2px !important; }
 
   .cronaca-title.center { font-size: 12px !important; letter-spacing: 2px !important; margin: 13px 0 8px !important; }
   .cronaca-title.center::before, .cronaca-title.center::after { display: none !important; }
