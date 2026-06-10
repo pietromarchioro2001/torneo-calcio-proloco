@@ -1126,15 +1126,20 @@ body {
 
 /* 🔥 Indicatore stato partita nel bracket (S/R) */
 .bracket-status-indicator {
-  display: inline-block;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
   font-size: 9px;
   font-weight: 800;
   margin-left: 4px;
   padding: 1px 4px;
   border-radius: 3px;
   letter-spacing: 0.5px;
-  line-height: 1;
-  vertical-align: super !important; /* ✅ Cambiato da "middle" a "super" */
+  line-height: 1 !important;
+  height: 14px;
+  vertical-align: baseline !important;
+  position: relative;
+  top: -1px; /* Compensa l'altezza del flex */
 }
 .bracket-status-indicator.supp {
   color: var(--granata);
