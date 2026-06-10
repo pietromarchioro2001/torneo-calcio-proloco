@@ -1158,7 +1158,7 @@ function renderMatchesByDate(date) {
                 badgeText = `GIRONE ${turnoVal}`;
               }
               
-              faseBadge = `<div style="font-size:10px;color:#888;text-transform:uppercase;letter-spacing:1px;margin-top:4px">${Sanitizer.html(badgeText)}</div>`;
+              faseBadge = `<div class="match-fase-badge-text" style="font-size:10px;color:#888;text-transform:uppercase;letter-spacing:1px;margin-top:4px">${Sanitizer.html(badgeText)}</div>`;
             }
 
         // 🔥 CENTRO CARD: punteggio, stato, badge fase
