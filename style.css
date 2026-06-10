@@ -1874,6 +1874,12 @@ body {
   }
   .match-controls-top { display: none !important; }
   .score-big { font-size: 26px !important; font-weight: 800 !important; letter-spacing: 2px !important; line-height: 1 !important; margin: 0 !important; position: static !important; width: auto !important; }
+   /* Spazio e dimensione ridotta per il punteggio rigori (5-4 dcr) */
+   .score span {
+       margin-left: 4px !important;
+       font-size: 10px !important;
+       color: #888 !important;
+   }
 
   .match-status { font-size: 10px !important; font-weight: 700 !important; letter-spacing: 2px !important; margin-top: 4px !important; text-transform: uppercase !important; }
   .match-status.live { font-size: 10px !important; font-weight: 800 !important; color: #e53935 !important; display: flex !important; align-items: center !important; justify-content: center !important; gap: 5px !important; }
