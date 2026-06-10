@@ -2229,50 +2229,64 @@ function renderRigoriPopup(rigoriState, match, casaNome, trasfNome, casaLogo, tr
     popup.className = 'rigori-popup-overlay';
     popup.id = 'rigoriPopupOverlay';
 
-    // ✅ NUOVO: Gestione fase di selezione (solo Admin)
-    if (rigoriState.fase === 'selezione') {
-        popup.innerHTML = `
-        <div class="rigori-popup" style="max-width: 500px; text-align: center; position: relative; padding: 40px 20px;">
-            <div style="position: absolute; right: 20px; top: 15px; cursor: pointer; font-size: 42px; color: #7a1e2c; line-height: 1; z-index: 10; width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; border-radius: 8px; transition: all 0.2s ease; font-weight: 300;" onclick="closeRigoriPopup()" onmouseover="this.style.background='#7a1e2c';this.style.color='#fff';this.style.transform='rotate(90deg)'" onmouseout="this.style.background='';this.style.color='#7a1e2c';this.style.transform='rotate(0deg)'">×</div>
-            
-            <div class="rigori-title" style="font-size: 26px; font-weight: 800; color: #7a1e2c; letter-spacing: 2px; margin-bottom: 40px;">CHI CALCIA PER PRIMO?</div>
-            
-            <div style="display: flex; flex-direction: column; gap: 20px; align-items: center;">
-                <button id="btn-seleziona-casa" class="phase-btn" style="width: 100%; max-width: 350px; padding: 20px; font-size: 18px; font-weight: 700;">
-                    ${casaNome}
-                </button>
-                <button id="btn-seleziona-trasferta" class="phase-btn secondary" style="width: 100%; max-width: 350px; padding: 20px; font-size: 18px; font-weight: 700;">
-                    ${trasfNome}
-                </button>
-            </div>
-        </div>`;
+    // ✅ NUOVO: Gestione fase di selezione (solo Admin) - LAYOUT ORIZZONTALE
+if (rigoriState.fase === 'selezione') {
+    popup.innerHTML = `
+    <div class="rigori-popup" style="max-width: 600px; position: relative; padding: 40px 20px;">
+        <div style="position: absolute; right: 20px; top: 15px; cursor: pointer; font-size: 42px; color: #7a1e2c; line-height: 1; z-index: 10; width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; border-radius: 8px; transition: all 0.2s ease; font-weight: 300;" onclick="closeRigoriPopup()" onmouseover="this.style.background='#7a1e2c';this.style.color='#fff';this.style.transform='rotate(90deg)'" onmouseout="this.style.background='';this.style.color='#7a1e2c';this.style.transform='rotate(0deg)'">×</div>
         
-        document.body.appendChild(popup);
+        <div class="rigori-title" style="font-size: 26px; font-weight: 800; color: #7a1e2c; letter-spacing: 2px; margin-bottom: 50px; text-align: center;">CHI CALCIA PER PRIMO?</div>
+        
+        <div style="display: flex; align-items: center; justify-content: center; gap: 30px;">
+            <!-- SQUADRA CASA -->
+            <button id="btn-seleziona-casa" style="background: none; border: none; cursor: pointer; padding: 0; transition: transform 0.2s; text-align: center;" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
+                <div style="width: 140px; height: 140px; border-radius: 50%; background: #f5f5f5; display: flex; align-items: center; justify-content: center; margin: 0 auto 15px; overflow: hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.15);">
+                    ${casaLogo ? `<img src="${getCachedImage(casaLogo, 140)}" alt="${casaNome}" style="width: 100%; height: 100%; object-fit: contain;">` : '<div style="font-size: 60px;">⚽</div>'}
+                </div>
+                <div style="font-size: 16px; font-weight: 700; color: #333; text-transform: uppercase; letter-spacing: 1px;">${casaNome}</div>
+            </button>
+            
+            <!-- VS -->
+            <div style="font-size: 32px; font-weight: 900; color: #7a1e2c; letter-spacing: 3px;">VS</div>
+            
+            <!-- SQUADRA TRASFERTA -->
+            <button id="btn-seleziona-trasferta" style="background: none; border: none; cursor: pointer; padding: 0; transition: transform 0.2s; text-align: center;" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
+                <div style="width: 140px; height: 140px; border-radius: 50%; background: #f5f5f5; display: flex; align-items: center; justify-content: center; margin: 0 auto 15px; overflow: hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.15);">
+                    ${trasfLogo ? `<img src="${getCachedImage(trasfLogo, 140)}" alt="${trasfNome}" style="width: 100%; height: 100%; object-fit: contain;">` : '<div style="font-size: 60px;">⚽</div>'}
+                </div>
+                <div style="font-size: 16px; font-weight: 700; color: #333; text-transform: uppercase; letter-spacing: 1px;">${trasfNome}</div>
+            </button>
+        </div>
+        
+        <div style="text-align: center; margin-top: 40px; font-size: 14px; color: #888; font-weight: 500;">Clicca sulla squadra che calcia per prima</div>
+    </div>`;
+    
+    document.body.appendChild(popup);
 
-        // Listener per la selezione
-        const btnCasa = document.getElementById('btn-seleziona-casa');
-        const btnTrasf = document.getElementById('btn-seleziona-trasferta');
-        
-        if (btnCasa) {
-            btnCasa.onclick = () => {
-                rigoriState.fase = 'tiri';
-                rigoriState.currentKicker = 'casa';
-                saveRigoriState();
-                closeRigoriPopup();
-                openRigoriPopup(false); // Riapre in modalità admin con la fase di tiro
-            };
-        }
-        if (btnTrasf) {
-            btnTrasf.onclick = () => {
-                rigoriState.fase = 'tiri';
-                rigoriState.currentKicker = 'trasferta';
-                saveRigoriState();
-                closeRigoriPopup();
-                openRigoriPopup(false);
-            };
-        }
-        return; // Esci qui, non renderizzare la fase di tiro
+    // Listener per la selezione
+    const btnCasa = document.getElementById('btn-seleziona-casa');
+    const btnTrasf = document.getElementById('btn-seleziona-trasferta');
+    
+    if (btnCasa) {
+        btnCasa.onclick = () => {
+            rigoriState.fase = 'tiri';
+            rigoriState.currentKicker = 'casa';
+            saveRigoriState();
+            closeRigoriPopup();
+            openRigoriPopup(false); // Riapre in modalità admin con la fase di tiro
+        };
     }
+    if (btnTrasf) {
+        btnTrasf.onclick = () => {
+            rigoriState.fase = 'tiri';
+            rigoriState.currentKicker = 'trasferta';
+            saveRigoriState();
+            closeRigoriPopup();
+            openRigoriPopup(false);
+        };
+    }
+    return; // Esci qui, non renderizzare la fase di tiro
+}
 
     // ✅ FASE DI TIRO (codice originale leggermente pulito)
     popup.innerHTML = `
@@ -2546,47 +2560,50 @@ function startMatchLiveRefresh() {
             // 🔥 AGGIUNGI QUESTO BLOCCO: Se il popup rigori è aperto, aggiornalo (SYNC MOBILE)
 if (document.getElementById('rigoriPopupOverlay') && String(window.APP_STATE.currentMatchId) === String(match.MATCH_ID)) {
     console.log('🔄 Popup rigori aperto - aggiorno dati dal backend (sync mobile)...');
-
-    // 1. Ricostruisci lo stato dai dati freschi del backend (fonte di verità)
+    
+    // Ricostruisci stato dai dati freschi del backend
     const penaltyEvents = (freshEvents || []).filter(e => {
         const rigoreResult = String(e.RIGORE_RESULT || "").toUpperCase();
         return rigoreResult === 'RIGORE_SEGNO' || rigoreResult === 'RIGORE_SBAGLIO';
     }).sort((a, b) => (Number(a.MINUTO) || 0) - (Number(b.MINUTO) || 0));
-
+    
     const casaId = String(updatedMatch.CASA_ID || "").trim();
     const history = [];
     
-    // Leggi i punteggi dal backend, con fallback di calcolo dagli eventi
+    // Leggi punteggi dal backend
     let casaScore = Number(updatedMatch.RIGORE_CASA ?? updatedMatch.RIGORI_CASA ?? 0) || 0;
     let trasfScore = Number(updatedMatch.RIGORE_TRASFERTA ?? updatedMatch.RIGORI_TRASFERTA ?? 0) || 0;
     
+    // Fallback: calcola dagli eventi se i punteggi sono 0
     if ((casaScore === 0 && trasfScore === 0) && penaltyEvents.length > 0) {
         casaScore = penaltyEvents.filter(e => e.RIGORE_RESULT === 'RIGORE_SEGNO' && String(e.TEAM_ID) === casaId).length;
         trasfScore = penaltyEvents.filter(e => e.RIGORE_RESULT === 'RIGORE_SEGNO' && String(e.TEAM_ID) !== casaId).length;
     }
-
+    
+    // Ricostruisci storia tiri
     penaltyEvents.forEach(e => {
         const isGoal = (e.RIGORE_RESULT === 'RIGORE_SEGNO');
         const isCasa = String(e.TEAM_ID) === casaId;
         history.push({ team: isCasa ? 'casa' : 'trasferta', result: isGoal ? 'goal' : 'miss' });
     });
-
-    // Determina chi deve calciare ora
+    
+    // Determina chi calcia ora
     let currentKicker = 'casa';
     if (history.length > 0) {
         const lastKick = history[history.length - 1];
         currentKicker = lastKick.team === 'casa' ? 'trasferta' : 'casa';
     }
-
-    // 2. Aggiorna il DOM del popup in tempo reale
+    
+    // Aggiorna UI popup
     const scoreCasaEl = document.getElementById('score-casa');
     const scoreTrasfEl = document.getElementById('score-trasferta');
     if (scoreCasaEl) scoreCasaEl.textContent = casaScore;
     if (scoreTrasfEl) scoreTrasfEl.textContent = trasfScore;
-
+    
+    // Aggiorna bollini
     const casaKicks = document.getElementById('kicks-casa');
     const trasfKicks = document.getElementById('kicks-trasferta');
-
+    
     if (casaKicks) {
         casaKicks.innerHTML = '';
         history.filter(k => k.team === 'casa').forEach(kick => {
@@ -2607,7 +2624,8 @@ if (document.getElementById('rigoriPopupOverlay') && String(window.APP_STATE.cur
             trasfKicks.appendChild(kickEl);
         });
     }
-
+    
+    // Aggiorna indicatore "chi calcia"
     const currentEl = document.getElementById('rigori-current');
     if (currentEl) {
         const nextTeamName = currentKicker === 'casa' ? updatedMatch.SQUADRA_CASA : updatedMatch.SQUADRA_TRASFERTA;
