@@ -3787,7 +3787,7 @@ function pollForMVPUpdate(matchId) {
     const check = async () => { attempts++; try { const data = await ApiClient.getMatchFull(matchId); if (data?.match?.MVP) { console.log('🏆 MVP trovato:', data.match.MVP); window.APP_STATE.lastMatch = data.match; updateMVPBanner(data.match); loadPlayersForMatch(data.match); refreshStandingsDebounced(500); } else if (attempts < maxAttempts) { setTimeout(check, 1000); } } catch (e) { console.error('Errore polling MVP', e); } };
     setTimeout(check, 1000);
 }
-
+}
 // ============================================================================
 // 📤 MODALE UPLOAD MEDIA
 // ============================================================================
