@@ -1137,12 +1137,12 @@ body {
   vertical-align: middle;
 }
 .bracket-status-indicator.supp {
-  color: #fff;
-  background: #8c1d2c;
+  color: var(--granata);
+  background: transparent;
 }
 .bracket-status-indicator.rigori {
-  color: #fff;
-  background: #7a1e2c;
+  color: var(--granata);
+  background: transparent;
   animation: liveDotPulse 1.5s infinite;
 }
 
@@ -1570,8 +1570,8 @@ body {
 
   .status { display: none !important; }
 
-.status.live { 
-  display: block !important; 
+.match-card .status.live { 
+  display: inline-block !important; 
   font-size: 10px !important;
   font-weight: 800 !important;
   color: var(--granata) !important;
