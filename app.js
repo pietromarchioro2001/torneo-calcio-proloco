@@ -2221,92 +2221,136 @@ function openRigoriPopup(directMode = false) {
 function closeRigoriPopup() { const popup = document.getElementById('rigoriPopupOverlay'); if (popup) { popup.remove(); } }
 
 function renderRigoriPopup(rigoriState, match, casaNome, trasfNome, casaLogo, trasfLogo, storageKey) {
-  function saveRigoriState() { 
-    localStorage.setItem(storageKey, JSON.stringify(rigoriState)); 
-  }
-  
-  const popup = document.createElement('div'); 
-  popup.className = 'rigori-popup-overlay'; 
-  popup.id = 'rigoriPopupOverlay';
-  
-  popup.innerHTML = `
-    <div class="rigori-popup" style="max-width: 700px;">
-      <div class="rigori-header" style="text-align: center; margin-bottom: 30px; position: relative;">
-        <div style="position: absolute; right: 20px; top: 15px; cursor: pointer; font-size: 42px; color: #7a1e2c; line-height: 1; z-index: 10; width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; border-radius: 8px; transition: all 0.2s ease; font-weight: 300;" onclick="closeRigoriPopup()" onmouseover="this.style.background='#7a1e2c';this.style.color='#fff';this.style.transform='rotate(90deg)'" onmouseout="this.style.background='';this.style.color='#7a1e2c';this.style.transform='rotate(0deg)'">×</div>
-        <div class="rigori-title" style="font-size: 32px; font-weight: 800; color: #7a1e2c; letter-spacing: 2px;">CALCI DI RIGORE</div>
-      </div>
-      <div id="rigori-tiri" style="display: block;">
-        <div class="rigori-teams" style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 40px; padding: 0 20px;">
-          <div class="rigori-team" id="rigori-casa" style="text-align: center; flex: 1; display: flex; flex-direction: column; align-items: center;">
-            ${casaLogo ? `<img src="${getCachedImage(casaLogo, 70)}" alt="${casaNome}" style="width: 70px; height: 70px; margin-bottom: 10px;">` : '<div style="width: 70px; height: 70px; background: #f0f0f0; margin: 0 auto 10px;"></div>'}
-            <div class="team-name" style="font-weight: 700; font-size: 15px; margin-bottom: 8px;">${casaNome}</div>
-            <div class="rigori-kicks" id="kicks-casa" style="display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; width: 100%; max-width: 180px;"></div>
-          </div>
-          <div class="rigori-score-center" style="text-align: center; flex: 0 0 150px;">
-            <div style="display: flex; align-items: center; justify-content: center; gap: 20px; margin-bottom: 10px;">
-              <div class="rigori-score" id="score-casa" style="font-size: 56px; font-weight: 900; color: #7a1e2c; line-height: 1;">${rigoriState.casaScore}</div>
-              <div style="font-size: 32px; font-weight: 700; color: #999;">-</div>
-              <div class="rigori-score" id="score-trasferta" style="font-size: 56px; font-weight: 900; color: #7a1e2c; line-height: 1;">${rigoriState.trasfScore}</div>
+    function saveRigoriState() {
+        localStorage.setItem(storageKey, JSON.stringify(rigoriState));
+    }
+
+    const popup = document.createElement('div');
+    popup.className = 'rigori-popup-overlay';
+    popup.id = 'rigoriPopupOverlay';
+
+    // ✅ NUOVO: Gestione fase di selezione (solo Admin)
+    if (rigoriState.fase === 'selezione') {
+        popup.innerHTML = `
+        <div class="rigori-popup" style="max-width: 500px; text-align: center; position: relative; padding: 40px 20px;">
+            <div style="position: absolute; right: 20px; top: 15px; cursor: pointer; font-size: 42px; color: #7a1e2c; line-height: 1; z-index: 10; width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; border-radius: 8px; transition: all 0.2s ease; font-weight: 300;" onclick="closeRigoriPopup()" onmouseover="this.style.background='#7a1e2c';this.style.color='#fff';this.style.transform='rotate(90deg)'" onmouseout="this.style.background='';this.style.color='#7a1e2c';this.style.transform='rotate(0deg)'">×</div>
+            
+            <div class="rigori-title" style="font-size: 26px; font-weight: 800; color: #7a1e2c; letter-spacing: 2px; margin-bottom: 40px;">CHI CALCIA PER PRIMO?</div>
+            
+            <div style="display: flex; flex-direction: column; gap: 20px; align-items: center;">
+                <button id="btn-seleziona-casa" class="phase-btn" style="width: 100%; max-width: 350px; padding: 20px; font-size: 18px; font-weight: 700;">
+                    ${casaNome}
+                </button>
+                <button id="btn-seleziona-trasferta" class="phase-btn secondary" style="width: 100%; max-width: 350px; padding: 20px; font-size: 18px; font-weight: 700;">
+                    ${trasfNome}
+                </button>
             </div>
-          </div>
-          <div class="rigori-team" id="rigori-trasferta" style="text-align: center; flex: 1; display: flex; flex-direction: column; align-items: center;">
-            ${trasfLogo ? `<img src="${getCachedImage(trasfLogo, 70)}" alt="${trasfNome}" style="width: 70px; height: 70px; margin-bottom: 10px;">` : '<div style="width: 70px; height: 70px; background: #f0f0f0; margin: 0 auto 10px;"></div>'}
-            <div class="team-name" style="font-weight: 700; font-size: 15px; margin-bottom: 8px;">${trasfNome}</div>
-            <div class="rigori-kicks" id="kicks-trasferta" style="display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; width: 100%; max-width: 180px;"></div>
-          </div>
+        </div>`;
+        
+        document.body.appendChild(popup);
+
+        // Listener per la selezione
+        const btnCasa = document.getElementById('btn-seleziona-casa');
+        const btnTrasf = document.getElementById('btn-seleziona-trasferta');
+        
+        if (btnCasa) {
+            btnCasa.onclick = () => {
+                rigoriState.fase = 'tiri';
+                rigoriState.currentKicker = 'casa';
+                saveRigoriState();
+                closeRigoriPopup();
+                openRigoriPopup(false); // Riapre in modalità admin con la fase di tiro
+            };
+        }
+        if (btnTrasf) {
+            btnTrasf.onclick = () => {
+                rigoriState.fase = 'tiri';
+                rigoriState.currentKicker = 'trasferta';
+                saveRigoriState();
+                closeRigoriPopup();
+                openRigoriPopup(false);
+            };
+        }
+        return; // Esci qui, non renderizzare la fase di tiro
+    }
+
+    // ✅ FASE DI TIRO (codice originale leggermente pulito)
+    popup.innerHTML = `
+    <div class="rigori-popup" style="max-width: 700px;">
+        <div class="rigori-header" style="text-align: center; margin-bottom: 30px; position: relative;">
+            <div style="position: absolute; right: 20px; top: 15px; cursor: pointer; font-size: 42px; color: #7a1e2c; line-height: 1; z-index: 10; width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; border-radius: 8px; transition: all 0.2s ease; font-weight: 300;" onclick="closeRigoriPopup()" onmouseover="this.style.background='#7a1e2c';this.style.color='#fff';this.style.transform='rotate(90deg)'" onmouseout="this.style.background='';this.style.color='#7a1e2c';this.style.transform='rotate(0deg)'">×</div>
+            <div class="rigori-title" style="font-size: 32px; font-weight: 800; color: #7a1e2c; letter-spacing: 2px;">CALCI DI RIGORE</div>
         </div>
-        <div class="rigori-center" style="text-align: center; margin: 40px 0;">
-          <div class="rigori-indicator" id="rigori-indicator" style="width: 120px; height: 120px; border-radius: 50%; background: #555; margin: 0 auto 20px; box-shadow: inset 0 -15px 25px rgba(0,0,0,0.3), 0 8px 20px rgba(0,0,0,0.2); transition: all 0.3s ease;"></div>
-          <div class="rigori-current" id="rigori-current" style="font-size: 20px; color: #333; font-weight: 700; letter-spacing: 1px;">${rigoriState.currentKicker === 'casa' ? casaNome : trasfNome}</div>
+        <div id="rigori-tiri" style="display: block;">
+            <div class="rigori-teams" style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 40px; padding: 0 20px;">
+                <div class="rigori-team" id="rigori-casa" style="text-align: center; flex: 1; display: flex; flex-direction: column; align-items: center;">
+                    ${casaLogo ? `<img src="${getCachedImage(casaLogo, 70)}" alt="${casaNome}" style="width: 70px; height: 70px; margin-bottom: 10px; object-fit: contain;">` : '<div style="width: 70px; height: 70px; background: #f0f0f0; margin: 0 auto 10px; border-radius: 50%;"></div>'}
+                    <div class="team-name" style="font-weight: 700; font-size: 15px; margin-bottom: 8px;">${casaNome}</div>
+                    <div class="rigori-kicks" id="kicks-casa" style="display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; width: 100%; max-width: 180px;"></div>
+                </div>
+                <div class="rigori-score-center" style="text-align: center; flex: 0 0 150px;">
+                    <div style="display: flex; align-items: center; justify-content: center; gap: 20px; margin-bottom: 10px;">
+                        <div class="rigori-score" id="score-casa" style="font-size: 56px; font-weight: 900; color: #7a1e2c; line-height: 1;">${rigoriState.casaScore}</div>
+                        <div style="font-size: 32px; font-weight: 700; color: #999;">-</div>
+                        <div class="rigori-score" id="score-trasferta" style="font-size: 56px; font-weight: 900; color: #7a1e2c; line-height: 1;">${rigoriState.trasfScore}</div>
+                    </div>
+                </div>
+                <div class="rigori-team" id="rigori-trasferta" style="text-align: center; flex: 1; display: flex; flex-direction: column; align-items: center;">
+                    ${trasfLogo ? `<img src="${getCachedImage(trasfLogo, 70)}" alt="${trasfNome}" style="width: 70px; height: 70px; margin-bottom: 10px; object-fit: contain;">` : '<div style="width: 70px; height: 70px; background: #f0f0f0; margin: 0 auto 10px; border-radius: 50%;"></div>'}
+                    <div class="team-name" style="font-weight: 700; font-size: 15px; margin-bottom: 8px;">${trasfNome}</div>
+                    <div class="rigori-kicks" id="kicks-trasferta" style="display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; width: 100%; max-width: 180px;"></div>
+                </div>
+            </div>
+            <div class="rigori-center" style="text-align: center; margin: 40px 0;">
+                <div class="rigori-indicator" id="rigori-indicator" style="width: 120px; height: 120px; border-radius: 50%; background: #555; margin: 0 auto 20px; box-shadow: inset 0 -15px 25px rgba(0,0,0,0.3), 0 8px 20px rgba(0,0,0,0.2); transition: all 0.3s ease;"></div>
+                <div class="rigori-current" id="rigori-current" style="font-size: 20px; color: #333; font-weight: 700; letter-spacing: 1px;">${rigoriState.currentKicker === 'casa' ? casaNome : trasfNome}</div>
+            </div>
+            <div class="rigori-controls" style="display: flex; justify-content: center; gap: 50px; margin: 40px 0;">
+                <button class="rigori-btn miss" id="btn-miss" style="width: 100px; height: 100px; border-radius: 50%; border: none; background: #ef4444; cursor: pointer; box-shadow: 0 6px 20px rgba(239, 68, 68, 0.4); transition: transform 0.2s; font-size: 16px; font-weight: 700; color: white;"></button>
+                <button class="rigori-btn goal" id="btn-goal" style="width: 100px; height: 100px; border-radius: 50%; border: none; background: #22c55e; cursor: pointer; box-shadow: 0 6px 20px rgba(34, 197, 94, 0.4); transition: transform 0.2s; font-size: 16px; font-weight: 700; color: white;"></button>
+            </div>
+            <button class="rigori-finish" id="rigori-finish" style="width: 100%; max-width: 300px; margin: 20px auto 0; padding: 12px 20px; background: #7a1e2c; color: white; border: none; border-radius: 8px; font-size: 16px; font-weight: 700; cursor: pointer; letter-spacing: 1px; box-shadow: 0 2px 8px rgba(122, 30, 44, 0.3); display: block;" onclick="finishRigori()">FINE</button>
         </div>
-        <div class="rigori-controls" style="display: flex; justify-content: center; gap: 50px; margin: 40px 0;">
-          <button class="rigori-btn miss" id="btn-miss" style="width: 100px; height: 100px; border-radius: 50%; border: none; background: #ef4444; cursor: pointer; box-shadow: 0 6px 20px rgba(239, 68, 68, 0.4); transition: transform 0.2s; font-size: 16px; font-weight: 700; color: white;"></button>
-          <button class="rigori-btn goal" id="btn-goal" style="width: 100px; height: 100px; border-radius: 50%; border: none; background: #22c55e; cursor: pointer; box-shadow: 0 6px 20px rgba(34, 197, 94, 0.4); transition: transform 0.2s; font-size: 16px; font-weight: 700; color: white;"></button>
-        </div>
-        <button class="rigori-finish" id="rigori-finish" style="width: 100%; max-width: 300px; margin: 20px auto 0; padding: 12px 20px; background: #7a1e2c; color: white; border: none; border-radius: 8px; font-size: 16px; font-weight: 700; cursor: pointer; letter-spacing: 1px; box-shadow: 0 2px 8px rgba(122, 30, 44, 0.3); display: block;" onclick="finishRigori()">FINE</button>
-      </div>
     </div>
-  `;
-  
-  document.body.appendChild(popup);
-  
-  const styleEl = document.createElement('style');
-  styleEl.textContent = `.rigori-kicks {display: flex;flex-wrap: wrap;gap: 8px;justify-content: center;margin-top: 5px;min-height: 30px;} .kick-indicator {width: 20px;height: 20px;border-radius: 50%;display: inline-block;transition: all 0.3s ease;} .kick-indicator.goal {background: #22c55e;box-shadow: 0 0 8px rgba(34, 197, 94, 0.4);} .kick-indicator.miss {background: #ef4444;box-shadow: 0 0 8px rgba(239, 68, 68, 0.4);}`;
-  document.head.appendChild(styleEl);
-  
-  function renderKickIndicators() {
-    const casaKicks = document.getElementById('kicks-casa'); 
-    const trasfKicks = document.getElementById('kicks-trasferta');
-    if (casaKicks) casaKicks.innerHTML = ''; 
-    if (trasfKicks) trasfKicks.innerHTML = '';
+    `;
     
-    rigoriState.history.forEach(kick => {
-      const kickEl = document.createElement('div'); 
-      kickEl.className = `kick-indicator ${kick.result}`; 
-      kickEl.style.cssText = 'width: 20px; height: 20px; border-radius: 50%; margin: 2px; display: inline-block;';
-      kickEl.style.background = kick.result === 'goal' ? '#22c55e' : '#ef4444';
-      if (kick.team === 'casa' && casaKicks) { casaKicks.appendChild(kickEl); } 
-      else if (kick.team === 'trasferta' && trasfKicks) { trasfKicks.appendChild(kickEl); }
-    });
-  }
-  
-  function updateUI() { 
-    document.getElementById('score-casa').textContent = rigoriState.casaScore; 
-    document.getElementById('score-trasferta').textContent = rigoriState.trasfScore; 
-  }
-  
-  // Renderizza subito i dati esistenti
-  updateUI();
-  const currentEl = document.getElementById('rigori-current'); 
-  if (currentEl) { 
-    currentEl.textContent = rigoriState.currentKicker === 'casa' ? casaNome : trasfNome; 
-  }
-  setTimeout(() => { renderKickIndicators(); }, 50);
-  
-  const btnMiss = document.getElementById('btn-miss'); 
-  const btnGoal = document.getElementById('btn-goal');
-  if (btnMiss) btnMiss.onclick = () => handleRigoreClick('miss', rigoriState, saveRigoriState, casaNome, trasfNome); 
-  if (btnGoal) btnGoal.onclick = () => handleRigoreClick('goal', rigoriState, saveRigoriState, casaNome, trasfNome);
+    document.body.appendChild(popup);
+    
+    const styleEl = document.createElement('style');
+    styleEl.textContent = `.rigori-kicks {display: flex;flex-wrap: wrap;gap: 8px;justify-content: center;margin-top: 5px;min-height: 30px;} .kick-indicator {width: 20px;height: 20px;border-radius: 50%;display: inline-block;transition: all 0.3s ease;} .kick-indicator.goal {background: #22c55e;box-shadow: 0 0 8px rgba(34, 197, 94, 0.4);} .kick-indicator.miss {background: #ef4444;box-shadow: 0 0 8px rgba(239, 68, 68, 0.4);}`;
+    document.head.appendChild(styleEl);
+
+    function renderKickIndicators() {
+        const casaKicks = document.getElementById('kicks-casa');
+        const trasfKicks = document.getElementById('kicks-trasferta');
+        if (casaKicks) casaKicks.innerHTML = '';
+        if (trasfKicks) trasfKicks.innerHTML = '';
+        rigoriState.history.forEach(kick => {
+            const kickEl = document.createElement('div');
+            kickEl.className = `kick-indicator ${kick.result}`;
+            kickEl.style.cssText = 'width: 20px; height: 20px; border-radius: 50%; margin: 2px; display: inline-block;';
+            kickEl.style.background = kick.result === 'goal' ? '#22c55e' : '#ef4444';
+            if (kick.team === 'casa' && casaKicks) { casaKicks.appendChild(kickEl); }
+            else if (kick.team === 'trasferta' && trasfKicks) { trasfKicks.appendChild(kickEl); }
+        });
+    }
+
+    function updateUI() {
+        document.getElementById('score-casa').textContent = rigoriState.casaScore;
+        document.getElementById('score-trasferta').textContent = rigoriState.trasfScore;
+    }
+
+    updateUI();
+    const currentEl = document.getElementById('rigori-current');
+    if (currentEl) {
+        currentEl.textContent = rigoriState.currentKicker === 'casa' ? casaNome : trasfNome;
+    }
+    setTimeout(() => { renderKickIndicators(); }, 50);
+
+    const btnMiss = document.getElementById('btn-miss');
+    const btnGoal = document.getElementById('btn-goal');
+    if (btnMiss) btnMiss.onclick = () => handleRigoreClick('miss', rigoriState, saveRigoriState, casaNome, trasfNome);
+    if (btnGoal) btnGoal.onclick = () => handleRigoreClick('goal', rigoriState, saveRigoriState, casaNome, trasfNome);
 }
 
 function handleRigoreClick(result, rigoriState, saveRigoriState, casaNome, trasfNome) {
@@ -2499,47 +2543,77 @@ function startMatchLiveRefresh() {
             };
           }
 
-            // 🔥 AGGIUNGI QUESTO BLOCCO: Se il popup rigori è aperto, aggiornalo
-        if (document.getElementById('rigoriPopupOverlay') && String(window.APP_STATE.currentMatchId) === String(match.MATCH_ID)) {
-          console.log('🔄 Popup rigori aperto - aggiorno dati...');
-          
-          const storageKey = `rigori_${match.MATCH_ID}`;
-          const savedState = localStorage.getItem(storageKey);
-          
-          if (savedState) {
-            const rigoriState = JSON.parse(savedState);
-            
-            // Aggiorna punteggio
-            const scoreCasaEl = document.getElementById('score-casa');
-            const scoreTrasfEl = document.getElementById('score-trasferta');
-            if (scoreCasaEl) scoreCasaEl.textContent = rigoriState.casaScore;
-            if (scoreTrasfEl) scoreTrasfEl.textContent = rigoriState.trasfScore;
-            
-            // Aggiorna bollini
-            const casaKicks = document.getElementById('kicks-casa');
-            const trasfKicks = document.getElementById('kicks-trasferta');
-            if (casaKicks) {
-              casaKicks.innerHTML = '';
-              rigoriState.history.filter(k => k.team === 'casa').forEach(kick => {
-                const kickEl = document.createElement('div');
-                kickEl.className = `kick-indicator ${kick.result}`;
-                kickEl.style.cssText = 'width: 20px; height: 20px; border-radius: 50%; margin: 2px; display: inline-block;';
-                kickEl.style.background = kick.result === 'goal' ? '#22c55e' : '#ef4444';
-                casaKicks.appendChild(kickEl);
-              });
-            }
-            if (trasfKicks) {
-              trasfKicks.innerHTML = '';
-              rigoriState.history.filter(k => k.team === 'trasferta').forEach(kick => {
-                const kickEl = document.createElement('div');
-                kickEl.className = `kick-indicator ${kick.result}`;
-                kickEl.style.cssText = 'width: 20px; height: 20px; border-radius: 50%; margin: 2px; display: inline-block;';
-                kickEl.style.background = kick.result === 'goal' ? '#22c55e' : '#ef4444';
-                trasfKicks.appendChild(kickEl);
-              });
-            }
-          }
-        }
+            // 🔥 AGGIUNGI QUESTO BLOCCO: Se il popup rigori è aperto, aggiornalo (SYNC MOBILE)
+if (document.getElementById('rigoriPopupOverlay') && String(window.APP_STATE.currentMatchId) === String(match.MATCH_ID)) {
+    console.log('🔄 Popup rigori aperto - aggiorno dati dal backend (sync mobile)...');
+
+    // 1. Ricostruisci lo stato dai dati freschi del backend (fonte di verità)
+    const penaltyEvents = (freshEvents || []).filter(e => {
+        const rigoreResult = String(e.RIGORE_RESULT || "").toUpperCase();
+        return rigoreResult === 'RIGORE_SEGNO' || rigoreResult === 'RIGORE_SBAGLIO';
+    }).sort((a, b) => (Number(a.MINUTO) || 0) - (Number(b.MINUTO) || 0));
+
+    const casaId = String(updatedMatch.CASA_ID || "").trim();
+    const history = [];
+    
+    // Leggi i punteggi dal backend, con fallback di calcolo dagli eventi
+    let casaScore = Number(updatedMatch.RIGORE_CASA ?? updatedMatch.RIGORI_CASA ?? 0) || 0;
+    let trasfScore = Number(updatedMatch.RIGORE_TRASFERTA ?? updatedMatch.RIGORI_TRASFERTA ?? 0) || 0;
+    
+    if ((casaScore === 0 && trasfScore === 0) && penaltyEvents.length > 0) {
+        casaScore = penaltyEvents.filter(e => e.RIGORE_RESULT === 'RIGORE_SEGNO' && String(e.TEAM_ID) === casaId).length;
+        trasfScore = penaltyEvents.filter(e => e.RIGORE_RESULT === 'RIGORE_SEGNO' && String(e.TEAM_ID) !== casaId).length;
+    }
+
+    penaltyEvents.forEach(e => {
+        const isGoal = (e.RIGORE_RESULT === 'RIGORE_SEGNO');
+        const isCasa = String(e.TEAM_ID) === casaId;
+        history.push({ team: isCasa ? 'casa' : 'trasferta', result: isGoal ? 'goal' : 'miss' });
+    });
+
+    // Determina chi deve calciare ora
+    let currentKicker = 'casa';
+    if (history.length > 0) {
+        const lastKick = history[history.length - 1];
+        currentKicker = lastKick.team === 'casa' ? 'trasferta' : 'casa';
+    }
+
+    // 2. Aggiorna il DOM del popup in tempo reale
+    const scoreCasaEl = document.getElementById('score-casa');
+    const scoreTrasfEl = document.getElementById('score-trasferta');
+    if (scoreCasaEl) scoreCasaEl.textContent = casaScore;
+    if (scoreTrasfEl) scoreTrasfEl.textContent = trasfScore;
+
+    const casaKicks = document.getElementById('kicks-casa');
+    const trasfKicks = document.getElementById('kicks-trasferta');
+
+    if (casaKicks) {
+        casaKicks.innerHTML = '';
+        history.filter(k => k.team === 'casa').forEach(kick => {
+            const kickEl = document.createElement('div');
+            kickEl.className = `kick-indicator ${kick.result}`;
+            kickEl.style.cssText = 'width: 20px; height: 20px; border-radius: 50%; margin: 2px; display: inline-block;';
+            kickEl.style.background = kick.result === 'goal' ? '#22c55e' : '#ef4444';
+            casaKicks.appendChild(kickEl);
+        });
+    }
+    if (trasfKicks) {
+        trasfKicks.innerHTML = '';
+        history.filter(k => k.team === 'trasferta').forEach(kick => {
+            const kickEl = document.createElement('div');
+            kickEl.className = `kick-indicator ${kick.result}`;
+            kickEl.style.cssText = 'width: 20px; height: 20px; border-radius: 50%; margin: 2px; display: inline-block;';
+            kickEl.style.background = kick.result === 'goal' ? '#22c55e' : '#ef4444';
+            trasfKicks.appendChild(kickEl);
+        });
+    }
+
+    const currentEl = document.getElementById('rigori-current');
+    if (currentEl) {
+        const nextTeamName = currentKicker === 'casa' ? updatedMatch.SQUADRA_CASA : updatedMatch.SQUADRA_TRASFERTA;
+        currentEl.textContent = nextTeamName || (currentKicker === 'casa' ? 'SQUADRA CASA' : 'SQUADRA TRASFERTA');
+    }
+}
           
           // 🔥 AGGIORNAMENTO BRACKET
           if (document.querySelector('.standings-page') && window.APP_STATE._activeStandingsTab === 'fasefinale') {
