@@ -1530,7 +1530,7 @@ const mediaButtonHtml = linkDrive && linkDrive.trim() !== '' ? `
               <div class="phase-btn secondary-btn" onclick="openRigoriPopup()">RIGORI</div>
             ` : ''}
           </div>
-          <div class="score-big">${match.GOL_CASA || 0} - ${match.GOL_TRASFERTA || 0}</div>
+          <div class="score-big ${isLive ? 'live-score-pulse' : ''}">${match.GOL_CASA || 0} - ${match.GOL_TRASFERTA || 0}</div>
           <div class="match-status" id="matchStatus"></div>
         </div>
         <div class="team-big right">
@@ -2383,7 +2383,7 @@ function startMatchLiveRefresh() {
         console.error(`❌ Errore refresh match ${match.MATCH_ID}:`, error);
       }
     }
-  }, 2000);
+  }, 1000);
 }
 
 function stopMatchLiveRefresh() {
@@ -3630,20 +3630,21 @@ function renderMVPTab(casaData, trasfData, match) {
     return;
   }
   const renderMVPVoteList = (players, teamId) => {
-    if (!players.length) return `<div style="text-align:center;padding:20px;color:#888">Nessun giocatore</div>`;
-    const savedVote = localStorage.getItem(`mvp_vote_${match.MATCH_ID}`); let selectedPlayerId = null;
-    if (savedVote) { try { const voteData = JSON.parse(savedVote); if (voteData.playerId) { selectedPlayerId = voteData.playerId; } } catch(e) {} }
-    let html = "<div class='players-list'>";
-    players.forEach(p => {
-      const photoHtml = p.FOTO_ID ? `<img src="${getCachedImage(p.FOTO_ID, 40)}" alt="${p.NOME}">` : `<div class="player-avatar-fallback">👤</div>`;
-      const isSelected = String(p.PLAYER_ID) === String(selectedPlayerId); const bgStyle = isSelected ? 'background:#fef3c7;opacity:1;' : ''; const checkOpacity = isSelected ? 'opacity:1' : 'opacity:0';
-      html += `<div class="player-row mvp-vote-row" onclick="voteMVP('${p.PLAYER_ID}', '${p.NOME.replace(/'/g, "\\'")}', event); event.stopPropagation();" style="cursor:pointer;transition:all 0.3s;${bgStyle}"><div class="player-avatar">${photoHtml}</div><div class="player-name">${formatPlayerName(p.NOME)}</div><div class="vote-check" style="${checkOpacity};font-size:1.2rem;color:#059669;font-weight:bold;">✓</div></div>`;
-    });
-    html += "</div>"; return html;
-  };
-  container.innerHTML = `<div class="players-col"><div class="players-team">${(casaData?.team?.NOME_SQUADRA || match.SQUADRA_CASA || "").toUpperCase()}</div>${renderMVPVoteList(casaPlayers, match.CASA_ID)}</div><div class="players-col"><div class="players-team">${(trasfData?.team?.NOME_SQUADRA || match.SQUADRA_TRASFERTA || "").toUpperCase()}</div>${renderMVPVoteList(trasfPlayers, match.TRASFERTA_ID)}</div>`;
-  setTimeout(() => loadExistingMVPVote(match.MATCH_ID), 50);
-}
+  if (!players.length) return `<div style="text-align:center;padding:20px;color:#888">Nessun giocatore</div>`;
+  const savedVote = localStorage.getItem(`mvp_vote_${match.MATCH_ID}`); let selectedPlayerId = null;
+  if (savedVote) { try { const voteData = JSON.parse(savedVote); if (voteData.playerId) { selectedPlayerId = voteData.playerId; } } catch(e) {} }
+  let html = "<div class='players-list'>";
+  players.forEach(p => {
+    const photoHtml = p.FOTO_ID ? `<img src="${getCachedImage(p.FOTO_ID, 40)}" alt="${p.NOME}">` : `<div class="player-avatar-fallback">👤</div>`;
+    const isSelected = String(p.PLAYER_ID) === String(selectedPlayerId); 
+    const bgStyle = isSelected ? 'background:#fef3c7;opacity:1;' : 'background:transparent;opacity:0.6;';
+    // ✅ RIMOSSA la spunta verde - ora c'è solo il highlight giallo
+    html += `<div class="player-row mvp-vote-row" onclick="voteMVP('${p.PLAYER_ID}', '${p.NOME.replace(/'/g, "\\'")}', event); event.stopPropagation();" style="cursor:pointer;transition:all 0.3s;${bgStyle}"><div class="player-avatar">${photoHtml}</div><div class="player-name">${formatPlayerName(p.NOME)}</div></div>`;
+  });
+  html += "</div>"; return html;
+};
+container.innerHTML = `<div class="players-col"><div class="players-team">${(casaData?.team?.NOME_SQUADRA || match.SQUADRA_CASA || "").toUpperCase()}</div>${renderMVPVoteList(casaPlayers, match.CASA_ID)}</div><div class="players-col"><div class="players-team">${(trasfData?.team?.NOME_SQUADRA || match.SQUADRA_TRASFERTA || "").toUpperCase()}</div>${renderMVPVoteList(trasfPlayers, match.TRASFERTA_ID)}</div>`;
+setTimeout(() => loadExistingMVPVote(match.MATCH_ID), 50);
 
 async function selectMVP(playerId, playerName) {
     const match = window.APP_STATE.lastMatch; if (!match) return;
