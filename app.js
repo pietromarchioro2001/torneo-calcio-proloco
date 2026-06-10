@@ -2111,10 +2111,10 @@ function openRigoriPopup(directMode = false) {
   const trasfNome = trasfData?.NOME_SQUADRA || match.SQUADRA_TRASFERTA;
   const casaLogo = casaData?.LOGO_FILE_ID || casaData?.LOGO_ID;
   const trasfLogo = trasfData?.LOGO_FILE_ID || trasfData?.LOGO_ID;
+  
   const storageKey = `rigori_${match.MATCH_ID}`;
   
-  // 🔥 FIX: Se siamo in directMode (telefono), facciamo fetch dal backend
-  // perché il localStorage è vuoto sul telefono!
+  // 🔥 Se siamo in directMode (telefono), facciamo fetch dal backend
   if (directMode) {
     console.log('📱 Telefono apre popup rigori - fetch dati dal backend...');
     
@@ -2151,14 +2151,14 @@ function openRigoriPopup(directMode = false) {
         const rigoriCasa = freshData.match.RIGORE_CASA ?? freshData.match.RIGORI_CASA ?? 0;
         const rigoriTrasf = freshData.match.RIGORE_TRASFERTA ?? freshData.match.RIGORI_TRASFERTA ?? 0;
         
-        console.log(' Rigori dal backend:', { rigoriCasa, rigoriTrasf });
+        console.log('✅ Rigori dal backend:', { rigoriCasa, rigoriTrasf });
         
         // Costruisci stato dai dati backend
         const rigoriState = {
           fase: 'tiri',
           casaScore: Number(rigoriCasa) || 0,
           trasfScore: Number(rigoriTrasf) || 0,
-          currentKicker: 'casa', // Default
+          currentKicker: 'casa',
           history: [],
           finished: false
         };
@@ -2199,7 +2199,7 @@ function openRigoriPopup(directMode = false) {
       alert('Errore di connessione. Riprova.');
     });
     
-    return; // Esce qui, il resto lo fa renderRigoriPopup
+    return; // Esce qui
   }
   
   // 🔥 LOGICA ORIGINALE per l'admin (PC)
