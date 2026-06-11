@@ -705,6 +705,75 @@ body {
 
 .dates-toolbar.dragging { cursor: grabbing; user-select: none; }
 
+/* Wrapper per indicatori di scroll */
+.dates-toolbar-wrapper {
+  position: relative;
+  width: 1100px;
+  margin: 0 auto 20px;
+}
+
+/* Gradienti ai bordi per indicare scroll disponibile */
+.dates-toolbar-wrapper::before,
+.dates-toolbar-wrapper::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 50px;
+  pointer-events: none;
+  z-index: 2;
+  transition: opacity 0.3s ease;
+  opacity: 0;
+}
+
+.dates-toolbar-wrapper::before {
+  left: 0;
+  background: linear-gradient(to right, rgba(255,255,255,0.95) 0%, rgba(255,255,255,0) 100%);
+}
+
+.dates-toolbar-wrapper::after {
+  right: 0;
+  background: linear-gradient(to left, rgba(255,255,255,0.95) 0%, rgba(255,255,255,0) 100%);
+}
+
+.dates-toolbar-wrapper.can-scroll-left::before {
+  opacity: 1;
+}
+
+.dates-toolbar-wrapper.can-scroll-right::after {
+  opacity: 1;
+}
+
+/* Toolbar migliorata */
+.dates-toolbar {
+  display: flex;
+  overflow-x: auto;
+  gap: 8px;
+  padding: 8px 30px;
+  scroll-behavior: smooth;
+  cursor: grab;
+  scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  justify-content: flex-start;
+  align-items: center;
+}
+
+.dates-toolbar::-webkit-scrollbar {
+  display: none;
+}
+
+.dates-toolbar:active {
+  cursor: grabbing;
+}
+
+.dates-toolbar.dragging {
+  cursor: grabbing;
+  user-select: none;
+  scroll-behavior: auto;
+}
+
 .team-logo-placeholder { width: 42px; height: 42px; border-radius: 50%; background: #efefef; flex: 0 0 42px; display: flex; align-items: center; justify-content: center; font-size: 1.3rem; flex-shrink: 0; }
 .team-logo-placeholder-wrap { display: flex; align-items: center; justify-content: center; }
 .team-logo-placeholder-fallback { display: none; }
