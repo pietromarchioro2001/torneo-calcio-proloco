@@ -992,60 +992,151 @@ function renderDatesToolbar() {
 }
 
 function enableDragScrollDates() {
-    const el = document.getElementById("datesToolbar");
-    if (!el) return;
-
-    let isDown = false;
-    let startX;
-    let scrollLeft;
-
-    let touchStartX = 0;
-
-    // ⚠️ stato globale del drag
+  const el = document.getElementById("datesToolbar");
+  if (!el) return;
+  
+  const wrapper = el.closest('.dates-toolbar-wrapper');
+  
+  // 🔥 Funzione per aggiornare gli indicatori di scroll
+  function updateScrollIndicators() {
+    if (!wrapper) return;
+    const canScrollLeft = el.scrollLeft > 5;
+    const canScrollRight = el.scrollLeft < (el.scrollWidth - el.clientWidth - 5);
+    
+    wrapper.classList.toggle('can-scroll-left', canScrollLeft);
+    wrapper.classList.toggle('can-scroll-right', canScrollRight);
+  }
+  
+  // Inizializza indicatori
+  updateScrollIndicators();
+  setTimeout(updateScrollIndicators, 200);
+  
+  // Ascolta lo scroll per aggiornare indicatori
+  el.addEventListener('scroll', updateScrollIndicators, { passive: true });
+  window.addEventListener('resize', updateScrollIndicators);
+  
+  // 🔥 WHEEL EVENT: converte scroll verticale rotellina in orizzontale
+  el.addEventListener('wheel', (e) => {
+    if (Math.abs(e.deltaY) > Math.abs(e.deltaX)) {
+      e.preventDefault();
+      el.scrollLeft += e.deltaY * 1.5;
+      // Aggiorna indicatori dopo lo scroll
+      setTimeout(updateScrollIndicators, 50);
+    }
+  }, { passive: false });
+  
+  // 🔥 DRAG TO SCROLL (migliorato)
+  let isDown = false;
+  let startX = 0;
+  let scrollLeftStart = 0;
+  let velocity = 0;
+  let lastX = 0;
+  let lastTime = 0;
+  let animationFrame = null;
+  
+  window.isDraggingDates = false;
+  
+  el.addEventListener("mousedown", (e) => {
+    isDown = true;
+    el.classList.add("dragging");
+    startX = e.pageX;
+    scrollLeftStart = el.scrollLeft;
+    lastX = e.pageX;
+    lastTime = Date.now();
+    velocity = 0;
     window.isDraggingDates = false;
-
-    el.addEventListener("mousedown", (e) => {
-        isDown = true;
-        el.classList.add("dragging");
-        startX = e.pageX - el.offsetLeft;
-        scrollLeft = el.scrollLeft;
-
-        window.isDraggingDates = false;
-    });
-
-    el.addEventListener("mouseleave", () => {
-        isDown = false;
-        el.classList.remove("dragging");
-    });
-
-    el.addEventListener("mouseup", () => {
-        isDown = false;
-        el.classList.remove("dragging");
-    });
-
-    el.addEventListener("mousemove", (e) => {
-        if (!isDown) return;
-        e.preventDefault();
-
-        const x = e.pageX - el.offsetLeft;
-        const walk = (x - startX) * 1.2;
-
-        el.scrollLeft = scrollLeft - walk;
-
-        window.isDraggingDates = true;
-    });
-
-    // touch
-    el.addEventListener("touchstart", (e) => {
-        touchStartX = e.touches[0].clientX;
-        scrollLeft = el.scrollLeft;
-    });
-
-    el.addEventListener("touchmove", (e) => {
-        const x = e.touches[0].clientX;
-        const walk = (x - touchStartX) * 1.2;
-        el.scrollLeft = scrollLeft - walk;
-    });
+    
+    // Cancella animazione momentum precedente
+    if (animationFrame) {
+      cancelAnimationFrame(animationFrame);
+      animationFrame = null;
+    }
+    
+    e.preventDefault();
+  });
+  
+  el.addEventListener("mousemove", (e) => {
+    if (!isDown) return;
+    e.preventDefault();
+    
+    const x = e.pageX;
+    const walk = (x - startX) * 1.2;
+    el.scrollLeft = scrollLeftStart - walk;
+    window.isDraggingDates = true;
+    
+    // Calcola velocità per momentum
+    const now = Date.now();
+    const dt = now - lastTime;
+    if (dt > 0) {
+      velocity = (x - lastX) / dt;
+    }
+    lastX = x;
+    lastTime = now;
+  });
+  
+  function endDrag() {
+    if (!isDown) return;
+    isDown = false;
+    el.classList.remove("dragging");
+    
+    // 🔥 MOMENTUM SCROLL (inerzia dopo il rilascio)
+    if (Math.abs(velocity) > 0.1) {
+      const deceleration = 0.95;
+      let currentVelocity = velocity * 50;
+      
+      function momentum() {
+        if (Math.abs(currentVelocity) < 0.5) {
+          animationFrame = null;
+          updateScrollIndicators();
+          return;
+        }
+        el.scrollLeft -= currentVelocity;
+        currentVelocity *= deceleration;
+        animationFrame = requestAnimationFrame(momentum);
+      }
+      
+      animationFrame = requestAnimationFrame(momentum);
+    }
+    
+    setTimeout(() => {
+      window.isDraggingDates = false;
+      updateScrollIndicators();
+    }, 100);
+  }
+  
+  el.addEventListener("mouseup", endDrag);
+  el.addEventListener("mouseleave", endDrag);
+  
+  // 🔥 TOUCH EVENTS (migliorati)
+  let touchStartX = 0;
+  let touchScrollLeft = 0;
+  
+  el.addEventListener("touchstart", (e) => {
+    touchStartX = e.touches[0].clientX;
+    touchScrollLeft = el.scrollLeft;
+  }, { passive: true });
+  
+  el.addEventListener("touchmove", (e) => {
+    const x = e.touches[0].clientX;
+    const walk = (touchStartX - x) * 1.2;
+    el.scrollLeft = touchScrollLeft + walk;
+  }, { passive: true });
+  
+  el.addEventListener("touchend", () => {
+    updateScrollIndicators();
+  }, { passive: true });
+  
+  // 🔥 KEYBOARD NAVIGATION (frecce sinistra/destra)
+  el.setAttribute('tabindex', '0');
+  el.addEventListener('keydown', (e) => {
+    if (e.key === 'ArrowLeft') {
+      e.preventDefault();
+      el.scrollBy({ left: -100, behavior: 'smooth' });
+    } else if (e.key === 'ArrowRight') {
+      e.preventDefault();
+      el.scrollBy({ left: 100, behavior: 'smooth' });
+    }
+  });
 }
 
 function selectDate(date) {
