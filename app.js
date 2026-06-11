@@ -2225,9 +2225,14 @@ function openRigoriPopup(directMode = false) {
             window.APP_CACHE.eventsByMatch[match.MATCH_ID] = freshEvents;
             CacheManager.save(window.APP_CACHE);
             
+            // 🔥 LEGGI I PUNTEGGI DAL BACKEND (colonne J/K)
             const rigoriCasa = freshData.match.RIGORE_CASA ?? freshData.match.RIGORI_CASA ?? 0;
             const rigoriTrasf = freshData.match.RIGORE_TRASFERTA ?? freshData.match.RIGORI_TRASFERTA ?? 0;
             
+            // 🔥 LEGGI CHI DEVE CALCIARE ORA (dal backend)
+            let currentKickerBackend = freshData.match.RIGORI_CURRENT_KICKER || 'casa';
+            
+            // 🔥 LEGGI LA HISTORY TEMPORANEA (se il backend la salva)
             let historyTemp = [];
             if (freshData.match.RIGORI_HISTORY_TEMP) {
                 try {
@@ -2259,7 +2264,7 @@ function openRigoriPopup(directMode = false) {
                 fase: 'tiri',
                 casaScore: Number(rigoriCasa) || 0,
                 trasfScore: Number(rigoriTrasf) || 0,
-                currentKicker: 'casa',
+                currentKicker: currentKickerBackend,  // ← USA QUELLO DEL BACKEND!
                 history: historyTemp,
                 finished: false
             };
@@ -2834,7 +2839,7 @@ function startMatchLiveRefresh() {
                             indicator.classList.add(lastKick.result);
                             setTimeout(() => {
                                 if (indicator) indicator.classList.remove('goal', 'miss');
-                            }, 3000);
+                            }, 2000);
                         }
                     }
                     window.APP_STATE._lastRigoriHistoryLength = backendHistory.length;
