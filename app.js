@@ -2833,12 +2833,16 @@ function startMatchLiveRefresh() {
               DATA: safeData
             };
           }
-          
- // 🔥 SE POPUP RIGORI APERTO - AGGIORNA MOBILE
+
+// 🔥 SE POPUP RIGORI APERTO - AGGIORNA UI
 if (document.getElementById('rigoriPopupOverlay') &&
     String(window.APP_STATE.currentMatchId) === String(match.MATCH_ID)) {
   
-  console.log('🔄 Sync mobile rigori...');
+  console.log('🔄 Sync rigori UI...', {
+    isAdmin: window.APP_STATE._isRigoriAdmin,
+    historyLength: history.length,
+    prevLength: window.APP_STATE._lastRigoriHistoryLength
+  });
   
   if (updatedMatch.STATO_PARTITA === "FINITA") {
     console.log('🏁 Partita finita - chiudo popup');
@@ -2853,19 +2857,24 @@ if (document.getElementById('rigoriPopupOverlay') &&
   let casaScore = Number(updatedMatch.RIGORE_CASA ?? updatedMatch.RIGORI_CASA ?? 0) || 0;
   let trasfScore = Number(updatedMatch.RIGORE_TRASFERTA ?? updatedMatch.RIGORI_TRASFERTA ?? 0) || 0;
   
-  // 🔥 ANIMAZIONE SEMAFORO (nuovo tiro rilevato)
+  // 🔥 RILEVA NUOVO TIRO
   const prevHistoryLength = window.APP_STATE._lastRigoriHistoryLength || 0;
-  if (history.length > prevHistoryLength) {
+  const hasNewKick = history.length > prevHistoryLength;
+  
+  if (hasNewKick) {
     const lastKick = history[history.length - 1];
     const indicator = document.getElementById('rigori-indicator');
     
-    if (indicator) {
-      // ✅ Mostra animazione
+    console.log('🎯 Nuovo tiro rilevato:', lastKick, 'Admin mode:', window.APP_STATE._isRigoriAdmin);
+    
+    // ✅ ANIMAZIONE SEMAFORO - SOLO SU MOBILE (non admin)
+    if (indicator && !window.APP_STATE._isRigoriAdmin) {
       indicator.classList.remove('goal', 'miss');
+      void indicator.offsetWidth; // Force reflow
       indicator.classList.add(lastKick.result);
-      indicator.style.transition = 'all 0.3s ease';
+      indicator.style.transition = 'background-color 0.3s ease';
       
-      console.log('🚦 Animazione semaforo:', lastKick.result);
+      console.log('🚦 Animazione semaforo MOBILE:', lastKick.result);
       
       // Dopo 3 secondi, rimuovi colore
       setTimeout(() => {
@@ -2873,8 +2882,12 @@ if (document.getElementById('rigoriPopupOverlay') &&
           indicator.classList.remove('goal', 'miss');
         }
       }, 3000);
+    } else if (indicator && window.APP_STATE._isRigoriAdmin) {
+      console.log('⏭️ Skip animazione su PC (gestita da click locale)');
     }
   }
+  
+  // Salva lunghezza history per prossimo controllo
   window.APP_STATE._lastRigoriHistoryLength = history.length;
   
   // Aggiorna punteggi
@@ -2909,19 +2922,15 @@ if (document.getElementById('rigoriPopupOverlay') &&
     });
   }
   
-  // 🔥 AGGIORNA "CHI CALCIA" - Mostra PROSSIMA squadra che deve calciare
+  // 🔥 AGGIORNA "CHI CALCIA" - Mostra PROSSIMA squadra
   const currentEl = document.getElementById('rigori-current');
   if (currentEl) {
-    // ✅ Calcola chi deve calciare ORA basandosi sulla history
-    // Se history.length è pari, tocca a chi ha iniziato
-    // Se è dispari, tocca all'altra squadra
+    // Calcola chi deve calciare ORA
     let nextKicker;
     
     if (history.length === 0) {
-      // Nessun tiro ancora, usa currentKicker dal backend
       nextKicker = currentKicker;
     } else {
-      // ✅ Determina chi calcia in base al numero di tiri
       const lastKick = history[history.length - 1];
       nextKicker = lastKick.team === 'casa' ? 'trasferta' : 'casa';
     }
@@ -2929,7 +2938,7 @@ if (document.getElementById('rigoriPopupOverlay') &&
     const nextTeamName = nextKicker === 'casa' ?
       updatedMatch.SQUADRA_CASA : updatedMatch.SQUADRA_TRASFERTA;
     
-    // ✅ Aggiorna con fade effect
+    // Aggiorna con fade
     currentEl.style.transition = 'opacity 0.3s ease';
     currentEl.style.opacity = '0';
     
