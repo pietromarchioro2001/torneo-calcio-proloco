@@ -979,16 +979,80 @@ function renderMatches() {
 }
 
 function renderDatesToolbar() {
-    const container = document.getElementById("datesToolbar"); if (!container) return;
-    const now = new Date(); const todayStr = formatLocalDate(now); let html = "";
+    const container = document.getElementById("datesToolbar"); 
+    if (!container) return;
+    
+    const now = new Date(); 
+    const todayStr = formatLocalDate(now); 
+    let html = "";
+    
     window.APP_STATE.availableDates.forEach(d => {
-        const isActive = d === window.APP_STATE.selectedDate; const isToday = d === todayStr; const dateObj = parseLocalDate(d);
+        const isActive = d === window.APP_STATE.selectedDate; 
+        const isToday = d === todayStr; 
+        const dateObj = parseLocalDate(d);
         if (!dateObj) return;
-        const dayName = dateObj.toLocaleString("it-IT", { weekday: "short" }).toUpperCase(); const dayNum = dateObj.getDate(); const monthName = dateObj.toLocaleString("it-IT", { month: "short" });
-        html += `<div class="date-item ${isActive ? 'active' : ''} ${isToday ? 'today' : ''}" onclick="selectDate('${d}')"><div class="date-day">${dayNum}</div><div class="date-month">${monthName}</div></div>`;
+        
+        const dayName = dateObj.toLocaleString("it-IT", { weekday: "short" }).toUpperCase(); 
+        const dayNum = dateObj.getDate(); 
+        const monthName = dateObj.toLocaleString("it-IT", { month: "short" });
+        
+        // ✅ MODIFICATO: Layout responsive con day-name visibile solo su desktop
+        html += `
+            <div class="date-item ${isActive ? 'active' : ''} ${isToday ? 'today' : ''}" 
+                 onclick="selectDate('${d}')" 
+                 style="flex-shrink: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 8px 12px; margin: 0 4px; border-radius: 8px; cursor: pointer; transition: all 0.2s; min-width: 50px;">
+                <div class="date-day" style="font-size: 20px; font-weight: 700; line-height: 1;">${dayNum}</div>
+                <div class="date-month" style="font-size: 11px; font-weight: 600; text-transform: uppercase; line-height: 1; margin-top: 2px;">${monthName}</div>
+            </div>`;
     });
-    container.innerHTML = html; setTimeout(centerActiveDate, 100);
-    enableDragScrollDates();
+    
+    container.innerHTML = html; 
+    
+    // ✅ AGGIUNTO: Stili per il container con scroll orizzontale
+    container.style.cssText = `
+        display: flex;
+        flex-direction: row;
+        overflow-x: auto;
+        overflow-y: hidden;
+        white-space: nowrap;
+        padding: 10px 0;
+        margin: 0 -10px;
+        scroll-behavior: smooth;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: none;
+        -ms-overflow-style: none;
+    `;
+    container.classList.add('dates-toolbar-scroll');
+    
+    // Nascondi scrollbar ma mantieni funzionalità
+    const style = document.createElement('style');
+    style.textContent = `
+        .dates-toolbar-scroll::-webkit-scrollbar {
+            display: none;
+        }
+        .date-item.active {
+            background: #7a1e2c !important;
+            color: white !important;
+        }
+        .date-item.today {
+            border: 2px solid #7a1e2c;
+        }
+        .date-item:hover {
+            background: #f5f5f5;
+        }
+        .date-item.active:hover {
+            background: #7a1e2c !important;
+        }
+    `;
+    if (!document.getElementById('datesToolbarStyles')) {
+        style.id = 'datesToolbarStyles';
+        document.head.appendChild(style);
+    }
+    
+    setTimeout(() => {
+        centerActiveDate();
+        enableDragScrollDates();
+    }, 100);
 }
 
 function enableDragScrollDates() {
@@ -999,14 +1063,16 @@ function enableDragScrollDates() {
     let startX;
     let scrollLeft;
     let touchStartX = 0;
-    let touchStartY = 0;
+    let touchStartScrollLeft = 0;
     
+    // ⚠️ stato globale del drag
     window.isDraggingDates = false;
     
     // Mouse events
     el.addEventListener("mousedown", (e) => {
         isDown = true;
         el.classList.add("dragging");
+        el.style.cursor = 'grabbing';
         startX = e.pageX - el.offsetLeft;
         scrollLeft = el.scrollLeft;
         window.isDraggingDates = false;
@@ -1015,44 +1081,46 @@ function enableDragScrollDates() {
     el.addEventListener("mouseleave", () => {
         isDown = false;
         el.classList.remove("dragging");
+        el.style.cursor = 'grab';
     });
     
     el.addEventListener("mouseup", () => {
         isDown = false;
         el.classList.remove("dragging");
+        el.style.cursor = 'grab';
     });
     
     el.addEventListener("mousemove", (e) => {
         if (!isDown) return;
         e.preventDefault();
         const x = e.pageX - el.offsetLeft;
-        const walk = (x - startX) * 1.2;
+        const walk = (x - startX) * 1.5;
         el.scrollLeft = scrollLeft - walk;
         window.isDraggingDates = true;
     });
     
-    // Touch events - con rilevamento direzione
+    // Touch events per mobile
     el.addEventListener("touchstart", (e) => {
         touchStartX = e.touches[0].clientX;
-        touchStartY = e.touches[0].clientY;
-        scrollLeft = el.scrollLeft;
+        touchStartScrollLeft = el.scrollLeft;
+        el.style.cursor = 'grabbing';
     }, { passive: true });
     
     el.addEventListener("touchmove", (e) => {
+        if (!touchStartX) return;
         const x = e.touches[0].clientX;
-        const y = e.touches[0].clientY;
-        
-        const diffX = Math.abs(x - touchStartX);
-        const diffY = Math.abs(y - touchStartY);
-        
-        // Se il movimento è prevalentemente orizzontale, gestisci lo scroll
-        if (diffX > diffY) {
-            const walk = (x - touchStartX) * 1.2;
-            el.scrollLeft = scrollLeft - walk;
-            window.isDraggingDates = true;
-        }
-        // Se è verticale, lascia fare al browser (scroll naturale della pagina)
+        const walk = (touchStartX - x) * 1.5;
+        el.scrollLeft = touchStartScrollLeft + walk;
+        window.isDraggingDates = true;
     }, { passive: true });
+    
+    el.addEventListener("touchend", () => {
+        touchStartX = 0;
+        el.style.cursor = 'grab';
+    });
+    
+    // Imposta cursor iniziale
+    el.style.cursor = 'grab';
 }
 function selectDate(date) {
     if (window.isDraggingDates) return;
@@ -1086,8 +1154,19 @@ function getMatchPriority(m) {
 }
 
 function centerActiveDate() {
-    const container = document.getElementById("datesToolbar"), active = container?.querySelector(".date-item.active");
-    if (!active) return; const offset = active.offsetLeft - (container.offsetWidth/2) + (active.offsetWidth/2); container.scrollTo({ left: offset, behavior: "smooth" });
+    const container = document.getElementById("datesToolbar");
+    const active = container?.querySelector(".date-item.active");
+    if (!active || !container) return;
+    
+    const containerWidth = container.offsetWidth;
+    const activeOffset = active.offsetLeft;
+    const activeWidth = active.offsetWidth;
+    const offset = activeOffset - (containerWidth / 2) + (activeWidth / 2);
+    
+    container.scrollTo({ 
+        left: offset, 
+        behavior: "smooth" 
+    });
 }
 
 function renderMatchesByDate(date) {
