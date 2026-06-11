@@ -407,7 +407,6 @@ function getNextMatchCard() {
         : '<div class="champion-logo" style="display:flex;align-items:center;justify-content:center;font-size:18px;">⚽</div>';
         
     const nomeVincitore = Sanitizer.html((vincitore.nome || "").toUpperCase());
-    
     return `
     <div class="home-next-match winner-card" onclick="openMatch('${Sanitizer.attr(finale1.MATCH_ID)}')">
         <div class="champion-label">CAMPIONE 2026:</div>
