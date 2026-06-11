@@ -946,7 +946,7 @@ function showMatches() {
     if (hasLiveMatch) {
         startMatchLiveRefresh();
     }
-    document.getElementById("app").innerHTML = `<div class="matches-page"><div class="page-title">PARTITE</div><div class="matches-actions"><div class="phase-btn" onclick="openNewMatchPage()">+ INSERISCI PARTITE</div></div><div class="dates-toolbar" id="datesToolbar"></div><div class="matches-scroll"><div id="matchesList"></div></div></div>`;
+    document.getElementById("app").innerHTML = `<div class="matches-page"><div class="page-title">PARTITE</div><div class="matches-actions"><div class="phase-btn" onclick="openNewMatchPage()">+ INSERISCI PARTITE</div></div><div class="dates-toolbar-wrapper"><div class="dates-toolbar" id="datesToolbar"></div></div><div class="matches-scroll"><div id="matchesList"></div></div></div>`;
     renderMatches();
 }
 
