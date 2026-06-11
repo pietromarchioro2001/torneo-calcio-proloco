@@ -1292,6 +1292,10 @@ body {
   transform: scale(1.1);
 }
 
+#rigori-current {
+  transition: opacity 0.3s ease;
+}
+
 /* =========================================
     STILE CARD & FINALI LIVE (UNIFICATO)
    ========================================= */
