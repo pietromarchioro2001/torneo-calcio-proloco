@@ -1629,7 +1629,9 @@ body {
     overflow-x: auto !important; overflow-y: hidden !important; scroll-behavior: auto;
     -webkit-overflow-scrolling: touch; scrollbar-width: none; -ms-overflow-style: none;
     display: flex !important; flex-wrap: nowrap !important; justify-content: flex-start !important;
-    touch-action: pan-y;
+    touch-action: pan-x !important; /* Cambiato da pan-y a pan-x */
+     -webkit-overflow-scrolling: touch;
+     overflow-x: auto !important;
   }
   .dates-toolbar::-webkit-scrollbar { display: none; }
   .date-item { flex: 0 0 auto !important; width: 44px !important; min-height: 38px !important; padding: 4px 0 !important; border-radius: 8px !important; margin: 0 1px !important; }
