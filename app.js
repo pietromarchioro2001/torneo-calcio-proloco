@@ -1059,20 +1059,22 @@ function enableDragScrollDates() {
     const el = document.getElementById("datesToolbar");
     if (!el) return;
     
+    const isMobile = window.innerWidth <= 768;
+    
     let isDown = false;
     let startX;
     let scrollLeft;
     let touchStartX = 0;
-    let touchStartScrollLeft = 0;
+    let touchStartY = 0;
+    let touchStartTime = 0;
     
-    // ⚠️ stato globale del drag
     window.isDraggingDates = false;
     
-    // Mouse events
+    // 🖱️ MOUSE EVENTS (solo PC)
     el.addEventListener("mousedown", (e) => {
+        if (isMobile) return;
         isDown = true;
         el.classList.add("dragging");
-        el.style.cursor = 'grabbing';
         startX = e.pageX - el.offsetLeft;
         scrollLeft = el.scrollLeft;
         window.isDraggingDates = false;
@@ -1081,47 +1083,52 @@ function enableDragScrollDates() {
     el.addEventListener("mouseleave", () => {
         isDown = false;
         el.classList.remove("dragging");
-        el.style.cursor = 'grab';
     });
     
     el.addEventListener("mouseup", () => {
         isDown = false;
         el.classList.remove("dragging");
-        el.style.cursor = 'grab';
     });
     
     el.addEventListener("mousemove", (e) => {
-        if (!isDown) return;
+        if (!isDown || isMobile) return;
         e.preventDefault();
         const x = e.pageX - el.offsetLeft;
-        const walk = (x - startX) * 1.5;
+        const walk = (x - startX) * 1.2;
         el.scrollLeft = scrollLeft - walk;
         window.isDraggingDates = true;
     });
     
-    // Touch events per mobile
+    // 📱 TOUCH EVENTS - solo per aggiornare indicatori, NON per scroll
+    // Lo scroll orizzontale lo gestisce nativamente il browser con overflow-x: auto
     el.addEventListener("touchstart", (e) => {
         touchStartX = e.touches[0].clientX;
-        touchStartScrollLeft = el.scrollLeft;
-        el.style.cursor = 'grabbing';
-    }, { passive: true });
-    
-    el.addEventListener("touchmove", (e) => {
-        if (!touchStartX) return;
-        const x = e.touches[0].clientX;
-        const walk = (touchStartX - x) * 1.5;
-        el.scrollLeft = touchStartScrollLeft + walk;
-        window.isDraggingDates = true;
+        touchStartY = e.touches[0].clientY;
+        touchStartTime = Date.now();
     }, { passive: true });
     
     el.addEventListener("touchend", () => {
-        touchStartX = 0;
-        el.style.cursor = 'grab';
-    });
+        // Aggiorna indicatori dopo il touch
+        updateScrollIndicators();
+    }, { passive: true });
     
-    // Imposta cursor iniziale
-    el.style.cursor = 'grab';
+    // 🔄 AGGIORNAMENTO INDICATORI SCROLL
+    function updateScrollIndicators() {
+        const wrapper = el.closest('.dates-toolbar-wrapper');
+        if (!wrapper) return;
+        const canScrollLeft = el.scrollLeft > 5;
+        const canScrollRight = el.scrollLeft < (el.scrollWidth - el.clientWidth - 5);
+        wrapper.classList.toggle('can-scroll-left', canScrollLeft);
+        wrapper.classList.toggle('can-scroll-right', canScrollRight);
+    }
+    
+    el.addEventListener("scroll", updateScrollIndicators, { passive: true });
+    window.addEventListener("resize", updateScrollIndicators);
+    
+    // Inizializza indicatori
+    setTimeout(updateScrollIndicators, 100);
 }
+
 function selectDate(date) {
     if (window.isDraggingDates) return;
 
