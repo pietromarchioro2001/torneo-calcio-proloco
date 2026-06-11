@@ -1210,6 +1210,18 @@ body {
 .rigori-team-select { cursor: pointer; transition: transform 0.2s; padding: 10px; border-radius: 12px; }
 .rigori-team-select:hover { transform: scale(1.05); background: #f9f9f9; }
 
+.rigori-indicator.goal {
+  background: #22c55e !important;
+  box-shadow: 0 0 30px rgba(34, 197, 94, 0.6);
+  transform: scale(1.1);
+}
+
+.rigori-indicator.miss {
+  background: #ef4444 !important;
+  box-shadow: 0 0 30px rgba(239, 68, 68, 0.6);
+  transform: scale(1.1);
+}
+
 /* =========================================
     STILE CARD & FINALI LIVE (UNIFICATO)
    ========================================= */
