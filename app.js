@@ -2520,7 +2520,8 @@ function handleRigoreClick(result, rigoriState, saveRigoriState, casaNome, trasf
     saveRigoriState();
   }, 3000);
 }
-
+}
+    
 async function finishRigori() {
     const match = window.APP_STATE.lastMatch;
     if (!match) return;
