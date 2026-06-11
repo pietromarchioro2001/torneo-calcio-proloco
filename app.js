@@ -2268,20 +2268,47 @@ if (rigoriState.fase === 'selezione') {
     const btnTrasf = document.getElementById('btn-seleziona-trasferta');
     
     if (btnCasa) {
-        btnCasa.onclick = () => {
+        btnCasa.onclick = async () => {
             rigoriState.fase = 'tiri';
             rigoriState.currentKicker = 'casa';
             saveRigoriState();
             closeRigoriPopup();
-            openRigoriPopup(false); // Riapre in modalità admin con la fase di tiro
+            
+            // 🔥 CAMBIA STATO PARTITA A RIGORI (così il mobile lo rileva)
+            try {
+                await ApiClient.updateMatchStatus(match.MATCH_ID, "RIGORI");
+                if (window.APP_CACHE.matches) {
+                    const idx = window.APP_CACHE.matches.findIndex(m => String(m.MATCH_ID) === String(match.MATCH_ID));
+                    if (idx >= 0) {
+                        window.APP_CACHE.matches[idx].STATO_PARTITA = "RIGORI";
+                        CacheManager.save(window.APP_CACHE);
+                    }
+                }
+                console.log('✅ Stato RIGORI inviato al backend');
+            } catch(e) { console.error('Errore update stato rigori:', e); }
+            
+            openRigoriPopup(false);
         };
     }
     if (btnTrasf) {
-        btnTrasf.onclick = () => {
+        btnTrasf.onclick = async () => {
             rigoriState.fase = 'tiri';
             rigoriState.currentKicker = 'trasferta';
             saveRigoriState();
             closeRigoriPopup();
+            
+            try {
+                await ApiClient.updateMatchStatus(match.MATCH_ID, "RIGORI");
+                if (window.APP_CACHE.matches) {
+                    const idx = window.APP_CACHE.matches.findIndex(m => String(m.MATCH_ID) === String(match.MATCH_ID));
+                    if (idx >= 0) {
+                        window.APP_CACHE.matches[idx].STATO_PARTITA = "RIGORI";
+                        CacheManager.save(window.APP_CACHE);
+                    }
+                }
+                console.log('✅ Stato RIGORI inviato al backend');
+            } catch(e) { console.error('Errore update stato rigori:', e); }
+            
             openRigoriPopup(false);
         };
     }
@@ -2363,64 +2390,131 @@ if (rigoriState.fase === 'selezione') {
 
     const btnMiss = document.getElementById('btn-miss');
     const btnGoal = document.getElementById('btn-goal');
-    if (btnMiss) btnMiss.onclick = () => handleRigoreClick('miss', rigoriState, saveRigoriState, casaNome, trasfNome);
-    if (btnGoal) btnGoal.onclick = () => handleRigoreClick('goal', rigoriState, saveRigoriState, casaNome, trasfNome);
+    if (btnMiss) btnMiss.onclick = () => handleRigoreClick('miss', rigoriState, saveRigoriState, casaNome, trasfNome, match);
+    if (btnGoal) btnGoal.onclick = () => handleRigoreClick('goal', rigoriState, saveRigoriState, casaNome, trasfNome, match);
 }
 
-function handleRigoreClick(result, rigoriState, saveRigoriState, casaNome, trasfNome) {
-  console.log('🎯 Click rigore - Stato attuale:', {
-    casaScore: rigoriState.casaScore,
-    trasfScore: rigoriState.trasfScore,
-    history: rigoriState.history.length
-  });
-  
-  const currentTeam = rigoriState.currentKicker; 
-  const isGoal = result === 'goal';
-  
-  if (isGoal) { 
-    if (currentTeam === 'casa') { rigoriState.casaScore++; } 
-    else { rigoriState.trasfScore++; } 
-  }
-  
-  rigoriState.history.push({ team: currentTeam, result: result });
-  saveRigoriState(); 
-  
-  // Aggiorna UI locale
-  const scoreCasaEl = document.getElementById('score-casa');
-  const scoreTrasfEl = document.getElementById('score-trasferta');
-  if (scoreCasaEl) scoreCasaEl.textContent = rigoriState.casaScore;
-  if (scoreTrasfEl) scoreTrasfEl.textContent = rigoriState.trasfScore;
-  
-  const indicator = document.getElementById('rigori-indicator'); 
-  if (indicator) indicator.style.background = isGoal ? '#22c55e' : '#ef4444';
-  
-  setTimeout(() => {
-    if (indicator) indicator.style.background = '#555';
-    
-    // Renderizza bollini
-    const casaKicks = document.getElementById('kicks-casa'); 
-    const trasfKicks = document.getElementById('kicks-trasferta');
-    if (casaKicks) casaKicks.innerHTML = ''; 
-    if (trasfKicks) trasfKicks.innerHTML = '';
-    
-    rigoriState.history.forEach(kick => {
-      const kickEl = document.createElement('div'); 
-      kickEl.className = `kick-indicator ${kick.result}`; 
-      kickEl.style.cssText = 'width: 20px; height: 20px; border-radius: 50%; margin: 2px; display: inline-block;';
-      kickEl.style.background = kick.result === 'goal' ? '#22c55e' : '#ef4444';
-      if (kick.team === 'casa' && casaKicks) { casaKicks.appendChild(kickEl); } 
-      else if (kick.team === 'trasferta' && trasfKicks) { trasfKicks.appendChild(kickEl); }
+function handleRigoreClick(result, rigoriState, saveRigoriState, casaNome, trasfNome, match) {
+    console.log('🎯 Click rigore - Stato attuale:', {
+        casaScore: rigoriState.casaScore,
+        trasfScore: rigoriState.trasfScore,
+        history: rigoriState.history.length
     });
     
-    rigoriState.currentKicker = currentTeam === 'casa' ? 'trasferta' : 'casa';
-    const nextTeam = rigoriState.currentKicker === 'casa' ? casaNome : trasfNome;
-    const currentEl = document.getElementById('rigori-current');
-    if (currentEl) currentEl.textContent = nextTeam;
+    const currentTeam = rigoriState.currentKicker;
+    const isGoal = result === 'goal';
     
+    if (isGoal) {
+        if (currentTeam === 'casa') { rigoriState.casaScore++; }
+        else { rigoriState.trasfScore++; }
+    }
+    
+    rigoriState.history.push({ team: currentTeam, result: result });
     saveRigoriState();
-  }, 3000);
+    
+    // 🔥 SALVA SUL BACKEND PER SYNC MOBILE
+    if (match) {
+        ApiClient.saveRigoriResults({
+            matchId: match.MATCH_ID,
+            casaScore: rigoriState.casaScore,
+            trasfScore: rigoriState.trasfScore,
+            history: rigoriState.history,
+            currentKicker: rigoriState.currentKicker,
+            finished: false
+        }).then(() => {
+            console.log('✅ Tiro salvato sul backend');
+        }).catch(e => console.error('Errore save rigori:', e));
+    }
+    
+    // Aggiorna UI locale
+    const scoreCasaEl = document.getElementById('score-casa');
+    const scoreTrasfEl = document.getElementById('score-trasferta');
+    if (scoreCasaEl) scoreCasaEl.textContent = rigoriState.casaScore;
+    if (scoreTrasfEl) scoreTrasfEl.textContent = rigoriState.trasfScore;
+    
+    const indicator = document.getElementById('rigori-indicator');
+    if (indicator) {
+        indicator.classList.remove('goal', 'miss');
+        indicator.classList.add(isGoal ? 'goal' : 'miss');
+    }
+    
+    setTimeout(() => {
+        if (indicator) indicator.classList.remove('goal', 'miss');
+        
+        const casaKicks = document.getElementById('kicks-casa');
+        const trasfKicks = document.getElementById('kicks-trasferta');
+        if (casaKicks) casaKicks.innerHTML = '';
+        if (trasfKicks) trasfKicks.innerHTML = '';
+        
+        rigoriState.history.forEach(kick => {
+            const kickEl = document.createElement('div');
+            kickEl.className = `kick-indicator ${kick.result}`;
+            kickEl.style.cssText = 'width: 20px; height: 20px; border-radius: 50%; margin: 2px; display: inline-block;';
+            kickEl.style.background = kick.result === 'goal' ? '#22c55e' : '#ef4444';
+            if (kick.team === 'casa' && casaKicks) { casaKicks.appendChild(kickEl); }
+            else if (kick.team === 'trasferta' && trasfKicks) { trasfKicks.appendChild(kickEl); }
+        });
+        
+        rigoriState.currentKicker = currentTeam === 'casa' ? 'trasferta' : 'casa';
+        const nextTeam = rigoriState.currentKicker === 'casa' ? casaNome : trasfNome;
+        const currentEl = document.getElementById('rigori-current');
+        if (currentEl) currentEl.textContent = nextTeam;
+        
+        saveRigoriState();
+    }, 3000);
 }
 
+async function finishRigori() {
+    const match = window.APP_STATE.lastMatch;
+    if (!match) return;
+    
+    const storageKey = `rigori_${match.MATCH_ID}`;
+    const savedState = localStorage.getItem(storageKey);
+    if (!savedState) return;
+    
+    const rigoriState = JSON.parse(savedState);
+    
+    console.log('🏁 Finish rigori:', rigoriState);
+    
+    try {
+        // 1. Salva risultati finali sul backend
+        await ApiClient.saveRigoriResults({
+            matchId: match.MATCH_ID,
+            casaScore: rigoriState.casaScore,
+            trasfScore: rigoriState.trasfScore,
+            history: rigoriState.history,
+            currentKicker: rigoriState.currentKicker,
+            finished: true
+        });
+        
+        // 2. Cambia stato partita a FINITA
+        await ApiClient.updateMatchStatus(match.MATCH_ID, "FINITA");
+        
+        // 3. Aggiorna cache locale
+        if (window.APP_CACHE.matches) {
+            const idx = window.APP_CACHE.matches.findIndex(m => String(m.MATCH_ID) === String(match.MATCH_ID));
+            if (idx >= 0) {
+                window.APP_CACHE.matches[idx].STATO_PARTITA = "FINITA";
+                window.APP_CACHE.matches[idx].RIGORE_CASA = rigoriState.casaScore;
+                window.APP_CACHE.matches[idx].RIGORE_TRASFERTA = rigoriState.trasfScore;
+                window.APP_CACHE.matches[idx].RIGORI_CASA = rigoriState.casaScore;
+                window.APP_CACHE.matches[idx].RIGORI_TRASFERTA = rigoriState.trasfScore;
+                CacheManager.save(window.APP_CACHE);
+            }
+        }
+        
+        console.log('✅ Rigori completati e salvati');
+    } catch(e) {
+        console.error('Errore finish rigori:', e);
+    }
+    
+    // 4. Chiudi popup e aggiorna UI
+    closeRigoriPopup();
+    stopMatchLiveRefresh();
+    invalidateCacheAndRefresh('matches');
+    invalidateCacheAndRefresh('finalStage');
+    refreshStandingsDebounced(500);
+}
 // ============================================================================
 // 📊 STANDINGS
 // ============================================================================
@@ -2560,6 +2654,13 @@ function startMatchLiveRefresh() {
             // 🔥 AGGIUNGI QUESTO BLOCCO: Se il popup rigori è aperto, aggiornalo (SYNC MOBILE)
 if (document.getElementById('rigoriPopupOverlay') && String(window.APP_STATE.currentMatchId) === String(match.MATCH_ID)) {
     console.log('🔄 Popup rigori aperto - aggiorno dati dal backend (sync mobile)...');
+
+    if (updatedMatch.STATO_PARTITA === "FINITA") {
+        console.log('🏁 Partita finita - chiudo popup rigori su mobile');
+        closeRigoriPopup();
+        // Il riquadro sequenza rigori apparirà automaticamente via renderPenaltyIndicators
+        return;
+    }
     
     // Ricostruisci stato dai dati freschi del backend
     const penaltyEvents = (freshEvents || []).filter(e => {
