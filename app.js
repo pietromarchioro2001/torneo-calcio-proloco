@@ -2225,11 +2225,9 @@ function openRigoriPopup(directMode = false) {
             window.APP_CACHE.eventsByMatch[match.MATCH_ID] = freshEvents;
             CacheManager.save(window.APP_CACHE);
             
-            // 🔥 LEGGI I PUNTEGGI DAL BACKEND (colonne J/K)
             const rigoriCasa = freshData.match.RIGORE_CASA ?? freshData.match.RIGORI_CASA ?? 0;
             const rigoriTrasf = freshData.match.RIGORE_TRASFERTA ?? freshData.match.RIGORI_TRASFERTA ?? 0;
             
-            // 🔥 LEGGI LA HISTORY TEMPORANEA (se il backend la salva)
             let historyTemp = [];
             if (freshData.match.RIGORI_HISTORY_TEMP) {
                 try {
@@ -2239,17 +2237,7 @@ function openRigoriPopup(directMode = false) {
                 }
             }
             
-            // Costruisci stato
-            const rigoriState = {
-                fase: 'tiri',
-                casaScore: Number(rigoriCasa) || 0,
-                trasfScore: Number(rigoriTrasf) || 0,
-                currentKicker: 'casa',
-                history: historyTemp,  // ← USA LA HISTORY TEMPORANEA
-                finished: false
-            };
-            
-            // Se non c'è history temporanea, ricostruisci dagli eventi (fallback)
+            // Se non c'è history dal backend, ricostruiscila dagli eventi
             if (historyTemp.length === 0) {
                 const penaltyEvents = (freshEvents || []).filter(e => {
                     const rigoreResult = String(e.RIGORE_RESULT || "").toUpperCase();
@@ -2260,21 +2248,31 @@ function openRigoriPopup(directMode = false) {
                 penaltyEvents.forEach(e => {
                     const isGoal = (e.RIGORE_RESULT === 'RIGORE_SEGNO');
                     const isCasa = String(e.TEAM_ID) === casaId;
-                    rigoriState.history.push({
+                    historyTemp.push({
                         team: isCasa ? 'casa' : 'trasferta',
                         result: isGoal ? 'goal' : 'miss'
                     });
                 });
             }
             
-            // Determina chi calcia ora
-            if (rigoriState.history.length > 0) {
-                const lastKick = rigoriState.history[rigoriState.history.length - 1];
+            const rigoriState = {
+                fase: 'tiri',
+                casaScore: Number(rigoriCasa) || 0,
+                trasfScore: Number(rigoriTrasf) || 0,
+                currentKicker: 'casa',
+                history: historyTemp,
+                finished: false
+            };
+            
+            if (historyTemp.length > 0) {
+                const lastKick = historyTemp[historyTemp.length - 1];
                 rigoriState.currentKicker = lastKick.team === 'casa' ? 'trasferta' : 'casa';
             }
             
             localStorage.setItem(storageKey, JSON.stringify(rigoriState));
             renderRigoriPopup(rigoriState, match, casaNome, trasfNome, casaLogo, trasfLogo, storageKey);
+        } else {
+            alert('Errore: impossibile caricare i dati dei rigori');
         }
     }).catch(err => {
         loader.remove();
