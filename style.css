@@ -695,7 +695,7 @@ body {
 .match-card:hover .match-options { opacity: 1; }
 .match-options:hover { background: #f3f3f3; color: #222; }
 
-.dates-toolbar { display: flex; justify-content: center; overflow-x: auto; gap: 8px; padding: 8px 20px; scroll-behavior: smooth; cursor: grab; scroll-snap-type: x mandatory; }
+
 .date-item { flex: 0 0 auto; width: 70px; padding: 6px 0; min-height: 48px; border-radius: 14px; background: #f1f1f1; text-align: center; cursor: pointer; transition: 0.2s; scroll-snap-align: center; }
 .date-item.today { border: 2px solid #8c404e; }
 .date-item:hover { transform: translateY(-2px); }
