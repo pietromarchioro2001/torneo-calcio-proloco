@@ -1000,13 +1000,10 @@ function enableDragScrollDates() {
     let scrollLeft;
     let touchStartX = 0;
     let touchStartY = 0;
-    let isScrolling = false;
     
     window.isDraggingDates = false;
     
-    // ✅ Usa touch-action: pan-y per permettere scroll verticale
-    el.style.touchAction = 'pan-y';
-    
+    // Mouse events
     el.addEventListener("mousedown", (e) => {
         isDown = true;
         el.classList.add("dragging");
@@ -1034,42 +1031,29 @@ function enableDragScrollDates() {
         window.isDraggingDates = true;
     });
     
-    // ✅ Touch events migliorati per mobile
+    // Touch events - con rilevamento direzione
     el.addEventListener("touchstart", (e) => {
         touchStartX = e.touches[0].clientX;
         touchStartY = e.touches[0].clientY;
         scrollLeft = el.scrollLeft;
-        isScrolling = false;
     }, { passive: true });
     
     el.addEventListener("touchmove", (e) => {
-        const touchX = e.touches[0].clientX;
-        const touchY = e.touches[0].clientY;
+        const x = e.touches[0].clientX;
+        const y = e.touches[0].clientY;
         
-        // ✅ Calcola la direzione del movimento
-        const diffX = Math.abs(touchX - touchStartX);
-        const diffY = Math.abs(touchY - touchStartY);
+        const diffX = Math.abs(x - touchStartX);
+        const diffY = Math.abs(y - touchStartY);
         
-        // ✅ Se il movimento verticale è maggiore, lascia scrollare la pagina
-        if (diffY > diffX && diffY > 10) {
-            isScrolling = true;
-            return; // Lascia fare lo scroll naturale
-        }
-        
-        // ✅ Se il movimento orizzontale è maggiore, fai drag della toolbar
-        if (diffX > diffY && diffX > 10) {
-            e.preventDefault(); // Previeni scroll verticale
-            const walk = (touchX - touchStartX) * 1.2;
+        // Se il movimento è prevalentemente orizzontale, gestisci lo scroll
+        if (diffX > diffY) {
+            const walk = (x - touchStartX) * 1.2;
             el.scrollLeft = scrollLeft - walk;
             window.isDraggingDates = true;
         }
-    }, { passive: false });
-    
-    el.addEventListener("touchend", () => {
-        isScrolling = false;
-    });
+        // Se è verticale, lascia fare al browser (scroll naturale della pagina)
+    }, { passive: true });
 }
-
 function selectDate(date) {
     if (window.isDraggingDates) return;
 
