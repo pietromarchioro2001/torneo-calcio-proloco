@@ -2189,6 +2189,9 @@ function toggleSupplementari() {
 function openRigoriPopup(directMode = false) {
   const match = window.APP_STATE.lastMatch; 
   if (!match) return;
+
+  window.APP_STATE._isRigoriAdmin = !directMode;
+  window.APP_STATE._isMobileViewer = directMode;
   
   const casaData = window.APP_CACHE.fullTeams?.[String(match.CASA_ID)]?.team;
   const trasfData = window.APP_CACHE.fullTeams?.[String(match.TRASFERTA_ID)]?.team;
@@ -2196,18 +2199,15 @@ function openRigoriPopup(directMode = false) {
   const trasfNome = trasfData?.NOME_SQUADRA || match.SQUADRA_TRASFERTA;
   const casaLogo = casaData?.LOGO_FILE_ID || casaData?.LOGO_ID;
   const trasfLogo = trasfData?.LOGO_FILE_ID || trasfData?.LOGO_ID;
-  
   const storageKey = `rigori_${match.MATCH_ID}`;
   
   // 🔥 Se siamo in directMode (telefono), facciamo fetch dal backend
   if (directMode) {
-    console.log('📱 Telefono apre popup rigori - fetch dati dal backend...');
     const loader = document.createElement('div');
     loader.className = 'rigori-popup-overlay';
     loader.id = 'rigoriLoader';
     loader.innerHTML = `
         <div class="rigori-popup" style="max-width: 400px; text-align: center; padding: 40px;">
-            <div style="font-size: 48px; margin-bottom: 20px;">⏳</div>
             <div style="font-size: 18px; font-weight: 700; color: #7a1e2c; letter-spacing: 2px;">
                 CARICAMENTO RIGORI...
             </div>
