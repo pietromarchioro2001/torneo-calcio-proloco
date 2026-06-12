@@ -2704,155 +2704,157 @@ let consecutiveErrors = 0;
 let currentPollingInterval = 2000;
 
 function startMatchLiveRefresh() {
-  if (matchLiveRefreshInterval) return;
-  
-  consecutiveErrors = 0;
-  currentPollingInterval = 2000;
-  
-  const getInterval = () => {
-    if (consecutiveErrors > 0) {
-      const backoff = Math.min(30000, 2000 * Math.pow(2, consecutiveErrors));
-      return backoff;
-    }
-    const hasRigori = (window.APP_CACHE.matches || []).some(m => m.STATO_PARTITA === "RIGORI");
-    return hasRigori ? 2000 : 3000;
-  };
-  
-  const doRefresh = async () => {
-    const liveMatches = (window.APP_CACHE.matches || []).filter(m =>
-      ["LIVE", "SUPP", "RIGORI"].includes(m.STATO_PARTITA)
-    );
+    if (matchLiveRefreshInterval) return;
+    consecutiveErrors = 0;
+    currentPollingInterval = 2000;
     
-    if (liveMatches.length === 0) {
-      stopMatchLiveRefresh();
-      return;
-    }
+    const getInterval = () => {
+        if (consecutiveErrors > 0) {
+            const backoff = Math.min(30000, 2000 * Math.pow(2, consecutiveErrors));
+            return backoff;
+        }
+        const hasRigori = (window.APP_CACHE.matches || []).some(m => m.STATO_PARTITA === "RIGORI");
+        // 🔥 RIGORI: polling ultra-rapido (1 secondo)
+        return hasRigori ? 1000 : 3000;
+    };
     
-    for (const match of liveMatches) {
-      try {
-        const freshData = await ApiClient.getMatchFull(match.MATCH_ID);
-        const freshEvents = await ApiClient.getEventsAdmin(match.MATCH_ID);
-        
-        if (freshData?.match) {
-          consecutiveErrors = 0;
-          
-          const mergedEvents = mergeEventsWithLocal(freshEvents, match.MATCH_ID);
-          const calculatedScore = calculateMatchScore(freshData.match, mergedEvents);
-          const idx = window.APP_CACHE.matches.findIndex(m => String(m.MATCH_ID) === String(match.MATCH_ID));
-          
-          if (idx < 0) continue;
-          
-          let safeData = window.APP_CACHE.matches[idx]?.DATA;
-          if (freshData.match.DATA) {
+    const doRefresh = async () => {
+        const liveMatches = (window.APP_CACHE.matches || []).filter(m =>
+            ["LIVE", "SUPP", "RIGORI"].includes(m.STATO_PARTITA)
+        );
+        if (liveMatches.length === 0) {
+            stopMatchLiveRefresh();
+            return;
+        }
+        for (const match of liveMatches) {
             try {
-              const str = String(freshData.match.DATA).trim();
-              const matchDateStr = str.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/);
-              if (matchDateStr) {
-                safeData = `${matchDateStr[1]}-${String(matchDateStr[2]).padStart(2, '0')}-${String(matchDateStr[3]).padStart(2, '0')}`;
-              } else {
-                const matchDateStr2 = str.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})/);
-                if (matchDateStr2) {
-                  safeData = `${matchDateStr2[3]}-${String(matchDateStr2[2]).padStart(2, '0')}-${String(matchDateStr2[1]).padStart(2, '0')}`;
+                const isRigori = match.STATO_PARTITA === "RIGORI";
+                
+                // 🔥 PER I RIGORI: solo getMatchFull (1 chiamata invece di 2)
+                // I dati dei rigori sono TUTTI in getMatchFull (RIGORI_HISTORY, RIGORI_CURRENT_KICKER, ecc.)
+                const freshData = await ApiClient.getMatchFull(match.MATCH_ID);
+                
+                // Solo per partite LIVE/SUPP normali, carica anche gli eventi
+                const freshEvents = isRigori ? [] : await ApiClient.getEventsAdmin(match.MATCH_ID);
+                
+                if (freshData?.match) {
+                    consecutiveErrors = 0;
+                    
+                    const mergedEvents = isRigori ? 
+                        (window.APP_CACHE.eventsByMatch[match.MATCH_ID] || []) : 
+                        mergeEventsWithLocal(freshEvents, match.MATCH_ID);
+                    
+                    const calculatedScore = isRigori ? 
+                        { GOL_CASA: match.GOL_CASA, GOL_TRASFERTA: match.GOL_TRASFERTA } :
+                        calculateMatchScore(freshData.match, mergedEvents);
+                    
+                    const idx = window.APP_CACHE.matches.findIndex(m => String(m.MATCH_ID) === String(match.MATCH_ID));
+                    if (idx < 0) continue;
+                    
+                    let safeData = window.APP_CACHE.matches[idx]?.DATA;
+                    if (freshData.match.DATA) {
+                        try {
+                            const str = String(freshData.match.DATA).trim();
+                            const matchDateStr = str.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/);
+                            if (matchDateStr) {
+                                safeData = `${matchDateStr[1]}-${String(matchDateStr[2]).padStart(2, '0')}-${String(matchDateStr[3]).padStart(2, '0')}`;
+                            } else {
+                                const matchDateStr2 = str.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})/);
+                                if (matchDateStr2) {
+                                    safeData = `${matchDateStr2[3]}-${String(matchDateStr2[2]).padStart(2, '0')}-${String(matchDateStr2[1]).padStart(2, '0')}`;
+                                }
+                            }
+                        } catch(e) {
+                            console.warn('⚠️ Errore normalizzazione data:', e, freshData.match.DATA);
+                        }
+                    }
+                    
+                    const updatedMatch = {
+                        ...window.APP_CACHE.matches[idx],
+                        ...freshData.match,
+                        ...calculatedScore,
+                        DATA: safeData
+                    };
+                    
+                    window.APP_CACHE.matches[idx] = updatedMatch;
+                    if (!isRigori) {
+                        window.APP_CACHE.eventsByMatch[match.MATCH_ID] = mergedEvents;
+                    }
+                    CacheManager.save(window.APP_CACHE);
+                    
+                    if (window.APP_STATE.matchesById[match.MATCH_ID]) {
+                        window.APP_STATE.matchesById[match.MATCH_ID] = {
+                            ...window.APP_STATE.matchesById[match.MATCH_ID],
+                            ...updatedMatch,
+                            DATA: safeData
+                        };
+                    }
+                    
+                    // 🔥 SE POPUP RIGORI APERTO - AGGIORNA SOLO SE MOBILE
+                    const rigoriPopupOpen = document.getElementById('rigoriPopupOverlay') &&
+                        String(window.APP_STATE.currentMatchId) === String(match.MATCH_ID);
+                    if (rigoriPopupOpen) {
+                        if (updatedMatch.STATO_PARTITA === "FINITA") {
+                            console.log('🏁 Partita finita - chiudo popup');
+                            closeRigoriPopup();
+                        } else {
+                            const isMobileViewer = window.APP_STATE._isMobileViewer === true;
+                            const isAdminViewer = window.APP_STATE._isRigoriAdmin === true && !isMobileViewer;
+                            if (isMobileViewer && !isAdminViewer) {
+                                updateRigoriPopupMobile(updatedMatch);
+                            }
+                        }
+                    }
+                    
+                    // 🔥 AGGIORNAMENTO PAGINA PARTITA
+                    if (document.querySelector('.match-page') && String(window.APP_STATE.currentMatchId) === String(match.MATCH_ID)) {
+                        renderMatchPage(updatedMatch);
+                        loadPlayersForMatch(updatedMatch);
+                        if (updatedMatch.STATO_PARTITA === "RIGORI" && !document.getElementById('rigoriPopupOverlay')) {
+                            console.log('🎯 Rilevato stato RIGORI - apro popup automatico');
+                            setTimeout(() => openRigoriPopup(true), 500);
+                        }
+                    }
+                    
+                    // 🔥 AGGIORNAMENTO LISTA PARTITE
+                    if (document.querySelector('.matches-page')) {
+                        const selectedDate = window.APP_STATE.selectedDate;
+                        if (selectedDate) {
+                            renderMatchesByDate(selectedDate);
+                        } else {
+                            renderMatches();
+                        }
+                    }
+                    
+                    // 🔥 AGGIORNAMENTO HOME
+                    if (document.querySelector('.home-container')) {
+                        const nextCardHtml = getNextMatchCard();
+                        const existing = document.querySelector('.home-next-match');
+                        if (existing && nextCardHtml) {
+                            existing.outerHTML = nextCardHtml;
+                        }
+                    }
                 }
-              }
-            } catch(e) {
-              console.warn('⚠️ Errore normalizzazione data:', e, freshData.match.DATA);
+            } catch (error) {
+                console.error(`❌ Errore refresh match ${match.MATCH_ID}:`, error);
+                consecutiveErrors++;
+                if (consecutiveErrors >= 5) {
+                    console.warn(`⚠️ Troppi errori consecutivi (${consecutiveErrors}). Polling rallentato.`);
+                }
+                if (error.message?.includes('Servizio Fogli di lavoro') ||
+                    error.message?.includes('rate limit') ||
+                    error.message?.includes('quota')) {
+                    console.warn('⚠️ Rate limit rilevato. Aumento intervallo polling.');
+                    consecutiveErrors = Math.max(consecutiveErrors, 3);
+                }
             }
-          }
-          
-          const updatedMatch = {
-            ...window.APP_CACHE.matches[idx],
-            ...freshData.match,
-            ...calculatedScore,
-            DATA: safeData
-          };
-          
-          window.APP_CACHE.matches[idx] = updatedMatch;
-          window.APP_CACHE.eventsByMatch[match.MATCH_ID] = mergedEvents;
-          CacheManager.save(window.APP_CACHE);
-          
-          if (window.APP_STATE.matchesById[match.MATCH_ID]) {
-            window.APP_STATE.matchesById[match.MATCH_ID] = {
-              ...window.APP_STATE.matchesById[match.MATCH_ID],
-              ...updatedMatch,
-              DATA: safeData
-            };
-          }
-
-          // 🔥 SE POPUP RIGORI APERTO - AGGIORNA SOLO SE MOBILE
-          const rigoriPopupOpen = document.getElementById('rigoriPopupOverlay') &&
-              String(window.APP_STATE.currentMatchId) === String(match.MATCH_ID);
-          
-          if (rigoriPopupOpen) {
-            if (updatedMatch.STATO_PARTITA === "FINITA") {
-              console.log('🏁 Partita finita - chiudo popup');
-              closeRigoriPopup();
-            } else {
-              // 🔥 AGGIORNA POPUP RIGORI SOLO SU MOBILE
-              const isMobileViewer = window.APP_STATE._isMobileViewer === true;
-              const isAdminViewer = window.APP_STATE._isRigoriAdmin === true && !isMobileViewer;
-              
-              if (isMobileViewer && !isAdminViewer) {
-                updateRigoriPopupMobile(updatedMatch);
-              }
-            }
-          }
-          
-          // 🔥 AGGIORNAMENTO PAGINA PARTITA
-          if (document.querySelector('.match-page') && String(window.APP_STATE.currentMatchId) === String(match.MATCH_ID)) {
-            renderMatchPage(updatedMatch);
-            loadPlayersForMatch(updatedMatch);
-            
-            if (updatedMatch.STATO_PARTITA === "RIGORI" && !document.getElementById('rigoriPopupOverlay')) {
-              console.log('🎯 Rilevato stato RIGORI - apro popup automatico');
-              setTimeout(() => openRigoriPopup(true), 500);
-            }
-          }
-          
-          // 🔥 AGGIORNAMENTO LISTA PARTITE
-          if (document.querySelector('.matches-page')) {
-            const selectedDate = window.APP_STATE.selectedDate;
-            if (selectedDate) {
-              renderMatchesByDate(selectedDate);
-            } else {
-              renderMatches();
-            }
-          }
-          
-          // 🔥 AGGIORNAMENTO HOME
-          if (document.querySelector('.home-container')) {
-            const nextCardHtml = getNextMatchCard();
-            const existing = document.querySelector('.home-next-match');
-            if (existing && nextCardHtml) {
-              existing.outerHTML = nextCardHtml;
-            }
-          }
         }
-      } catch (error) {
-        console.error(`❌ Errore refresh match ${match.MATCH_ID}:`, error);
-        
-        consecutiveErrors++;
-        
-        if (consecutiveErrors >= 5) {
-          console.warn(`⚠️ Troppi errori consecutivi (${consecutiveErrors}). Polling rallentato.`);
+        if (matchLiveRefreshInterval) {
+            clearInterval(matchLiveRefreshInterval);
+            matchLiveRefreshInterval = setInterval(doRefresh, getInterval());
         }
-        
-        if (error.message?.includes('Servizio Fogli di lavoro') || 
-            error.message?.includes('rate limit') ||
-            error.message?.includes('quota')) {
-          console.warn('⚠️ Rate limit rilevato. Aumento intervallo polling.');
-          consecutiveErrors = Math.max(consecutiveErrors, 3);
-        }
-      }
-    }
-    
-    if (matchLiveRefreshInterval) {
-      clearInterval(matchLiveRefreshInterval);
-      matchLiveRefreshInterval = setInterval(doRefresh, getInterval());
-    }
-  };
-  
-  matchLiveRefreshInterval = setInterval(doRefresh, getInterval());
+    };
+    matchLiveRefreshInterval = setInterval(doRefresh, getInterval());
 }
 
 function updateRigoriPopupMobile(updatedMatch) {
