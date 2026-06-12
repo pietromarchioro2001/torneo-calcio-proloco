@@ -2844,118 +2844,115 @@ function startMatchLiveRefresh() {
 
         // 🔥 SE POPUP RIGORI APERTO - AGGIORNA UI
         if (document.getElementById('rigoriPopupOverlay') &&
-        String(window.APP_STATE.currentMatchId) === String(match.MATCH_ID)) {
+            String(window.APP_STATE.currentMatchId) === String(match.MATCH_ID)) {
         
-        if (updatedMatch.STATO_PARTITA === "FINITA") {
-        console.log('🏁 Partita finita - chiudo popup');
-        closeRigoriPopup();
-        return;
-        }
+          if (updatedMatch.STATO_PARTITA === "FINITA") {
+            console.log('🏁 Partita finita - chiudo popup');
+            closeRigoriPopup();
+            return;
+          }
         
-        // 🔥 LEGGI HISTORY DAL BACKEND (DEFINITA PRIMA DI USARLA!)
-        const history = updatedMatch.RIGORI_HISTORY || [];
-        const currentKicker = updatedMatch.RIGORI_CURRENT_KICKER || 'casa';
-        let casaScore = Number(updatedMatch.RIGORE_CASA ?? updatedMatch.RIGORI_CASA ?? 0) || 0;
-        let trasfScore = Number(updatedMatch.RIGORE_TRASFERTA ?? updatedMatch.RIGORI_TRASFERTA ?? 0) || 0;
+          // 🔥 SU PC: NON FARE NULLA - tutto è gestito localmente dal click
+          if (window.APP_STATE._isRigoriAdmin) {
+            console.log('💻 PC mode - skip sync UI (gestito localmente)');
+            return; // ESCI SUBITO, non aggiornare nulla!
+          }
         
-        console.log('🔄 Sync rigori UI...', {
-          isAdmin: window.APP_STATE._isRigoriAdmin,
-          isMobile: window.APP_STATE._isMobileViewer,
-          historyLength: history.length,
-          prevLength: window.APP_STATE._lastRigoriHistoryLength,
-          casaScore,
-          trasfScore
-        });
+          // 🔥 SU MOBILE: aggiorna tutto dal backend
+          const history = updatedMatch.RIGORI_HISTORY || [];
+          const currentKicker = updatedMatch.RIGORI_CURRENT_KICKER || 'casa';
+          let casaScore = Number(updatedMatch.RIGORE_CASA ?? updatedMatch.RIGORI_CASA ?? 0) || 0;
+          let trasfScore = Number(updatedMatch.RIGORE_TRASFERTA ?? updatedMatch.RIGORI_TRASFERTA ?? 0) || 0;
         
-        // 🔥 RILEVA NUOVO TIRO
-        const prevHistoryLength = window.APP_STATE._lastRigoriHistoryLength || 0;
-        const hasNewKick = history.length > prevHistoryLength;
+          console.log('📱 Mobile sync rigori...', {
+            historyLength: history.length,
+            prevLength: window.APP_STATE._lastRigoriHistoryLength,
+            casaScore,
+            trasfScore
+          });
         
-        if (hasNewKick) {
-        const lastKick = history[history.length - 1];
-        const indicator = document.getElementById('rigori-indicator');
+          // 🔥 RILEVA NUOVO TIRO
+          const prevHistoryLength = window.APP_STATE._lastRigoriHistoryLength || 0;
+          const hasNewKick = history.length > prevHistoryLength;
         
-        console.log('🎯 Nuovo tiro rilevato:', lastKick, {
-          isAdmin: window.APP_STATE._isRigoriAdmin,
-          isMobile: window.APP_STATE._isMobileViewer
-        });
+          if (hasNewKick) {
+            const lastKick = history[history.length - 1];
+            const indicator = document.getElementById('rigori-indicator');
         
-        // ✅ ANIMAZIONE SEMAFORO - SOLO SU MOBILE
-        const btnMissExists = document.getElementById('btn-miss');
-        const isMobileMode = !btnMissExists || btnMissExists.style.display === 'none' ||
-        (btnMissExists.closest('.rigori-controls') &&
-        btnMissExists.closest('.rigori-controls').style.display === 'none');
+            console.log('🎯 Nuovo tiro mobile:', lastKick);
         
-        if (indicator && isMobileMode) {
-        indicator.classList.remove('goal', 'miss');
-        void indicator.offsetWidth;
-        indicator.classList.add(lastKick.result);
-        indicator.style.transition = 'background-color 0.3s ease';
-        console.log('🚦 Animazione semaforo MOBILE:', lastKick.result);
-        setTimeout(() => {
-        if (indicator) indicator.classList.remove('goal', 'miss');
-        }, 3000);
-        } else if (indicator && !isMobileMode) {
-        console.log('⏭️ Skip animazione su PC (gestita da click locale)');
-        }
-        }
+            // ✅ ANIMAZIONE SEMAFORO
+            if (indicator) {
+              indicator.classList.remove('goal', 'miss');
+              void indicator.offsetWidth;
+              indicator.classList.add(lastKick.result);
+              indicator.style.transition = 'background-color 0.3s ease';
+              console.log('🚦 Animazione semaforo MOBILE:', lastKick.result);
+              
+              setTimeout(() => {
+                if (indicator) indicator.classList.remove('goal', 'miss');
+              }, 3000);
+            }
+          }
         
-        // Salva lunghezza history per prossimo controllo
-        window.APP_STATE._lastRigoriHistoryLength = history.length;
+          // Salva lunghezza history
+          window.APP_STATE._lastRigoriHistoryLength = history.length;
         
-        // Aggiorna punteggi
-        const scoreCasaEl = document.getElementById('score-casa');
-        const scoreTrasfEl = document.getElementById('score-trasferta');
-        if (scoreCasaEl) scoreCasaEl.textContent = casaScore;
-        if (scoreTrasfEl) scoreTrasfEl.textContent = trasfScore;
+          // Aggiorna punteggi
+          const scoreCasaEl = document.getElementById('score-casa');
+          const scoreTrasfEl = document.getElementById('score-trasferta');
+          if (scoreCasaEl) scoreCasaEl.textContent = casaScore;
+          if (scoreTrasfEl) scoreTrasfEl.textContent = trasfScore;
         
-        // 🔥 AGGIORNA BOLLINI
-        const casaKicks = document.getElementById('kicks-casa');
-        const trasfKicks = document.getElementById('kicks-trasferta');
+          // 🔥 AGGIORNA BOLLINI
+          const casaKicks = document.getElementById('kicks-casa');
+          const trasfKicks = document.getElementById('kicks-trasferta');
         
-        if (casaKicks) {
-        casaKicks.innerHTML = '';
-        history.filter(k => k.team === 'casa').forEach(kick => {
-        const kickEl = document.createElement('div');
-        kickEl.className = `kick-indicator ${kick.result}`;
-        kickEl.style.cssText = 'width: 20px; height: 20px; border-radius: 50%; margin: 2px; display: inline-block;';
-        kickEl.style.background = kick.result === 'goal' ? '#22c55e' : '#ef4444';
-        casaKicks.appendChild(kickEl);
-        });
-        }
+          if (casaKicks) {
+            casaKicks.innerHTML = '';
+            history.filter(k => k.team === 'casa').forEach(kick => {
+              const kickEl = document.createElement('div');
+              kickEl.className = `kick-indicator ${kick.result}`;
+              kickEl.style.cssText = 'width: 20px; height: 20px; border-radius: 50%; margin: 2px; display: inline-block;';
+              kickEl.style.background = kick.result === 'goal' ? '#22c55e' : '#ef4444';
+              casaKicks.appendChild(kickEl);
+            });
+          }
         
-        if (trasfKicks) {
-        trasfKicks.innerHTML = '';
-        history.filter(k => k.team === 'trasferta').forEach(kick => {
-        const kickEl = document.createElement('div');
-        kickEl.className = `kick-indicator ${kick.result}`;
-        kickEl.style.cssText = 'width: 20px; height: 20px; border-radius: 50%; margin: 2px; display: inline-block;';
-        kickEl.style.background = kick.result === 'goal' ? '#22c55e' : '#ef4444';
-        trasfKicks.appendChild(kickEl);
-        });
-        }
+          if (trasfKicks) {
+            trasfKicks.innerHTML = '';
+            history.filter(k => k.team === 'trasferta').forEach(kick => {
+              const kickEl = document.createElement('div');
+              kickEl.className = `kick-indicator ${kick.result}`;
+              kickEl.style.cssText = 'width: 20px; height: 20px; border-radius: 50%; margin: 2px; display: inline-block;';
+              kickEl.style.background = kick.result === 'goal' ? '#22c55e' : '#ef4444';
+              trasfKicks.appendChild(kickEl);
+            });
+          }
         
-        // 🔥 AGGIORNA "CHI CALCIA"
-        const currentEl = document.getElementById('rigori-current');
-        if (currentEl) {
-        let nextKicker;
-        if (history.length === 0) {
-        nextKicker = currentKicker;
-        } else {
-        const lastKick = history[history.length - 1];
-        nextKicker = lastKick.team === 'casa' ? 'trasferta' : 'casa';
-        }
-        const nextTeamName = nextKicker === 'casa' ?
-        updatedMatch.SQUADRA_CASA : updatedMatch.SQUADRA_TRASFERTA;
-        currentEl.style.transition = 'opacity 0.3s ease';
-        currentEl.style.opacity = '0';
-        setTimeout(() => {
-        currentEl.textContent = nextTeamName ||
-        (nextKicker === 'casa' ? 'SQUADRA CASA' : 'SQUADRA TRASFERTA');
-        currentEl.style.opacity = '1';
-        }, 150);
-        console.log('🎯 Prossimo calciatore:', nextKicker, '-', nextTeamName);
-        }
+          // 🔥 AGGIORNA "CHI CALCIA"
+          const currentEl = document.getElementById('rigori-current');
+          if (currentEl) {
+            let nextKicker;
+            if (history.length === 0) {
+              nextKicker = currentKicker;
+            } else {
+              const lastKick = history[history.length - 1];
+              nextKicker = lastKick.team === 'casa' ? 'trasferta' : 'casa';
+            }
+            const nextTeamName = nextKicker === 'casa' ?
+              updatedMatch.SQUADRA_CASA : updatedMatch.SQUADRA_TRASFERTA;
+            
+            currentEl.style.transition = 'opacity 0.3s ease';
+            currentEl.style.opacity = '0';
+            setTimeout(() => {
+              currentEl.textContent = nextTeamName ||
+                (nextKicker === 'casa' ? 'SQUADRA CASA' : 'SQUADRA TRASFERTA');
+              currentEl.style.opacity = '1';
+            }, 150);
+            
+            console.log('🎯 Prossimo calciatore mobile:', nextKicker, '-', nextTeamName);
+          }
         }
           
           // 🔥 AGGIORNAMENTO PAGINA PARTITA
