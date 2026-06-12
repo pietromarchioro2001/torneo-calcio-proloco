@@ -2742,7 +2742,7 @@ function startMatchLiveRefresh() {
       return backoff;
     }
     const hasRigori = (window.APP_CACHE.matches || []).some(m => m.STATO_PARTITA === "RIGORI");
-    return hasRigori ? 2000 : 3000;
+    return hasRigori ? 1000 : 3000;
   };
   
   const doRefresh = async () => {
