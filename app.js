@@ -2852,24 +2852,22 @@ function startMatchLiveRefresh() {
             return;
           }
         
-          // 🔥 SU PC: NON FARE NULLA - tutto è gestito localmente dal click
-          if (window.APP_STATE._isRigoriAdmin) {
-            console.log('💻 PC mode - skip sync UI (gestito localmente)');
-            return; // ESCI SUBITO, non aggiornare nulla!
+          // 🔥 SU PC ADMIN: NON FARE NULLA - tutto è gestito localmente
+          if (window.APP_STATE._isRigoriAdmin && !window.APP_STATE._isMobileViewer) {
+            console.log('💻 PC Admin mode - skip sync UI');
+            return;
           }
         
-          // 🔥 SU MOBILE: aggiorna tutto dal backend
+          // 🔥 SU MOBILE VIEWER: aggiorna tutto dal backend
+          console.log('📱 Mobile viewer sync...', {
+            isAdmin: window.APP_STATE._isRigoriAdmin,
+            isMobile: window.APP_STATE._isMobileViewer
+          });
+        
           const history = updatedMatch.RIGORI_HISTORY || [];
           const currentKicker = updatedMatch.RIGORI_CURRENT_KICKER || 'casa';
           let casaScore = Number(updatedMatch.RIGORE_CASA ?? updatedMatch.RIGORI_CASA ?? 0) || 0;
           let trasfScore = Number(updatedMatch.RIGORE_TRASFERTA ?? updatedMatch.RIGORI_TRASFERTA ?? 0) || 0;
-        
-          console.log('📱 Mobile sync rigori...', {
-            historyLength: history.length,
-            prevLength: window.APP_STATE._lastRigoriHistoryLength,
-            casaScore,
-            trasfScore
-          });
         
           // 🔥 RILEVA NUOVO TIRO
           const prevHistoryLength = window.APP_STATE._lastRigoriHistoryLength || 0;
@@ -2895,7 +2893,6 @@ function startMatchLiveRefresh() {
             }
           }
         
-          // Salva lunghezza history
           window.APP_STATE._lastRigoriHistoryLength = history.length;
         
           // Aggiorna punteggi
