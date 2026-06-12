@@ -2439,8 +2439,21 @@ if (rigoriState.fase === 'selezione') {
     return; // Esci qui, non renderizzare la fase di tiro
 }
 
-    // ✅ FASE DI TIRO 
-    const isMobile = window.APP_STATE._isMobileViewer === true;
+    // ✅ FASE DI TIRO
+    // 🔥 DEFINISCI controlsHtml PRIMA del template (nasconde pulsanti su mobile)
+    const controlsHtml = isMobile ? `
+        <div class="rigori-controls" style="display: none;">
+            <button class="rigori-btn miss" id="btn-miss" style="width: 100px; height: 100px; border-radius: 50%; border: none; background: #ef4444;"></button>
+            <button class="rigori-btn goal" id="btn-goal" style="width: 100px; height: 100px; border-radius: 50%; border: none; background: #22c55e;"></button>
+        </div>
+        <button class="rigori-finish" id="rigori-finish" style="display: none;" onclick="finishRigori()">FINE</button>
+    ` : `
+        <div class="rigori-controls" style="display: flex; justify-content: center; gap: 50px; margin: 40px 0;">
+            <button class="rigori-btn miss" id="btn-miss" style="width: 100px; height: 100px; border-radius: 50%; border: none; background: #ef4444; cursor: pointer; box-shadow: 0 6px 20px rgba(239, 68, 68, 0.4); transition: transform 0.2s; font-size: 16px; font-weight: 700; color: white;"></button>
+            <button class="rigori-btn goal" id="btn-goal" style="width: 100px; height: 100px; border-radius: 50%; border: none; background: #22c55e; cursor: pointer; box-shadow: 0 6px 20px rgba(34, 197, 94, 0.4); transition: transform 0.2s; font-size: 16px; font-weight: 700; color: white;"></button>
+        </div>
+        <button class="rigori-finish" id="rigori-finish" style="width: 100%; max-width: 300px; margin: 20px auto 0; padding: 12px 20px; background: #7a1e2c; color: white; border: none; border-radius: 8px; font-size: 16px; font-weight: 700; cursor: pointer; letter-spacing: 1px; box-shadow: 0 2px 8px rgba(122, 30, 44, 0.3); display: block;" onclick="finishRigori()">FINE</button>
+    `;
     
     popup.innerHTML = `
     <div class="rigori-popup" style="max-width: 700px;">
