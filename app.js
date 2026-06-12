@@ -2865,27 +2865,30 @@ if (document.getElementById('rigoriPopupOverlay') &&
     const lastKick = history[history.length - 1];
     const indicator = document.getElementById('rigori-indicator');
     
-    console.log('🎯 Nuovo tiro rilevato:', lastKick, 'Admin mode:', window.APP_STATE._isRigoriAdmin);
+    console.log('🎯 Nuovo tiro rilevato:', lastKick, {
+        isAdmin: window.APP_STATE._isRigoriAdmin,
+        isMobile: window.APP_STATE._isMobileViewer
+    });
     
     // ✅ ANIMAZIONE SEMAFORO - SOLO SU MOBILE (non admin)
-    if (indicator && !window.APP_STATE._isRigoriAdmin) {
-      indicator.classList.remove('goal', 'miss');
-      void indicator.offsetWidth; // Force reflow
-      indicator.classList.add(lastKick.result);
-      indicator.style.transition = 'background-color 0.3s ease';
-      
-      console.log('🚦 Animazione semaforo MOBILE:', lastKick.result);
-      
-      // Dopo 3 secondi, rimuovi colore
-      setTimeout(() => {
-        if (indicator) {
-          indicator.classList.remove('goal', 'miss');
-        }
-      }, 3000);
+    if (indicator && window.APP_STATE._isMobileViewer) {
+        indicator.classList.remove('goal', 'miss');
+        void indicator.offsetWidth; // Force reflow
+        indicator.classList.add(lastKick.result);
+        indicator.style.transition = 'background-color 0.3s ease';
+        
+        console.log('🚦 Animazione semaforo MOBILE:', lastKick.result);
+        
+        // Dopo 3 secondi, rimuovi colore
+        setTimeout(() => {
+            if (indicator) {
+                indicator.classList.remove('goal', 'miss');
+            }
+        }, 3000);
     } else if (indicator && window.APP_STATE._isRigoriAdmin) {
-      console.log('⏭️ Skip animazione su PC (gestita da click locale)');
+        console.log('⏭️ Skip animazione su PC (gestita da click locale)');
     }
-  }
+}
   
   // Salva lunghezza history per prossimo controllo
   window.APP_STATE._lastRigoriHistoryLength = history.length;
