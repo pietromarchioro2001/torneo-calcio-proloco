@@ -2858,6 +2858,96 @@ function startMatchLiveRefresh() {
 }
 
 function updateRigoriPopupMobile(updatedMatch) {
+  console.log('📱 Mobile sync rigori...', {
+    currentKicker: updatedMatch.RIGORI_CURRENT_KICKER,
+    historyLength: updatedMatch.RIGORI_HISTORY?.length,
+    casaScore: updatedMatch.RIGORE_CASA,
+    trasfScore: updatedMatch.RIGORE_TRASFERTA
+  });
+  
+  const history = updatedMatch.RIGORI_HISTORY || [];
+  const currentKicker = updatedMatch.RIGORI_CURRENT_KICKER || 'casa';
+  const casaScore = Number(updatedMatch.RIGORE_CASA ?? 0) || 0;
+  const trasfScore = Number(updatedMatch.RIGORE_TRASFERTA ?? 0) || 0;
+  
+  const prevHistoryLength = window.APP_STATE._lastRigoriHistoryLength || 0;
+  const hasNewKick = history.length > prevHistoryLength;
+  
+  if (hasNewKick) {
+    const lastKick = history[history.length - 1];
+    const indicator = document.getElementById('rigori-indicator');
+    console.log('🎯 Nuovo tiro mobile:', lastKick);
+    
+    if (indicator) {
+      indicator.classList.remove('goal', 'miss');
+      void indicator.offsetWidth;
+      indicator.classList.add(lastKick.result);
+      console.log('🚦 Semaforo colorato:', lastKick.result);
+      
+      setTimeout(() => {
+        if (indicator) {
+          indicator.classList.remove('goal', 'miss');
+          console.log('✅ Semaforo tornato grigio');
+        }
+      }, 3000);
+    }
+  }
+  
+  window.APP_STATE._lastRigoriHistoryLength = history.length;
+  
+  const scoreCasaEl = document.getElementById('score-casa');
+  const scoreTrasfEl = document.getElementById('score-trasferta');
+  if (scoreCasaEl) scoreCasaEl.textContent = casaScore;
+  if (scoreTrasfEl) scoreTrasfEl.textContent = trasfScore;
+  
+  const casaKicks = document.getElementById('kicks-casa');
+  const trasfKicks = document.getElementById('kicks-trasferta');
+  const currentCasaCount = casaKicks?.children.length || 0;
+  const currentTrasfCount = trasfKicks?.children.length || 0;
+  const newCasaCount = history.filter(k => k.team === 'casa').length;
+  const newTrasfCount = history.filter(k => k.team === 'trasferta').length;
+  
+  if (currentCasaCount !== newCasaCount || currentTrasfCount !== newTrasfCount) {
+    console.log('🔵 Aggiorno bollini:', { casa: newCasaCount, trasferta: newTrasfCount });
+    if (casaKicks) {
+      casaKicks.innerHTML = '';
+      history.filter(k => k.team === 'casa').forEach(kick => {
+        const kickEl = document.createElement('div');
+        kickEl.className = `kick-indicator ${kick.result}`;
+        kickEl.style.cssText = 'width: 20px; height: 20px; border-radius: 50%; margin: 2px; display: inline-block;';
+        kickEl.style.background = kick.result === 'goal' ? '#22c55e' : '#ef4444';
+        casaKicks.appendChild(kickEl);
+      });
+    }
+    if (trasfKicks) {
+      trasfKicks.innerHTML = '';
+      history.filter(k => k.team === 'trasferta').forEach(kick => {
+        const kickEl = document.createElement('div');
+        kickEl.className = `kick-indicator ${kick.result}`;
+        kickEl.style.cssText = 'width: 20px; height: 20px; border-radius: 50%; margin: 2px; display: inline-block;';
+        kickEl.style.background = kick.result === 'goal' ? '#22c55e' : '#ef4444';
+        trasfKicks.appendChild(kickEl);
+      });
+    }
+  }
+  
+  const currentEl = document.getElementById('rigori-current');
+  if (currentEl) {
+    const nextTeamName = currentKicker === 'casa' ? 
+      updatedMatch.SQUADRA_CASA : updatedMatch.SQUADRA_TRASFERTA;
+    
+    if (currentEl.textContent !== nextTeamName) {
+      console.log('🎯 Cambio nome squadra:', currentEl.textContent, '->', nextTeamName);
+      currentEl.style.transition = 'opacity 0.3s ease';
+      currentEl.style.opacity = '0';
+      setTimeout(() => {
+        currentEl.textContent = nextTeamName || 
+          (currentKicker === 'casa' ? 'SQUADRA CASA' : 'SQUADRA TRASFERTA');
+        currentEl.style.opacity = '1';
+      }, 150);
+    }
+  }
+}
 
 function stopMatchLiveRefresh() {
   if (matchLiveRefreshInterval) {
