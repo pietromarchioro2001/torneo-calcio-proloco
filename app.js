@@ -3,7 +3,7 @@
 // ============================================================================
 const CONFIG = {
     // 🔥 SOSTITUISCI CON IL TUO URL APPS SCRIPT WEB APP
-    BACKEND_URL: 'https://script.google.com/macros/s/AKfycbwuAhACOXeByWCRkKSVRwsj8xqNlF4UGRePd09mBNG2Vz2KVAZaT-J3jZONmqFkS6Sq/exec',
+    BACKEND_URL: 'https://script.google.com/macros/s/AKfycbwddWR4k95rEeXM1W4oCmGRIMSYkLxRgx7YW9k8gZt5-HwO5i3s5KMo-e_KuNUfYWcJ/exec',
     API_TIMEOUT: 30000,
     CACHE_VERSION: 'v3.0',
     CACHE_MAX_AGE: 5 * 60 * 1000
@@ -2199,75 +2199,78 @@ function openRigoriPopup(directMode = false) {
     const storageKey = `rigori_${match.MATCH_ID}`;
     
     if (directMode) {
-        // 🔥 MOBILE: popup sola lettura, polling dal backend
-        console.log('📱 MOBILE: apro popup rigori in modalità lettura');
-        window.APP_STATE._isRigoriAdmin = false;
-        window.APP_STATE._isMobileViewer = true;
+      // 🔥 MOBILE: popup sola lettura, polling dal backend
+      console.log('📱 MOBILE: apro popup rigori in modalità lettura');
+      window.APP_STATE._isRigoriAdmin = false;
+      window.APP_STATE._isMobileViewer = true;
+      
+      const loader = document.createElement('div');
+      loader.className = 'rigori-popup-overlay';
+      loader.id = 'rigoriLoader';
+      loader.innerHTML = `<div style="display:flex;align-items:center;justify-content:center;height:100vh;color:white;font-size:20px;">Caricamento...</div>`;
+      document.body.appendChild(loader);
+      
+      // ✅ Fetch dati completi dal backend
+      Promise.all([
+        ApiClient.getMatchFull(match.MATCH_ID),
+        ApiClient.getEventsAdmin(match.MATCH_ID)
+      ]).then(([matchData, events]) => {
+        loader.remove();
         
-        const loader = document.createElement('div');
-        loader.className = 'rigori-popup-overlay';
-        loader.id = 'rigoriLoader';
-        loader.innerHTML = `
-            <div class="rigori-popup" style="max-width: 400px; text-align: center; padding: 40px;">
-                <div style="font-size: 48px; margin-bottom: 20px;">⏳</div>
-                <div style="font-size: 18px; font-weight: 700; color: #7a1e2c; letter-spacing: 2px;">
-                    CARICAMENTO RIGORI...
-                </div>
-            </div>
-        `;
-        document.body.appendChild(loader);
+        if (!matchData?.match) {
+          alert('Errore: dati partita non trovati');
+          return;
+        }
         
-        // DENTRO openRigoriPopup, ramo directMode === true (mobile)
-        ApiClient.getMatchFull(match.MATCH_ID).then(async freshData => {
-          loader.remove();
-          if (freshData?.match) {
-            // 🔥 CARICA ANCHE GLI EVENTI per ricostruire i rigori!
-            const freshEvents = await ApiClient.getEventsAdmin(match.MATCH_ID);
-            
-            // Filtra solo gli eventi rigore
-            const penaltyEvents = freshEvents.filter(e => 
-              ['RIGORE_SEGNO', 'RIGORE_SBAGLIO'].includes(e.TIPO)
-            );
-            
-            // Ricostruisci history dai dati reali
-            const casaId = String(freshData.match.CASA_ID).trim();
-            const history = penaltyEvents.map(e => ({
-              team: String(e.TEAM_ID) === casaId ? 'casa' : 'trasferta',
-              result: e.TIPO === 'RIGORE_SEGNO' ? 'goal' : 'miss'
-            }));
-            
-            // Calcola punteggi dai bollini
-            const casaScore = history.filter(h => h.team === 'casa' && h.result === 'goal').length;
-            const trasfScore = history.filter(h => h.team === 'trasferta' && h.result === 'goal').length;
-            
-            // Determina chi deve calciare adesso (se non finiti)
-            let currentKicker = 'casa';
-            if (history.length > 0) {
-              currentKicker = history.length % 2 === 0 ? 'casa' : 'trasferta';
-            }
-            // Ma se il backend ha già RIGORI_CURRENT_KICKER, usa quello
-            if (freshData.match.RIGORI_CURRENT_KICKER) {
-              currentKicker = freshData.match.RIGORI_CURRENT_KICKER;
-            }
-            
-            const rigoriState = {
-              fase: 'tiri',
-              casaScore,
-              trasfScore,
-              currentKicker,
-              history,
-              finished: false
-            };
-            
-            localStorage.setItem(storageKey, JSON.stringify(rigoriState));
-            renderRigoriPopup(rigoriState, match, casaNome, trasfNome, casaLogo, trasfLogo, storageKey);
-          }
-        }).catch(err => {
-          loader.remove();
-          console.error('❌ Errore fetch rigori:', err);
-          alert('Errore di connessione. Riprova.');
+        const freshMatch = matchData.match;
+        
+        // 🔥 FILTRA EVENTI RIGORI
+        const penaltyEvents = events.filter(e => 
+          ['RIGORE_SEGNO', 'RIGORE_SBAGLIO'].includes(e.TIPO)
+        );
+        
+        // 🔥 COSTRUISCI HISTORY DAGLI EVENTI
+        const casaId = String(freshMatch.CASA_ID).trim();
+        const history = penaltyEvents.map(e => ({
+          team: String(e.TEAM_ID) === casaId ? 'casa' : 'trasferta',
+          result: e.TIPO === 'RIGORE_SEGNO' ? 'goal' : 'miss'
+        }));
+        
+        // 🔥 LEGGI PUNTEGGI DA COLONNE J/K
+        const casaScore = Number(freshMatch.RIGORE_CASA ?? 0) || 0;
+        const trasfScore = Number(freshMatch.RIGORE_TRASFERTA ?? 0) || 0;
+        
+        // 🔥 LEGGI CURRENT KICKER DA COLONNA T
+        const currentKicker = freshMatch.RIGORI_CURRENT_KICKER || 'casa';
+        
+        console.log('📱 Mobile rigori data:', {
+          history,
+          casaScore,
+          trasfScore,
+          currentKicker,
+          RIGORI_HISTORY: freshMatch.RIGORI_HISTORY,
+          RIGORI_CURRENT_KICKER: freshMatch.RIGORI_CURRENT_KICKER
         });
-        return;
+        
+        const rigoriState = {
+          fase: 'tiri',
+          casaScore,
+          trasfScore,
+          currentKicker,
+          history,
+          finished: false
+        };
+        
+        localStorage.setItem(storageKey, JSON.stringify(rigoriState));
+        renderRigoriPopup(rigoriState, match, casaNome, trasfNome, casaLogo, trasfLogo, storageKey);
+        
+      }).catch(err => {
+        loader.remove();
+        console.error('❌ Errore fetch rigori mobile:', err);
+        alert('Errore di connessione: ' + err.message);
+      });
+      
+      return;
     }
     
     // 🔥 PC ADMIN: logica originale con localStorage
