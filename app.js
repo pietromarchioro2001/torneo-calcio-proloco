@@ -2217,27 +2217,52 @@ function openRigoriPopup(directMode = false) {
         `;
         document.body.appendChild(loader);
         
-        // Fetch iniziale
-        ApiClient.getMatchFull(match.MATCH_ID).then(freshData => {
-            loader.remove();
-            if (freshData?.match) {
-                // 🔥 Leggi TUTTO dal backend
-                const rigoriState = {
-                    fase: 'tiri',
-                    casaScore: Number(freshData.match.RIGORE_CASA ?? 0) || 0,
-                    trasfScore: Number(freshData.match.RIGORE_TRASFERTA ?? 0) || 0,
-                    currentKicker: freshData.match.RIGORI_CURRENT_KICKER || 'casa',
-                    history: freshData.match.RIGORI_HISTORY || [],
-                    finished: false
-                };
-                
-                // Salva in localStorage SOLO per riferimento locale (non per sync)
-                localStorage.setItem(storageKey, JSON.stringify(rigoriState));
-                
-                renderRigoriPopup(rigoriState, match, casaNome, trasfNome, casaLogo, trasfLogo, storageKey);
-
-            }
-        }).catch(err => {
+        // DENTRO openRigoriPopup, ramo directMode === true (mobile)
+    ApiClient.getMatchFull(match.MATCH_ID).then(async freshData => {
+      loader.remove();
+      if (freshData?.match) {
+        // 🔥 CARICA ANCHE GLI EVENTI per ricostruire i rigori!
+        const freshEvents = await ApiClient.getEventsAdmin(match.MATCH_ID);
+        
+        // Filtra solo gli eventi rigore
+        const penaltyEvents = freshEvents.filter(e => 
+          ['RIGORE_SEGNO', 'RIGORE_SBAGLIO'].includes(e.TIPO)
+        );
+    
+        // Ricostruisci history dai dati reali
+        const casaId = String(freshData.match.CASA_ID).trim();
+        const history = penaltyEvents.map(e => ({
+          team: String(e.TEAM_ID) === casaId ? 'casa' : 'trasferta',
+          result: e.TIPO === 'RIGORE_SEGNO' ? 'goal' : 'miss'
+        }));
+    
+        // Calcola punteggi dai bollini
+        const casaScore = history.filter(h => h.team === 'casa' && h.result === 'goal').length;
+        const trasfScore = history.filter(h => h.team === 'trasferta' && h.result === 'goal').length;
+    
+        // Determina chi deve calciare adesso (se non finiti)
+        let currentKicker = 'casa';
+        if (history.length > 0) {
+          currentKicker = history.length % 2 === 0 ? 'casa' : 'trasferta';
+        }
+        // Ma se il backend ha già RIGORI_CURRENT_KICKER, usa quello
+        if (freshData.match.RIGORI_CURRENT_KICKER) {
+          currentKicker = freshData.match.RIGORI_CURRENT_KICKER;
+        }
+    
+        const rigoriState = {
+          fase: 'tiri',
+          casaScore,
+          trasfScore,
+          currentKicker,
+          history,
+          finished: false
+        };
+    
+        localStorage.setItem(storageKey, JSON.stringify(rigoriState));
+        renderRigoriPopup(rigoriState, match, casaNome, trasfNome, casaLogo, trasfLogo, storageKey);
+      }
+    });.catch(err => {
             loader.remove();
             console.error('❌ Errore fetch rigori:', err);
             alert('Errore di connessione. Riprova.');
