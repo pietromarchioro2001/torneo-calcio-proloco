@@ -2767,30 +2767,27 @@ function startStandingsLiveRefresh() {
     }
   }, 3000);
 }
-
 // 🔥 POLLING PER PARTITE LIVE - Aggiorna risultati in tempo reale
 // 🔥 POLLING PER PARTITE LIVE - Con protezione anti-rate-limit
 let matchLiveRefreshInterval = null;
 let currentPollingMatchId = null;
-let consecutiveErrors = 0; // 🔥 Contatore errori consecutivi
-let currentPollingInterval = 2000; // 🔥 Intervallo dinamico (parte da 2000ms)
+let consecutiveErrors = 0;
+let currentPollingInterval = 2000;
 
 function startMatchLiveRefresh() {
   if (matchLiveRefreshInterval) return;
   
-  // 🔥 RESET contatore errori all'avvio
   consecutiveErrors = 0;
-  currentPollingInterval = 2000; // Parte da 2 secondi
+  currentPollingInterval = 2000;
   
-  // 🔥 FUNZIONE INTERNA: determina intervallo basato su errori e stato
   const getInterval = () => {
     if (consecutiveErrors > 0) {
-        const backoff = Math.min(30000, 2000 * Math.pow(2, consecutiveErrors));
-        return backoff;
+      const backoff = Math.min(30000, 2000 * Math.pow(2, consecutiveErrors));
+      return backoff;
     }
     const hasRigori = (window.APP_CACHE.matches || []).some(m => m.STATO_PARTITA === "RIGORI");
-    return hasRigori ? 2000 : 3000; // 2 secondi per rigori
-};
+    return hasRigori ? 2000 : 3000;
+  };
   
   const doRefresh = async () => {
     const liveMatches = (window.APP_CACHE.matches || []).filter(m =>
@@ -2808,7 +2805,6 @@ function startMatchLiveRefresh() {
         const freshEvents = await ApiClient.getEventsAdmin(match.MATCH_ID);
         
         if (freshData?.match) {
-          // 🔥 RESET contatore errori su successo
           consecutiveErrors = 0;
           
           const mergedEvents = mergeEventsWithLocal(freshEvents, match.MATCH_ID);
@@ -2854,115 +2850,30 @@ function startMatchLiveRefresh() {
             };
           }
 
-        // 🔥 SE POPUP RIGORI APERTO - AGGIORNA UI
-        if (document.getElementById('rigoriPopupOverlay') &&
-            String(window.APP_STATE.currentMatchId) === String(match.MATCH_ID)) {
-            
+          // 🔥 SE POPUP RIGORI APERTO - AGGIORNA SOLO SE MOBILE
+          const rigoriPopupOpen = document.getElementById('rigoriPopupOverlay') &&
+              String(window.APP_STATE.currentMatchId) === String(match.MATCH_ID);
+          
+          if (rigoriPopupOpen) {
             if (updatedMatch.STATO_PARTITA === "FINITA") {
-                console.log('🏁 Partita finita - chiudo popup');
-                closeRigoriPopup();
-                return;
+              console.log('🏁 Partita finita - chiudo popup');
+              closeRigoriPopup();
+            } else {
+              // 🔥 AGGIORNA POPUP RIGORI SOLO SU MOBILE
+              const isMobileViewer = window.APP_STATE._isMobileViewer === true;
+              const isAdminViewer = window.APP_STATE._isRigoriAdmin === true && !isMobileViewer;
+              
+              if (isMobileViewer && !isAdminViewer) {
+                updateRigoriPopupMobile(updatedMatch);
+              }
             }
-            
-            // 🔥 SU PC ADMIN: skip (gestito localmente)
-            if (window.APP_STATE._isRigoriAdmin === true && window.APP_STATE._isMobileViewer !== true) {
-                return;
-            }
-            
-            console.log('📱 Mobile sync rigori...');
-            
-            // 🔥 LEGGI DATI DAL BACKEND
-            const history = updatedMatch.RIGORI_HISTORY || [];
-            const currentKicker = updatedMatch.RIGORI_CURRENT_KICKER || 'casa';
-            const casaScore = Number(updatedMatch.RIGORE_CASA ?? updatedMatch.RIGORI_CASA ?? 0) || 0;
-            const trasfScore = Number(updatedMatch.RIGORE_TRASFERTA ?? updatedMatch.RIGORI_TRASFERTA ?? 0) || 0;
-            
-            // 🔥 RILEVA NUOVO TIRO
-            const prevHistoryLength = window.APP_STATE._lastRigoriHistoryLength || 0;
-            const hasNewKick = history.length > prevHistoryLength;
-            
-            if (hasNewKick) {
-                const lastKick = history[history.length - 1];
-                const indicator = document.getElementById('rigori-indicator');
-                
-                console.log('🎯 Nuovo tiro mobile:', lastKick);
-                
-                // ✅ Animazione semaforo
-                if (indicator) {
-                    indicator.classList.remove('goal', 'miss');
-                    void indicator.offsetWidth; // Force reflow
-                    indicator.classList.add(lastKick.result);
-                    console.log('🚦 Semaforo:', lastKick.result);
-                    
-                    setTimeout(() => {
-                        if (indicator) indicator.classList.remove('goal', 'miss');
-                    }, 3000);
-                }
-            }
-            
-            window.APP_STATE._lastRigoriHistoryLength = history.length;
-            
-            // ✅ Aggiorna punteggi
-            const scoreCasaEl = document.getElementById('score-casa');
-            const scoreTrasfEl = document.getElementById('score-trasferta');
-            if (scoreCasaEl) scoreCasaEl.textContent = casaScore;
-            if (scoreTrasfEl) scoreTrasfEl.textContent = trasfScore;
-            
-            // ✅ Aggiorna bollini sotto le squadre
-            const casaKicks = document.getElementById('kicks-casa');
-            const trasfKicks = document.getElementById('kicks-trasferta');
-            
-            if (casaKicks) {
-                casaKicks.innerHTML = '';
-                history.filter(k => k.team === 'casa').forEach(kick => {
-                    const kickEl = document.createElement('div');
-                    kickEl.className = `kick-indicator ${kick.result}`;
-                    kickEl.style.cssText = 'width: 20px; height: 20px; border-radius: 50%; margin: 2px; display: inline-block;';
-                    kickEl.style.background = kick.result === 'goal' ? '#22c55e' : '#ef4444';
-                    casaKicks.appendChild(kickEl);
-                });
-            }
-            
-            if (trasfKicks) {
-                trasfKicks.innerHTML = '';
-                history.filter(k => k.team === 'trasferta').forEach(kick => {
-                    const kickEl = document.createElement('div');
-                    kickEl.className = `kick-indicator ${kick.result}`;
-                    kickEl.style.cssText = 'width: 20px; height: 20px; border-radius: 50%; margin: 2px; display: inline-block;';
-                    kickEl.style.background = kick.result === 'goal' ? '#22c55e' : '#ef4444';
-                    trasfKicks.appendChild(kickEl);
-                });
-            }
-            
-            // ✅ Aggiorna "CHI CALCIA"
-            const currentEl = document.getElementById('rigori-current');
-            if (currentEl) {
-                let nextKicker;
-                if (history.length === 0) {
-                    nextKicker = currentKicker;
-                } else {
-                    const lastKick = history[history.length - 1];
-                    nextKicker = lastKick.team === 'casa' ? 'trasferta' : 'casa';
-                }
-                const nextTeamName = nextKicker === 'casa' ?
-                    updatedMatch.SQUADRA_CASA : updatedMatch.SQUADRA_TRASFERTA;
-                
-                currentEl.style.transition = 'opacity 0.3s ease';
-                currentEl.style.opacity = '0';
-                setTimeout(() => {
-                    currentEl.textContent = nextTeamName ||
-                        (nextKicker === 'casa' ? 'SQUADRA CASA' : 'SQUADRA TRASFERTA');
-                    currentEl.style.opacity = '1';
-                }, 150);
-            }
-        }
+          }
           
           // 🔥 AGGIORNAMENTO PAGINA PARTITA
           if (document.querySelector('.match-page') && String(window.APP_STATE.currentMatchId) === String(match.MATCH_ID)) {
             renderMatchPage(updatedMatch);
             loadPlayersForMatch(updatedMatch);
             
-            // 🔥 SE STATO RIGORI E POPUP NON APERTO, APRILO AUTOMATICAMENTE
             if (updatedMatch.STATO_PARTITA === "RIGORI" && !document.getElementById('rigoriPopupOverlay')) {
               console.log('🎯 Rilevato stato RIGORI - apro popup automatico');
               setTimeout(() => openRigoriPopup(true), 500);
@@ -2991,25 +2902,21 @@ function startMatchLiveRefresh() {
       } catch (error) {
         console.error(`❌ Errore refresh match ${match.MATCH_ID}:`, error);
         
-        // 🔥 GESTIONE ERRORI CON BACKOFF
         consecutiveErrors++;
         
-        // Se troppi errori consecutivi, mostra avviso
         if (consecutiveErrors >= 5) {
           console.warn(`⚠️ Troppi errori consecutivi (${consecutiveErrors}). Polling rallentato.`);
         }
         
-        // Se l'errore è di rate limiting, aspetta di più
         if (error.message?.includes('Servizio Fogli di lavoro') || 
             error.message?.includes('rate limit') ||
             error.message?.includes('quota')) {
           console.warn('⚠️ Rate limit rilevato. Aumento intervallo polling.');
-          consecutiveErrors = Math.max(consecutiveErrors, 3); // Forza backoff significativo
+          consecutiveErrors = Math.max(consecutiveErrors, 3);
         }
       }
     }
     
-    // 🔥 RIPIANIFICA CON INTERVALLO DINAMICO (basato su errori)
     if (matchLiveRefreshInterval) {
       clearInterval(matchLiveRefreshInterval);
       matchLiveRefreshInterval = setInterval(doRefresh, getInterval());
@@ -3017,6 +2924,96 @@ function startMatchLiveRefresh() {
   };
   
   matchLiveRefreshInterval = setInterval(doRefresh, getInterval());
+}
+
+// 🔥 NUOVA FUNZIONE: Aggiorna popup rigori su mobile
+function updateRigoriPopupMobile(updatedMatch) {
+  console.log('📱 Mobile viewer sync...');
+  
+  const history = updatedMatch.RIGORI_HISTORY || [];
+  const currentKicker = updatedMatch.RIGORI_CURRENT_KICKER || 'casa';
+  const casaScore = Number(updatedMatch.RIGORE_CASA ?? updatedMatch.RIGORI_CASA ?? 0) || 0;
+  const trasfScore = Number(updatedMatch.RIGORE_TRASFERTA ?? updatedMatch.RIGORI_TRASFERTA ?? 0) || 0;
+  
+  const prevHistoryLength = window.APP_STATE._lastRigoriHistoryLength || 0;
+  const hasNewKick = history.length > prevHistoryLength;
+  
+  if (hasNewKick) {
+    const lastKick = history[history.length - 1];
+    const indicator = document.getElementById('rigori-indicator');
+    
+    console.log('🎯 Nuovo tiro mobile:', lastKick);
+    
+    if (indicator) {
+      indicator.classList.remove('goal', 'miss');
+      void indicator.offsetWidth;
+      indicator.classList.add(lastKick.result);
+      console.log('🚦 Semaforo colorato:', lastKick.result);
+      
+      setTimeout(() => {
+        if (indicator) {
+          indicator.classList.remove('goal', 'miss');
+          console.log('✅ Semaforo tornato grigio');
+        }
+      }, 4000);
+    }
+  }
+  
+  window.APP_STATE._lastRigoriHistoryLength = history.length;
+  
+  const scoreCasaEl = document.getElementById('score-casa');
+  const scoreTrasfEl = document.getElementById('score-trasferta');
+  if (scoreCasaEl) scoreCasaEl.textContent = casaScore;
+  if (scoreTrasfEl) scoreTrasfEl.textContent = trasfScore;
+  
+  const casaKicks = document.getElementById('kicks-casa');
+  const trasfKicks = document.getElementById('kicks-trasferta');
+  
+  if (casaKicks) {
+    casaKicks.innerHTML = '';
+    history.filter(k => k.team === 'casa').forEach(kick => {
+      const kickEl = document.createElement('div');
+      kickEl.className = `kick-indicator ${kick.result}`;
+      kickEl.style.cssText = 'width: 20px; height: 20px; border-radius: 50%; margin: 2px; display: inline-block;';
+      kickEl.style.background = kick.result === 'goal' ? '#22c55e' : '#ef4444';
+      casaKicks.appendChild(kickEl);
+    });
+  }
+  
+  if (trasfKicks) {
+    trasfKicks.innerHTML = '';
+    history.filter(k => k.team === 'trasferta').forEach(kick => {
+      const kickEl = document.createElement('div');
+      kickEl.className = `kick-indicator ${kick.result}`;
+      kickEl.style.cssText = 'width: 20px; height: 20px; border-radius: 50%; margin: 2px; display: inline-block;';
+      kickEl.style.background = kick.result === 'goal' ? '#22c55e' : '#ef4444';
+      trasfKicks.appendChild(kickEl);
+    });
+  }
+  
+  const currentEl = document.getElementById('rigori-current');
+  if (currentEl) {
+    let nextKicker;
+    if (history.length === 0) {
+      nextKicker = currentKicker;
+    } else {
+      const lastKick = history[history.length - 1];
+      nextKicker = lastKick.team === 'casa' ? 'trasferta' : 'casa';
+    }
+    
+    const nextTeamName = nextKicker === 'casa' ?
+      updatedMatch.SQUADRA_CASA : updatedMatch.SQUADRA_TRASFERTA;
+    
+    currentEl.style.transition = 'opacity 0.3s ease';
+    currentEl.style.opacity = '0';
+    setTimeout(() => {
+      currentEl.textContent = nextTeamName ||
+        (nextKicker === 'casa' ? 'SQUADRA CASA' : 'SQUADRA TRASFERTA');
+      currentEl.style.opacity = '1';
+    }, 150);
+    
+    console.log('🎯 Chi calcia (calcolato):', nextKicker, '-', nextTeamName);
+  }
 }
 
 function stopMatchLiveRefresh() {
