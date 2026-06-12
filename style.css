@@ -2196,7 +2196,13 @@ body {
     flex-direction: row !important; justify-content: space-between !important; align-items: center !important;
     gap: 8px !important; padding: 10px 5px !important; margin-bottom: 15px !important;
   }
-  .rigori-team { width: auto !important; flex: 1 !important; flex-direction: column !important; gap: 6px !important; }
+  .rigori-team { 
+     width: auto !important; 
+     flex: 0 0 auto !important; /* Cambiato da flex: 1 */
+     flex-direction: column !important; 
+     gap: 6px !important; 
+     min-width: 80px !important; /* Aggiunto min-width */
+   }
   .rigori-team img { width: 50px !important; height: 50px !important; }
   .rigori-team .team-name { font-size: 11px !important; letter-spacing: 1px !important; text-align: center !important; }
   .rigori-score-center { padding: 0 10px !important; flex: 0 0 auto !important; transform: translateY(-15px) !important; }
@@ -2207,8 +2213,20 @@ body {
   .rigori-controls, .rigori-finish { display: none !important; }
   #rigori-selezione { display: none !important; }
   #rigori-tiri { display: block !important; }
-  .rigori-kicks { gap: 4px !important; min-height: 20px !important; }
-  .kick-indicator { width: 14px !important; height: 14px !important; }
+  .rigori-kicks { 
+     gap: 4px !important; 
+     min-height: 20px !important;
+     display: flex !important; /* Assicurati che sia flex */
+     flex-wrap: wrap !important;
+     justify-content: center !important;
+   }
+  .kick-indicator { 
+     width: 14px !important; 
+     height: 14px !important;
+     display: inline-block !important;
+     border-radius: 50% !important;
+     flex-shrink: 0 !important; /* Importante: non rimpicciolire */
+   }
 
   .final-stage-modal { width: 95vw; padding: 20px; border-radius: 16px; }
   .final-stage-title { font-size: 28px; letter-spacing: 4px; margin-bottom: 20px; }
