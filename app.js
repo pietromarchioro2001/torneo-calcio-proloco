@@ -2308,8 +2308,10 @@ window.APP_STATE._lastRigoreClickTime = 0;
 window.APP_STATE._isRigoriAdmin = false;
 
 function renderRigoriPopup(rigoriState, match, casaNome, trasfNome, casaLogo, trasfLogo, storageKey) {
-    const savedState = localStorage.getItem(storageKey);
-      window.APP_STATE._isRigoriAdmin = !!savedState;
+    const isMobile = window.APP_STATE._isMobileViewer === true;
+    const isAdmin = window.APP_STATE._isRigoriAdmin === true;
+    
+    console.log('🎯 Render rigori popup - Mobile:', isMobile, 'Admin:', isAdmin);
     function saveRigoriState() {
         localStorage.setItem(storageKey, JSON.stringify(rigoriState));
     }
@@ -2437,7 +2439,9 @@ if (rigoriState.fase === 'selezione') {
     return; // Esci qui, non renderizzare la fase di tiro
 }
 
-    // ✅ FASE DI TIRO (codice originale leggermente pulito)
+    // ✅ FASE DI TIRO 
+    const isMobile = window.APP_STATE._isMobileViewer === true;
+    
     popup.innerHTML = `
     <div class="rigori-popup" style="max-width: 700px;">
         <div class="rigori-header" style="text-align: center; margin-bottom: 30px; position: relative;">
@@ -2468,11 +2472,7 @@ if (rigoriState.fase === 'selezione') {
                 <div class="rigori-indicator" id="rigori-indicator" style="width: 120px; height: 120px; border-radius: 50%; background: #555; margin: 0 auto 20px; box-shadow: inset 0 -15px 25px rgba(0,0,0,0.3), 0 8px 20px rgba(0,0,0,0.2); transition: all 0.3s ease;"></div>
                 <div class="rigori-current" id="rigori-current" style="font-size: 20px; color: #333; font-weight: 700; letter-spacing: 1px;">${rigoriState.currentKicker === 'casa' ? casaNome : trasfNome}</div>
             </div>
-            <div class="rigori-controls" style="display: flex; justify-content: center; gap: 50px; margin: 40px 0;">
-                <button class="rigori-btn miss" id="btn-miss" style="width: 100px; height: 100px; border-radius: 50%; border: none; background: #ef4444; cursor: pointer; box-shadow: 0 6px 20px rgba(239, 68, 68, 0.4); transition: transform 0.2s; font-size: 16px; font-weight: 700; color: white;"></button>
-                <button class="rigori-btn goal" id="btn-goal" style="width: 100px; height: 100px; border-radius: 50%; border: none; background: #22c55e; cursor: pointer; box-shadow: 0 6px 20px rgba(34, 197, 94, 0.4); transition: transform 0.2s; font-size: 16px; font-weight: 700; color: white;"></button>
-            </div>
-            <button class="rigori-finish" id="rigori-finish" style="width: 100%; max-width: 300px; margin: 20px auto 0; padding: 12px 20px; background: #7a1e2c; color: white; border: none; border-radius: 8px; font-size: 16px; font-weight: 700; cursor: pointer; letter-spacing: 1px; box-shadow: 0 2px 8px rgba(122, 30, 44, 0.3); display: block;" onclick="finishRigori()">FINE</button>
+            ${controlsHtml}
         </div>
     </div>
     `;
@@ -2517,22 +2517,21 @@ if (rigoriState.fase === 'selezione') {
     console.log('🔴 btnMiss:', btnMiss);
     console.log('🟢 btnGoal:', btnGoal);
     
-    if (btnMiss) {
-      btnMiss.onclick = function(e) {
-        e.preventDefault();
-        e.stopPropagation();
-        console.log('🔴 Click su ROSSO (sbagliato)');
-        handleRigoreClick('miss', rigoriState, saveRigoriState, casaNome, trasfNome, match);
-      };
+    if (btnMiss && !isMobile) {
+        btnMiss.onclick = function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            console.log('🔴 Click su ROSSO (sbagliato)');
+            handleRigoreClick('miss', rigoriState, saveRigoriState, casaNome, trasfNome, match);
+        };
     }
-    
-    if (btnGoal) {
-      btnGoal.onclick = function(e) {
-        e.preventDefault();
-        e.stopPropagation();
-        console.log('🟢 Click su VERDE (gol)');
-        handleRigoreClick('goal', rigoriState, saveRigoriState, casaNome, trasfNome, match);
-      };
+    if (btnGoal && !isMobile) {
+        btnGoal.onclick = function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            console.log('🟢 Click su VERDE (gol)');
+            handleRigoreClick('goal', rigoriState, saveRigoriState, casaNome, trasfNome, match);
+        };
     }
 
     function handleRigoreClick(result, rigoriState, saveRigoriState, casaNome, trasfNome, match) {
@@ -2871,21 +2870,22 @@ if (document.getElementById('rigoriPopupOverlay') &&
     });
     
     // ✅ ANIMAZIONE SEMAFORO - SOLO SU MOBILE (non admin)
-    if (indicator && window.APP_STATE._isMobileViewer) {
+    const btnMissExists = document.getElementById('btn-miss');
+    const isMobileMode = !btnMissExists || btnMissExists.style.display === 'none' || 
+                         (btnMissExists.closest('.rigori-controls') && 
+                          btnMissExists.closest('.rigori-controls').style.display === 'none');
+    
+    if (indicator && isMobileMode) {
         indicator.classList.remove('goal', 'miss');
         void indicator.offsetWidth; // Force reflow
         indicator.classList.add(lastKick.result);
         indicator.style.transition = 'background-color 0.3s ease';
-        
         console.log('🚦 Animazione semaforo MOBILE:', lastKick.result);
         
-        // Dopo 3 secondi, rimuovi colore
         setTimeout(() => {
-            if (indicator) {
-                indicator.classList.remove('goal', 'miss');
-            }
+            if (indicator) indicator.classList.remove('goal', 'miss');
         }, 3000);
-    } else if (indicator && window.APP_STATE._isRigoriAdmin) {
+    } else if (indicator && !isMobileMode) {
         console.log('⏭️ Skip animazione su PC (gestita da click locale)');
     }
 }
