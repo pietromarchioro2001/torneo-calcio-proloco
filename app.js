@@ -2262,7 +2262,7 @@ function openRigoriPopup(directMode = false) {
         localStorage.setItem(storageKey, JSON.stringify(rigoriState));
         renderRigoriPopup(rigoriState, match, casaNome, trasfNome, casaLogo, trasfLogo, storageKey);
       }
-    });.catch(err => {
+    }).catch(err => {
             loader.remove();
             console.error('❌ Errore fetch rigori:', err);
             alert('Errore di connessione. Riprova.');
