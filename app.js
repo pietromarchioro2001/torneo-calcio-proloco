@@ -2310,8 +2310,18 @@ window.APP_STATE._isRigoriAdmin = false;
 function renderRigoriPopup(rigoriState, match, casaNome, trasfNome, casaLogo, trasfLogo, storageKey) {
     const isMobile = window.APP_STATE._isMobileViewer === true;
     const isAdmin = window.APP_STATE._isRigoriAdmin === true;
+
+    let controlsHtml = '';
+    if (!isMobile) {
+      controlsHtml = `
+      <div class="rigori-controls">
+        <button class="rigori-btn miss" id="btn-miss" style="width: 100px; height: 100px; border-radius: 50%; border: none; background: #ef4444; cursor: pointer; box-shadow: 0 6px 20px rgba(239, 68, 68, 0.4); transition: transform 0.2s; font-size: 16px; font-weight: 700; color: white;"></button>
+        <button class="rigori-btn goal" id="btn-goal" style="width: 100px; height: 100px; border-radius: 50%; border: none; background: #22c55e; cursor: pointer; box-shadow: 0 6px 20px rgba(34, 197, 94, 0.4); transition: transform 0.2s; font-size: 16px; font-weight: 700; color: white;"></button>
+      </div>
+      <button class="rigori-finish" id="rigori-finish" style="width: 100%; max-width: 300px; margin: 20px auto 0; padding: 12px 20px; background: #7a1e2c; color: white; border: none; border-radius: 8px; font-size: 16px; font-weight: 700; cursor: pointer; letter-spacing: 1px; box-shadow: 0 2px 8px rgba(122, 30, 44, 0.3); display: block;" onclick="finishRigori()">FINE</button>
+      `;
+    }
     
-    console.log('🎯 Render rigori popup - Mobile:', isMobile, 'Admin:', isAdmin);
     function saveRigoriState() {
         localStorage.setItem(storageKey, JSON.stringify(rigoriState));
     }
