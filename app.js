@@ -187,16 +187,15 @@ const ApiClient = {
     try {
       const response = await fetch(url, {
         method: 'POST',
-        mode: 'cors',
         headers: {
-          'Content-Type': 'text/plain;charset=utf-8',
+            'Content-Type': 'text/plain;charset=utf-8',
         },
         body: JSON.stringify({
-          action: action,
-          payload: payload
+            action: action,
+            payload: payload
         }),
         redirect: 'follow'
-      });
+    });
       
       if (!response.ok) {
         const errorText = await response.text();
@@ -2817,13 +2816,13 @@ function startMatchLiveRefresh() {
   currentPollingInterval = 2000;
   
   const getInterval = () => {
-    if (consecutiveErrors > 0) {
-      const backoff = Math.min(30000, 2000 * Math.pow(2, consecutiveErrors));
-      return backoff;
-    }
-    const hasRigori = (window.APP_CACHE.matches || []).some(m => m.STATO_PARTITA === "RIGORI");
-    return hasRigori ? 500 : 3000;
-  };
+        if (consecutiveErrors > 0) {
+            const backoff = Math.min(60000, 5000 * Math.pow(2, consecutiveErrors));
+            return backoff;
+        }
+        const hasRigori = (window.APP_CACHE.matches || []).some(m => m.STATO_PARTITA === "RIGORI");
+        return hasRigori ? 2000 : 5000;  // ← 2000ms per rigori, 5000ms normale
+    };
   
   const doRefresh = async () => {
     const liveMatches = (window.APP_CACHE.matches || []).filter(m =>
@@ -4336,122 +4335,6 @@ async function selectMVP(playerId, playerName) {
     try { await ApiClient.saveMVPFinal(match.MATCH_ID, playerId); match.MVP = playerName; window.APP_STATE.lastMatch = match; updateMVPBanner(match); renderMVPTab(window.APP_CACHE.fullTeams?.[match.CASA_ID], window.APP_CACHE.fullTeams?.[match.TRASFERTA_ID], match); console.log('✅ MVP salvato:', playerName); } catch (error) { console.error('Error saving MVP:', error); alert('Errore salvataggio MVP: ' + error.message); }
 }
 
-function getDeviceFingerprint() {
-  // Combina più parametri per identificare il dispositivo
-  const params = [
-    navigator.userAgent,
-    navigator.language,
-    screen.width + 'x' + screen.height,
-    new Date().getTimezoneOffset(),
-    navigator.hardwareConcurrency || 'unknown',
-    navigator.platform || 'unknown'
-  ];
-  
-  // Crea hash semplice
-  const str = params.join('|');
-  let hash = 0;
-  for (let i = 0; i < str.length; i++) {
-    const char = str.charCodeAt(i);
-    hash = ((hash << 5) - hash) + char;
-    hash |= 0;
-  }
-  return 'fp_' + Math.abs(hash).toString(36);
-}
-
-async function voteMVP(playerId, playerName, event) {
-  const match = window.APP_STATE.lastMatch;
-  if (!match || match.STATO_PARTITA !== "LIVE") {
-    return;
-  }
-  
-  // 🔒 Genera/recupera fingerprint del dispositivo
-  const fingerprint = getDeviceFingerprint();
-  
-  // 🔒 Recupera o crea voterId
-  let voterId = localStorage.getItem('mvp_voter_id');
-  const savedFingerprint = localStorage.getItem('mvp_fingerprint');
-  
-  // ✅ CONTROLLO ANTI-DOPPIO VOTO
-  if (voterId && savedFingerprint !== fingerprint) {
-    // Fingerprint diverso = dispositivo/browser diverso
-    showToast('⚠️ Hai già votato da un altro dispositivo');
-    return;
-  }
-  
-  if (!voterId) {
-    voterId = fingerprint + '_' + Date.now();
-    localStorage.setItem('mvp_voter_id', voterId);
-    localStorage.setItem('mvp_fingerprint', fingerprint);
-  }
-  
-  // ✅ Salva voto in localStorage (con flag "sent")
-  const voteData = {
-    matchId: match.MATCH_ID,
-    playerId: playerId,
-    playerName: playerName,
-    voterId: voterId,
-    timestamp: Date.now(),
-    sent: false
-  };
-  
-  localStorage.setItem(`mvp_vote_${match.MATCH_ID}`, JSON.stringify(voteData));
-  updateMVPVoteUI(playerId);
-  
-  // 🔥 Invia con retry automatico
-  await sendVoteWithRetry(voteData, 3);
-}
-
-async function sendVoteWithRetry(voteData, maxRetries) {
-  for (let attempt = 1; attempt <= maxRetries; attempt++) {
-    try {
-      await ApiClient.saveMVPVote(
-        voteData.matchId,
-        voteData.voterId,
-        voteData.playerId
-      );
-      
-      // Segna come inviato
-      voteData.sent = true;
-      localStorage.setItem(
-        `mvp_vote_${voteData.matchId}`,
-        JSON.stringify(voteData)
-      );
-      
-      console.log(`✅ Voto inviato al tentativo ${attempt}`);
-      return true;
-      
-    } catch (error) {
-      console.warn(`⚠️ Tentativo ${attempt} fallito:`, error.message);
-      
-      if (attempt < maxRetries) {
-        // Attendi prima di riprovare (backoff esponenziale)
-        await new Promise(r => setTimeout(r, 1000 * attempt));
-      }
-    }
-  }
-  
-  // Tutti i tentativi falliti - il voto rimane in localStorage
-  console.error('❌ Voto non inviato dopo', maxRetries, 'tentativi');
-  
-  // 🔥 Mostra notifica all'utente
-  showToast('⚠️ Voto salvato localmente. Riproveremo automaticamente.');
-  
-  // Programma retry in background
-  setTimeout(() => sendVoteWithRetry(voteData, 2), 30000);
-  
-  return false;
-}
-
-function updateMVPVoteUI(selectedPlayerId) {
-    document.querySelectorAll('.mvp-vote-row').forEach(row => { row.style.background = ''; row.style.opacity = '0.6'; const check = row.querySelector('.vote-check'); if (check) check.style.opacity = '0'; });
-    const selectedRow = document.querySelector(`.mvp-vote-row[onclick*="'${selectedPlayerId}'"]`);
-    if (selectedRow) { selectedRow.style.background = '#fef3c7'; selectedRow.style.opacity = '1'; const check = selectedRow.querySelector('.vote-check'); if (check) { check.style.opacity = '1'; check.textContent = '✓'; check.style.color = '#059669'; check.style.fontWeight = 'bold'; } }
-}
-
-function loadExistingMVPVote(matchId) {
-    const savedVote = localStorage.getItem(`mvp_vote_${matchId}`); if (savedVote) { try { const voteData = JSON.parse(savedVote); updateMVPVoteUI(voteData.playerId); } catch (e) { console.error('Errore lettura voto:', e); } }
-}
-
 function updateLocalMVPCounter() {
     const votes = window.APP_STATE.localMVPVotes || {}; const matchId = window.APP_STATE.currentMatchId;
     const matchVotes = Object.values(votes).filter(v => v.matchId === matchId); const counts = {};
@@ -4459,19 +4342,142 @@ function updateLocalMVPCounter() {
     console.log('📊 Voti locali:', counts);
 }
 
-async function submitAllMVPVotes(matchId) {
-    const votes = window.APP_STATE.localMVPVotes || {}; const matchVotes = Object.values(votes).filter(v => v.matchId === matchId);
-    if (matchVotes.length === 0) { console.log('📭 Nessun voto da inviare'); return; }
-    console.log(`📤 Invio ${matchVotes.length} voti al backend...`);
-    const promises = matchVotes.map(vote => { return ApiClient.saveMVPVote(matchId, vote.voterId || vote.timestamp, vote.playerId).catch(err => console.error('❌ Errore invio voto:', err)); });
-    await Promise.all(promises); console.log(`✅ ${matchVotes.length} voti inviati con successo!`); delete window.APP_STATE.localMVPVotes;
-}
-
 function pollForMVPUpdate(matchId) {
     let attempts = 0; const maxAttempts = 20;
     const check = async () => { attempts++; try { const data = await ApiClient.getMatchFull(matchId); if (data?.match?.MVP) { console.log('🏆 MVP trovato:', data.match.MVP); window.APP_STATE.lastMatch = data.match; updateMVPBanner(data.match); loadPlayersForMatch(data.match); refreshStandingsDebounced(500); } else if (attempts < maxAttempts) { setTimeout(check, 1000); } } catch (e) { console.error('Errore polling MVP', e); } };
     setTimeout(check, 1000);
 }
+}
+
+function getDeviceFingerprint() {
+    const params = [
+        navigator.userAgent,
+        navigator.language,
+        screen.width + 'x' + screen.height,
+        new Date().getTimezoneOffset(),
+        navigator.hardwareConcurrency || 'unknown',
+        navigator.platform || 'unknown'
+    ];
+    const str = params.join('|');
+    let hash = 0;
+    for (let i = 0; i < str.length; i++) {
+        const char = str.charCodeAt(i);
+        hash = ((hash << 5) - hash) + char;
+        hash |= 0;
+    }
+    return 'fp_' + Math.abs(hash).toString(36);
+}
+
+async function voteMVP(playerId, playerName, event) {
+    const match = window.APP_STATE.lastMatch;
+    if (!match || match.STATO_PARTITA !== "LIVE") {
+        return;
+    }
+    
+    const fingerprint = getDeviceFingerprint();
+    let voterId = localStorage.getItem('mvp_voter_id');
+    const savedFingerprint = localStorage.getItem('mvp_fingerprint');
+    
+    if (voterId && savedFingerprint !== fingerprint) {
+        alert('⚠️ Hai già votato da un altro dispositivo');
+        return;
+    }
+    
+    if (!voterId) {
+        voterId = fingerprint + '_' + Date.now();
+        localStorage.setItem('mvp_voter_id', voterId);
+        localStorage.setItem('mvp_fingerprint', fingerprint);
+    }
+    
+    const voteData = {
+        matchId: match.MATCH_ID,
+        playerId: playerId,
+        playerName: playerName,
+        voterId: voterId,
+        timestamp: Date.now(),
+        sent: false
+    };
+    
+    localStorage.setItem(`mvp_vote_${match.MATCH_ID}`, JSON.stringify(voteData));
+    updateMVPVoteUI(playerId);
+    
+    await sendVoteWithRetry(voteData, 3);
+}
+
+async function sendVoteWithRetry(voteData, maxRetries) {
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+        try {
+            await ApiClient.saveMVPVote(
+                voteData.matchId,
+                voteData.voterId,
+                voteData.playerId
+            );
+            voteData.sent = true;
+            localStorage.setItem(`mvp_vote_${voteData.matchId}`, JSON.stringify(voteData));
+            console.log(`✅ Voto inviato al tentativo ${attempt}`);
+            return true;
+        } catch (error) {
+            console.warn(`⚠️ Tentativo ${attempt} fallito:`, error.message);
+            if (attempt < maxRetries) {
+                await new Promise(r => setTimeout(r, 1000 * attempt));
+            }
+        }
+    }
+    console.error('❌ Voto non inviato dopo', maxRetries, 'tentativi');
+    alert('⚠️ Voto salvato localmente. Riproveremo automaticamente.');
+    setTimeout(() => sendVoteWithRetry(voteData, 2), 30000);
+    return false;
+}
+
+function updateMVPVoteUI(selectedPlayerId) {
+    document.querySelectorAll('.mvp-vote-row').forEach(row => {
+        row.style.background = '';
+        row.style.opacity = '0.6';
+        const check = row.querySelector('.vote-check');
+        if (check) check.style.opacity = '0';
+    });
+    
+    const selectedRow = document.querySelector(`.mvp-vote-row[onclick*="'${selectedPlayerId}'"]`);
+    if (selectedRow) {
+        selectedRow.style.background = '#fef3c7';
+        selectedRow.style.opacity = '1';
+        const check = selectedRow.querySelector('.vote-check');
+        if (check) {
+            check.style.opacity = '1';
+            check.textContent = '✓';
+            check.style.color = '#059669';
+            check.style.fontWeight = 'bold';
+        }
+    }
+}
+
+function loadExistingMVPVote(matchId) {
+    const savedVote = localStorage.getItem(`mvp_vote_${matchId}`);
+    if (savedVote) {
+        try {
+            const voteData = JSON.parse(savedVote);
+            updateMVPVoteUI(voteData.playerId);
+        } catch (e) {
+            console.error('Errore lettura voto:', e);
+        }
+    }
+}
+
+async function submitAllMVPVotes(matchId) {
+    const votes = window.APP_STATE.localMVPVotes || {};
+    const matchVotes = Object.values(votes).filter(v => v.matchId === matchId);
+    if (matchVotes.length === 0) {
+        console.log('📭 Nessun voto da inviare');
+        return;
+    }
+    console.log(`📤 Invio ${matchVotes.length} voti al backend...`);
+    const promises = matchVotes.map(vote => {
+        return ApiClient.saveMVPVote(matchId, vote.voterId || vote.timestamp, vote.playerId)
+            .catch(err => console.error('❌ Errore invio voto:', err));
+    });
+    await Promise.all(promises);
+    console.log(`✅ ${matchVotes.length} voti inviati con successo!`);
+    delete window.APP_STATE.localMVPVotes;
 }
 // ============================================================================
 // 📤 MODALE UPLOAD MEDIA
