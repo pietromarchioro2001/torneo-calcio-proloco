@@ -1439,8 +1439,7 @@ function openMatch(id) {
         if (cachedMatch.STATO_PARTITA === "RIGORI" && !document.getElementById('rigoriPopupOverlay')) {
             const isMobile = window.innerWidth <= 768;
             console.log('🎯 Apertura automatica popup rigori - Device:', isMobile ? 'MOBILE' : 'PC');
-            // Piccolo delay per assicurare che il DOM sia pronto
-            setTimeout(() => openRigoriPopup(isMobile), 300); 
+            setTimeout(() => openRigoriPopup(isMobile), 300);
         }
         
         // Aggiorna cache in background (senza bloccare il popup)
