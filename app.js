@@ -2204,73 +2204,94 @@ function openRigoriPopup(directMode = false) {
     const storageKey = `rigori_${match.MATCH_ID}`;
     
     if (directMode) {
-        console.log('📱 MOBILE: apro popup rigori in modalità lettura');
-        window.APP_STATE._isRigoriAdmin = false;
-        window.APP_STATE._isMobileViewer = true;
+    console.log('📱 MOBILE: apro popup rigori in modalità lettura ROBUSTA');
+    window.APP_STATE._isRigoriAdmin = false;
+    window.APP_STATE._isMobileViewer = true;
+    
+    const loader = document.createElement('div');
+    loader.className = 'rigori-popup-overlay';
+    loader.id = 'rigoriLoader';
+    loader.innerHTML = `
+    <div class="rigori-popup" style="max-width: 400px; text-align: center; padding: 40px;">
+        <div style="font-size: 48px; margin-bottom: 20px;">⏳</div>
+        <div style="font-size: 18px; font-weight: 700; color: #7a1e2c; letter-spacing: 2px;">CARICAMENTO RIGORI...</div>
+    </div>`;
+    document.body.appendChild(loader);
+
+    Promise.all([
+        ApiClient.getMatchFull(match.MATCH_ID),
+        ApiClient.getEventsAdmin(match.MATCH_ID)
+    ]).then(([matchData, events]) => {
+        loader.remove();
+        if (!matchData?.match) {
+            alert('Errore: dati partita non trovati');
+            return;
+        }
+        const freshMatch = matchData.match;
+        const casaId = String(freshMatch.CASA_ID).trim();
         
-        const loader = document.createElement('div');
-        loader.className = 'rigori-popup-overlay';
-        loader.id = 'rigoriLoader';
-        loader.innerHTML = `
-        <div class="rigori-popup" style="max-width: 400px; text-align: center; padding: 40px;">
-            <div style="font-size: 48px; margin-bottom: 20px;">⏳</div>
-            <div style="font-size: 18px; font-weight: 700; color: #7a1e2c; letter-spacing: 2px;">CARICAMENTO RIGORI...</div>
-        </div>`;
-        document.body.appendChild(loader);
-
-        Promise.all([
-            ApiClient.getMatchFull(match.MATCH_ID),
-            ApiClient.getEventsAdmin(match.MATCH_ID)
-        ]).then(([matchData, events]) => {
-            loader.remove();
-            if (!matchData?.match) {
-                alert('Errore: dati partita non trovati');
-                return;
-            }
-            const freshMatch = matchData.match;
-            const casaId = String(freshMatch.CASA_ID).trim();
-            
-            let history = freshMatch.RIGORI_HISTORY || freshMatch.rigoriHistory || [];
-            
-            if (history.length === 0 && events && events.length > 0) {
-                const penaltyEvents = events.filter(e =>
-                    ['RIGORE_SEGNO', 'RIGORE_SBAGLIO'].includes(e.TIPO) ||
-                    ['RIGORE_SEGNO', 'RIGORE_SBAGLIO'].includes(String(e.RIGORE_RESULT || "").toUpperCase())
-                );
-                history = penaltyEvents.map(e => ({
-                    team: String(e.TEAM_ID) === casaId ? 'casa' : 'trasferta',
-                    result: (e.TIPO === 'RIGORE_SEGNO' || String(e.RIGORE_RESULT || "").toUpperCase() === 'RIGORE_SEGNO') ? 'goal' : 'miss'
-                }));
-            }
-
-            let casaScore = Number(freshMatch.RIGORE_CASA ?? freshMatch.rigoreCasa ?? freshMatch.RIGORI_CASA ?? freshMatch.rigoriCasa ?? 0) || 0;
-            let trasfScore = Number(freshMatch.RIGORE_TRASFERTA ?? freshMatch.rigoreTrasferta ?? freshMatch.RIGORI_TRASFERTA ?? freshMatch.rigoriTrasferta ?? 0) || 0;
-
-            if ((casaScore === 0 && trasfScore === 0) && history.length > 0) {
-                casaScore = history.filter(h => h.team === 'casa' && h.result === 'goal').length;
-                trasfScore = history.filter(h => h.team === 'trasferta' && h.result === 'goal').length;
-            }
-
-            const currentKicker = freshMatch.RIGORI_CURRENT_KICKER || freshMatch.rigoriCurrentKicker || 'casa';
-
-            const rigoriState = {
-                fase: 'tiri',
-                casaScore,
-                trasfScore,
-                currentKicker,
-                history,
-                finished: false
-            };
-            
-            localStorage.setItem(storageKey, JSON.stringify(rigoriState));
-            renderRigoriPopup(rigoriState, match, casaNome, trasfNome, casaLogo, trasfLogo, storageKey);
-        }).catch(err => {
-            loader.remove();
-            console.error('❌ Errore fetch rigori:', err);
-            alert('Errore di connessione. Riprova.');
+        console.log('📲 Dati ricevuti dal backend:', {
+            RIGORI_HISTORY: freshMatch.RIGORI_HISTORY || freshMatch.rigoriHistory,
+            RIGORE_CASA: freshMatch.RIGORE_CASA ?? freshMatch.rigoreCasa,
+            RIGORE_TRASFERTA: freshMatch.RIGORE_TRASFERTA ?? freshMatch.rigoreTrasferta,
+            eventsCount: events?.length
         });
-        return;
-    }
+
+        // 🔥 PROVA 1: Usa la history dal backend (supporta maiuscolo e camelCase)
+        let history = freshMatch.RIGORI_HISTORY || freshMatch.rigoriHistory || [];
+
+        // 🔥 PROVA 2: Se la history è vuota, ricostruiscila dagli eventi
+        if (history.length === 0 && events && events.length > 0) {
+            console.log('📱 History vuota dal backend, ricostruisco dagli eventi');
+            const penaltyEvents = events.filter(e =>
+                ['RIGORE_SEGNO', 'RIGORE_SBAGLIO'].includes(e.TIPO) ||
+                ['RIGORE_SEGNO', 'RIGORE_SBAGLIO'].includes(String(e.RIGORE_RESULT || "").toUpperCase())
+            );
+            history = penaltyEvents.map(e => ({
+                team: String(e.TEAM_ID) === casaId ? 'casa' : 'trasferta',
+                result: (e.TIPO === 'RIGORE_SEGNO' || String(e.RIGORE_RESULT || "").toUpperCase() === 'RIGORE_SEGNO') ? 'goal' : 'miss'
+            }));
+            console.log('📱 History ricostruita dagli eventi:', history);
+        }
+
+        // Calcola i punteggi (supporta maiuscolo e camelCase)
+        let casaScore = Number(freshMatch.RIGORE_CASA ?? freshMatch.rigoreCasa ?? freshMatch.RIGORI_CASA ?? freshMatch.rigoriCasa ?? 0) || 0;
+        let trasfScore = Number(freshMatch.RIGORE_TRASFERTA ?? freshMatch.rigoreTrasferta ?? freshMatch.RIGORI_TRASFERTA ?? freshMatch.rigoriTrasferta ?? 0) || 0;
+
+        // Se i punteggi sono 0 ma ci sono eventi, calcolali dagli eventi
+        if ((casaScore === 0 && trasfScore === 0) && history.length > 0) {
+            console.log('📱 Punteggi a zero, calcolo dagli eventi');
+            casaScore = history.filter(h => h.team === 'casa' && h.result === 'goal').length;
+            trasfScore = history.filter(h => h.team === 'trasferta' && h.result === 'goal').length;
+        }
+
+        const currentKicker = freshMatch.RIGORI_CURRENT_KICKER || freshMatch.rigoriCurrentKicker || 'casa';
+
+        console.log('📱 Stato finale rigori mobile:', { historyLength: history.length, casaScore, trasfScore, currentKicker });
+
+        const rigoriState = {
+            fase: 'tiri',
+            casaScore,
+            trasfScore,
+            currentKicker,
+            history,
+            finished: false
+        };
+        
+        localStorage.setItem(storageKey, JSON.stringify(rigoriState));
+        
+        // 🔥 RECUPERA LOGHI DAL BACKEND SE NON SONO DEFINITI
+        const finalCasaLogo = casaLogo || freshMatch.LOGO_CASA;
+        const finalTrasfLogo = trasfLogo || freshMatch.LOGO_TRASFERTA;
+        
+        renderRigoriPopup(rigoriState, match, casaNome, trasfNome, finalCasaLogo, finalTrasfLogo, storageKey);
+    }).catch(err => {
+        loader.remove();
+        console.error('❌ Errore fetch rigori:', err);
+        alert('Errore di connessione. Riprova.');
+    });
+    return;
+}
 
     // 🔥 PC ADMIN
     console.log('💻 PC: apro popup rigori admin');
@@ -2493,6 +2514,11 @@ function renderRigoriPopup(rigoriState, match, casaNome, trasfNome, casaLogo, tr
     `;
     
     document.body.appendChild(popup);
+
+    setTimeout(() => {
+    renderKickIndicators();
+    console.log('✅ Bollini renderizzati - Mobile:', isMobile, 'History:', rigoriState.history?.length);
+}, 100);
     
     const styleEl = document.createElement('style');
     styleEl.textContent = `.rigori-kicks {display: flex;flex-wrap: wrap;gap: 8px;justify-content: center;margin-top: 5px;min-height: 30px;} .kick-indicator {width: 20px;height: 20px;border-radius: 50%;display: inline-block;transition: all 0.3s ease;} .kick-indicator.goal {background: #22c55e;box-shadow: 0 0 8px rgba(34, 197, 94, 0.4);} .kick-indicator.miss {background: #ef4444;box-shadow: 0 0 8px rgba(239, 68, 68, 0.4);}`;
