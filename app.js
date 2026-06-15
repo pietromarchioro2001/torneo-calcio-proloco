@@ -4176,6 +4176,8 @@ async function resetTournament() {
     window.APP_CACHE = CacheManager.load();
     window.APP_STATE.matchesById = {};
     window.APP_STATE.lastMatch = null;
+    window.APP_STATE._podiumShownThisSession = false;
+    localStorage.removeItem('podiumDismissed');
 
     if (progress) progress.style.width = '100%';
 
