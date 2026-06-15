@@ -1429,7 +1429,6 @@ function openMatch(id) {
         // 🔥 FIX: Se la partita è in RIGORI, forza apertura popup su mobile
         if (cachedMatch.STATO_PARTITA === "RIGORI") {
             const popupEsistente = document.getElementById('rigoriPopupOverlay');
-            // Se il popup non c'è, aprilo subito in modalità mobile
             if (!popupEsistente) {
                 console.log('🎯 Rilevato stato RIGORI - Forzo apertura popup MOBILE');
                 setTimeout(() => openRigoriPopup(true), 300);
@@ -1472,12 +1471,12 @@ function openMatch(id) {
         }).catch(err => {
             console.error('❌ Errore refresh rigori:', err);
         });
-        return; // Esce qui, il resto lo fa il Promise sopra
+        return; // Esce qui per le partite in RIGORI
     }
     
-    // Per partite NON in rigori: comportamento normale
+    // Per partite NON in rigori (o senza cache completa): comportamento normale
     const localEvents = window.APP_CACHE.eventsByMatch?.[id] || [];
-    const calculatedScore = calculateMatchScore(cachedMatch, localEvents);
+    const calculatedScore = cachedMatch ? calculateMatchScore(cachedMatch, localEvents) : { GOL_CASA: 0, GOL_TRASFERTA: 0 };
     renderMatchPage({...cachedMatch, ...calculatedScore});
     updateMatchUI(cachedMatch);
     window.APP_STATE.lastMatch = { ...cachedMatch, ...calculatedScore };
@@ -1536,50 +1535,6 @@ function openMatch(id) {
         console.error('❌ Errore backend getMatchFull:', err);
     });
 }
-  
-  // ✅ PARTE 2: Fetch dal backend (in background)
-  ApiClient.getMatchFull(id).then(res => {
-    if (myNonce !== window.APP_STATE._matchRequestNonce) return;
-    if (!res?.match) return;
-    const freshMatch = res.match;
-    if (!freshMatch.CASA_ID || !freshMatch.TRASFERTA_ID || freshMatch.CASA_ID === "" || freshMatch.TRASFERTA_ID === "") {
-      console.warn('⚠️ Backend ha ritornato ID VUOTI, MANTENGO CACHE:', freshMatch);
-      return;
-    }
-    return ApiClient.getEventsAdmin(id).then(freshEvents => {
-      const mergedEvents = mergeEventsWithLocal(freshEvents, id);
-      window.APP_CACHE.eventsByMatch[id] = mergedEvents;
-      CacheManager.save(window.APP_CACHE);
-      const calculatedScore = calculateMatchScore(freshMatch, mergedEvents);
-      console.log('✅ Backend dati validi, aggiorno cache con punteggio calcolato');
-      window.APP_STATE.matchesById[freshMatch.MATCH_ID] = {...freshMatch, ...calculatedScore};
-      window.APP_STATE.lastMatch = {...freshMatch, ...calculatedScore};
-      if (window.APP_CACHE.matches) {
-        const idx = window.APP_CACHE.matches.findIndex(m => String(m.MATCH_ID) === String(freshMatch.MATCH_ID));
-        if (idx >= 0) {
-          window.APP_CACHE.matches[idx] = {
-            ...window.APP_CACHE.matches[idx],
-            ...freshMatch,
-            ...calculatedScore
-          };
-          CacheManager.save(window.APP_CACHE);
-        }
-      }
-      // 🔥 AGGIORNA UI SOLO SE I DATI SONO CAMBIATI
-      if (cachedMatch && (
-        calculatedScore.GOL_CASA !== cachedMatch.GOL_CASA ||
-        calculatedScore.GOL_TRASFERTA !== cachedMatch.GOL_TRASFERTA ||
-        freshMatch.STATO_PARTITA !== cachedMatch.STATO_PARTITA
-      )) {
-        console.log('🔄 Aggiorno UI con nuovi dati backend + punteggio calcolato');
-        renderMatchPage({...freshMatch, ...calculatedScore});
-        renderPenaltyIndicators(mergedEvents, {...freshMatch, ...calculatedScore});
-        loadPlayersForMatch(freshMatch);
-      }
-    });
-  }).catch(err => {
-    console.error('❌ Errore backend getMatchFull:', err);
-  });
 
 function renderMatchPage(match) {
   // ✅ VALIDAZIONE INIZIALE MIGLIORATA
