@@ -1425,13 +1425,18 @@ function openMatch(id) {
       casaId: cachedMatch.CASA_ID,
       trasfertaId: cachedMatch.TRASFERTA_ID
     });
-    
-    // 🔥 FIX CRITICO: Se la partita è in RIGORI, forza un refresh IMMEDIATO dei dati
-    if (cachedMatch.STATO_PARTITA === "RIGORI") {
-    console.log('🎯 Partita in RIGORI - Apro popup immediatamente');
-    
-    // 🔥 APRI SUBITO IL POPUP (con loader interno che caricherà i dati)
-    setTimeout(() => openRigoriPopup(true), 100);
+
+    // 🔥 FIX: Se la partita è in RIGORI, forza apertura popup su mobile
+    if (updatedMatch.STATO_PARTITA === "RIGORI") {
+        const popupExistente = document.getElementById('rigoriPopupOverlay');
+        
+        // Se il popup non c'è, aprilo subito in modalità mobile
+        if (!popupExistente) {
+            console.log(' Rilevato stato RIGORI - Forzo apertura popup MOBILE');
+            // Piccolo delay per assicurare che il DOM sia pronto
+            setTimeout(() => openRigoriPopup(true), 300);
+        }
+    }
     
     // Render immediato con cache
     const localEvents = window.APP_CACHE.eventsByMatch?.[id] || [];
@@ -2626,11 +2631,6 @@ function renderRigoriPopup(rigoriState, match, casaNome, trasfNome, casaLogo, tr
     }
     
     function handleRigoreClick(result, rigoriState, saveRigoriState, casaNome, trasfNome, match) {
-    console.log('🎯 Click rigore PC - Stato:', {
-        casaScore: rigoriState.casaScore,
-        trasfScore: rigoriState.trasfScore,
-        currentKicker: rigoriState.currentKicker
-    });
     
     const currentTeam = rigoriState.currentKicker;
     const isGoal = result === 'goal';
@@ -2664,11 +2664,7 @@ function renderRigoriPopup(rigoriState, match, casaNome, trasfNome, casaLogo, tr
         history: rigoriState.history,
         currentKicker: rigoriState.currentKicker,
         finished: false
-    }).then(() => {
-        console.log('✅ Tiro salvato backend - mobile leggerà tra 1s');
-    }).catch(e => {
-        console.error('❌ Errore save:', e);
-    });
+    })
     
     // 🔥 Dopo 3 secondi: aggiorna bollini e cambia squadra
     setTimeout(() => {
@@ -2703,7 +2699,6 @@ function renderRigoriPopup(rigoriState, match, casaNome, trasfNome, casaLogo, tr
         }
         
         saveRigoriState();
-        console.log('✅ Prossimo calciatore:', rigoriState.currentKicker, '-', nextTeamName);
     }, 3000);
 }
 }
