@@ -2038,14 +2038,21 @@ function updateScoreFromEvents(matchId) {
 
 function renderPenaltyIndicators(events, match) {
     const timeline = document.getElementById('eventsTimeline');
-    if (!timeline) return;
+    if (!timeline) {
+        console.error("❌ eventsTimeline element not found!");
+        return;
+    }
 
     // ✅ ESCI SUBITO SE NON SIAMO IN FASE FINALE
     const fase = String(match.FASE || "").trim().toUpperCase();
-    if (fase !== "FINALI") return;
+    if (fase !== "FINALI") {
+        return;
+    }
 
     // 🔥 FIX: Verifica se siamo in fase rigori o se ci sono eventi di rigore
     const isRigoriPhase = match.STATO_PARTITA === "RIGORI";
+    
+    // Filtra eventi rigore: cerca RIGORE_RESULT o TIPO
     const penaltyEvents = events.filter(e => {
         const rigoreResult = String(e.RIGORE_RESULT || "").toUpperCase();
         const tipo = String(e.TIPO || "").toUpperCase();
@@ -2054,7 +2061,9 @@ function renderPenaltyIndicators(events, match) {
     });
 
     // ✅ ESCI SOLO SE non siamo in fase rigori E non ci sono eventi di rigore
-    if (!isRigoriPhase && penaltyEvents.length === 0) return;
+    if (!isRigoriPhase && penaltyEvents.length === 0) {
+        return;
+    }
 
     // Rimuovi eventuali indicatori precedenti
     const existing = document.getElementById('penalty-indicators');
@@ -2118,7 +2127,7 @@ function renderPenaltyIndicators(events, match) {
         </div>
     `;
 
-    // Inserisci dopo gli eventi (sotto la timeline)
+    // 🔥 INSERISCI DOPO GLI EVENTI (sotto la timeline, non sopra)
     if (timeline.parentNode) {
         timeline.parentNode.insertBefore(indicatorsDiv, timeline.nextSibling);
     }
@@ -2187,14 +2196,15 @@ function openRigoriPopup(directMode = false) {
     const trasfData = window.APP_CACHE.fullTeams?.[String(match.TRASFERTA_ID)]?.team;
     const casaNome = casaData?.NOME_SQUADRA || match.SQUADRA_CASA;
     const trasfNome = trasfData?.NOME_SQUADRA || match.SQUADRA_TRASFERTA;
-    const casaLogo = casaData?.LOGO_FILE_ID || casaData?.LOGO_ID;
-    const trasfLogo = trasfData?.LOGO_FILE_ID || trasfData?.LOGO_ID;
     
-    // 🔥 DICHIARAZIONE UNICA (vale per tutto il resto della funzione)
+    // 🔥 FIX: Supporta TUTTE le possibili chiavi dei loghi
+    const casaLogo = casaData?.LOGO_ID || casaData?.LOGO_FILE_ID || match.LOGO_CASA;
+    const trasfLogo = trasfData?.LOGO_ID || trasfData?.LOGO_FILE_ID || match.LOGO_TRASFERTA;
+    
     const storageKey = `rigori_${match.MATCH_ID}`;
     
     if (directMode) {
-        console.log('📱 MOBILE: apro popup rigori in modalità lettura ROBUSTA');
+        console.log('📱 MOBILE: apro popup rigori in modalità lettura');
         window.APP_STATE._isRigoriAdmin = false;
         window.APP_STATE._isMobileViewer = true;
         
@@ -2220,19 +2230,9 @@ function openRigoriPopup(directMode = false) {
             const freshMatch = matchData.match;
             const casaId = String(freshMatch.CASA_ID).trim();
             
-            console.log('📲 Dati ricevuti dal backend:', {
-                RIGORI_HISTORY: freshMatch.RIGORI_HISTORY || freshMatch.rigoriHistory,
-                RIGORE_CASA: freshMatch.RIGORE_CASA ?? freshMatch.rigoreCasa,
-                RIGORE_TRASFERTA: freshMatch.RIGORE_TRASFERTA ?? freshMatch.rigoreTrasferta,
-                eventsCount: events?.length
-            });
-
-            // 🔥 PROVA 1: Usa la history dal backend (supporta maiuscolo e camelCase)
             let history = freshMatch.RIGORI_HISTORY || freshMatch.rigoriHistory || [];
-
-            // 🔥 PROVA 2: Se la history è vuota, ricostruiscila dagli eventi
+            
             if (history.length === 0 && events && events.length > 0) {
-                console.log('📱 History vuota dal backend, ricostruisco dagli eventi');
                 const penaltyEvents = events.filter(e =>
                     ['RIGORE_SEGNO', 'RIGORE_SBAGLIO'].includes(e.TIPO) ||
                     ['RIGORE_SEGNO', 'RIGORE_SBAGLIO'].includes(String(e.RIGORE_RESULT || "").toUpperCase())
@@ -2241,23 +2241,17 @@ function openRigoriPopup(directMode = false) {
                     team: String(e.TEAM_ID) === casaId ? 'casa' : 'trasferta',
                     result: (e.TIPO === 'RIGORE_SEGNO' || String(e.RIGORE_RESULT || "").toUpperCase() === 'RIGORE_SEGNO') ? 'goal' : 'miss'
                 }));
-                console.log('📱 History ricostruita dagli eventi:', history);
             }
 
-            // Calcola i punteggi (supporta maiuscolo e camelCase)
             let casaScore = Number(freshMatch.RIGORE_CASA ?? freshMatch.rigoreCasa ?? freshMatch.RIGORI_CASA ?? freshMatch.rigoriCasa ?? 0) || 0;
             let trasfScore = Number(freshMatch.RIGORE_TRASFERTA ?? freshMatch.rigoreTrasferta ?? freshMatch.RIGORI_TRASFERTA ?? freshMatch.rigoriTrasferta ?? 0) || 0;
 
-            // Se i punteggi sono 0 ma ci sono eventi, calcolali dagli eventi
             if ((casaScore === 0 && trasfScore === 0) && history.length > 0) {
-                console.log('📱 Punteggi a zero, calcolo dagli eventi');
                 casaScore = history.filter(h => h.team === 'casa' && h.result === 'goal').length;
                 trasfScore = history.filter(h => h.team === 'trasferta' && h.result === 'goal').length;
             }
 
             const currentKicker = freshMatch.RIGORI_CURRENT_KICKER || freshMatch.rigoriCurrentKicker || 'casa';
-
-            console.log('📱 Stato finale rigori mobile:', { historyLength: history.length, casaScore, trasfScore, currentKicker });
 
             const rigoriState = {
                 fase: 'tiri',
@@ -2278,17 +2272,14 @@ function openRigoriPopup(directMode = false) {
         return;
     }
 
-    // 🔥 PC ADMIN: logica con fallback al backend se localStorage è vuoto
+    // 🔥 PC ADMIN
     console.log('💻 PC: apro popup rigori admin');
     window.APP_STATE._isRigoriAdmin = true;
     window.APP_STATE._isMobileViewer = false;
     
-    // ✅ RIMOSSA la doppia dichiarazione "const storageKey". Quella sopra è già sufficiente!
     const savedState = localStorage.getItem(storageKey);
     let rigoriState = savedState ? JSON.parse(savedState) : null;
 
-    // 🔥 FIX CRITICO: Se non c'è nulla in localStorage, ma la partita è in RIGORI,
-    // recuperiamo i dati dal backend per non perdere lo stato al refresh!
     if (!rigoriState && match.STATO_PARTITA === "RIGORI") {
         console.log('💻 PC: Stato locale assente, recupero dal backend...');
         const loader = document.createElement('div');
@@ -2324,27 +2315,23 @@ function openRigoriPopup(directMode = false) {
                     finished: false
                 };
                 localStorage.setItem(storageKey, JSON.stringify(rigoriState));
-                
-                // Ora che abbiamo i dati, renderizziamo
-                renderRigoriPopup(rigoriState, match, match.SQUADRA_CASA, match.SQUADRA_TRASFERTA, null, null, storageKey);
+                renderRigoriPopup(rigoriState, match, match.SQUADRA_CASA, match.SQUADRA_TRASFERTA, casaLogo, trasfLogo, storageKey);
             }
         }).catch(err => {
             loader.remove();
             console.error('❌ Errore recupero stato rigori:', err);
-            // Fallback estremo: stato vuoto
             rigoriState = { fase: 'selezione', casaScore: 0, trasfScore: 0, currentKicker: 'casa', history: [], finished: false };
-            renderRigoriPopup(rigoriState, match, match.SQUADRA_CASA, match.SQUADRA_TRASFERTA, null, null, storageKey);
+            renderRigoriPopup(rigoriState, match, match.SQUADRA_CASA, match.SQUADRA_TRASFERTA, casaLogo, trasfLogo, storageKey);
         });
-        return; // Esce qui, la renderizzazione la fa la Promise
+        return;
     }
 
-    // Se abbiamo lo stato (da localStorage), procedi normalmente
     rigoriState = rigoriState || { fase: 'selezione', casaScore: 0, trasfScore: 0, currentKicker: 'casa', history: [], finished: false };
     rigoriState.casaScore = parseInt(rigoriState.casaScore) || 0;
     rigoriState.trasfScore = parseInt(rigoriState.trasfScore) || 0;
     rigoriState.finished = false;
     
-    renderRigoriPopup(rigoriState, match, match.SQUADRA_CASA, match.SQUADRA_TRASFERTA, null, null, storageKey);
+    renderRigoriPopup(rigoriState, match, match.SQUADRA_CASA, match.SQUADRA_TRASFERTA, casaLogo, trasfLogo, storageKey);
 }
 
 // 🔥 NUOVA FUNZIONE: Polling specifico per mobile
