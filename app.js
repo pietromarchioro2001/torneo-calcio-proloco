@@ -2293,13 +2293,17 @@ function openRigoriPopup(directMode = false) {
         return;
     }
     
-    // Procedi normalmente con lo stato da localStorage
     rigoriState = rigoriState || { fase: 'selezione', casaScore: 0, trasfScore: 0, currentKicker: 'casa', history: [], finished: false };
+    
+    // Se non ci sono tiri effettuati, forza la fase selezione
+    if (!rigoriState.history || rigoriState.history.length === 0) {
+        rigoriState.fase = 'selezione';
+    }
+    
     rigoriState.casaScore = parseInt(rigoriState.casaScore) || 0;
     rigoriState.trasfScore = parseInt(rigoriState.trasfScore) || 0;
     rigoriState.finished = false;
-    
-    renderRigoriPopup(rigoriState, match, casaNome, trasfNome, casaLogo, trasfLogo, storageKey);
+    renderRigoriPopup(rigoriState, match, match.SQUADRA_CASA, match.SQUADRA_TRASFERTA, casaLogo, trasfLogo, storageKey);
 }
 
 // ✅ NUOVA FUNZIONE: Aggiornamento fluido senza re-render completo
