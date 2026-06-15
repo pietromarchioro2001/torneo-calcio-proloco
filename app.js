@@ -1435,6 +1435,13 @@ function openMatch(id) {
         renderEvents(localEvents, cachedMatch);
         loadPlayersForMatch(cachedMatch);
         renderPenaltyIndicators(localEvents, cachedMatch);
+
+        if (cachedMatch.STATO_PARTITA === "RIGORI" && !document.getElementById('rigoriPopupOverlay')) {
+            const isMobile = window.innerWidth <= 768;
+            console.log('🎯 Apertura automatica popup rigori - Device:', isMobile ? 'MOBILE' : 'PC');
+            // Piccolo delay per assicurare che il DOM sia pronto
+            setTimeout(() => openRigoriPopup(isMobile), 300); 
+        }
         
         // Aggiorna cache in background (senza bloccare il popup)
         Promise.all([
@@ -2895,64 +2902,6 @@ function startMatchLiveRefresh() {
             renderMatchPage(updatedMatch);
             loadPlayersForMatch(updatedMatch);
         
-            // 🔥 APERTURA AUTOMATICA MOBILE: Se è RIGORI e il popup è chiuso, aprilo subito
-            if (cachedMatch.STATO_PARTITA === "RIGORI") {
-                const isMobile = window.innerWidth <= 768;
-                console.log('🎯 Partita in RIGORI - detected device:', isMobile ? 'MOBILE' : 'PC');
-                
-                // Render immediato con cache
-                const localEvents = window.APP_CACHE.eventsByMatch?.[id] || [];
-                const calculatedScore = calculateMatchScore(cachedMatch, localEvents);
-                renderMatchPage({...cachedMatch, ...calculatedScore});
-                updateMatchUI(cachedMatch);
-                window.APP_STATE.lastMatch = { ...cachedMatch, ...calculatedScore };
-                renderEvents(localEvents, cachedMatch);
-                loadPlayersForMatch(cachedMatch);
-                renderPenaltyIndicators(localEvents, cachedMatch);
-                
-                // Aggiorna cache in background
-                Promise.all([
-                    ApiClient.getMatchFull(id),
-                    ApiClient.getEventsAdmin(id)
-                ]).then(([freshData, freshEvents]) => {
-                    if (freshData?.match && freshEvents) {
-                        const mergedEvents = mergeEventsWithLocal(freshEvents, id);
-                        window.APP_CACHE.eventsByMatch[id] = mergedEvents;
-                        if (window.APP_CACHE.matches) {
-                            const idx = window.APP_CACHE.matches.findIndex(m => String(m.MATCH_ID) === String(id));
-                            if (idx >= 0) {
-                                window.APP_CACHE.matches[idx] = {
-                                    ...window.APP_CACHE.matches[idx],
-                                    ...freshData.match,
-                                    RIGORE_CASA: freshData.match.RIGORE_CASA ?? freshData.match.rigoriCasa,
-                                    RIGORE_TRASFERTA: freshData.match.RIGORE_TRASFERTA ?? freshData.match.rigoriTrasferta,
-                                    RIGORI_CASA: freshData.match.RIGORE_CASA ?? freshData.match.rigoriCasa,
-                                    RIGORI_TRASFERTA: freshData.match.RIGORE_TRASFERTA ?? freshData.match.rigoriTrasferta
-                                };
-                                CacheManager.save(window.APP_CACHE);
-                            }
-                        }
-                        // Aggiorna lastMatch con dati freschi
-                        window.APP_STATE.lastMatch = {
-                            ...window.APP_STATE.lastMatch,
-                            ...freshData.match
-                        };
-                        // Se il popup è aperto, chiudi e riapri con dati freschi
-                        if (document.getElementById('rigoriPopupOverlay')) {
-                            closeRigoriPopup();
-                            setTimeout(() => openRigoriPopup(isMobile), 100);
-                        } else {
-                            // Apri popup con dati freschi
-                            setTimeout(() => openRigoriPopup(isMobile), 100);
-                        }
-                    }
-                }).catch(err => {
-                    console.error('❌ Errore refresh rigori:', err);
-                    // Fallback: apri popup con dati cache
-                    setTimeout(() => openRigoriPopup(isMobile), 100);
-                });
-                return;
-            }
         }
           
           // 🔥 AGGIORNAMENTO LISTA PARTITE
