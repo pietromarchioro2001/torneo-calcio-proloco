@@ -1420,10 +1420,6 @@ function openMatch(id) {
     
     // ✅ PARTE 1: Render immediato dalla cache (se disponibile)
     if (cachedMatch && cachedMatch.CASA_ID && cachedMatch.TRASFERTA_ID) {
-        console.log('✅ Match COMPLETO dalla cache:', {
-            casaId: cachedMatch.CASA_ID,
-            trasfertaId: cachedMatch.TRASFERTA_ID
-        });
 
         // Render immediato con cache
         const localEvents = window.APP_CACHE.eventsByMatch?.[id] || [];
@@ -2190,13 +2186,11 @@ function openRigoriPopup(directMode = false) {
     }
 
     // 🔥 PC ADMIN
-    console.log('💻 PC: apro popup rigori admin');
     window.APP_STATE._isRigoriAdmin = true;
     window.APP_STATE._isMobileViewer = false;
 
     // 🔥 Se la partita è in RIGORI, recupera SEMPRE dal backend
     if (match.STATO_PARTITA === "RIGORI") {
-        console.log('💻 PC: Partita in RIGORI, recupero stato dal backend...');
         const loader = document.createElement('div');
         loader.className = 'rigori-popup-overlay';
         loader.innerHTML = `<div class="rigori-popup" style="max-width: 400px; text-align: center; padding: 40px;"><div style="font-size: 48px; margin-bottom: 20px;">⏳</div><div style="font-size: 18px; font-weight: 700; color: #7a1e2c;">SINCRONIZZAZIONE...</div></div>`;
@@ -2900,14 +2894,53 @@ function startMatchLiveRefresh() {
             }
           }
    
-        // 🔥 AGGIORNAMENTO PAGINA PARTITA
+        // 🔥 AGGIORNAMENTO PAGINA PARTITA - OTTIMIZZATO (evita flickering)
         if (document.querySelector('.match-page') && String(window.APP_STATE.currentMatchId) === String(match.MATCH_ID)) {
-            // ✅ FIX CRITICO: Aggiorna lastMatch PRIMA di qualsiasi altra cosa
+            const previousMatch = window.APP_STATE.lastMatch;
+            
+            // ✅ CONFRONTA i dati: aggiorna SOLO se qualcosa è cambiato davvero
+            const scoreChanged = (
+                previousMatch?.GOL_CASA !== updatedMatch.GOL_CASA ||
+                previousMatch?.GOL_TRASFERTA !== updatedMatch.GOL_TRASFERTA
+            );
+            const statusChanged = previousMatch?.STATO_PARTITA !== updatedMatch.STATO_PARTITA;
+            const eventsChanged = (
+                JSON.stringify(previousMatch?._eventsHash || '') !== 
+                JSON.stringify(mergedEvents.length + '_' + (mergedEvents[mergedEvents.length-1]?.EVENT_ID || ''))
+            );
+            
+            // Salva hash eventi per confronto futuro
+            updatedMatch._eventsHash = mergedEvents.length + '_' + (mergedEvents[mergedEvents.length-1]?.EVENT_ID || '');
+            
+            // ✅ AGGIORNA lastMatch PRIMA di qualsiasi altra cosa
             window.APP_STATE.lastMatch = updatedMatch;
-        
-            renderMatchPage(updatedMatch);
-            loadPlayersForMatch(updatedMatch);
-        
+            
+            // 🔥 AGGIORNAMENTO MIRATO (solo elementi cambiati, NO re-render completo)
+            if (scoreChanged || statusChanged) {
+                // Aggiorna solo il punteggio
+                const scoreEl = document.querySelector(".score-big");
+                if (scoreEl) {
+                    scoreEl.textContent = `${updatedMatch.GOL_CASA || 0} - ${updatedMatch.GOL_TRASFERTA || 0}`;
+                }
+                // Aggiorna solo lo stato
+                updateMatchUI(updatedMatch);
+                console.log('🔄 Aggiornamento mirato:', { scoreChanged, statusChanged });
+            }
+            
+            // ✅ Aggiorna eventi SOLO se sono cambiati (evita flickering nomi)
+            if (eventsChanged) {
+                renderEvents(mergedEvents, updatedMatch);
+                renderPenaltyIndicators(mergedEvents, updatedMatch);
+                console.log('📋 Eventi aggiornati:', mergedEvents.length);
+            }
+            
+            // ✅ Aggiorna giocatori SOLO se necessario (non ad ogni refresh)
+            // I giocatori cambiano raramente durante la partita, quindi li aggiorniamo solo al primo caricamento
+            if (!window.APP_STATE._playersLoadedForMatch || 
+                window.APP_STATE._playersLoadedForMatch !== updatedMatch.MATCH_ID) {
+                loadPlayersForMatch(updatedMatch);
+                window.APP_STATE._playersLoadedForMatch = updatedMatch.MATCH_ID;
+            }
         }
           
           // 🔥 AGGIORNAMENTO LISTA PARTITE
@@ -3774,8 +3807,6 @@ function bootAdminApp() {
     },
     get() { return this._lastMatch; }
   });
-
-  console.log("🚀 Booting Torneo Admin - PRODUCTION MODE");
   
   // 1. Carica cache istantaneamente
   window.APP_CACHE = CacheManager.load();
@@ -4180,7 +4211,6 @@ async function resetTournament() {
 // 🏁 START
 // ============================================================================
 if (document.readyState === "loading") { document.addEventListener("DOMContentLoaded", bootAdminApp); } else { bootAdminApp(); }
-console.log("✅ ADMIN JS LOADED - GitHub + Apps Script Ready v2.2");
 
 function loadPlayersForMatch(match) {
     const casaId = match?.CASA_ID; const trasfId = match?.TRASFERTA_ID;
@@ -4370,7 +4400,11 @@ function getDeviceFingerprint() {
 
 async function voteMVP(playerId, playerName, event) {
     const match = window.APP_STATE.lastMatch;
-    if (!match || match.STATO_PARTITA !== "LIVE") {
+    if (!match) return;
+    
+    // ✅ PERMETTI VOTO ANCHE DURANTE RIGORI E SUPPLEMENTARI
+    const canVote = ["LIVE", "SUPP", "RIGORI"].includes(match.STATO_PARTITA);
+    if (!canVote) {
         return;
     }
     
