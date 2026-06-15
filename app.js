@@ -2836,11 +2836,19 @@ function startMatchLiveRefresh() {
           }
           
           // 🔥 AGGIORNAMENTO PAGINA PARTITA
-            if (document.querySelector('.match-page') && String(window.APP_STATE.currentMatchId) === String(match.MATCH_ID)) {
-                renderMatchPage(updatedMatch);
-                loadPlayersForMatch(updatedMatch);
-
+        if (document.querySelector('.match-page') && String(window.APP_STATE.currentMatchId) === String(match.MATCH_ID)) {
+            // 🔥 FIX CRITICO: Aggiorna lastMatch PRIMA di tutto
+            window.APP_STATE.lastMatch = updatedMatch;
+            
+            renderMatchPage(updatedMatch);
+            loadPlayersForMatch(updatedMatch);
+            
+            // 🔥 FIX: Apri popup rigori se lo stato è RIGORI e il popup non è aperto
+            if (updatedMatch.STATO_PARTITA === "RIGORI" && !document.getElementById('rigoriPopupOverlay')) {
+                console.log('🎯 Rilevato stato RIGORI - apro popup automatico');
+                setTimeout(() => openRigoriPopup(true), 300);
             }
+        }
           
           // 🔥 AGGIORNAMENTO LISTA PARTITE
           if (document.querySelector('.matches-page')) {
