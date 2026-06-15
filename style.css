@@ -2246,7 +2246,7 @@ body {
     height: 70px !important;
   }
   .rigori-current { font-size: 14px !important; letter-spacing: 1px !important; }
-  .rigori-controls,  display: none !important; }
+  .rigori-controls, .rigori-finish { display: none !important; }
   #rigori-selezione { display: none !important; }
   #rigori-tiri { display: block !important; }
   .rigori-kicks { 
