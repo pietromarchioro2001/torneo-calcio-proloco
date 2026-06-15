@@ -2834,18 +2834,19 @@ function startMatchLiveRefresh() {
               }
             }
           }
-          
-          // 🔥 AGGIORNAMENTO PAGINA PARTITA
+   
+        // 🔥 AGGIORNAMENTO PAGINA PARTITA
         if (document.querySelector('.match-page') && String(window.APP_STATE.currentMatchId) === String(match.MATCH_ID)) {
-            // 🔥 FIX CRITICO: Aggiorna lastMatch PRIMA di tutto
+            // ✅ FIX CRITICO: Aggiorna lastMatch PRIMA di qualsiasi altra cosa
             window.APP_STATE.lastMatch = updatedMatch;
-            
+        
             renderMatchPage(updatedMatch);
             loadPlayersForMatch(updatedMatch);
-            
-            // 🔥 FIX: Apri popup rigori se lo stato è RIGORI e il popup non è aperto
+        
+            // 🔥 APERTURA AUTOMATICA MOBILE: Se è RIGORI e il popup è chiuso, aprilo subito
             if (updatedMatch.STATO_PARTITA === "RIGORI" && !document.getElementById('rigoriPopupOverlay')) {
-                console.log('🎯 Rilevato stato RIGORI - apro popup automatico');
+                console.log('🎯 Rilevato stato RIGORI - apro popup automatico MOBILE');
+                // Piccolo delay per assicurare che il DOM sia pronto
                 setTimeout(() => openRigoriPopup(true), 300);
             }
         }
