@@ -2158,7 +2158,6 @@ function openRigoriPopup(directMode = false) {
         console.error('❌ openRigoriPopup: match non trovato');
         return;
     }
-    
     const casaData = window.APP_CACHE.fullTeams?.[String(match.CASA_ID)]?.team;
     const trasfData = window.APP_CACHE.fullTeams?.[String(match.TRASFERTA_ID)]?.team;
     const casaNome = casaData?.NOME_SQUADRA || match.SQUADRA_CASA;
@@ -2166,33 +2165,37 @@ function openRigoriPopup(directMode = false) {
     const casaLogo = casaData?.LOGO_FILE_ID || casaData?.LOGO_ID || match.LOGO_CASA;
     const trasfLogo = trasfData?.LOGO_FILE_ID || trasfData?.LOGO_ID || match.LOGO_TRASFERTA;
     const storageKey = `rigori_${match.MATCH_ID}`;
-    
-    // 🔥 MOBILE: usa dati dalla cache e mostra subito
+
+    // 🔥 MOBILE: usa dati dalla cache/backend e mostra subito
     if (directMode) {
         window.APP_STATE._isRigoriAdmin = false;
         window.APP_STATE._isMobileViewer = true;
+        
+        // ✅ FIX CRITICO: Lettura robusta con fallback su minuscolo e localStorage
+        const savedLocal = localStorage.getItem(storageKey);
+        const localState = savedLocal ? JSON.parse(savedLocal) : null;
+        
         const rigoriState = {
             fase: 'tiri',
-            casaScore: Number(match.RIGORE_CASA ?? 0) || 0,
-            trasfScore: Number(match.RIGORE_TRASFERTA ?? 0) || 0,
-            currentKicker: match.RIGORI_CURRENT_KICKER || 'casa',
-            history: match.RIGORI_HISTORY || [],
+            casaScore: Number(match.RIGORE_CASA ?? match.rigoriCasa ?? localState?.casaScore ?? 0) || 0,
+            trasfScore: Number(match.RIGORE_TRASFERTA ?? match.rigoriTrasferta ?? localState?.trasfScore ?? 0) || 0,
+            currentKicker: match.RIGORI_CURRENT_KICKER || match.rigoriCurrentKicker || localState?.currentKicker || 'casa',
+            history: match.RIGORI_HISTORY || match.rigoriHistory || localState?.history || [],
             finished: false
         };
+        
         localStorage.setItem(storageKey, JSON.stringify(rigoriState));
         renderRigoriPopup(rigoriState, match, casaNome, trasfNome, casaLogo, trasfLogo, storageKey);
-        
-        // 🔥 AVVIA POLLING MOBILE (mancante!)
         startMobileRigoriPolling(match.MATCH_ID, casaNome, trasfNome, casaLogo, trasfLogo, storageKey);
         return;
     }
-    
+
     // 🔥 PC ADMIN
     console.log('💻 PC: apro popup rigori admin');
     window.APP_STATE._isRigoriAdmin = true;
     window.APP_STATE._isMobileViewer = false;
-    
-    // 🔥 Se la partita è in RIGORI, recupera SEMPRE dal backend (ignora localStorage)
+
+    // 🔥 Se la partita è in RIGORI, recupera SEMPRE dal backend
     if (match.STATO_PARTITA === "RIGORI") {
         console.log('💻 PC: Partita in RIGORI, recupero stato dal backend...');
         const loader = document.createElement('div');
@@ -2207,9 +2210,10 @@ function openRigoriPopup(directMode = false) {
                 const freshMatch = matchData.match;
                 const casaId = String(freshMatch.CASA_ID).trim();
                 
-                let history = freshMatch.RIGORI_HISTORY || [];
+                // ✅ FIX CRITICO: Lettura robusta con fallback
+                let history = freshMatch.RIGORI_HISTORY || freshMatch.rigoriHistory || [];
                 if (history.length === 0 && events) {
-                    history = events.filter(e => 
+                    history = events.filter(e =>
                         ['RIGORE_SEGNO', 'RIGORE_SBAGLIO'].includes(e.TIPO)
                     ).map(e => ({
                         team: String(e.TEAM_ID) === casaId ? 'casa' : 'trasferta',
@@ -2217,14 +2221,14 @@ function openRigoriPopup(directMode = false) {
                     }));
                 }
                 
-                let casaScore = Number(freshMatch.RIGORE_CASA ?? 0) || 0;
-                let trasfScore = Number(freshMatch.RIGORE_TRASFERTA ?? 0) || 0;
+                let casaScore = Number(freshMatch.RIGORE_CASA ?? freshMatch.rigoriCasa ?? 0) || 0;
+                let trasfScore = Number(freshMatch.RIGORE_TRASFERTA ?? freshMatch.rigoriTrasferta ?? 0) || 0;
                 
                 const rigoriState = {
                     fase: 'tiri',
                     casaScore,
                     trasfScore,
-                    currentKicker: freshMatch.RIGORI_CURRENT_KICKER || 'casa',
+                    currentKicker: freshMatch.RIGORI_CURRENT_KICKER || freshMatch.rigoriCurrentKicker || 'casa',
                     history,
                     finished: false
                 };
@@ -2235,26 +2239,30 @@ function openRigoriPopup(directMode = false) {
         }).catch(err => {
             loader.remove();
             console.error('❌ Errore recupero stato rigori:', err);
-            const rigoriState = { fase: 'selezione', casaScore: 0, trasfScore: 0, currentKicker: 'casa', history: [], finished: false };
+            // Fallback a localStorage se il backend fallisce momentaneamente
+            const savedState = localStorage.getItem(storageKey);
+            const rigoriState = savedState ? JSON.parse(savedState) : { 
+                fase: 'selezione', casaScore: 0, trasfScore: 0, currentKicker: 'casa', history: [], finished: false 
+            };
             renderRigoriPopup(rigoriState, match, casaNome, trasfNome, casaLogo, trasfLogo, storageKey);
         });
         return;
     }
-    
+
     // 🔥 Se la partita NON è in RIGORI, usa localStorage (per fase di selezione iniziale)
     const savedState = localStorage.getItem(storageKey);
-    let rigoriState = savedState ? JSON.parse(savedState) : { 
-        fase: 'selezione', 
-        casaScore: 0, 
-        trasfScore: 0, 
-        currentKicker: 'casa', 
-        history: [], 
-        finished: false 
+    let rigoriState = savedState ? JSON.parse(savedState) : {
+        fase: 'selezione',
+        casaScore: 0,
+        trasfScore: 0,
+        currentKicker: 'casa',
+        history: [],
+        finished: false
     };
-    
     rigoriState.casaScore = parseInt(rigoriState.casaScore) || 0;
     rigoriState.trasfScore = parseInt(rigoriState.trasfScore) || 0;
     rigoriState.finished = false;
+    
     renderRigoriPopup(rigoriState, match, casaNome, trasfNome, casaLogo, trasfLogo, storageKey);
 }
 
@@ -2341,9 +2349,9 @@ function startMobileRigoriPolling(matchId, casaNome, trasfNome, casaLogo, trasfL
                 return;
             }
             
-            const history = freshMatch.RIGORI_HISTORY || [];
-            const casaScore = Number(freshMatch.RIGORE_CASA ?? 0) || 0;
-            const trasfScore = Number(freshMatch.RIGORE_TRASFERTA ?? 0) || 0;
+            const history = freshMatch.RIGORI_HISTORY || freshMatch.rigoriHistory || [];
+            const casaScore = Number(freshMatch.RIGORE_CASA ?? freshMatch.rigoriCasa ?? 0) || 0;
+            const trasfScore = Number(freshMatch.RIGORE_TRASFERTA ?? freshMatch.rigoriTrasferta ?? 0) || 0;
             
             // ✅ Aggiorna SOLO se ci sono cambiamenti reali
             const hasNewKick = history.length !== lastHistoryLength;
@@ -2945,17 +2953,10 @@ function startMatchLiveRefresh() {
 }
 
 function updateRigoriPopupMobile(updatedMatch) {
-    console.log('📱 Mobile sync rigori...', {
-        currentKicker: updatedMatch.RIGORI_CURRENT_KICKER,
-        historyLength: updatedMatch.RIGORI_HISTORY?.length,
-        casaScore: updatedMatch.RIGORE_CASA,
-        trasfScore: updatedMatch.RIGORE_TRASFERTA
-    });
-
-    const history = updatedMatch.RIGORI_HISTORY || [];
-    const currentKicker = updatedMatch.RIGORI_CURRENT_KICKER || 'casa';
-    const casaScore = Number(updatedMatch.RIGORE_CASA ?? 0) || 0;
-    const trasfScore = Number(updatedMatch.RIGORE_TRASFERTA ?? 0) || 0;
+    const history = updatedMatch.RIGORI_HISTORY || updatedMatch.rigoriHistory || [];
+    const currentKicker = updatedMatch.RIGORI_CURRENT_KICKER || updatedMatch.rigoriCurrentKicker || 'casa';
+    const casaScore = Number(updatedMatch.RIGORE_CASA ?? updatedMatch.rigoriCasa ?? 0) || 0;
+    const trasfScore = Number(updatedMatch.RIGORE_TRASFERTA ?? updatedMatch.rigoriTrasferta ?? 0) || 0;
 
     // RILEVA NUOVO TIRO
     const prevHistoryLength = window.APP_STATE._lastRigoriHistoryLength || 0;
