@@ -827,6 +827,10 @@ body {
 
 .match-page .back-btn-wrapper { margin-top: auto; padding: 20px 0 10px; display: flex; justify-content: flex-end; }
 
+.match-controls-top .secondary-btn {
+  border: none !important;
+}
+
 /* =============================================================================================
    8. CRONACA & EVENTI
 =============================================================================================== */
