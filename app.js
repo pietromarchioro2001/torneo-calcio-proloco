@@ -1540,7 +1540,6 @@ function openMatch(id) {
   }).catch(err => {
     console.error('❌ Errore backend getMatchFull:', err);
   });
-}
 
 function renderMatchPage(match) {
   // ✅ VALIDAZIONE INIZIALE MIGLIORATA
