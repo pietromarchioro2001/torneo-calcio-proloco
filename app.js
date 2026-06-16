@@ -3355,27 +3355,16 @@ function renderFinalStage(data) {
     );
     const finaliFiniti = finali.filter(m => m.stato === "FINITA").length;
     const finaliCreate = finali.length >= 2;
-    
     const podioActivated = localStorage.getItem('podioActivated') === 'true';
-    if (podioActivated && finaliCreate && finaliFiniti === 2) {
-        setTimeout(() => {
-            if (!document.getElementById('podiumPopupOverlay')) {
-                showTournamentPodium(data);
-            }
-        }, 500);
-    }
     
-    // ✅ CONTROLLO MULTI-LIVELLO PER EVITARE DOPPIE VISUALIZZAZIONI
-    if (finaliCreate && finaliFiniti === 2 && !window.APP_STATE._podiumShownThisSession) {
+    // ✅ UNA SOLA CHIAMATA con tutti i controlli necessari
+    if (finaliCreate && finaliFiniti === 2 && podioActivated && !window.APP_STATE._podiumShownThisSession) {
         const existingPodium = document.getElementById('podiumPopupOverlay');
-        const podiumAlreadyActivated = localStorage.getItem('podioActivated') === 'true';
-        
-        if (!existingPodium && !podiumAlreadyActivated) {
+        if (!existingPodium) {
             window.APP_STATE._podiumShownThisSession = true;
             setTimeout(() => {
                 // Doppio controllo prima di mostrare
-                if (!document.getElementById('podiumPopupOverlay') && 
-                    localStorage.getItem('podioActivated') !== 'true') {
+                if (!document.getElementById('podiumPopupOverlay')) {
                     showTournamentPodium(data);
                 }
             }, 500);
