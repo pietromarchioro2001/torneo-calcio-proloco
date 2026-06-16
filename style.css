@@ -31,6 +31,134 @@ body {
 ::-webkit-scrollbar { display: none; }
 * { scrollbar-width: none; }
 
+/* ============================================================================
+   📱 PWA INSTALL BANNER
+============================================================================ */
+#pwa-install-banner {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  background: linear-gradient(135deg, #7a1e2c 0%, #9f2c3d 100%);
+  color: white;
+  padding: 15px;
+  z-index: 10001;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+  animation: slideDown 0.3s ease;
+  font-family: 'Oswald', sans-serif;
+}
+
+@keyframes slideDown {
+  from { transform: translateY(-100%); }
+  to { transform: translateY(0); }
+}
+
+.pwa-banner-content {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.pwa-banner-icon {
+  font-size: 32px;
+  flex-shrink: 0;
+}
+
+.pwa-banner-text {
+  flex: 1;
+}
+
+.pwa-banner-text strong {
+  font-size: 16px;
+  display: block;
+  margin-bottom: 4px;
+  letter-spacing: 1px;
+}
+
+.pwa-banner-text p {
+  font-size: 13px;
+  margin: 0;
+  opacity: 0.9;
+  letter-spacing: 0.5px;
+}
+
+.pwa-banner-install {
+  background: white;
+  color: #7a1e2c;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 6px;
+  font-weight: 700;
+  cursor: pointer;
+  font-size: 14px;
+  flex-shrink: 0;
+  letter-spacing: 1px;
+  transition: all 0.2s;
+}
+
+.pwa-banner-install:hover {
+  background: #f5f5f5;
+  transform: scale(1.05);
+}
+
+.pwa-banner-close {
+  background: transparent;
+  color: white;
+  border: none;
+  font-size: 24px;
+  cursor: pointer;
+  padding: 0 8px;
+  opacity: 0.8;
+  transition: opacity 0.2s;
+}
+
+.pwa-banner-close:hover {
+  opacity: 1;
+}
+
+.pwa-banner-instructions {
+  background: rgba(255,255,255,0.15);
+  padding: 10px 12px;
+  border-radius: 6px;
+  font-size: 12px;
+  letter-spacing: 0.5px;
+}
+
+.pwa-banner-instructions strong {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 13px;
+  letter-spacing: 1px;
+}
+
+.pwa-banner-instructions ul {
+  margin: 0;
+  padding-left: 20px;
+}
+
+.pwa-banner-instructions li {
+  margin-bottom: 4px;
+  line-height: 1.4;
+}
+
+@media (max-width: 768px) {
+  .pwa-banner-content {
+    flex-wrap: wrap;
+  }
+  
+  .pwa-banner-text {
+    flex: 1 1 100%;
+    order: 3;
+    margin-top: 8px;
+  }
+  
+  .pwa-banner-install {
+    padding: 6px 12px;
+    font-size: 12px;
+  }
+}
+
 /* =============================================================================================
     2. TOOLBAR & NAVIGAZIONE
 =============================================================================================== */
