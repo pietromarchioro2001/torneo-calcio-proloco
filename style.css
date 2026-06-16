@@ -32,131 +32,141 @@ body {
 * { scrollbar-width: none; }
 
 /* ============================================================================
-   📱 PWA INSTALL BANNER
+   📱 PWA MINI BANNER - Elegante e discreto
 ============================================================================ */
-#pwa-install-banner {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  background: linear-gradient(135deg, #7a1e2c 0%, #9f2c3d 100%);
-  color: white;
-  padding: 15px;
-  z-index: 10001;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-  animation: slideDown 0.3s ease;
-  font-family: 'Oswald', sans-serif;
+#pwa-mini-banner {
+    position: fixed;
+    bottom: 80px;
+    left: 50%;
+    transform: translateX(-50%) translateY(100px);
+    z-index: 9998;
+    background: white;
+    border-radius: 16px;
+    box-shadow: 0 8px 30px rgba(0,0,0,0.15), 0 0 0 1px rgba(122, 30, 44, 0.1);
+    padding: 12px 16px;
+    opacity: 0;
+    transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+    max-width: 380px;
+    width: calc(100% - 40px);
+    font-family: 'Oswald', sans-serif;
 }
 
-@keyframes slideDown {
-  from { transform: translateY(-100%); }
-  to { transform: translateY(0); }
+#pwa-mini-banner.show {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
 }
 
-.pwa-banner-content {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  margin-bottom: 10px;
+.pwa-mini-content {
+    display: flex;
+    align-items: center;
+    gap: 12px;
 }
 
-.pwa-banner-icon {
-  font-size: 32px;
-  flex-shrink: 0;
+.pwa-mini-icon {
+    font-size: 24px;
+    flex-shrink: 0;
+    width: 40px;
+    height: 40px;
+    background: linear-gradient(135deg, #7a1e2c 0%, #9f2c3d 100%);
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 2px 8px rgba(122, 30, 44, 0.3);
 }
 
-.pwa-banner-text {
-  flex: 1;
+.pwa-mini-text {
+    flex: 1;
+    min-width: 0;
 }
 
-.pwa-banner-text strong {
-  font-size: 16px;
-  display: block;
-  margin-bottom: 4px;
-  letter-spacing: 1px;
+.pwa-mini-text strong {
+    display: block;
+    font-size: 14px;
+    font-weight: 700;
+    color: #111;
+    letter-spacing: 0.5px;
+    line-height: 1.2;
 }
 
-.pwa-banner-text p {
-  font-size: 13px;
-  margin: 0;
-  opacity: 0.9;
-  letter-spacing: 0.5px;
+.pwa-mini-text span {
+    display: block;
+    font-size: 11px;
+    color: #888;
+    letter-spacing: 0.3px;
+    margin-top: 2px;
+    line-height: 1.2;
 }
 
-.pwa-banner-install {
-  background: white;
-  color: #7a1e2c;
-  border: none;
-  padding: 8px 16px;
-  border-radius: 6px;
-  font-weight: 700;
-  cursor: pointer;
-  font-size: 14px;
-  flex-shrink: 0;
-  letter-spacing: 1px;
-  transition: all 0.2s;
-}
-
-.pwa-banner-install:hover {
-  background: #f5f5f5;
-  transform: scale(1.05);
-}
-
-.pwa-banner-close {
-  background: transparent;
-  color: white;
-  border: none;
-  font-size: 24px;
-  cursor: pointer;
-  padding: 0 8px;
-  opacity: 0.8;
-  transition: opacity 0.2s;
-}
-
-.pwa-banner-close:hover {
-  opacity: 1;
-}
-
-.pwa-banner-instructions {
-  background: rgba(255,255,255,0.15);
-  padding: 10px 12px;
-  border-radius: 6px;
-  font-size: 12px;
-  letter-spacing: 0.5px;
-}
-
-.pwa-banner-instructions strong {
-  display: block;
-  margin-bottom: 6px;
-  font-size: 13px;
-  letter-spacing: 1px;
-}
-
-.pwa-banner-instructions ul {
-  margin: 0;
-  padding-left: 20px;
-}
-
-.pwa-banner-instructions li {
-  margin-bottom: 4px;
-  line-height: 1.4;
-}
-
-@media (max-width: 768px) {
-  .pwa-banner-content {
-    flex-wrap: wrap;
-  }
-  
-  .pwa-banner-text {
-    flex: 1 1 100%;
-    order: 3;
-    margin-top: 8px;
-  }
-  
-  .pwa-banner-install {
-    padding: 6px 12px;
+.pwa-mini-btn {
+    background: linear-gradient(135deg, #7a1e2c 0%, #9f2c3d 100%);
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 8px;
     font-size: 12px;
-  }
+    font-weight: 700;
+    letter-spacing: 1px;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-family: 'Oswald', sans-serif;
+    text-transform: uppercase;
+    flex-shrink: 0;
+    box-shadow: 0 2px 8px rgba(122, 30, 44, 0.3);
+}
+
+.pwa-mini-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(122, 30, 44, 0.4);
+}
+
+.pwa-mini-btn:active {
+    transform: translateY(0);
+}
+
+.pwa-mini-close {
+    background: transparent;
+    color: #999;
+    border: none;
+    font-size: 20px;
+    cursor: pointer;
+    padding: 0 4px;
+    line-height: 1;
+    transition: color 0.2s;
+    flex-shrink: 0;
+}
+
+.pwa-mini-close:hover {
+    color: #7a1e2c;
+}
+
+/* 📱 Mobile - versione più compatta */
+@media (max-width: 768px) {
+    #pwa-mini-banner {
+        bottom: 75px;
+        padding: 10px 12px;
+        border-radius: 12px;
+    }
+    
+    .pwa-mini-icon {
+        width: 36px;
+        height: 36px;
+        font-size: 20px;
+        border-radius: 8px;
+    }
+    
+    .pwa-mini-text strong {
+        font-size: 13px;
+    }
+    
+    .pwa-mini-text span {
+        font-size: 10px;
+    }
+    
+    .pwa-mini-btn {
+        padding: 7px 12px;
+        font-size: 11px;
+    }
 }
 
 /* =============================================================================================
