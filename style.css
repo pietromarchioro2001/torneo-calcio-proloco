@@ -610,7 +610,7 @@ body {
 
 .team-row-click { cursor: pointer; }
 
-.form-wrapper { width: 700px; margin: 0 auto 0 20px; }
+.form-wrapper { width: 700px; margin: 0 auto; }
 .form-input { width: 100%; padding: 14px; border: 1px solid #ddd; border-radius: 8px; font-size: 16px; font-family: 'Oswald'; transition: 0.2s; font-weight: 500; letter-spacing: 3px; text-transform: uppercase; }
 .form-input:focus { outline: none; border-color: #7a1e2c; }
 .form-select { width: 100%; padding: 14px; border: 1px solid #ddd; border-radius: 8px; font-size: 16px; font-family: 'Oswald'; font-weight: 500; letter-spacing: 3px; text-transform: uppercase; }
