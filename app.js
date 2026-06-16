@@ -3346,17 +3346,15 @@ function renderNextPhaseButton() {
 function renderFinalStage(data) {
     const container = document.getElementById("standingsContent");
     if (!container) return;
-    
     if (!data?.length) {
         container.innerHTML = `<div class="final-empty"><div class="final-empty-icon"></div><div class="final-empty-title">FASE FINALE</div><div class="final-empty-line"></div><div class="final-empty-text">Crea la fase finale per visualizzare il tabellone del torneo.</div><div class="phase-btn" onclick="createFinalStage()">CREA FASE FINALE</div></div>`;
         return;
     }
-    
     container.innerHTML = `<div class="final-stage-page"><div id="finalBracketContainer"></div></div>`;
     renderFinalBracket(data);
     renderNextPhaseButton();
-
-    // ✅ Definisci le variabili QUI (non erano definite!)
+    
+    // ✅ MOSTRA PODIO UNA SOLA VOLTA - CONTROLLO PIÙ RIGOROSO
     const finali = (data || []).filter(m =>
         m.turno === "FINALE 1-2" || m.turno === "FINALE 3-4" ||
         m.matchKey === "F" || m.matchKey === "TP"
@@ -3364,14 +3362,21 @@ function renderFinalStage(data) {
     const finaliFiniti = finali.filter(m => m.stato === "FINITA").length;
     const finaliCreate = finali.length >= 2;
     
-    // ✅ Mostra podio automaticamente SOLO se l'admin lo ha attivato
-    const podioActivated = localStorage.getItem('podioActivated') === 'true';
-    if (podioActivated && finaliCreate && finaliFiniti === 2) {
-        setTimeout(() => {
-            if (!document.getElementById('podiumPopupOverlay')) {
-                showTournamentPodium(data);
-            }
-        }, 500);
+    // ✅ CONTROLLO MULTI-LIVELLO PER EVITARE DOPPIE VISUALIZZAZIONI
+    if (finaliCreate && finaliFiniti === 2 && !window.APP_STATE._podiumShownThisSession) {
+        const existingPodium = document.getElementById('podiumPopupOverlay');
+        const podiumAlreadyActivated = localStorage.getItem('podioActivated') === 'true';
+        
+        if (!existingPodium && !podiumAlreadyActivated) {
+            window.APP_STATE._podiumShownThisSession = true;
+            setTimeout(() => {
+                // Doppio controllo prima di mostrare
+                if (!document.getElementById('podiumPopupOverlay') && 
+                    localStorage.getItem('podioActivated') !== 'true') {
+                    showTournamentPodium(data);
+                }
+            }, 500);
+        }
     }
 }
 
@@ -3389,15 +3394,21 @@ function openNextPhasePopup(phase) {
 
 function showTournamentPodium(finalStageData) {
   // ✅ VERIFICA DI ESSERE NELLA PAGINA FASE FINALE
-  if (!document.querySelector('.final-stage-page') &&
-      !(document.querySelector('.standings-page') && window.APP_STATE._activeStandingsTab === "fasefinale")) {
-    console.warn('⚠️ showTournamentPodium chiamato fuori dalla pagina corretta');
-    return;
-  }
-  
-  // Rimuovi popup esistente se presente
-  const existing = document.getElementById("podiumPopupOverlay");
-  if (existing) existing.remove();
+    if (!document.querySelector('.final-stage-page') &&
+        !(document.querySelector('.standings-page') && window.APP_STATE._activeStandingsTab === "fasefinale")) {
+        console.warn('⚠️ showTournamentPodium chiamato fuori dalla pagina corretta');
+        return;
+    }
+    
+    // ✅ EVITA DOPPIE CREAZIONI DEL POPUP
+    const existing = document.getElementById("podiumPopupOverlay");
+    if (existing) {
+        console.log('🛑 Popup podio già esistente, non creo duplicato');
+        return;
+    }
+    
+    // ✅ MARCA SUBITO COME ATTIVATO PER EVITATE CHIAMATE MULTIPLE
+    localStorage.setItem('podioActivated', 'true');
   
   const finale1 = finalStageData.find(m => m.matchKey === "F");
   const finale3 = finalStageData.find(m => m.matchKey === "TP");
