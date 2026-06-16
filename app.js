@@ -3831,7 +3831,7 @@ function bootAdminApp() {
   window.APP_STATE._dataReady = (window.APP_CACHE.teams?.length > 0 || window.APP_CACHE.matches?.length > 0);
   
   const loader = document.getElementById("startupLoader");
-  const LOADER_MIN_TIME = 400; // ✅ Loader breve ma percettibile
+  const LOADER_MIN_TIME = 2500; // ✅ Loader breve ma percettibile
   const loaderStartTime = Date.now();
   
   if (loader) loader.style.display = "flex";
