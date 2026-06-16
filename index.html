@@ -6,13 +6,15 @@
   <meta name="description" content="Admin Panel - Torneo dei Paesi Sarnonico">
   <meta name="theme-color" content="#7a1e2c">
   
-  <!-- ✅ RIMOSSO: <link rel="manifest" href="manifest.json"> -->
-  <!-- ✅ AGGIUNTO: Meta tag per iOS (usa il tuo logo) -->
+  <!-- ✅ RIATTIVATO: Link al manifest -->
+  <link rel="manifest" href="manifest.json">
+  
+  <!-- ✅ CORRETTO: Meta tag per iOS -->
   <link rel="apple-touch-icon" href="https://lh3.googleusercontent.com/d/1HVh1Suod5EmXv87lTRdXwk_ezqTGFlB7">
-  <meta name="apple-mobile-web-app-capable" content="no">
+  <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="apple-mobile-web-app-title" content="Torneo">
-  <meta name="mobile-web-app-capable" content="no">
+  <meta name="mobile-web-app-capable" content="yes">
   <link rel="icon" type="image/png" href="https://lh3.googleusercontent.com/d/1HVh1Suod5EmXv87lTRdXwk_ezqTGFlB7">
   
   <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;600;700&display=swap" rel="stylesheet">
@@ -87,8 +89,16 @@
   <div id="app"></div>
   <div id="toolbar"></div>
 
-  <!-- ✅ RIMOSSO: registrazione service worker -->
-  <!-- Se avevi una riga tipo: navigator.serviceWorker.register('sw.js'), ELIMINALA -->
+  <!-- ✅ RIATTIVATO: Registrazione Service Worker -->
+  <script>
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('/sw.js')
+        .then(reg => console.log('✅ Service Worker registrato:', reg.scope))
+        .catch(err => console.error('❌ Errore registrazione SW:', err));
+    });
+  }
+  </script>
   
   <script src="app.js"></script>
 
