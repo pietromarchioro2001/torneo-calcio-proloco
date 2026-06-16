@@ -3301,8 +3301,10 @@ function renderNextPhaseButton() {
         action = "FINALI";
     }
     else if (finaliCreate && finaliFiniti === 2) {
-        // ✅ Mostra "VEDI PODIO" SOLO se non è ancora stato attivato
-        if (!podioActivated) {
+        // ✅ Mostra il pulsante PODIO solo se NON è ancora stato attivato
+        const podiumAlreadyShown = localStorage.getItem('podioActivated') === 'true';
+        if (!podiumAlreadyShown) {
+            isReady = true;
             action = "PODIO";
         }
     }
