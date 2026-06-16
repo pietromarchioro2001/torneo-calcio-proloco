@@ -702,7 +702,25 @@ body {
 .player-form label { font-size: 13px; letter-spacing: 3px; color: #777; text-transform: uppercase; }
 .player-input { border: none; border-bottom: 2px solid #ccc; padding: 10px 4px; font-size: 20px; font-family: 'Oswald', sans-serif; letter-spacing: 3px; text-transform: uppercase; background: transparent; transition: 0.25s; text-align: center; }
 .player-input:focus { outline: none; border-color: var(--granata); }
-.player-upload { height: 100px; border: 2px dashed #ccc; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-family: 'Oswald', sans-serif; letter-spacing: 3px; font-size: 13px; color: #777; cursor: pointer; transition: 0.25s; }
+.player-upload { 
+  width: 140px; 
+  height: 140px; 
+  border-radius: 50%; 
+  background: #e5e7eb; 
+  display: flex; 
+  align-items: center; 
+  justify-content: center; 
+  cursor: pointer; 
+  transition: 0.25s;
+  border: 3px solid transparent;
+  margin: 20px auto;
+}
+
+.player-upload:hover { 
+  border-color: var(--granata); 
+  transform: scale(1.05);
+  background: #d1d5db;
+}
 
 .player-upload:not(.has-photo) {
   font-size: 0 !important;
@@ -711,10 +729,12 @@ body {
 }
 .player-upload:not(.has-photo)::before {
   content: "👤";
-  font-size: 40px;
-  opacity: 0.4;
+  font-size: 60px;
+  opacity: 0.5;
   position: absolute;
+  color: #9ca3af;
 }
+
 .player-upload.has-photo {
     border: none !important;
     background: transparent !important;
@@ -2088,15 +2108,20 @@ body {
 
 /* Centra la foto */
 .player-modal .player-upload {
-  display: flex !important;
-  justify-content: center !important;
-  align-items: center !important;
-  margin: 0 auto !important;
-  border: none !important;
-  background: transparent !important;
-  pointer-events: none !important;
-  width: 200px !important;
-  height: 200px !important;
+  width: 120px !important;
+  height: 120px !important;
+  border-radius: 50% !important;
+  background: #e5e7eb !important;
+  border: 3px solid transparent !important;
+  margin: 15px auto !important;
+  pointer-events: auto !important;
+  cursor: pointer !important;
+}
+
+.player-modal .player-upload:hover {
+  border-color: var(--granata) !important;
+  transform: scale(1.05) !important;
+  background: #d1d5db !important;
 }
 
 /* Foto quadrata centrata */
@@ -2761,20 +2786,6 @@ body {
   user-select: none !important;
 }
 
-/* Centra la foto/avatar */
-.player-modal .player-upload {
-  display: flex !important;
-  justify-content: center !important;
-  align-items: center !important;
-  margin: 0 auto !important;
-  border: none !important;
-  background: transparent !important;
-  pointer-events: none !important;
-  width: 200px !important;
-  height: 200px !important;
-  position: relative !important;
-}
-
 /* Foto quadrata centrata */
 .player-modal .playerPhotoBig {
   width: 100% !important;
@@ -2794,12 +2805,13 @@ body {
 /* Avatar grande quando non c'è foto */
 .player-modal .player-upload:not(.has-photo)::before {
   content: "👤" !important;
-  font-size: 80px !important;
-  opacity: 0.4 !important;
+  font-size: 50px !important;
+  opacity: 0.5 !important;
   position: absolute !important;
   top: 50% !important;
   left: 50% !important;
   transform: translate(-50%, -50%) !important;
+  color: #9ca3af !important;
 }
 
 /* Nascondi testo "FOTO GIOCATORE" */
@@ -2936,54 +2948,4 @@ body {
     line-height: 0 !important;
   }
 
-}
-
-/* DESKTOP */
-.player-upload:not(.has-photo) {
-  border: none !important;
-  background: #f0f0f0 !important;
-  border-radius: 12px !important;
-  font-size: 0 !important;
-  color: transparent !important;
-  position: relative !important;
-  display: flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-}
-
-.player-upload:not(.has-photo)::before {
-  content: "👤" !important;
-  font-size: 40px !important;
-  opacity: 0.4 !important;
-  position: absolute !important;
-  top: 50% !important;
-  left: 50% !important;
-  transform: translate(-50%, -50%) !important;
-}
-
-/* MOBILE */
-@media (max-width: 768px) {
-  .player-modal .player-upload:not(.has-photo),
-  .modalBox.player-modal .player-upload:not(.has-photo) {
-    border: none !important;
-    background: #f0f0f0 !important;
-    border-radius: 12px !important;
-    font-size: 0 !important;
-    color: transparent !important;
-    position: relative !important;
-    display: flex !important;
-    align-items: center !important;
-    justify-content: center !important;
-  }
-
-  .player-modal .player-upload:not(.has-photo)::before,
-  .modalBox.player-modal .player-upload:not(.has-photo)::before {
-    content: "👤" !important;
-    font-size: 70px !important;
-    opacity: 0.3 !important;
-    position: absolute !important;
-    top: 50% !important;
-    left: 50% !important;
-    transform: translate(-50%, -50%) !important;
-  }
 }
