@@ -731,7 +731,15 @@ function renderTeamEditor(team, players = []) {
     const logoBox = document.getElementById("teamLogoBox");
     if (logoBox) { if (team.LOGO_ID) { logoBox.innerHTML = `<img src="${getCachedImage(team.LOGO_ID, 512)}" class="team-header-logo" alt="Logo" onclick="teamLogoAction()">`; } else { logoBox.innerHTML = `<div class="empty-logo" onclick="uploadNewLogo()">⚽</div>`; } }
     const photoBox = document.getElementById("teamPhotoBox");
-    if (photoBox) { if (team.FOTO_SQUADRA_FILE_ID) { photoBox.innerHTML = `<div class="team-photo-wrapper"><img src="${getCachedImage(team.FOTO_SQUADRA_FILE_ID, 800)}" class="team-photo-view loaded" alt="Foto squadra" onclick="teamPhotoAction()"></div>`; } else { photoBox.innerHTML = `<div class="team-photo-empty" onclick="uploadNewTeamPhoto()"><div class="team-photo-empty-plus">📷</div><div class="team-photo-empty-text">FOTO SQUADRA</div></div>`; } }
+    if (photoBox) { 
+      if (team.FOTO_SQUADRA_FILE_ID) { 
+        // ✅ Su mobile non assegnare onclick
+        const photoOnClick = window.innerWidth <= 768 ? '' : 'onclick="teamPhotoAction()"';
+        photoBox.innerHTML = `<div class="team-photo-wrapper"><img src="${getCachedImage(team.FOTO_SQUADRA_FILE_ID, 800)}" class="team-photo-view loaded" alt="Foto squadra" ${photoOnClick}></div>`; 
+      } else { 
+        photoBox.innerHTML = `<div class="team-photo-empty" onclick="uploadNewTeamPhoto()"><div class="team-photo-empty-plus">📷</div><div class="team-photo-empty-text">FOTO SQUADRA</div></div>`; 
+      } 
+    }
     const nameDisplay = document.getElementById("teamNameDisplay"); const nameInput = document.getElementById("teamNameInput");
     if (nameDisplay && nameInput) { nameDisplay.textContent = team.NOME_SQUADRA || ""; nameInput.value = team.NOME_SQUADRA || ""; nameDisplay.onclick = () => { nameDisplay.style.display="none"; nameInput.style.display="block"; nameInput.focus(); }; nameInput.onblur = async () => { const newName = nameInput.value.trim().toUpperCase(); if (newName && newName !== team.NOME_SQUADRA) { nameDisplay.textContent = newName; await ApiClient.updateTeamName(team.TEAM_ID, newName); if (window.APP_CACHE.teams) { const idx = window.APP_CACHE.teams.findIndex(t=>t.TEAM_ID===team.TEAM_ID); if (idx >= 0) { window.APP_CACHE.teams[idx].NOME_SQUADRA = newName; CacheManager.save(window.APP_CACHE); } } } nameInput.style.display="none"; nameDisplay.style.display="block"; }; }
     const gironeDisplay = document.getElementById("teamGironeDisplay"); const gironeSelect = document.getElementById("teamGironeSelect");
