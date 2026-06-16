@@ -65,11 +65,15 @@ self.addEventListener('fetch', (event) => {
   if (url.hostname === 'script.google.com' || request.url.includes('action=')) {
     event.respondWith(
       fetch(request)
-        .then((response) => response)
-        .catch(() => caches.match(request))
+        .catch(() => {
+          // Solo fallback offline, senza cache
+          return new Response(JSON.stringify({ success: false, error: 'Offline' }), {
+            headers: { 'Content-Type': 'application/json' }
+          });
+        })
     );
     return;
-  }
+}
 
   // ✅ Static assets: cache-first
   if (STATIC_ASSETS.some(asset => request.url.endsWith(asset) || request.url.includes(asset))) {
