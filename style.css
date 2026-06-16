@@ -2964,3 +2964,58 @@ body {
   }
 
 }
+
+/* ============================================================================
+   ✅ FIX DEFINITIVO: Avatar al posto del riquadro tratteggiato
+   (sovrascrive TUTTE le regole precedenti)
+============================================================================ */
+
+/* DESKTOP - Popup modifica giocatore */
+.player-upload:not(.has-photo) {
+  border: none !important;
+  background: #f0f0f0 !important;
+  border-radius: 12px !important;
+  font-size: 0 !important;
+  color: transparent !important;
+  position: relative !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+.player-upload:not(.has-photo)::before {
+  content: "👤" !important;
+  font-size: 40px !important;
+  opacity: 0.4 !important;
+  position: absolute !important;
+  top: 50% !important;
+  left: 50% !important;
+  transform: translate(-50%, -50%) !important;
+}
+
+/* MOBILE - Popup modifica giocatore */
+@media (max-width: 768px) {
+  .player-modal .player-upload:not(.has-photo),
+  .modalBox.player-modal .player-upload:not(.has-photo) {
+    border: none !important;
+    background: #f0f0f0 !important;
+    border-radius: 12px !important;
+    font-size: 0 !important;
+    color: transparent !important;
+    position: relative !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+  }
+
+  .player-modal .player-upload:not(.has-photo)::before,
+  .modalBox.player-modal .player-upload:not(.has-photo)::before {
+    content: "👤" !important;
+    font-size: 70px !important;
+    opacity: 0.3 !important;
+    position: absolute !important;
+    top: 50% !important;
+    left: 50% !important;
+    transform: translate(-50%, -50%) !important;
+  }
+}
