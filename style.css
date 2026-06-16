@@ -2148,12 +2148,6 @@ body {
   font-size: 80px !important;
   opacity: 0.4 !important;
 }
-
-/* Nascondi testo "FOTO GIOCATORE" quando non c'è foto */
-.player-modal .player-upload:not(.has-photo) {
-  font-size: 0 !important;
-  color: transparent !important;
-}
    
 /* Nascondi la scritta "FOTO GIOCATORE" che appare di default */
 .player-upload:not(.has-photo) {
@@ -2800,7 +2794,7 @@ body {
 
 /* Quando non c'è foto - mostra avatar centrato */
 .player-modal .player-upload:not(.has-photo) {
-  border: 2px dashed #ccc !important;
+  border: none !important;
   background: #f0f0f0 !important;
   border-radius: 12px !important;
 }
@@ -2921,14 +2915,6 @@ body {
     object-fit: cover !important;
     margin: 0 auto !important;
     display: block !important;
-  }
-
-  /* Quando NON c'è foto - mostra avatar placeholder */
-  .player-modal .player-upload:not(.has-photo),
-  .modalBox.player-modal .player-upload:not(.has-photo) {
-    border-radius: 12px !important;
-    color: transparent !important;
-    font-size: 0 !important;
   }
 
   /* Avatar placeholder quando non c'è foto */
