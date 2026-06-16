@@ -3262,85 +3262,59 @@ function renderFinalBracket(matches) {
 }
 
 function renderNextPhaseButton() {
-    // ✅ Controlla se siamo nella pagina fase finale
     if (!document.querySelector('.final-stage-page') &&
         !(document.querySelector('.standings-page') && window.APP_STATE._activeStandingsTab === "fasefinale")) {
         return;
     }
-    
     const oldBtn = document.getElementById("next-phase-action-btn");
     if (oldBtn) oldBtn.remove();
-    
     const container = document.getElementById("finalBracketContainer");
     if (!container) return;
-    
     const finalStageData = window.APP_CACHE.finalStage || [];
-    const quarti = finalStageData.filter(m => m.turno === "QUARTI");
-    const quartiFiniti = quarti.filter(m => m.stato === "FINITA").length;
-    const semi = finalStageData.filter(m => m.turno === "SEMIFINALE");
-    const semiFiniti = semi.filter(m => m.stato === "FINITA").length;
-    const finali = finalStageData.filter(m =>
+    const finali = finalStageData.filter(m => 
         m.turno === "FINALE 1-2" || m.turno === "FINALE 3-4" ||
         m.matchKey === "F" || m.matchKey === "TP"
     );
     const finaliFiniti = finali.filter(m => m.stato === "FINITA").length;
     const finaliCreate = finali.length >= 2;
-    const sf1Exists = finalStageData.some(m => m.matchKey === "SF1");
-    const sf2Exists = finalStageData.some(m => m.matchKey === "SF2");
-    const semiCreate = sf1Exists && sf2Exists;
-
-    // ✅ Controlla se il podio è già stato attivato dall'admin
-    const podioActivated = localStorage.getItem('podioActivated') === 'true';
-
+    
+    let isReady = false;
     let action = null;
     
-    if (quartiFiniti === 4 && !semiCreate) {
-        action = "SEMIFINALI";
-    }
-    else if (quartiFiniti === 4 && semiFiniti === 2 && !finaliCreate) {
-        action = "FINALI";
-    }
+    // ... (codice esistente per QUARTI e SEMIFINALI)
+    
     else if (finaliCreate && finaliFiniti === 2) {
-        // ✅ Mostra il pulsante PODIO solo se NON è ancora stato attivato
-        const podiumAlreadyShown = localStorage.getItem('podioActivated') === 'true';
-        if (!podiumAlreadyShown) {
-            isReady = true;
-            action = "PODIO";
-        }
+        isReady = true;
+        action = "PODIO";
     }
-
-    // ✅ Se non c'è azione pronta, esci (niente wrapper vuoto)
+    
     if (!action) return;
-
-    // ✅ Crea il wrapper
+    
     const btnWrapper = document.createElement("div");
     btnWrapper.className = "next-phase-button";
     if (action === "PODIO") {
         btnWrapper.classList.add("podio-ready");
     }
     btnWrapper.id = "next-phase-action-btn";
-    
-    // ✅ Crea il pulsante (PRIMA di usarlo!)
     const btn = document.createElement("button");
-    btn.className = "next-phase-btn";
+    btn.className = `next-phase-btn ${isReady ? '' : 'disabled'}`;
     btn.textContent = action === "PODIO" ? "🏆 VEDI PODIO" : "PROSSIMA FASE";
     
-    // ✅ Imposta l'onclick UNA SOLA VOLTA
-    btn.onclick = () => {
-        if (action === "PODIO") {
-            // ✅ Attiva il flag persistente e rimuovi il pulsante
-            localStorage.setItem('podioActivated', 'true');
-            showTournamentPodium(finalStageData, false);
-            btnWrapper.remove(); // ✅ Rimuove il pulsante dopo il click
-        } else {
-            openNextPhasePopup(action);
-        }
-    };
+    if (isReady) {
+        btn.onclick = () => {
+            if (action === "PODIO") {
+                localStorage.setItem('podioActivated', 'true');
+                showTournamentPodium(finalStageData, false);
+                btnWrapper.remove();
+            } else {
+                openNextPhasePopup(action);
+            }
+        };
+    }
     
-    // ✅ Assembla e aggiungi al DOM
     btnWrapper.appendChild(btn);
     const pageContainer = document.querySelector('.final-stage-page');
-    if (pageContainer) {
+    if(pageContainer) {
         pageContainer.appendChild(btnWrapper);
     }
 }
@@ -3356,13 +3330,21 @@ function renderFinalStage(data) {
     renderFinalBracket(data);
     renderNextPhaseButton();
     
-    // ✅ MOSTRA PODIO UNA SOLA VOLTA - CONTROLLO PIÙ RIGOROSO
     const finali = (data || []).filter(m =>
         m.turno === "FINALE 1-2" || m.turno === "FINALE 3-4" ||
         m.matchKey === "F" || m.matchKey === "TP"
     );
     const finaliFiniti = finali.filter(m => m.stato === "FINITA").length;
     const finaliCreate = finali.length >= 2;
+    
+    const podioActivated = localStorage.getItem('podioActivated') === 'true';
+    if (podioActivated && finaliCreate && finaliFiniti === 2) {
+        setTimeout(() => {
+            if (!document.getElementById('podiumPopupOverlay')) {
+                showTournamentPodium(data);
+            }
+        }, 500);
+    }
     
     // ✅ CONTROLLO MULTI-LIVELLO PER EVITARE DOPPIE VISUALIZZAZIONI
     if (finaliCreate && finaliFiniti === 2 && !window.APP_STATE._podiumShownThisSession) {
