@@ -4700,82 +4700,88 @@ function closeMediaUploadModal() {
 }
 
 // ============================================================================
-// 📱 PWA INSTALL BANNER
+// 📱 PWA INSTALL - Prompt nativo browser (elegante e discreto)
 // ============================================================================
-let deferredPrompt;
-const PWA_BANNER_SHOWN_KEY = 'pwa_install_banner_shown';
-
-window.addEventListener('beforeinstallprompt', (e) => {
-  e.preventDefault();
-  deferredPrompt = e;
-  
-  // Mostra banner solo se non è già stato mostrato
-  const bannerShown = localStorage.getItem(PWA_BANNER_SHOWN_KEY);
-  if (!bannerShown) {
-    setTimeout(() => showPWAInstallBanner(), 2000);
-  }
-});
-
-function showPWAInstallBanner() {
-  // Rimuovi banner esistente se presente
-  const existing = document.getElementById('pwa-install-banner');
-  if (existing) existing.remove();
-  
-  const banner = document.createElement('div');
-  banner.id = 'pwa-install-banner';
-  banner.innerHTML = `
-    <div class="pwa-banner-content">
-      <div class="pwa-banner-icon">📱</div>
-      <div class="pwa-banner-text">
-        <strong>Installa l'app</strong>
-        <p>Aggiungi alla schermata home per accesso rapido</p>
-      </div>
-      <button class="pwa-banner-install">Installa</button>
-      <button class="pwa-banner-close">×</button>
-    </div>
-    <div class="pwa-banner-instructions">
-      <strong>Come installare manualmente:</strong>
-      <ul>
-        <li><strong>Android:</strong> Menu (⋮) → "Aggiungi alla schermata home"</li>
-        <li><strong>iPhone:</strong> Condividi (↑) → "Aggiungi alla schermata home"</li>
-      </ul>
-    </div>
-  `;
-  
-  document.body.appendChild(banner);
-  
-  // Pulsante Installa
-  banner.querySelector('.pwa-banner-install').addEventListener('click', async () => {
-    if (deferredPrompt) {
-      deferredPrompt.prompt();
-      const { outcome } = await deferredPrompt.userChoice;
-      console.log(`User response to install prompt: ${outcome}`);
-      deferredPrompt = null;
+(function() {
+    let deferredPrompt = null;
+    const STORAGE_KEY = 'pwa_install_dismissed';
+    
+    // Intercetta l'evento beforeinstallprompt del browser
+    window.addEventListener('beforeinstallprompt', (e) => {
+        e.preventDefault();
+        deferredPrompt = e;
+        
+        // Mostra il mini-banner solo se non è stato già rifiutato
+        if (!localStorage.getItem(STORAGE_KEY)) {
+            setTimeout(() => showInstallMiniBanner(), 2000);
+        }
+    });
+    
+    function showInstallMiniBanner() {
+        // Rimuovi banner esistente se presente
+        const existing = document.getElementById('pwa-mini-banner');
+        if (existing) existing.remove();
+        
+        const banner = document.createElement('div');
+        banner.id = 'pwa-mini-banner';
+        banner.innerHTML = `
+            <div class="pwa-mini-content">
+                <div class="pwa-mini-icon">📱</div>
+                <div class="pwa-mini-text">
+                    <strong>Installa l'app</strong>
+                    <span>Accesso rapido dalla home</span>
+                </div>
+                <button class="pwa-mini-btn" id="pwa-install-btn">Installa</button>
+                <button class="pwa-mini-close" id="pwa-close-btn">×</button>
+            </div>
+        `;
+        
+        document.body.appendChild(banner);
+        
+        // Animazione di entrata
+        requestAnimationFrame(() => {
+            banner.classList.add('show');
+        });
+        
+        // Pulsante Installa - attiva il prompt NATIVO del browser
+        document.getElementById('pwa-install-btn').addEventListener('click', async () => {
+            if (deferredPrompt) {
+                deferredPrompt.prompt();
+                const { outcome } = await deferredPrompt.userChoice;
+                console.log(`📱 Install prompt: ${outcome}`);
+                deferredPrompt = null;
+            }
+            hideBanner();
+            localStorage.setItem(STORAGE_KEY, 'true');
+        });
+        
+        // Pulsante Chiudi
+        document.getElementById('pwa-close-btn').addEventListener('click', () => {
+            hideBanner();
+            localStorage.setItem(STORAGE_KEY, 'true');
+        });
+        
+        // Auto-hide dopo 12 secondi
+        setTimeout(() => {
+            if (document.getElementById('pwa-mini-banner')) {
+                hideBanner();
+            }
+        }, 12000);
     }
-    banner.remove();
-    localStorage.setItem(PWA_BANNER_SHOWN_KEY, 'true');
-  });
-  
-  // Pulsante Chiudi
-  banner.querySelector('.pwa-banner-close').addEventListener('click', () => {
-    banner.remove();
-    localStorage.setItem(PWA_BANNER_SHOWN_KEY, 'true');
-  });
-  
-  // Auto-hide dopo 15 secondi
-  setTimeout(() => {
-    if (document.getElementById('pwa-install-banner')) {
-      banner.remove();
-      localStorage.setItem(PWA_BANNER_SHOWN_KEY, 'true');
+    
+    function hideBanner() {
+        const banner = document.getElementById('pwa-mini-banner');
+        if (banner) {
+            banner.classList.remove('show');
+            setTimeout(() => banner.remove(), 300);
+        }
     }
-  }, 15000);
-}
-
-// Se l'utente installa l'app, nascondi il banner
-window.addEventListener('appinstalled', () => {
-  const banner = document.getElementById('pwa-install-banner');
-  if (banner) banner.remove();
-  localStorage.setItem(PWA_BANNER_SHOWN_KEY, 'true');
-  deferredPrompt = null;
-  console.log('✅ PWA installed!');
-});
+    
+    // Se l'utente installa l'app, nascondi il banner
+    window.addEventListener('appinstalled', () => {
+        hideBanner();
+        localStorage.setItem(STORAGE_KEY, 'true');
+        deferredPrompt = null;
+        console.log('✅ PWA installed!');
+    });
+})();
