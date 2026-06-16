@@ -3,13 +3,13 @@
  * Cache strategy: Cache-first for static assets, Network-first for API
  */
 
-const CACHE_NAME = 'torneo-admin-v2.2';
+const CACHE_NAME = 'torneo-admin-v2.3';
 const STATIC_ASSETS = [
-  '/',
-  '/index.html',
-  '/app.js',
-  '/style.css',
-  '/manifest.json',
+  './',
+  './index.html',
+  './app.js',
+  './style.css',
+  './manifest.json',
   'https://fonts.googleapis.com/css2?family=Oswald:wght@400;600;700&display=swap'
 ];
 
