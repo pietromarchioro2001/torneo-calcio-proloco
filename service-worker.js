@@ -1,4 +1,4 @@
-const CACHE_NAME = 'torneo-admin-v3.0';  // ← AUMENTATO da v2.4 a v3.0
+const CACHE_NAME = 'torneo-admin-v3.1';  // ← AUMENTATO da v3.0 a v3.1
 const STATIC_ASSETS = [
   './',
   './index.html',
@@ -40,9 +40,11 @@ self.addEventListener('fetch', (event) => {
   const { request } = event;
   const url = new URL(request.url);
 
-  // ✅ NON CACHARE immagini Google Drive (lascia gestire al browser)
-  // Questo risolve il problema del logo sgranato nella PWA
-  if (url.hostname === 'lh3.googleusercontent.com' || url.hostname === 'drive.google.com') {
+  // ✅ NON CACHARE MAI immagini Google Drive/Googleusercontent
+  // Questo risolve definitivamente il problema del logo sgranato
+  if (url.hostname.includes('googleusercontent.com') || 
+      url.hostname.includes('drive.google.com') ||
+      url.hostname.includes('google.com')) {
     event.respondWith(fetch(request));
     return;
   }
