@@ -1,9 +1,9 @@
 /**
- * 🏆 Service Worker - Torneo Admin
+ * 🏆 Service Worker - Torneo Admin v2.5
  * Cache strategy: Cache-first for static assets, Network-first for API
  */
 
-const CACHE_NAME = 'torneo-admin-v2.4';
+const CACHE_NAME = 'torneo-admin-v2.5';  // ← AUMENTATO da v2.4 a v2.5
 const STATIC_ASSETS = [
   './',
   './index.html',
@@ -45,18 +45,23 @@ self.addEventListener('fetch', (event) => {
   const { request } = event;
   const url = new URL(request.url);
 
+  // ✅ NON CACHARE immagini Google Drive (lascia gestire al browser)
+  if (url.hostname === 'lh3.googleusercontent.com' || url.hostname === 'drive.google.com') {
+    event.respondWith(fetch(request));
+    return;
+  }
+
+  // ✅ NON CACHARE font Google (gestiti dal browser)
+  if (url.hostname === 'fonts.googleapis.com' || url.hostname === 'fonts.gstatic.com') {
+    event.respondWith(fetch(request));
+    return;
+  }
+
   // API calls to Apps Script: network-first with cache fallback
   if (url.hostname === 'script.google.com' || request.url.includes('action=')) {
     event.respondWith(
       fetch(request)
         .then((response) => {
-          // Cache successful API responses (short TTL)
-          if (response.ok) {
-            const clone = response.clone();
-            caches.open(CACHE_NAME).then((cache) => {
-              cache.put(request, clone);
-            });
-          }
           return response;
         })
         .catch(() => {
@@ -76,36 +81,9 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // Images: cache-first with background update
-  if (request.destination === 'image') {
-    event.respondWith(
-      caches.match(request)
-        .then((cached) => {
-          const networkFetch = fetch(request).then((response) => {
-            if (response.ok) {
-              caches.open(CACHE_NAME).then((cache) => cache.put(request, response.clone()));
-            }
-            return response;
-          }).catch(() => null);
-          return cached || networkFetch;
-        })
-    );
-    return;
-  }
-
   // Default: network-first
   event.respondWith(
     fetch(request)
       .catch(() => caches.match(request))
   );
-});
-
-// Background sync for offline actions (future enhancement)
-self.addEventListener('sync', (event) => {
-  if (event.tag === 'sync-torneo-actions') {
-    event.waitUntil(
-      // TODO: replay pending actions when back online
-      console.log('🔄 SW: Background sync triggered')
-    );
-  }
 });
