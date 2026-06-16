@@ -1,10 +1,12 @@
-const CACHE_NAME = 'torneo-admin-v3.1';  // ← AUMENTATO da v3.0 a v3.1
+const CACHE_NAME = 'torneo-admin-v4.0';  // ← Aumenta versione
 const STATIC_ASSETS = [
   './',
   './index.html',
   './app.js',
   './style.css',
-  './manifest.json'
+  './manifest.json',
+  './icon-192.png',   // ← Aggiungi
+  './icon-512.png'    // ← Aggiungi
 ];
 
 // Install: cache static assets
@@ -49,11 +51,10 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // ✅ NON CACHARE font Google (gestiti dal browser)
   if (url.hostname === 'fonts.googleapis.com' || url.hostname === 'fonts.gstatic.com') {
-    event.respondWith(fetch(request));
-    return;
-  }
+  event.respondWith(fetch(request));
+  return;
+}
 
   // API calls to Apps Script: network-first with cache fallback
   if (url.hostname === 'script.google.com' || request.url.includes('action=')) {
