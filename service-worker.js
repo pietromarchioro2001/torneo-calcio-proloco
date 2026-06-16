@@ -1,27 +1,32 @@
-const CACHE_NAME = 'torneo-admin-v4.0';  // ← Aumenta versione
+const CACHE_NAME = 'torneo-admin-v5.0';
 const STATIC_ASSETS = [
   './',
   './index.html',
   './app.js',
   './style.css',
-  './manifest.json',
-  './icon-192.png',   // ← Aggiungi
-  './icon-512.png'    // ← Aggiungi
+  './manifest.json'
 ];
 
-// Install: cache static assets
+// Install: cache static assets + SVUOTA TUTTE LE VECCHIE CACHE
 self.addEventListener('install', (event) => {
   event.waitUntil(
-    caches.open(CACHE_NAME)
-      .then((cache) => {
+    caches.keys().then((cacheNames) => {
+      return Promise.all(
+        cacheNames.map((name) => {
+          console.log('🗑 SW: Deleting old cache:', name);
+          return caches.delete(name);
+        })
+      );
+    }).then(() => {
+      return caches.open(CACHE_NAME).then((cache) => {
         console.log('✅ SW: Caching static assets');
         return cache.addAll(STATIC_ASSETS);
-      })
-      .then(() => self.skipWaiting())
+      });
+    }).then(() => self.skipWaiting())
   );
 });
 
-// Activate: clean old caches
+// Activate
 self.addEventListener('activate', (event) => {
   event.waitUntil(
     caches.keys().then((cacheNames) => {
@@ -37,13 +42,12 @@ self.addEventListener('activate', (event) => {
   );
 });
 
-// Fetch: cache-first for static, network-first for API
+// Fetch
 self.addEventListener('fetch', (event) => {
   const { request } = event;
   const url = new URL(request.url);
 
-  // ✅ NON CACHARE MAI immagini Google Drive/Googleusercontent
-  // Questo risolve definitivamente il problema del logo sgranato
+  // ✅ IMMAGINI GOOGLE: SEMPRE NETWORK (MAI CACHE)
   if (url.hostname.includes('googleusercontent.com') || 
       url.hostname.includes('drive.google.com') ||
       url.hostname.includes('google.com')) {
@@ -51,27 +55,23 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
+  // ✅ FONT GOOGLE: SEMPRE NETWORK
   if (url.hostname === 'fonts.googleapis.com' || url.hostname === 'fonts.gstatic.com') {
-  event.respondWith(fetch(request));
-  return;
-}
+    event.respondWith(fetch(request));
+    return;
+  }
 
-  // API calls to Apps Script: network-first with cache fallback
+  // ✅ API Apps Script: network-first
   if (url.hostname === 'script.google.com' || request.url.includes('action=')) {
     event.respondWith(
       fetch(request)
-        .then((response) => {
-          return response;
-        })
-        .catch(() => {
-          // Offline fallback
-          return caches.match(request);
-        })
+        .then((response) => response)
+        .catch(() => caches.match(request))
     );
     return;
   }
 
-  // Static assets: cache-first
+  // ✅ Static assets: cache-first
   if (STATIC_ASSETS.some(asset => request.url.endsWith(asset) || request.url.includes(asset))) {
     event.respondWith(
       caches.match(request)
