@@ -1,9 +1,4 @@
-/**
- * 🏆 Service Worker - Torneo Admin v2.5
- * Cache strategy: Cache-first for static assets, Network-first for API
- */
-
-const CACHE_NAME = 'torneo-admin-v2.5';  // ← AUMENTATO da v2.4 a v2.5
+const CACHE_NAME = 'torneo-admin-v3.0';  // ← AUMENTATO da v2.4 a v3.0
 const STATIC_ASSETS = [
   './',
   './index.html',
@@ -46,6 +41,7 @@ self.addEventListener('fetch', (event) => {
   const url = new URL(request.url);
 
   // ✅ NON CACHARE immagini Google Drive (lascia gestire al browser)
+  // Questo risolve il problema del logo sgranato nella PWA
   if (url.hostname === 'lh3.googleusercontent.com' || url.hostname === 'drive.google.com') {
     event.respondWith(fetch(request));
     return;
