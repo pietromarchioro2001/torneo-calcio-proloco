@@ -733,9 +733,8 @@ function renderTeamEditor(team, players = []) {
     const photoBox = document.getElementById("teamPhotoBox");
     if (photoBox) { 
       if (team.FOTO_SQUADRA_FILE_ID) { 
-        // ✅ Su mobile non assegnare onclick
-        const photoOnClick = window.innerWidth <= 768 ? '' : 'onclick="teamPhotoAction()"';
-        photoBox.innerHTML = `<div class="team-photo-wrapper"><img src="${getCachedImage(team.FOTO_SQUADRA_FILE_ID, 800)}" class="team-photo-view loaded" alt="Foto squadra" ${photoOnClick}></div>`; 
+        // ✅ Assegna sempre onclick, la funzione controllerà se è mobile
+        photoBox.innerHTML = `<div class="team-photo-wrapper"><img src="${getCachedImage(team.FOTO_SQUADRA_FILE_ID, 800)}" class="team-photo-view loaded" alt="Foto squadra" onclick="teamPhotoAction()"></div>`; 
       } else { 
         photoBox.innerHTML = `<div class="team-photo-empty" onclick="uploadNewTeamPhoto()"><div class="team-photo-empty-plus">📷</div><div class="team-photo-empty-text">FOTO SQUADRA</div></div>`; 
       } 
@@ -784,8 +783,15 @@ function uploadNewTeamPhoto() {
 }
 
 function teamPhotoAction() {
-    const teamId = window.APP_STATE.currentTeamId; const team = window.APP_CACHE.fullTeams?.[teamId]?.team;
-    if (!team?.FOTO_SQUADRA_FILE_ID) { uploadNewTeamPhoto(); return; }
+    if (window.innerWidth <= 768) {
+        return; // Non fare nulla su mobile
+      }
+      const teamId = window.APP_STATE.currentTeamId; 
+      const team = window.APP_CACHE.fullTeams?.[teamId]?.team;
+      if (!team?.FOTO_SQUADRA_FILE_ID) { 
+        uploadNewTeamPhoto(); 
+        return; 
+      }
     const modal = document.createElement("div"); modal.className = "modalOverlay";
     modal.innerHTML = `<div class="modalBox" style="max-width:800px;"><div class="modalTitle">FOTO SQUADRA</div><img src="${getCachedImage(team.FOTO_SQUADRA_FILE_ID, 1200)}" style="max-width:100%;border-radius:12px;margin:20px 0;"><div class="modalActions"><div class="phase-btn secondary" onclick="window.open('https://drive.google.com/file/d/${team.FOTO_SQUADRA_FILE_ID}/view', '_blank'); this.closest('.modalOverlay').remove()">APRI</div><div class="phase-btn" onclick="this.closest('.modalOverlay').remove(); uploadNewTeamPhoto()">CAMBIA</div></div></div>`;
     document.body.appendChild(modal); modal.onclick = (e) => { if (e.target === modal) modal.remove(); };
