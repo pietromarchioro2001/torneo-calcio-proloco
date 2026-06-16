@@ -4189,6 +4189,16 @@ async function resetTournament() {
 
     // Svuota cache locale
     CacheManager.clear();
+
+    if ('caches' in window) {
+    caches.keys().then(names => {
+        names.forEach(name => {
+            console.log('🗑️ Elimino cache SW:', name);
+            caches.delete(name);
+        });
+    });
+}
+
       // ✅ Resetta anche il flag del podio attivato
     localStorage.removeItem('podioActivated');
     window.APP_CACHE = CacheManager.load();
