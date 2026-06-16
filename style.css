@@ -2056,8 +2056,7 @@ body {
   .players-list { gap: 4px !important; }
 
   .modalOverlay .delete-btn, .modalOverlay .phase-btn, .modalOverlay .modalBtn,
-  .modalOverlay .form-actions, .modalOverlay .uploadBox, .modalOverlay .modern-upload,
-  .modalOverlay .player-upload { display: none !important; }
+  .modalOverlay .form-actions, .modalOverlay .uploadBox, .modalOverlay .modern-upload { display: none !important; }
   .team-photo-wrapper .uploadBox, .team-photo-wrapper .modern-upload { display: none !important; }
 
   .player-modal {
@@ -2106,8 +2105,11 @@ body {
   user-select: none !important;
 }
 
-/* Centra la foto */
+/* Centra la foto/avatar */
 .player-modal .player-upload {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
   width: 120px !important;
   height: 120px !important;
   border-radius: 50% !important;
@@ -2116,6 +2118,7 @@ body {
   margin: 15px auto !important;
   pointer-events: auto !important;
   cursor: pointer !important;
+  position: relative !important;
 }
 
 .player-modal .player-upload:hover {
