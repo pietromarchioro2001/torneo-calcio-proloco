@@ -2884,31 +2884,6 @@ body {
     user-select: none !important;
   }
 
-/* ✅ Area foto/avatar - UPLOAD RIATTIVATO */
-.player-modal .player-upload,
-.modalBox.player-modal .player-upload {
-  display: flex !important;
-  justify-content: center !important;
-  align-items: center !important;
-  margin: 0 auto !important;
-  background: transparent !important;  /* ✅ Rimosso background di default */
-  pointer-events: auto !important;
-  cursor: pointer !important;
-  width: 180px !important;
-  height: 180px !important;
-  position: relative !important;
-  overflow: hidden !important;
-  border-radius: 12px !important;
-  transition: all 0.25s ease !important;
-}
-
-/* SOLO quando NON c'è la foto - mostra bordo tratteggiato */
-.player-modal .player-upload:not(.has-photo),
-.modalBox.player-modal .player-upload:not(.has-photo) {
-  border: 2px dashed #ccc !important;
-  background: #f5f5f5 !important;
-}
-
 .player-modal .player-upload:not(.has-photo):hover,
 .modalBox.player-modal .player-upload:not(.has-photo):hover {
   border-color: #7a1e2c !important;
@@ -2936,8 +2911,6 @@ body {
   /* Quando NON c'è foto - mostra avatar placeholder */
   .player-modal .player-upload:not(.has-photo),
   .modalBox.player-modal .player-upload:not(.has-photo) {
-    border: 2px dashed #ccc !important;
-    background: #f5f5f5 !important;
     border-radius: 12px !important;
     color: transparent !important;
     font-size: 0 !important;
@@ -2965,12 +2938,7 @@ body {
 
 }
 
-/* ============================================================================
-   ✅ FIX DEFINITIVO: Avatar al posto del riquadro tratteggiato
-   (sovrascrive TUTTE le regole precedenti)
-============================================================================ */
-
-/* DESKTOP - Popup modifica giocatore */
+/* DESKTOP */
 .player-upload:not(.has-photo) {
   border: none !important;
   background: #f0f0f0 !important;
@@ -2993,7 +2961,7 @@ body {
   transform: translate(-50%, -50%) !important;
 }
 
-/* MOBILE - Popup modifica giocatore */
+/* MOBILE */
 @media (max-width: 768px) {
   .player-modal .player-upload:not(.has-photo),
   .modalBox.player-modal .player-upload:not(.has-photo) {
