@@ -3271,8 +3271,8 @@ function renderFinalStage(data) {
     );
     const finaliFiniti = finali.filter(m => m.stato === "FINITA").length;
     const finaliCreate = finali.length >= 2;
-
-    // ✅ NUOVO: Mostra podio automaticamente SOLO se l'admin lo ha attivato
+    
+    // ✅ Mostra podio automaticamente SOLO se l'admin lo ha attivato
     const podioActivated = localStorage.getItem('podioActivated') === 'true';
     if (podioActivated && finaliCreate && finaliFiniti === 2) {
         setTimeout(() => {
@@ -3312,50 +3312,61 @@ function renderFinalBracket(matches) {
 }
 
 function renderNextPhaseButton() {
+    // ✅ SOLO ADMIN vede i pulsanti di gestione fase finale
+    if (!window.APP_STATE.isAdmin) return;
+    
     if (!document.querySelector('.final-stage-page') &&
         !(document.querySelector('.standings-page') && window.APP_STATE._activeStandingsTab === "fasefinale")) {
         return;
     }
+    
     const oldBtn = document.getElementById("next-phase-action-btn");
     if (oldBtn) oldBtn.remove();
+    
     const container = document.getElementById("finalBracketContainer");
     if (!container) return;
+    
     const finalStageData = window.APP_CACHE.finalStage || [];
     const quarti = finalStageData.filter(m => m.turno === "QUARTI");
     const quartiFiniti = quarti.filter(m => m.stato === "FINITA").length;
     const semi = finalStageData.filter(m => m.turno === "SEMIFINALE");
     const semiFiniti = semi.filter(m => m.stato === "FINITA").length;
-    const finali = finalStageData.filter(m => m.turno === "FINALE 1-2" || m.turno === "FINALE 3-4");
+    const finali = finalStageData.filter(m =>
+        m.turno === "FINALE 1-2" || m.turno === "FINALE 3-4" ||
+        m.matchKey === "F" || m.matchKey === "TP"
+    );
     const finaliFiniti = finali.filter(m => m.stato === "FINITA").length;
+    const finaliCreate = finali.length >= 2;
     const sf1Exists = finalStageData.some(m => m.matchKey === "SF1");
     const sf2Exists = finalStageData.some(m => m.matchKey === "SF2");
     const semiCreate = sf1Exists && sf2Exists;
     const final1Exists = finalStageData.some(m => m.matchKey === "F");
     const final3Exists = finalStageData.some(m => m.matchKey === "TP");
-    const finaliCreate = final1Exists && final3Exists;
+    const finaliCreate2 = final1Exists && final3Exists;
 
-    // ✅ NUOVO: Controlla se il podio è già stato attivato dall'admin
+    // ✅ Controlla se il podio è già stato attivato dall'admin
     const podioActivated = localStorage.getItem('podioActivated') === 'true';
 
     let isReady = false;
     let action = null;
+    
     if (quartiFiniti === 4 && !semiCreate) {
         isReady = true;
         action = "SEMIFINALI";
     }
-    else if (quartiFiniti === 4 && semiFiniti === 2 && !finaliCreate) {
+    else if (quartiFiniti === 4 && semiFiniti === 2 && !finaliCreate2) {
         isReady = true;
         action = "FINALI";
     }
-    else if (finaliCreate && finaliFiniti === 2) {
-        // ✅ Mostra il pulsante PODIO solo se NON è ancora stato attivato
+    else if (finaliCreate2 && finaliFiniti === 2) {
+        // ✅ Mostra "VEDI PODIO" SOLO se non è ancora stato attivato
         if (!podioActivated) {
             isReady = true;
             action = "PODIO";
         }
     }
 
-    // ✅ Se non c'è nessuna azione pronta, esci (niente wrapper vuoto)
+    // ✅ Se non c'è azione pronta, esci (niente wrapper vuoto)
     if (!action) return;
 
     const btnWrapper = document.createElement("div");
@@ -3364,21 +3375,24 @@ function renderNextPhaseButton() {
         btnWrapper.classList.add("podio-ready");
     }
     btnWrapper.id = "next-phase-action-btn";
+    
     const btn = document.createElement("button");
     btn.className = `next-phase-btn ${isReady ? '' : 'disabled'}`;
     btn.textContent = action === "PODIO" ? "🏆 VEDI PODIO" : "PROSSIMA FASE";
+    
     if (isReady) {
         btn.onclick = () => {
             if (action === "PODIO") {
                 // ✅ Attiva il flag persistente e rimuovi il pulsante
                 localStorage.setItem('podioActivated', 'true');
                 showTournamentPodium(finalStageData, false);
-                btnWrapper.remove();
+                btnWrapper.remove(); // ✅ Rimuove il pulsante dopo il click
             } else {
                 openNextPhasePopup(action);
             }
         };
     }
+    
     btnWrapper.appendChild(btn);
     const pageContainer = document.querySelector('.final-stage-page');
     if(pageContainer) {
