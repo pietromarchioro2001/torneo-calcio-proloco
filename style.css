@@ -2323,7 +2323,7 @@ body {
     transform: none !important;
     z-index: 1001 !important; /* ✅ Sopra il toolbar (1000) */
     margin: 20px auto 30px !important;
-    min-height: 36px !important; /* ✅ Altezza fissa */
+    min-height: 10px !important; /* ✅ Altezza fissa */
     line-height: 1 !important;
     pointer-events: auto !important; /* ✅ FORZA click */
     touch-action: manipulation !important; /* ✅ Ottimizza touch */
