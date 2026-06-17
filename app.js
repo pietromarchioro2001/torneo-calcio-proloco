@@ -1715,10 +1715,10 @@ function renderMatchPage(match) {
           </div>
         </div>
       </div>
-      ${mediaButtonHtml}
       <div class="back-btn-wrapper">
+        ${mediaButtonHtml}
         <div class="phase-btn secondary" onclick="showMatches()">INDIETRO</div>
-      </div>
+        </div>
     </div>
   `;
   
