@@ -2168,7 +2168,7 @@ body {
   .team-editor .back-btn-wrapper .phase-btn { display: inline-block !important; visibility: visible !important; opacity: 1 !important; }
 
   .match-page {
-    width: 100% !important; padding-top: 20px !important; padding: 0 4px !important;
+    width: 100% !important; padding: 80px 4px 20px !important; 
     box-sizing: border-box !important; overflow-x: hidden !important;
   }
   .match-header-big {
