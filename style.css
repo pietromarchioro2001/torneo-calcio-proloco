@@ -2322,7 +2322,7 @@ body {
     left: auto !important;
     transform: none !important;
     z-index: auto !important;
-    margin: 15px auto 25px !important;
+    margin: 15px auto 40px !important;
     min-height: 10px !important;
   }
 
@@ -2353,7 +2353,7 @@ body {
     box-sizing: border-box !important;
     margin: 0 !important;
     margin-top: auto !important;
-    margin-bottom: 10px !important;
+    margin-bottom: 25px !important;
     position: relative !important;
   }
 
