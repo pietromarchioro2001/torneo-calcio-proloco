@@ -1843,7 +1843,7 @@ body {
   .phase-btn.small { padding: 5px 10px; font-size: 9px; }
 
   .dates-toolbar {
-    margin-top: 10px !important; gap: 6px !important; padding: 8px 12px !important;
+    margin-top: 10px !important; margin-bottom: 20px !important; gap: 6px !important; padding: 8px 12px !important;
     overflow-x: auto !important; overflow-y: hidden !important; scroll-behavior: auto;
     -webkit-overflow-scrolling: touch; scrollbar-width: none; -ms-overflow-style: none;
     display: flex !important; flex-wrap: nowrap !important; justify-content: flex-start !important;
@@ -1855,7 +1855,7 @@ body {
   .date-month { font-size: 7px !important; }
 
   .match-card {
-    padding: 8px 10px !important; margin: 4px 0 !important; border-radius: 10px !important;
+    padding: 8px 10px !important; margin: 12px 0 !important; border-radius: 10px !important;
     min-height: 60px !important; box-sizing: border-box !important;
     display: flex !important; align-items: center !important;
   }
