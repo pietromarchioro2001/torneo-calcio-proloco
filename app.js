@@ -3813,182 +3813,179 @@ if (!document.getElementById('spinLoaderStyle')) {
 }
 
 function bootAdminApp() {
-  // 🔒 Protegge lastMatch da valori incompleti
-  Object.defineProperty(window.APP_STATE, 'lastMatch', {
-    set(value) {
-      if (value && (!value.CASA_ID || !value.TRASFERTA_ID)) {
-        console.error('⚠️ TENTATIVO DI SALVARE lastMatch INCOMPLETO:', value);
-      }
-      this._lastMatch = value;
-    },
-    get() { return this._lastMatch; }
-  });
-  
-  // 1. Carica cache istantaneamente
-  window.APP_CACHE = CacheManager.load();
-  
-  // ✅ Flag: i dati sono pronti? (false finché non arriva la prima risposta API)
-  window.APP_STATE._dataReady = (window.APP_CACHE.teams?.length > 0 || window.APP_CACHE.matches?.length > 0);
-  
-  const loader = document.getElementById("startupLoader");
-  const LOADER_MIN_TIME = 2500; // ✅ Loader breve ma percettibile
-  const loaderStartTime = Date.now();
-  
-  if (loader) loader.style.display = "flex";
-  
-  let dataLoaded = false;
-  let initialRouteHandled = false;
-  
-  // Timeout di sicurezza
-  const maxTimeout = setTimeout(() => {
-    if (!dataLoaded) {
-      console.warn('⏱️ Timeout caricamento dati - mostro UI con dati parziali');
-      hideLoader();
-      if (!initialRouteHandled) {
-        showHome();
-        initialRouteHandled = true;
-      }
-    }
-  }, 5000);
-  
-  function hideLoader() {
-    clearTimeout(maxTimeout);
-    const elapsed = Date.now() - loaderStartTime;
-    const remaining = Math.max(0, LOADER_MIN_TIME - elapsed);
-    setTimeout(() => {
-      if (loader) {
-        loader.classList.add("hide");
-        setTimeout(() => { loader.style.display = "none"; }, 300);
-      }
-    }, remaining);
-  }
-  
-  // ✅ MOSTRA HOME SUBITO dopo loader breve (anche se cache vuota)
-  setTimeout(() => {
-    hideLoader();
-    if (!initialRouteHandled) {
-      initialRouteHandled = true;
-      showHome(); // Mostra home: con dati cache OPPURE card "Caricamento..."
-    }
-  }, 100);
-  
-  // Fetch dati dal backend (in background, non blocca la UI)
-  Promise.all([
-    ApiClient.getInitialData(),
-    ApiClient.isFinalStageStarted().catch(() => false)
-  ])
-  .then(async ([initialData, finalStageStarted]) => {
-    dataLoaded = true;
-    
-    // ✅ Aggiorna cache
-    window.APP_CACHE = {
-      ...window.APP_CACHE,
-      teams: initialData.teams || window.APP_CACHE.teams,
-      matches: initialData.matches || window.APP_CACHE.matches,
-      standings: initialData.standings || window.APP_CACHE.standings,
-      fullTeams: initialData.fullTeams || window.APP_CACHE.fullTeams,
-      playersMap: initialData.playersMap || window.APP_CACHE.playersMap,
-      meta: {
-        ...window.APP_CACHE.meta,
-        initialized: true,
-        finalStageStarted: finalStageStarted
-      }
-    };
-    
-    hydrateMatches(window.APP_CACHE.matches || []);
-    preloadRecentEvents();
-    CacheManager.save(window.APP_CACHE);
-    
-    // ✅ Segnala che i dati sono pronti
-    window.APP_STATE._dataReady = true;
-    
-    // 🔥 Carica fase finale se attiva
-    if (finalStageStarted) {
-      ApiClient.getFinalStageMatches().then(finalData => {
-        if (finalData) {
-          window.APP_CACHE.finalStage = finalData;
-          if (window.APP_CACHE.matches) {
-            finalData.forEach(fm => {
-              const idx = window.APP_CACHE.matches.findIndex(m =>
-                String(m.MATCH_ID) === String(fm.matchId)
-              );
-              if (idx >= 0) {
-                window.APP_CACHE.matches[idx] = {
-                  ...window.APP_CACHE.matches[idx],
-                  RIGORE_CASA: fm.rigoriCasa,
-                  RIGORE_TRASFERTA: fm.rigoriTrasferta,
-                  RIGORI_CASA: fm.rigoriCasa,
-                  RIGORI_TRASFERTA: fm.rigoriTrasferta
-                };
-              }
-            });
-          }
-          CacheManager.save(window.APP_CACHE);
-        }
-      }).catch(err => console.error('Errore caricamento fase finale:', err));
-    }
-    
-    const hasLiveMatch = (window.APP_CACHE.matches || []).some(m =>
-      m.STATO_PARTITA === "LIVE" || m.STATO_PARTITA === "SUPP" || m.STATO_PARTITA === "RIGORI"
-    );
-    if (hasLiveMatch) startMatchLiveRefresh();
-    
-    // ✅ Aggiorna UI se siamo su home (sostituisci card "Caricamento..." con dati reali)
-    if (document.querySelector(".home-container")) {
-      const nextCard = getNextMatchCard();
-      const existing = document.querySelector(".home-next-match");
-      if (existing && nextCard) {
-        existing.outerHTML = nextCard;
-      }
-    }
-    
-    // Aggiorna altre pagine se aperte
-    if (document.querySelector(".matches-page")) renderMatches();
-    if (document.querySelector(".standings-page")) {
-      if (window.APP_STATE._activeStandingsTab === "fasefinale") {
-        loadFinalStage();
-      } else {
-        renderStandings(window.APP_CACHE.standings);
-      }
-    }
-    
-    if (!initialRouteHandled) {
-      initialRouteHandled = true;
-      showHome();
-      if (finalStageStarted) {
-        window.APP_STATE._activeStandingsTab = "fasefinale";
-        window.APP_STATE._finalStageLoaded = false;
-      }
-    }
-    
-    if (localStorage.getItem('podiumDismissed') === 'true') {
-      podiumDismissed = true;
-    }
-    
-    window.APP_STATE._initialLoadComplete = true;
-    const queue = window.APP_STATE._apiCallQueue || [];
-    queue.forEach(item => {
-      if (Date.now() - item.timestamp < 5000) item.fn();
+    // 🔒 Protegge lastMatch da valori incompleti
+    Object.defineProperty(window.APP_STATE, 'lastMatch', {
+        set(value) {
+            if (value && (!value.CASA_ID || !value.TRASFERTA_ID)) {
+                console.error('️ TENTATIVO DI SALVARE lastMatch INCOMPLETO:', value);
+            }
+            this._lastMatch = value;
+        },
+        get() { return this._lastMatch; }
     });
-    window.APP_STATE._apiCallQueue = [];
-  })
-  .catch(error => {
-    console.error('❌ Errore caricamento:', error);
-    dataLoaded = true;
-    window.APP_STATE._dataReady = true; // ✅ Anche in errore, sblocca la UI
-    hideLoader();
-    if (!initialRouteHandled) {
-      initialRouteHandled = true;
-      showHome();
-    }
-  });
-  
-  // 🔥 Global error handling
-  window.addEventListener("error", e => console.error("Global error:", e.error||e.message));
-  window.addEventListener("beforeunload", () => {
-    Cleanup.releaseAll();
-    CacheManager.save(window.APP_CACHE, 0);
-  });
+
+    // 1. Carica cache istantaneamente
+    window.APP_CACHE = CacheManager.load();
+    window.APP_STATE._dataReady = (window.APP_CACHE.teams?.length > 0 || window.APP_CACHE.matches?.length > 0);
+
+    const loader = document.getElementById("startupLoader");
+    let dataLoaded = false;
+    let initialRouteHandled = false;
+
+    // ✅ MOSTRA HOME SUBITO (senza aspettare il loader)
+    setTimeout(() => {
+        if (!initialRouteHandled) {
+            initialRouteHandled = true;
+            showHome(); // Mostra home con card "Caricamento..."
+            
+            // ✅ Fade out del loader SOVRAPPOSTO alla home
+            if (loader) {
+                loader.style.transition = 'opacity 0.5s ease';
+                loader.style.opacity = '0';
+                setTimeout(() => {
+                    loader.style.display = 'none';
+                }, 500);
+            }
+        }
+    }, 100);
+
+    // Fetch dati dal backend
+    Promise.all([
+        ApiClient.getInitialData(),
+        ApiClient.isFinalStageStarted().catch(() => false)
+    ])
+    .then(async ([initialData, finalStageStarted]) => {
+        dataLoaded = true;
+        
+        // ✅ Aggiorna cache
+        window.APP_CACHE = {
+            ...window.APP_CACHE,
+            teams: initialData.teams || window.APP_CACHE.teams,
+            matches: initialData.matches || window.APP_CACHE.matches,
+            standings: initialData.standings || window.APP_CACHE.standings,
+            fullTeams: initialData.fullTeams || window.APP_CACHE.fullTeams,
+            playersMap: initialData.playersMap || window.APP_CACHE.playersMap,
+            meta: {
+                ...window.APP_CACHE.meta,
+                initialized: true,
+                finalStageStarted: finalStageStarted
+            }
+        };
+        
+        hydrateMatches(window.APP_CACHE.matches || []);
+        preloadRecentEvents();
+        CacheManager.save(window.APP_CACHE);
+        
+        window.APP_STATE._dataReady = true;
+
+        // 🔥 Carica fase finale se attiva
+        if (finalStageStarted) {
+            ApiClient.getFinalStageMatches().then(finalData => {
+                if (finalData) {
+                    window.APP_CACHE.finalStage = finalData;
+                    if (window.APP_CACHE.matches) {
+                        finalData.forEach(fm => {
+                            const idx = window.APP_CACHE.matches.findIndex(m =>
+                                String(m.MATCH_ID) === String(fm.matchId)
+                            );
+                            if (idx >= 0) {
+                                window.APP_CACHE.matches[idx] = {
+                                    ...window.APP_CACHE.matches[idx],
+                                    RIGORE_CASA: fm.rigoriCasa,
+                                    RIGORE_TRASFERTA: fm.rigoriTrasferta,
+                                    RIGORI_CASA: fm.rigoriCasa,
+                                    RIGORI_TRASFERTA: fm.rigoriTrasferta
+                                };
+                            }
+                        });
+                    }
+                    CacheManager.save(window.APP_CACHE);
+                }
+            }).catch(err => console.error('Errore caricamento fase finale:', err));
+        }
+
+        const hasLiveMatch = (window.APP_CACHE.matches || []).some(m =>
+            m.STATO_PARTITA === "LIVE" || m.STATO_PARTITA === "SUPP" || m.STATO_PARTITA === "RIGORI"
+        );
+        if (hasLiveMatch) startMatchLiveRefresh();
+
+        // ✅ Aggiorna UI con animazione fluida
+        if (document.querySelector(".home-container")) {
+            const nextCard = getNextMatchCard();
+            const existing = document.querySelector(".home-next-match");
+            if (existing && nextCard) {
+                // ✅ Animazione fade per il cambio card
+                existing.style.transition = 'opacity 0.3s ease';
+                existing.style.opacity = '0';
+                setTimeout(() => {
+                    existing.outerHTML = nextCard;
+                    const newCard = document.querySelector(".home-next-match");
+                    if (newCard) {
+                        newCard.style.opacity = '0';
+                        requestAnimationFrame(() => {
+                            newCard.style.transition = 'opacity 0.3s ease';
+                            newCard.style.opacity = '1';
+                        });
+                    }
+                }, 300);
+            }
+        }
+
+        // Aggiorna altre pagine se aperte
+        if (document.querySelector(".matches-page")) renderMatches();
+        if (document.querySelector(".standings-page")) {
+            if (window.APP_STATE._activeStandingsTab === "fasefinale") {
+                loadFinalStage();
+            } else {
+                renderStandings(window.APP_CACHE.standings);
+            }
+        }
+
+        if (!initialRouteHandled) {
+            initialRouteHandled = true;
+            showHome();
+            if (finalStageStarted) {
+                window.APP_STATE._activeStandingsTab = "fasefinale";
+                window.APP_STATE._finalStageLoaded = false;
+            }
+        }
+
+        if (localStorage.getItem('podiumDismissed') === 'true') {
+            podiumDismissed = true;
+        }
+
+        window.APP_STATE._initialLoadComplete = true;
+        const queue = window.APP_STATE._apiCallQueue || [];
+        queue.forEach(item => {
+            if (Date.now() - item.timestamp < 5000) item.fn();
+        });
+        window.APP_STATE._apiCallQueue = [];
+    })
+    .catch(error => {
+        console.error('❌ Errore caricamento:', error);
+        dataLoaded = true;
+        window.APP_STATE._dataReady = true;
+        
+        if (loader) {
+            loader.style.transition = 'opacity 0.5s ease';
+            loader.style.opacity = '0';
+            setTimeout(() => {
+                loader.style.display = 'none';
+            }, 500);
+        }
+        
+        if (!initialRouteHandled) {
+            initialRouteHandled = true;
+            showHome();
+        }
+    });
+
+    // 🔥 Global error handling
+    window.addEventListener("error", e => console.error("Global error:", e.error||e.message));
+    window.addEventListener("beforeunload", () => {
+        Cleanup.releaseAll();
+        CacheManager.save(window.APP_CACHE, 0);
+    });
 }
 
 // ✅ NUOVA FUNZIONE: Aggiorna dati app
