@@ -2300,7 +2300,7 @@ body {
     display: inline-flex !important;
     align-items: center !important;
     justify-content: center !important;
-    padding: 8px 16px !important;
+    padding: 10px 20px !important;
     border: none !important;
     border-radius: 8px !important;
     background: var(--granata) !important;
@@ -2311,29 +2311,19 @@ body {
     letter-spacing: 1.5px !important;
     text-transform: uppercase !important;
     cursor: pointer !important;
-    box-shadow: 0 4px 12px rgba(122, 30, 44, 0.4) !important;
-    position: relative !important; /* Rimuove fixed */
-    bottom: auto !important;
-    left: auto !important;
-    transform: none !important;
-    z-index: 1001 !important;
-    margin: 30px auto 20px !important; /* ✅ AUMENTATO margin-top da 20px a 30px */
-    min-height: 15px !important;
+    box-shadow: 0 2px 8px rgba(122, 30, 44, 0.3) !important;
+    position: absolute !important;
+    left: 50% !important;
+    transform: translateX(-50%) !important;
+    min-height: 36px !important;
     line-height: 1 !important;
     pointer-events: auto !important;
     touch-action: manipulation !important;
-    -webkit-tap-highlight-color: rgba(122, 30, 44, 0.2) !important;
-    user-select: none !important;
+    margin: 0 !important;
   }
 
   .media-button:hover {
     background: var(--granata-light) !important;
-    transform: translateY(-2px) !important;
-  }
-
-  .media-button:active {
-    transform: scale(0.98) !important;
-    background: #5a1520 !important;
   }
    
   .back-btn-wrapper {
@@ -2350,17 +2340,18 @@ body {
 
   .match-page .back-btn-wrapper,
   .back-btn-wrapper {
-    display: flex !important;
-    flex-direction: row !important;
-    align-items: center !important;
-    justify-content: flex-end !important;
+    position: fixed !important;
+    bottom: 72px !important; /* Toolbar (~60px) + 2mm (~8px) + padding */
+    left: 0 !important;
+    right: 0 !important;
     width: 100% !important;
-    padding: 15px 20px !important;
-    box-sizing: border-box !important;
     margin: 0 !important;
-    margin-top: auto !important;
-    margin-bottom: 35px !important; /* ✅ AUMENTATO da 25px a 35px */
-    position: relative !important; /* Rimuove fixed */
+    padding: 0 20px !important;
+    z-index: 999 !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    background: transparent !important;
   }
 
 
@@ -2389,7 +2380,7 @@ body {
   }
 
    .match-content {
-    padding-bottom: 80px !important;
+    padding-bottom: 120px !important;
   }
    
   .small-btn { padding: 8px 16px; font-size: 12px; margin-bottom: 20px; }
