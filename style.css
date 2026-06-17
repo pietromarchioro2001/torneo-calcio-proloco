@@ -2947,4 +2947,23 @@ body {
     line-height: 0 !important;
   }
 
+   #mediaUploadModal .modalBox .modalActions > * {
+    display: inline-block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    pointer-events: auto !important;
+  }
+  
+  #mediaUploadModal .modalBox #mediaDropZone,
+  #mediaUploadModal .modalBox #mediaFileList,
+  #mediaUploadModal .modalBox #mediaProgress {
+    display: block !important;
+    visibility: visible !important;
+  }
+  
+  #mediaUploadModal .modalBox .modalTitle {
+    display: block !important;
+    visibility: visible !important;
+  }
+
 }
