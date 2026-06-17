@@ -2315,7 +2315,7 @@ body {
     position: absolute !important;
     left: 50% !important;
     transform: translateX(-50%) !important;
-    min-height: 36px !important;
+    min-height: 15px !important;
     line-height: 1 !important;
     pointer-events: auto !important;
     touch-action: manipulation !important;
