@@ -2323,7 +2323,7 @@ body {
     transform: none !important;
     z-index: auto !important;
     margin: 15px auto 25px !important;
-    min-height: 15px !important;
+    min-height: 10px !important;
   }
 
   .media-button:hover {
