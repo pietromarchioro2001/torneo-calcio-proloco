@@ -4548,6 +4548,7 @@ async function submitAllMVPVotes(matchId) {
 // ============================================================================
 
 function openMediaUploadModal(matchId, linkDrive) {
+    console.log('🔍 MEDIA DEBUG:', { matchId, linkDrive, type: typeof linkDrive });
   // ✅ VALIDA L'URL PRIMA DI USARLO
   if (!linkDrive || typeof linkDrive !== 'string') {
     alert('Errore: Link Drive non valido');
