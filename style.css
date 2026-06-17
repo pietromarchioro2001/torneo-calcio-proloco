@@ -2305,36 +2305,40 @@ body {
     display: inline-flex !important;
     align-items: center !important;
     justify-content: center !important;
-    padding: 10px 20px !important;
+    padding: 8px 16px !important;
     border: none !important;
     border-radius: 8px !important;
     background: var(--granata) !important;
     color: white !important;
-    font-size: 11px !important;
+    font-size: 12px !important;
     font-weight: 700 !important;
     font-family: 'Oswald', sans-serif !important;
     letter-spacing: 1.5px !important;
     text-transform: uppercase !important;
     cursor: pointer !important;
-    box-shadow: 0 2px 8px rgba(122, 30, 44, 0.3) !important;
+    box-shadow: 0 4px 12px rgba(122, 30, 44, 0.4) !important;
     position: relative !important;
     bottom: auto !important;
     left: auto !important;
     transform: none !important;
-    z-index: 999 !important;  /* ✅ AUMENTA Z-INDEX */
-    margin: 15px auto 30px !important;
-    min-height: 36px !important;
-    pointer-events: auto !important;  /* ✅ AGGIUNGI QUESTO */
-    touch-action: manipulation !important;  /* ✅ AGGIUNGI QUESTO */
-    -webkit-tap-highlight-color: transparent !important;  /* ✅ MIGLIORA TOUCH */
+    z-index: 1001 !important; /* ✅ Sopra il toolbar (1000) */
+    margin: 20px auto 30px !important;
+    min-height: 10px !important;
+    line-height: 1 !important;
+    pointer-events: auto !important; /* ✅ FORZA click */
+    touch-action: manipulation !important; /* ✅ Ottimizza touch */
+    -webkit-tap-highlight-color: rgba(122, 30, 44, 0.2) !important; /* ✅ Feedback visivo */
+    user-select: none !important;
   }
 
   .media-button:hover {
     background: var(--granata-light) !important;
+    transform: translateY(-2px) !important;
   }
-  
+
   .media-button:active {
-    transform: scale(0.98) !important;  /* ✅ FEEDBACK VISIVO TOUCH */
+    transform: scale(0.98) !important;
+    background: #5a1520 !important;
   }
    
   .back-btn-wrapper {
