@@ -2240,7 +2240,7 @@ body {
   text-transform: uppercase !important;
 }
 
-  .events-timeline { position: relative !important; width: 100% !important; padding: 10px 0 !important; min-height: 200px !important; }
+  .events-timeline { position: relative !important; width: 100% !important; padding: 10px 0 40px !important; min-height: 200px !important; }
   .events-timeline::before {
     content: "" !important; position: absolute !important; left: 50% !important; top: 0 !important;
     transform: translateX(-50%) !important; width: 2px !important; height: 100% !important;
@@ -2312,17 +2312,17 @@ body {
     text-transform: uppercase !important;
     cursor: pointer !important;
     box-shadow: 0 4px 12px rgba(122, 30, 44, 0.4) !important;
-    position: relative !important;
+    position: relative !important; /* Rimuove fixed */
     bottom: auto !important;
     left: auto !important;
     transform: none !important;
-    z-index: 1001 !important; /* ✅ Sopra il toolbar (1000) */
-    margin: 20px auto 30px !important;
-    min-height: 15px !important; /* ✅ Altezza fissa */
+    z-index: 1001 !important;
+    margin: 30px auto 20px !important; /* ✅ AUMENTATO margin-top da 20px a 30px */
+    min-height: 15px !important;
     line-height: 1 !important;
-    pointer-events: auto !important; /* ✅ FORZA click */
-    touch-action: manipulation !important; /* ✅ Ottimizza touch */
-    -webkit-tap-highlight-color: rgba(122, 30, 44, 0.2) !important; /* ✅ Feedback visivo */
+    pointer-events: auto !important;
+    touch-action: manipulation !important;
+    -webkit-tap-highlight-color: rgba(122, 30, 44, 0.2) !important;
     user-select: none !important;
   }
 
@@ -2345,7 +2345,7 @@ body {
     padding: 20px !important;
     box-sizing: border-box !important;
     margin-top: auto !important;
-    margin-bottom: 10px !important;
+    margin-bottom: 20px !important; /* ✅ AUMENTATO da 10px a 20px */
   }
 
   .match-page .back-btn-wrapper,
@@ -2359,9 +2359,10 @@ body {
     box-sizing: border-box !important;
     margin: 0 !important;
     margin-top: auto !important;
-    margin-bottom: 25px !important;
-    position: relative !important;
+    margin-bottom: 35px !important; /* ✅ AUMENTATO da 25px a 35px */
+    position: relative !important; /* Rimuove fixed */
   }
+
 
   /* Pulsante INDIETRO */
   .back-btn {
@@ -2388,7 +2389,7 @@ body {
   }
 
    .match-content {
-    padding-bottom: 50px !important;
+    padding-bottom: 80px !important;
   }
    
   .small-btn { padding: 8px 16px; font-size: 12px; margin-bottom: 20px; }
@@ -2650,9 +2651,19 @@ body {
   .mvp-winner-badge { font-size: 11px !important; }
   .mvp-winner-team { font-size: 10px !important; }
 
-  .players-columns { gap: 20px !important; margin-top: 10px !important; }
-  .players-col { padding: 0 8px 0 4px !important; overflow: hidden !important; }
-  .players-col:last-child { padding: 0 10px 0 4px !important; }
+  .players-columns {
+    gap: 20px !important;
+    margin-top: 30px !important; /* ✅ AUMENTATO da 10px a 30px */
+  }
+
+  .players-col {
+    padding: 0 8px 0 4px !important;
+    overflow: hidden !important;
+  }
+
+  .players-col:last-child {
+    padding: 0 10px 0 4px !important;
+  }
 
   .player-row.mvp-player-row .mvp-crown {
     font-size: 13px !important; width: 18px !important; height: 18px !important;
