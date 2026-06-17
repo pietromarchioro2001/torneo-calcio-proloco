@@ -2320,10 +2320,12 @@ body {
     pointer-events: auto !important;
     touch-action: manipulation !important;
     margin: 0 !important;
+    transition: background 0.2s ease, box-shadow 0.2s ease !important;
   }
 
   .media-button:hover {
     background: var(--granata-light) !important;
+    transform: translateX(-50%) !important;
   }
    
   .back-btn-wrapper {
@@ -2399,7 +2401,7 @@ body {
     box-shadow: 0 2px 8px rgba(122, 30, 44, 0.3) !important;
     position: absolute !important;
     right: 20px !important;
-    min-height: 36px !important;
+    min-height: 15px !important;
     line-height: 1 !important;
     pointer-events: auto !important;
     margin: 0 !important;
@@ -2411,7 +2413,7 @@ body {
   }
 
    .match-content {
-    padding-bottom: 120px !important;
+    padding-bottom: 150px !important;
   }
    
   .small-btn { padding: 8px 16px; font-size: 12px; margin-bottom: 20px; }
