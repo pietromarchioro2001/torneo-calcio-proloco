@@ -16,6 +16,160 @@ if (!CONFIG.BACKEND_URL || CONFIG.BACKEND_URL.includes('DEPLOYMENT_ID')) {
 }
 
 // ============================================================================
+// 🔐 PROTEZIONE DESKTOP CON PASSWORD
+// ============================================================================
+const DESKTOP_PASSWORD = "torneo2026"; // ✅ CAMBIA CON LA TUA PASSWORD
+const DESKTOP_AUTH_KEY = "desktop_auth_ok";
+
+function checkDesktopAuth() {
+  const isDesktop = window.innerWidth > 768;
+  
+  // Se è mobile, non chiedere password
+  if (!isDesktop) return true;
+  
+  // Se già autenticato in questa sessione, permetti accesso
+  if (localStorage.getItem(DESKTOP_AUTH_KEY) === "true") return true;
+  
+  // Mostra modal password
+  showPasswordModal();
+  return false;
+}
+
+function showPasswordModal() {
+  // Rimuovi modal esistente se presente
+  const existing = document.getElementById("passwordModal");
+  if (existing) existing.remove();
+  
+  const modal = document.createElement("div");
+  modal.id = "passwordModal";
+  modal.className = "modalOverlay";
+  modal.style.cssText = `
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.9);
+    z-index: 99999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    backdrop-filter: blur(8px);
+  `;
+  
+  modal.innerHTML = `
+    <div style="
+      background: white;
+      padding: 40px;
+      border-radius: 16px;
+      text-align: center;
+      max-width: 400px;
+      width: 90%;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+    ">
+      <div style="font-size: 48px; margin-bottom: 20px;">🔒</div>
+      <div style="font-size: 22px; font-weight: 700; color: #111; margin-bottom: 10px; letter-spacing: 2px;">
+        ACCESSO RISERVATO
+      </div>
+      <div style="font-size: 13px; color: #888; margin-bottom: 30px; letter-spacing: 1px;">
+        Inserisci la password per accedere
+      </div>
+      <input 
+        id="passwordInput" 
+        type="password" 
+        placeholder="Password"
+        style="
+          width: 100%;
+          padding: 14px;
+          border: 2px solid #ddd;
+          border-radius: 8px;
+          font-size: 16px;
+          font-family: 'Oswald', sans-serif;
+          letter-spacing: 2px;
+          text-align: center;
+          margin-bottom: 20px;
+          box-sizing: border-box;
+        "
+        onkeypress="if(event.key==='Enter') verifyPassword()"
+      >
+      <div id="passwordError" style="
+        color: #dc2626;
+        font-size: 12px;
+        margin-bottom: 15px;
+        display: none;
+        letter-spacing: 1px;
+      ">
+        Password errata
+      </div>
+      <div style="display: flex; gap: 10px;">
+        <button onclick="verifyPassword()" style="
+          flex: 1;
+          padding: 14px;
+          background: #7a1e2c;
+          color: white;
+          border: none;
+          border-radius: 8px;
+          font-size: 14px;
+          font-weight: 700;
+          font-family: 'Oswald', sans-serif;
+          letter-spacing: 2px;
+          cursor: pointer;
+          text-transform: uppercase;
+        ">
+          ACCEDI
+        </button>
+        <button onclick="window.location.href='#home'" style="
+          padding: 14px 20px;
+          background: white;
+          color: #7a1e2c;
+          border: 2px solid #7a1e2c;
+          border-radius: 8px;
+          font-size: 14px;
+          font-weight: 700;
+          font-family: 'Oswald', sans-serif;
+          letter-spacing: 2px;
+          cursor: pointer;
+          text-transform: uppercase;
+        ">
+          ANNULLA
+        </button>
+      </div>
+      <div style="margin-top: 20px; font-size: 11px; color: #aaa; letter-spacing: 1px;">
+        💡 La password verrà salvata su questo dispositivo
+      </div>
+    </div>
+  `;
+  
+  document.body.appendChild(modal);
+  
+  // Focus sull'input
+  setTimeout(() => {
+    document.getElementById("passwordInput")?.focus();
+  }, 100);
+}
+
+function verifyPassword() {
+  const input = document.getElementById("passwordInput");
+  const error = document.getElementById("passwordError");
+  const password = input?.value?.trim();
+  
+  if (password === DESKTOP_PASSWORD) {
+    // Password corretta - salva in localStorage
+    localStorage.setItem(DESKTOP_AUTH_KEY, "true");
+    
+    // Rimuovi modal
+    const modal = document.getElementById("passwordModal");
+    if (modal) modal.remove();
+    
+    console.log("✅ Accesso desktop autorizzato");
+  } else {
+    // Password errata
+    if (error) {
+      error.style.display = "block";
+      input.value = "";
+      input.focus();
+    }
+  }
+}
+
+// ============================================================================
 // 🔐 SECURITY UTILITIES
 // ============================================================================
 const Sanitizer = {
@@ -3832,6 +3986,12 @@ if (!document.getElementById('spinLoaderStyle')) {
 }
 
 function bootAdminApp() {
+
+    if (!checkDesktopAuth()) {
+    // Se non autenticato, blocca tutto finché non inserisce password
+    console.log("🔒 Attesa autenticazione desktop...");
+    return; // Esce e non carica il resto
+  }
     // 🔒 Protegge lastMatch da valori incompleti
     Object.defineProperty(window.APP_STATE, 'lastMatch', {
         set(value) {
@@ -4006,6 +4166,21 @@ function bootAdminApp() {
         CacheManager.save(window.APP_CACHE, 0);
     });
 }
+
+// Aggiungi dopo bootAdminApp()
+let lastWidth = window.innerWidth;
+window.addEventListener("resize", () => {
+  const currentWidth = window.innerWidth;
+  
+  // Se passa da mobile a desktop e non è autenticato
+  if (lastWidth <= 768 && currentWidth > 768) {
+    if (!checkDesktopAuth()) {
+      console.log(" Richiesta autenticazione per desktop");
+    }
+  }
+  
+  lastWidth = currentWidth;
+});
 
 // ✅ AGGIUNGI DOPO bootAdminApp()
 let resizeTimer;
