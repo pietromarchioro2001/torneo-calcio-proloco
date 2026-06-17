@@ -4007,6 +4007,27 @@ function bootAdminApp() {
     });
 }
 
+// ✅ AGGIUNGI DOPO bootAdminApp()
+let resizeTimer;
+window.addEventListener('resize', () => {
+  clearTimeout(resizeTimer);
+  resizeTimer = setTimeout(() => {
+    const isMobile = window.innerWidth <= 768;
+    console.log('📱 Resize rilevato:', isMobile ? 'MOBILE' : 'DESKTOP');
+    
+    // Se siamo nella pagina standings, ri-renderizza
+    if (document.querySelector('.standings-page')) {
+      const currentTab = window.APP_STATE._activeStandingsTab;
+      showStandings(); // Ri-renderizza con le nuove dimensioni
+      
+      // Ripristina il tab attivo
+      if (currentTab === 'fasefinale') {
+        document.querySelector('[data-tab="fasefinale"]')?.click();
+      }
+    }
+  }, 250); // Debounce 250ms
+});
+
 // ✅ NUOVA FUNZIONE: Aggiorna dati app
 function updateAppData(initialData, finalStageStarted) {
   window.APP_CACHE = {
