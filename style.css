@@ -1786,11 +1786,11 @@ body {
     bottom: 130px !important; 
     z-index: 1001 !important; 
     width: 75% !important; /* Ridotto da 90% a 75% */
-    max-width: 260px !important; /* Ridotto da 320px a 260px */
+    max-width: 280px !important; /* Ridotto da 320px a 260px */
     padding: 10px 12px !important; /* Leggermente ridotto */
     min-height: 50px; 
   }
-  .home-team { font-size: 12px; }
+  .home-team { font-size: 11px; }
   .home-team-logo, .home-team-block img { width: 28px; height: 28px; }
   .home-score { font-size: 14px; }
   .home-match-time { font-size: 12px; }
