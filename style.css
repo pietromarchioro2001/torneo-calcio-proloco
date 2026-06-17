@@ -1786,11 +1786,11 @@ body {
     bottom: 130px !important; 
     z-index: 1001 !important; 
     width: 75% !important; /* Ridotto da 90% a 75% */
-    max-width: 280px !important; /* Ridotto da 320px a 260px */
+    max-width: 290px !important; /* Ridotto da 320px a 260px */
     padding: 10px 12px !important; /* Leggermente ridotto */
     min-height: 50px; 
   }
-  .home-team { font-size: 11px; }
+  .home-team { font-size: 10px; }
   .home-team-logo, .home-team-block img { width: 28px; height: 28px; }
   .home-score { font-size: 14px; }
   .home-match-time { font-size: 12px; }
@@ -1799,9 +1799,9 @@ body {
   .home-next-match.winner-card {
     bottom: 130px !important; 
     z-index: 1001 !important; 
-    min-width: 140px !important; /* Ridotto da 160px */
-    max-width: 200px !important; /* Ridotto da 220px */
-    width: 65% !important; /* Ridotto da 70% */
+    min-width: 160px !important; /* Ridotto da 160px */
+    max-width: 220px !important; /* Ridotto da 220px */
+    width: 70% !important; /* Ridotto da 70% */
     padding: 8px 12px !important;
   }
   .home-next-match.winner-card:hover { transform: translateX(-50%) translateY(-2px) !important; }
