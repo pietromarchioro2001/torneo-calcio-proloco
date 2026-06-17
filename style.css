@@ -2305,7 +2305,7 @@ body {
     display: inline-flex !important;
     align-items: center !important;
     justify-content: center !important;
-    padding: 8px 16px !important;
+    padding: 10px 20px !important;
     border: none !important;
     border-radius: 8px !important;
     background: var(--granata) !important;
@@ -2321,13 +2321,20 @@ body {
     bottom: auto !important;
     left: auto !important;
     transform: none !important;
-    z-index: auto !important;
+    z-index: 999 !important;  /* ✅ AUMENTA Z-INDEX */
     margin: 15px auto 30px !important;
-    min-height: 10px !important;
+    min-height: 36px !important;
+    pointer-events: auto !important;  /* ✅ AGGIUNGI QUESTO */
+    touch-action: manipulation !important;  /* ✅ AGGIUNGI QUESTO */
+    -webkit-tap-highlight-color: transparent !important;  /* ✅ MIGLIORA TOUCH */
   }
 
   .media-button:hover {
     background: var(--granata-light) !important;
+  }
+  
+  .media-button:active {
+    transform: scale(0.98) !important;  /* ✅ FEEDBACK VISIVO TOUCH */
   }
    
   .back-btn-wrapper {
