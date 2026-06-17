@@ -2382,12 +2382,12 @@ body {
   }
 
    .back-btn-wrapper .phase-btn.secondary,
-  .back-btn-wrapper .phase-btn {
+   .back-btn-wrapper .phase-btn {
     all: unset !important;
     display: inline-flex !important;
     align-items: center !important;
     justify-content: center !important;
-    padding: 10px 20px !important;
+    padding: 8px 16px !important;
     border: 2px solid var(--granata) !important;
     border-radius: 8px !important;
     background: var(--granata) !important;
