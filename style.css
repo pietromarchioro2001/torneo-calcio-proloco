@@ -2317,17 +2317,20 @@ body {
     text-transform: uppercase !important;
     cursor: pointer !important;
     box-shadow: 0 2px 8px rgba(122, 30, 44, 0.3) !important;
+    
+    /* Rimuove position fixed e centra */
     position: relative !important;
     bottom: auto !important;
     left: auto !important;
     transform: none !important;
     z-index: auto !important;
+    margin: 15px auto 25px !important;
     min-height: 40px !important;
-}
+  }
 
-.media-button:hover {
+  .media-button:hover {
     background: var(--granata-light) !important;
-}
+  }
    
   .back-btn-wrapper {
     display: flex !important;
