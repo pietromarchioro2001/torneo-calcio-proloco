@@ -3145,6 +3145,7 @@ function showStandings() {
       <div class="standings-tabs">
         <div class="standings-tab ${!isFinalStage ? 'active' : ''}" data-tab="gironi">GIRONI</div>
         ${showFaseFinaleTab ? `<div class="standings-tab ${isFinalStage ? 'active' : ''}" data-tab="fasefinale">FASE FINALE</div>` : ''}
+        <div class="standings-tab" data-tab="chiosco"> COPPA CHIOSCO</div>
       </div>
       <div id="standingsContent"></div>
     </div>`;
@@ -3167,35 +3168,53 @@ function showStandings() {
   }
   
   document.querySelectorAll(".standings-tab").forEach(tab => {
-    tab.onclick = () => {
-      document.querySelectorAll(".standings-tab").forEach(t => t.classList.remove("active"));
-      tab.classList.add("active");
-      const type = tab.dataset.tab;
-      window.APP_STATE._activeStandingsTab = type;
-      if (type === "gironi") {
-        renderStandings(window.APP_CACHE.standings || {});
-        ApiClient.getStandings().then(data => {
-          if (data) {
-            window.APP_CACHE.standings = data;
-            CacheManager.save(window.APP_CACHE);
-          }
-          if (window.APP_STATE._activeStandingsTab === "gironi") {
-            renderStandings(data);
-          }
-        }).catch(console.error);
-      }
-      else if (type === "fasefinale") {
-        if (!window.APP_STATE._finalStageLoaded) {
-          loadFinalStage();
-          window.APP_STATE._finalStageLoaded = true;
-        } else {
-          renderFinalStage(window.APP_CACHE.finalStage || []);
+  tab.onclick = () => {
+    document.querySelectorAll(".standings-tab").forEach(t => t.classList.remove("active"));
+    tab.classList.add("active");
+    const type = tab.dataset.tab;
+    window.APP_STATE._activeStandingsTab = type;
+    
+    if (type === "gironi") {
+      renderStandings(window.APP_CACHE.standings || {});
+      ApiClient.getStandings().then(data => {
+        if (data) {
+          window.APP_CACHE.standings = data;
+          CacheManager.save(window.APP_CACHE);
         }
-        
-        startStandingsLiveRefresh();
+        if (window.APP_STATE._activeStandingsTab === "gironi") {
+          renderStandings(data);
+        }
+      }).catch(console.error);
+    }
+    else if (type === "fasefinale") {
+      if (!window.APP_STATE._finalStageLoaded) {
+        loadFinalStage();
+        window.APP_STATE._finalStageLoaded = true;
+      } else {
+        renderFinalStage(window.APP_CACHE.finalStage || []);
       }
-    };
-  });
+      startStandingsLiveRefresh();
+    }
+    // ✅ AGGIUNGI QUESTO BLOCCO PER IL CHIOSCO
+    else if (type === "chiosco") {
+      // Ferma polling classifiche
+      stopStandingsLiveRefresh();
+      
+      const container = document.getElementById("standingsContent");
+      container.innerHTML = `
+        <div style="width:100%;height:calc(100vh - 200px);border-radius:12px;overflow:hidden;">
+          <iframe 
+            src="https://URL-DEL-SITO-CHIOSCO" 
+            style="width:100%;height:100%;border:none;"
+            allow="autoplay; fullscreen"
+            loading="lazy"
+            sandbox="allow-scripts allow-same-origin allow-forms allow-popups"
+          ></iframe>
+        </div>
+      `;
+    }
+  };
+});
   
   if (!isFinalStage) {
     startStandingsLiveRefresh();
