@@ -2305,7 +2305,7 @@ body {
     display: inline-flex !important;
     align-items: center !important;
     justify-content: center !important;
-    padding: 10px 20px !important;
+    padding: 8px 16px !important;
     border: none !important;
     border-radius: 8px !important;
     background: var(--granata) !important;
@@ -2322,7 +2322,7 @@ body {
     left: auto !important;
     transform: none !important;
     z-index: auto !important;
-    margin: 15px auto 40px !important;
+    margin: 15px auto 50px !important;
     min-height: 10px !important;
   }
 
