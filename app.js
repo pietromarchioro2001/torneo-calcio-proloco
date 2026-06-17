@@ -1640,10 +1640,10 @@ function renderMatchPage(match) {
   // 🔥 RECUPERA LINK DRIVE
   const linkDrive = (match.LINK_DRIVE || match.linkDrive || '');
   const mediaButtonHtml = linkDrive && linkDrive.trim() !== '' ? `
-    <button class="media-button" onclick="openMediaUploadModal('${Sanitizer.attr(match.MATCH_ID)}', '${Sanitizer.url(linkDrive).replace(/'/g, "\\'")}'); event.stopPropagation();">
-      <span>MEDIA</span>
+    <button class="media-button" onclick="openMediaUploadModal('${Sanitizer.attr(match.MATCH_ID)}', '${String(linkDrive).replace(/'/g, "\\'")}'); event.stopPropagation();">
+    <span>MEDIA</span>
     </button>
-  ` : '';
+    ` : '';
   
   // 🔥 TEMPLATE HTML
   document.getElementById("app").innerHTML = `
