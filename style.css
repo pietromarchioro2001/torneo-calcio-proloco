@@ -1096,20 +1096,20 @@ body {
   display: inline-flex !important;
   align-items: center !important;
   justify-content: center !important;
-  padding: 10px 20px !important;
+  padding: 12px 22px !important;
   border: none !important;
   border-radius: 8px !important;
   background: var(--granata) !important;
   color: white !important;
-  font-size: 11px !important;
-  font-weight: 700 !important;
+  font-size: 13px !important;
+  font-weight: 600 !important;
   font-family: 'Oswald', sans-serif !important;
-  letter-spacing: 1.5px !important;
+  letter-spacing: 2px !important;
   text-transform: uppercase !important;
   cursor: pointer !important;
   box-shadow: 0 2px 8px rgba(122, 30, 44, 0.3) !important;
   margin-right: 15px !important; /* Spazio tra MEDIA e INDIETRO */
-  min-height: 36px !important;
+  min-height: 44px !important;
   line-height: 1 !important;
   transition: all 0.2s ease !important;
 }
