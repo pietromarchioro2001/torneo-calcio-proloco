@@ -3847,7 +3847,7 @@ function bootAdminApp() {
                 }, 500);
             }
         }
-    }, 100);
+    }, 2500);
 
     // Fetch dati dal backend
     Promise.all([
