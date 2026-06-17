@@ -2379,6 +2379,37 @@ body {
     background: var(--granata-light) !important;
   }
 
+   .back-btn-wrapper .phase-btn.secondary,
+  .back-btn-wrapper .phase-btn {
+    all: unset !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    padding: 10px 20px !important;
+    border: 2px solid var(--granata) !important;
+    border-radius: 8px !important;
+    background: var(--granata) !important;
+    color: white !important;
+    font-size: 11px !important;
+    font-weight: 700 !important;
+    font-family: 'Oswald', sans-serif !important;
+    letter-spacing: 1.5px !important;
+    text-transform: uppercase !important;
+    cursor: pointer !important;
+    box-shadow: 0 2px 8px rgba(122, 30, 44, 0.3) !important;
+    position: absolute !important;
+    right: 20px !important;
+    min-height: 36px !important;
+    line-height: 1 !important;
+    pointer-events: auto !important;
+    margin: 0 !important;
+  }
+
+  .back-btn-wrapper .phase-btn.secondary:hover,
+  .back-btn-wrapper .phase-btn:hover {
+    background: var(--granata-light) !important;
+  }
+
    .match-content {
     padding-bottom: 120px !important;
   }
