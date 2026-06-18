@@ -3418,7 +3418,7 @@ function showStandings() {
     container.innerHTML = `
       <div style="width:100%;height:calc(100vh - 220px);border-radius:12px;overflow:hidden;background:#000;position:relative;">
         <iframe
-          src="https://torneo.alcentro.restaurant/"
+          src="https://torneo.alcentro.restaurant/classifica"
           style="width:100%;height:100%;border:none;overflow-y:auto;"
           scrolling="yes"
           allow="autoplay; fullscreen"
@@ -3479,28 +3479,68 @@ function showStandings() {
         startStandingsLiveRefresh();
       }
       else if (type === "chiosco") {
-        // ✅ FERMA COMPLETAMENTE il polling classifiche
-        stopStandingsLiveRefresh();
-        window.APP_STATE._standingsActive = false;
-        const container = document.getElementById("standingsContent");
-        container.innerHTML = `
-          <div style="width:100%;height:calc(100vh - 220px);border-radius:12px;overflow:hidden;background:#000;position:relative;">
-            <iframe
-              src="https://torneo.alcentro.restaurant/"
-              style="width:100%;height:100%;border:none;overflow-y:auto;"
-              scrolling="yes"
-              allow="autoplay; fullscreen"
-              loading="lazy"
-              sandbox="allow-scripts allow-same-origin allow-forms allow-popups"
-            ></iframe>
-          </div>
-        `;
-        // ✅ BLOCCA eventuali refresh accidentali
-        setTimeout(() => {
+      // ✅ FERMA COMPLETAMENTE il polling classifiche
+      stopStandingsLiveRefresh();
+      window.APP_STATE._standingsActive = false;
+      const container = document.getElementById("standingsContent");
+      
+      // ✅ CAMBIA QUESTO LINK CON QUELLO CHE VUOI
+      const CHIOSCO_URL = "https://torneo.alcentro.restaurant/";
+      
+      container.innerHTML = `
+        <div style="position:relative;width:100%;height:calc(100vh - 220px);border-radius:12px;overflow:hidden;background:#000;">
+          <!-- ✅ iframe SOLO VISIVO (non interattivo) -->
+          <iframe
+            src="${CHIOSCO_URL}"
+            style="width:100%;height:100%;border:none;pointer-events:none;"
+            loading="lazy"
+            sandbox="allow-scripts allow-same-origin"
+            tabindex="-1"
+          ></iframe>
+          <!-- ✅ Overlay cliccabile sopra l'iframe -->
+          <a href="${CHIOSCO_URL}" target="_blank" rel="noopener noreferrer" style="
+            position:absolute;
+            inset:0;
+            display:flex;
+            align-items:center;
+            justify-content:center;
+            background:rgba(0,0,0,0.15);
+            text-decoration:none;
+            transition:background 0.3s ease;
+            z-index:10;
+            cursor:pointer;
+          " onmouseover="this.style.background='rgba(0,0,0,0.35)'" onmouseout="this.style.background='rgba(0,0,0,0.15)'">
+            <div style="
+              background:rgba(122,30,44,0.95);
+              color:white;
+              padding:16px 28px;
+              border-radius:12px;
+              font-family:'Oswald',sans-serif;
+              font-size:14px;
+              font-weight:700;
+              letter-spacing:2px;
+              text-transform:uppercase;
+              display:flex;
+              align-items:center;
+              gap:10px;
+              box-shadow:0 4px 20px rgba(0,0,0,0.4);
+              backdrop-filter:blur(4px);
+            ">
+              <span style="font-size:20px;">🔗</span>
+              APRI COPPA CHIOSCO
+            </div>
+          </a>
+        </div>
+      `;
+      
+      // ✅ BLOCCA eventuali refresh accidentali
+      setTimeout(() => {
+        const currentTab = document.querySelector('.standings-tab[data-tab="chiosco"]');
+        if (currentTab && currentTab.classList.contains('active')) {
           stopStandingsLiveRefresh();
-          window.APP_STATE._standingsActive = false;
-        }, 1000);
-      }
+        }
+      }, 1000);
+    }
     };
   });
   
