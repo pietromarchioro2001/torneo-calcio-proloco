@@ -3019,45 +3019,54 @@ function stopStandingsLiveRefresh() {
 }
 
 function startStandingsLiveRefresh() {
-
+  // ✅ CONTROLLO INIZIALE
   const chioscoTab = document.querySelector('.standings-tab[data-tab="chiosco"]');
   if (chioscoTab && chioscoTab.classList.contains('active')) {
     console.log('⏸️ Polling bloccato - Tab COPPA CHIOSCO attivo');
     return;
   }
-  
   if (window.APP_STATE._standingsActive) return;
   window.APP_STATE._standingsActive = true;
   if (window.APP_STATE._standingsInterval) clearInterval(window.APP_STATE._standingsInterval);
+  
   window.APP_STATE._standingsInterval = setInterval(() => {
-    const page = document.querySelector(".standings-page"); 
-    if (!page) { stopStandingsLiveRefresh(); return; } 
+    // ✅ CONTROLLO AD OGNI ITERAZIONE - se l'utente è su chiosco, ferma il polling
+    const activeChioscoTab = document.querySelector('.standings-tab[data-tab="chiosco"]');
+    if (activeChioscoTab && activeChioscoTab.classList.contains('active')) {
+      console.log('️ Polling fermato - utente su COPPA CHIOSCO');
+      stopStandingsLiveRefresh();
+      return;
+    }
+    
+    const page = document.querySelector(".standings-page");
+    if (!page) { stopStandingsLiveRefresh(); return; }
     if (document.hidden) return;
     const activeTab = window.APP_STATE._activeStandingsTab;
-    if (activeTab === "gironi") { 
-      ApiClient.getStandings().then(data => { 
-        if (data) { 
-          window.APP_CACHE.standings = data; 
-          CacheManager.save(window.APP_CACHE); 
-        } 
-        if (window.APP_STATE._activeStandingsTab === "gironi") { 
-          renderStandings(data); 
-        } 
-      }).catch(console.error); 
+    if (activeTab === "gironi") {
+      ApiClient.getStandings().then(data => {
+        if (data) {
+          window.APP_CACHE.standings = data;
+          CacheManager.save(window.APP_CACHE);
+        }
+        if (window.APP_STATE._activeStandingsTab === "gironi") {
+          renderStandings(data);
+        }
+      }).catch(console.error);
     }
-    else if (activeTab === "fasefinale") { 
-      ApiClient.getFinalStageMatches().then(data => { 
-        if (data) { 
-          window.APP_CACHE.finalStage = data || []; 
-          CacheManager.save(window.APP_CACHE); 
-        } 
-        if (window.APP_STATE._activeStandingsTab === "fasefinale") { 
-          renderFinalStage(data || window.APP_CACHE.finalStage); 
-        } 
-      }).catch(console.error); 
+    else if (activeTab === "fasefinale") {
+      ApiClient.getFinalStageMatches().then(data => {
+        if (data) {
+          window.APP_CACHE.finalStage = data || [];
+          CacheManager.save(window.APP_CACHE);
+        }
+        if (window.APP_STATE._activeStandingsTab === "fasefinale") {
+          renderFinalStage(data || window.APP_CACHE.finalStage);
+        }
+      }).catch(console.error);
     }
   }, 3000);
 }
+
 // 🔥 POLLING PER PARTITE LIVE - Aggiorna risultati in tempo reale
 // 🔥 POLLING PER PARTITE LIVE - Con protezione anti-rate-limit
 let matchLiveRefreshInterval = null;
@@ -3368,31 +3377,24 @@ function renderKickIndicatorsFromHistory(history, casaId) {
 function showStandings() {
   window.location.hash = '#standings';
   renderToolbar("standings");
-  
   const isFinalStage = window.APP_CACHE.meta?.finalStageStarted === true;
   window.APP_STATE._activeStandingsTab = isFinalStage ? "fasefinale" : "gironi";
   window.APP_STATE._finalStageLoaded = !isFinalStage;
   
-  // ✅ Inizializza variabile per podio automatico (solo sessione corrente)
   if (window.APP_STATE._podiumAutoShownThisSession === undefined) {
     window.APP_STATE._podiumAutoShownThisSession = false;
   }
   
-  // ✅ Rileva se siamo su mobile
   const isMobile = window.innerWidth <= 768;
-  
-  // ✅ Su mobile: mostra tab FASE FINALE solo se bracket già creato
-  // Su desktop: mostra sempre entrambi i tab
   const showFaseFinaleTab = isMobile ? isFinalStage : true;
   
-  // ✅ Renderizza struttura base con tab FASE FINALE condizionale
   document.getElementById("app").innerHTML = `
     <div class="page-container standings-page">
       <div class="page-title">CLASSIFICHE</div>
       <div class="standings-tabs">
         <div class="standings-tab ${!isFinalStage ? 'active' : ''}" data-tab="gironi">GIRONI</div>
         ${showFaseFinaleTab ? `<div class="standings-tab ${isFinalStage ? 'active' : ''}" data-tab="fasefinale">FASE FINALE</div>` : ''}
-        <div class="standings-tab" data-tab="chiosco"> COPPA CHIOSCO</div>
+        <div class="standings-tab" data-tab="chiosco">🍺 COPPA CHIOSCO</div>
       </div>
       <div id="standingsContent"></div>
     </div>`;
@@ -3415,59 +3417,57 @@ function showStandings() {
   }
   
   document.querySelectorAll(".standings-tab").forEach(tab => {
-  tab.onclick = () => {
-    document.querySelectorAll(".standings-tab").forEach(t => t.classList.remove("active"));
-    tab.classList.add("active");
-    const type = tab.dataset.tab;
-    window.APP_STATE._activeStandingsTab = type;
-    
-    if (type === "gironi") {
-      renderStandings(window.APP_CACHE.standings || {});
-      ApiClient.getStandings().then(data => {
-        if (data) {
-          window.APP_CACHE.standings = data;
-          CacheManager.save(window.APP_CACHE);
-        }
-        if (window.APP_STATE._activeStandingsTab === "gironi") {
-          renderStandings(data);
-        }
-      }).catch(console.error);
-    }
-    else if (type === "fasefinale") {
-      if (!window.APP_STATE._finalStageLoaded) {
-        loadFinalStage();
-        window.APP_STATE._finalStageLoaded = true;
-      } else {
-        renderFinalStage(window.APP_CACHE.finalStage || []);
-      }
-      startStandingsLiveRefresh();
-    }
-    else if (type === "chiosco") {
-      // ✅ FERMA COMPLETAMENTE il polling classifiche
+    tab.onclick = () => {
+      document.querySelectorAll(".standings-tab").forEach(t => t.classList.remove("active"));
+      tab.classList.add("active");
+      const type = tab.dataset.tab;
+      window.APP_STATE._activeStandingsTab = type;
+      
+      // ✅ FERMA SEMPRE IL POLLING QUANDO CAMBI TAB
       stopStandingsLiveRefresh();
-      window.APP_STATE._standingsActive = false;
-      const container = document.getElementById("standingsContent");
-      container.innerHTML = `
-        <div class="chiosco-iframe-container">
-          <iframe
-            src="https://torneo.alcentro.restaurant/"
-            allow="autoplay; fullscreen"
-            loading="lazy"
-            sandbox="allow-scripts allow-same-origin allow-forms allow-popups"
-          ></iframe>
-        </div>
-      `;
-      // ✅ BLOCCA eventuali refresh accidentali
-      setTimeout(() => {
-        const currentTab = document.querySelector('.standings-tab[data-tab="chiosco"]');
-        if (currentTab && currentTab.classList.contains('active')) {
-          stopStandingsLiveRefresh();
+      
+      if (type === "gironi") {
+        renderStandings(window.APP_CACHE.standings || {});
+        ApiClient.getStandings().then(data => {
+          if (data) {
+            window.APP_CACHE.standings = data;
+            CacheManager.save(window.APP_CACHE);
+          }
+          if (window.APP_STATE._activeStandingsTab === "gironi") {
+            renderStandings(data);
+          }
+        }).catch(console.error);
+        startStandingsLiveRefresh();
+      }
+      else if (type === "fasefinale") {
+        if (!window.APP_STATE._finalStageLoaded) {
+          loadFinalStage();
+          window.APP_STATE._finalStageLoaded = true;
+        } else {
+          renderFinalStage(window.APP_CACHE.finalStage || []);
         }
-      }, 1000);
-    }
-  };
-});
+        startStandingsLiveRefresh();
+      }
+      else if (type === "chiosco") {
+        // ✅ NON AVVIARE IL POLLING - resta su chiosco
+        const container = document.getElementById("standingsContent");
+        container.innerHTML = `
+          <div class="chiosco-iframe-container">
+            <iframe
+              src="https://torneo.alcentro.restaurant/"
+              scrolling="no"
+              style="width:100%;height:100%;border:none;"
+              allow="autoplay; fullscreen"
+              loading="lazy"
+              sandbox="allow-scripts allow-same-origin allow-forms allow-popups"
+            ></iframe>
+          </div>
+        `;
+      }
+    };
+  });
   
+  // ✅ AVVIA IL POLLING SOLO SE NON SIAMO SU CHIOSCO
   if (!isFinalStage) {
     startStandingsLiveRefresh();
   }
