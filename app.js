@@ -3019,7 +3019,14 @@ function stopStandingsLiveRefresh() {
 }
 
 function startStandingsLiveRefresh() {
-  if (window.APP_STATE._standingsActive) return; 
+  / ✅ NON ATTIVARE se siamo sul tab COPPA CHIOSCO
+  const chioscoTab = document.querySelector('.standings-tab[data-tab="chiosco"]');
+  if (chioscoTab && chioscoTab.classList.contains('active')) {
+    console.log('⏸️ Polling bloccato - Tab COPPA CHIOSCO attivo');
+    return;
+  }
+  
+  if (window.APP_STATE._standingsActive) return;
   window.APP_STATE._standingsActive = true;
   if (window.APP_STATE._standingsInterval) clearInterval(window.APP_STATE._standingsInterval);
   window.APP_STATE._standingsInterval = setInterval(() => {
@@ -3437,21 +3444,30 @@ function showStandings() {
     }
     // ✅ AGGIUNGI QUESTO BLOCCO PER IL CHIOSCO
     else if (type === "chiosco") {
-      // Ferma polling classifiche
+      // ✅ FERMA COMPLETAMENTE il polling classifiche
       stopStandingsLiveRefresh();
+      window.APP_STATE._standingsActive = false;
       
       const container = document.getElementById("standingsContent");
       container.innerHTML = `
-        <div style="width:100%;height:calc(100vh - 200px);border-radius:12px;overflow:hidden;">
-          <iframe 
-            src="https://torneo.alcentro.restaurant/" 
-            style="width:100%;height:100%;border:none;"
-            allow="autoplay; fullscreen"
-            loading="lazy"
-            sandbox="allow-scripts allow-same-origin allow-forms allow-popups"
-          ></iframe>
-        </div>
-      `;
+      <div class="chiosco-iframe-container" style="width:100%;height:calc(100vh - 220px);border-radius:12px;overflow:hidden;background:#000;">
+        <iframe
+          src="https://torneo.alcentro.restaurant/"
+          style="width:100%;height:100%;border:none;"
+          allow="autoplay; fullscreen"
+          loading="lazy"
+          sandbox="allow-scripts allow-same-origin allow-forms allow-popups"
+        ></iframe>
+      </div>
+    `;
+      
+      // ✅ BLOCCA eventuali refresh accidentali
+      setTimeout(() => {
+        const currentTab = document.querySelector('.standings-tab[data-tab="chiosco"]');
+        if (currentTab && currentTab.classList.contains('active')) {
+          stopStandingsLiveRefresh();
+        }
+      }, 1000);
     }
   };
 });
