@@ -3491,39 +3491,73 @@ function showStandings() {
         }
         startStandingsLiveRefresh();
       }
-      else if (type === "chiosco") {
-        // ✅ FERMA COMPLETAMENTE il polling classifiche
-        stopStandingsLiveRefresh();
-        window.APP_STATE._standingsActive = false;
-        
-        const container = document.getElementById("standingsContent");
-        // ✅ FORZA il rendering immediato
-        container.innerHTML = `
-        <div style="position:relative;width:100%;height:calc(100vh - 220px);border-radius:12px;overflow:hidden;background:#000;">
-        <iframe
-        src="https://torneo.alcentro.restaurant/classifica"
-        style="width:100%;height:100%;border:none;"
-        loading="lazy"
-        sandbox="allow-scripts allow-same-origin allow-forms allow-popups"
-        ></iframe>
-        <div onclick="window.open('https://torneo.alcentro.restaurant/', '_blank')" style="
-        position:absolute;
-        inset:0;
-        background:rgba(0,0,0,0.01);
-        cursor:pointer;
-        z-index:10;
-        "></div>
-        </div>
-        `;
-        
-        // ✅ BLOCCA eventuali refresh accidentali
-        setTimeout(() => {
-        const currentTab = document.querySelector('.standings-tab[data-tab="chiosco"]');
-        if (currentTab && currentTab.classList.contains('active')) {
-        stopStandingsLiveRefresh();
-        window.APP_STATE._standingsActive = false;
-        }
-        }, 100); // ← Riduci a 100ms invece di 1000ms
+      // Nella funzione showStandings(), quando crei l'iframe per COPPA CHIOSCO:
+        else if (type === "chiosco") {
+            // ✅ FERMA COMPLETAMENTE il polling classifiche
+            stopStandingsLiveRefresh();
+            window.APP_STATE._standingsActive = false;
+            
+            const container = document.getElementById("standingsContent");
+            const CHIOSCO_URL = "https://torneo.alcentro.restaurant/";
+            const IFRAME_URL = "https://torneo.alcentro.restaurant/classifica";
+            
+            container.innerHTML = `
+                <div style="
+                    position: relative;
+                    width: 100%;
+                    height: calc(100vh - 220px);
+                    border-radius: 12px;
+                    overflow: hidden;
+                    background: #000;
+                ">
+                    <!-- ✅ iframe con scroll abilitato e barra nascosta -->
+                    <iframe
+                        src="${IFRAME_URL}"
+                        id="chioscoIframe"
+                        style="
+                            width: 100%;
+                            height: 100%;
+                            border: none;
+                            overflow: auto;
+                            -webkit-overflow-scrolling: touch;
+                        "
+                        scrolling="yes"
+                        allow="autoplay; fullscreen"
+                        loading="lazy"
+                        sandbox="allow-scripts allow-same-origin allow-forms allow-popups"
+                    ></iframe>
+                    
+                    <!-- ✅ Overlay trasparente cliccabile sopra l'iframe -->
+                    <div onclick="window.open('${CHIOSCO_URL}', '_blank')" style="
+                        position: absolute;
+                        inset: 0;
+                        background: rgba(0,0,0,0.01);
+                        cursor: pointer;
+                        z-index: 10;
+                        transition: background 0.3s ease;
+                    " onmouseover="this.style.background='rgba(0,0,0,0.15)'" onmouseout="this.style.background='rgba(0,0,0,0.01)'">
+                    </div>
+                </div>
+                
+                <!-- ✅ CSS per nascondere scrollbar ma mantenere scroll -->
+                <style>
+                    #chioscoIframe {
+                        scrollbar-width: none; /* Firefox */
+                        -ms-overflow-style: none; /* IE/Edge */
+                    }
+                    #chioscoIframe::-webkit-scrollbar {
+                        display: none; /* Chrome/Safari */
+                    }
+                </style>
+            `;
+            
+            // ✅ BLOCCA eventuali refresh accidentali
+            setTimeout(() => {
+                const currentTab = document.querySelector('.standings-tab[data-tab="chiosco"]');
+                if (currentTab && currentTab.classList.contains('active')) {
+                    stopStandingsLiveRefresh();
+                }
+            }, 1000);
         }
     };
   });
