@@ -544,31 +544,30 @@ function queueApiCall(fn, priority = 0) {
 }
 
 function refreshStandingsDebounced(delay = 1200) {
-  // ✅ Se non abbiamo finito il caricamento iniziale, accoda
-  if (!window.APP_STATE._initialLoadComplete) {
-    queueApiCall(() => {
-      clearTimeout(standingsRefreshTimer);
-      standingsRefreshTimer = setTimeout(() => {
-        ApiClient.getStandings().then(data => {
-          if (data) { 
-            window.APP_CACHE.standings = data; 
-            CacheManager.save(window.APP_CACHE); 
-          }
-          if (document.querySelector(".standings-page")) {
-            renderStandings(data || window.APP_CACHE.standings);
-          }
-        }).catch(console.error);
-      }, delay);
-    }, 10); // Priorità alta
+  // 🔥 FIX: NON fare nulla se siamo su COPPA CHIOSCO
+  if (window.APP_STATE._activeStandingsTab === "chiosco") {
+    console.log('⏸️ refreshStandingsDebounced bloccato - tab COPPA CHIOSCO attivo');
     return;
   }
   
-  // Comportamento normale se caricamento completato
   clearTimeout(standingsRefreshTimer);
   standingsRefreshTimer = setTimeout(() => {
+    // 🔥 DOPPIO CHECK dentro il timeout
+    if (window.APP_STATE._activeStandingsTab === "chiosco") {
+      console.log('⏸️ refreshStandingsDebounced timeout bloccato - tab COPPA CHIOSCO');
+      return;
+    }
+    
     ApiClient.getStandings().then(data => {
-      if (data) { window.APP_CACHE.standings = data; CacheManager.save(window.APP_CACHE); }
-      if (document.querySelector(".standings-page")) renderStandings(data || window.APP_CACHE.standings);
+      if (data) {
+        window.APP_CACHE.standings = data;
+        CacheManager.save(window.APP_CACHE);
+      }
+      // 🔥 Controlla ancora prima di renderizzare
+      if (document.querySelector(".standings-page") && 
+          window.APP_STATE._activeStandingsTab !== "chiosco") {
+        renderStandings(data || window.APP_CACHE.standings);
+      }
     }).catch(console.error);
   }, delay);
 }
@@ -2996,20 +2995,6 @@ async function finishRigori() {
 // ============================================================================
 let standingsRefreshTimer = null;
 
-function refreshStandingsDebounced(delay = 1200) {
-  clearTimeout(standingsRefreshTimer); 
-  standingsRefreshTimer = setTimeout(() => {
-    ApiClient.getStandings().then(data => { 
-      if (data) { 
-        window.APP_CACHE.standings = data; 
-        CacheManager.save(window.APP_CACHE); 
-      } 
-      if (document.querySelector(".standings-page")) 
-        renderStandings(data || window.APP_CACHE.standings); 
-    }).catch(console.error);
-  }, delay);
-}
-
 function stopStandingsLiveRefresh() { 
   window.APP_STATE._standingsActive = false; 
   if (window.APP_STATE._standingsInterval) { 
@@ -3493,71 +3478,79 @@ function showStandings() {
       }
       // Nella funzione showStandings(), quando crei l'iframe per COPPA CHIOSCO:
         else if (type === "chiosco") {
-            // ✅ FERMA COMPLETAMENTE il polling classifiche
-            stopStandingsLiveRefresh();
-            window.APP_STATE._standingsActive = false;
-            
-            const container = document.getElementById("standingsContent");
-            const CHIOSCO_URL = "https://torneo.alcentro.restaurant/";
-            const IFRAME_URL = "https://torneo.alcentro.restaurant/classifica";
-            
-            container.innerHTML = `
-                <div style="
-                    position: relative;
-                    width: 100%;
-                    height: calc(100vh - 220px);
-                    border-radius: 12px;
-                    overflow: hidden;
-                    background: #000;
-                ">
-                    <!-- ✅ iframe con scroll abilitato e barra nascosta -->
-                    <iframe
-                        src="${IFRAME_URL}"
-                        id="chioscoIframe"
-                        style="
-                            width: 100%;
-                            height: 100%;
-                            border: none;
-                            overflow: auto;
-                            -webkit-overflow-scrolling: touch;
-                        "
-                        scrolling="yes"
-                        allow="autoplay; fullscreen"
-                        loading="lazy"
-                        sandbox="allow-scripts allow-same-origin allow-forms allow-popups"
-                    ></iframe>
-                    
-                    <!-- ✅ Overlay trasparente cliccabile sopra l'iframe -->
-                    <div onclick="window.open('${CHIOSCO_URL}', '_blank')" style="
-                        position: absolute;
-                        inset: 0;
-                        background: rgba(0,0,0,0.01);
-                        cursor: pointer;
-                        z-index: 10;
-                        transition: background 0.3s ease;
-                    " onmouseover="this.style.background='rgba(0,0,0,0.15)'" onmouseout="this.style.background='rgba(0,0,0,0.01)'">
-                    </div>
-                </div>
-                
-                <!-- ✅ CSS per nascondere scrollbar ma mantenere scroll -->
-                <style>
-                    #chioscoIframe {
-                        scrollbar-width: none; /* Firefox */
-                        -ms-overflow-style: none; /* IE/Edge */
-                    }
-                    #chioscoIframe::-webkit-scrollbar {
-                        display: none; /* Chrome/Safari */
-                    }
-                </style>
-            `;
-            
-            // ✅ BLOCCA eventuali refresh accidentali
-            setTimeout(() => {
-                const currentTab = document.querySelector('.standings-tab[data-tab="chiosco"]');
-                if (currentTab && currentTab.classList.contains('active')) {
-                    stopStandingsLiveRefresh();
-                }
-            }, 1000);
+          // ✅ FERMA COMPLETAMENTE il polling classifiche
+          stopStandingsLiveRefresh();
+          window.APP_STATE._standingsActive = false;
+          clearTimeout(standingsRefreshTimer); // 🔥 Pulisci anche eventuali timeout in coda
+          
+          const container = document.getElementById("standingsContent");
+          const CHIOSCO_URL = "https://torneo.alcentro.restaurant/";
+          const IFRAME_URL = "https://torneo.alcentro.restaurant/classifica";
+          
+          container.innerHTML = `
+            <div style="
+              position: relative;
+              width: 100%;
+              height: calc(100vh - 220px);
+              border-radius: 12px;
+              overflow: hidden;
+              background: #000;
+            ">
+              <!-- ✅ iframe con scroll interno -->
+              <iframe
+                src="${IFRAME_URL}"
+                id="chioscoIframe"
+                style="
+                  width: 100%;
+                  height: 100%;
+                  border: none;
+                  display: block;
+                "
+                scrolling="yes"
+                allow="autoplay; fullscreen"
+                loading="lazy"
+                sandbox="allow-scripts allow-same-origin allow-forms allow-popups"
+              ></iframe>
+              <!-- ✅ Overlay trasparente cliccabile sopra l'iframe -->
+              <div onclick="window.open('${CHIOSCO_URL}', '_blank')" style="
+                position: absolute;
+                inset: 0;
+                background: rgba(0,0,0,0.01);
+                cursor: pointer;
+                z-index: 10;
+                transition: background 0.3s ease;
+              " onmouseover="this.style.background='rgba(0,0,0,0.15)'" 
+                 onmouseout="this.style.background='rgba(0,0,0,0.01)'">
+              </div>
+            </div>
+            <!-- ✅ CSS per nascondere scrollbar ma mantenere scroll interno -->
+            <style>
+              #chioscoIframe {
+                scrollbar-width: none; /* Firefox */
+                -ms-overflow-style: none; /* IE/Edge */
+              }
+              #chioscoIframe::-webkit-scrollbar {
+                display: none; /* Chrome/Safari/Opera */
+              }
+              /* 🔥 Nascondi scrollbar anche sul container esterno se appare */
+              .standings-page::-webkit-scrollbar {
+                display: none;
+              }
+              .standings-page {
+                scrollbar-width: none;
+                -ms-overflow-style: none;
+              }
+            </style>
+          `;
+          
+          // ✅ BLOCCA eventuali refresh accidentali
+          setTimeout(() => {
+            const currentTab = document.querySelector('.standings-tab[data-tab="chiosco"]');
+            if (currentTab && currentTab.classList.contains('active')) {
+              stopStandingsLiveRefresh();
+              clearTimeout(standingsRefreshTimer);
+            }
+          }, 500);
         }
     };
   });
@@ -3569,10 +3562,16 @@ function showStandings() {
 }
 
 function renderStandings(data) {
-  const container = document.getElementById("standingsContent"); 
+  // 🔥 FIX: NON renderizzare se siamo su COPPA CHIOSCO
+  if (window.APP_STATE._activeStandingsTab === "chiosco") {
+    console.log('⏸️ renderStandings bloccato - tab COPPA CHIOSCO attivo');
+    return;
+  }
+  
+  const container = document.getElementById("standingsContent");
   if (!container) return;
-  const A = data?.A || [], B = data?.B || []; 
-  let html = renderGironeTable("GIRONE A", A) + renderGironeTable("GIRONE B", B); 
+  const A = data?.A || [], B = data?.B || [];
+  let html = renderGironeTable("GIRONE A", A) + renderGironeTable("GIRONE B", B);
   container.innerHTML = html;
 }
 
