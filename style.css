@@ -1752,7 +1752,7 @@ body {
    13.2 COPPA CHIOSCO
 =============================================================================================== */
 
-/* ✅ IFRAME COPPA CHIOSCO - Responsive senza scroll */
+/* ✅ IFRAME COPPA CHIOSCO - NO SCROLLBAR */
 .chiosco-iframe-container {
   width: 100%;
   border-radius: 12px;
@@ -1763,20 +1763,29 @@ body {
 
 .chiosco-iframe-container iframe {
   width: 100%;
-  height: 100%;
   border: none;
   display: block;
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE/Edge */
 }
 
-/* ✅ MOBILE: altezza compatta, NO scroll */
+.chiosco-iframe-container iframe::-webkit-scrollbar {
+  display: none; /* Chrome/Safari/Opera */
+}
+
+/* ✅ MOBILE: altezza maggiore, NO scrollbar visibile */
 @media (max-width: 768px) {
   .chiosco-iframe-container {
-    height: calc(100vh - 200px) !important;
+    height: calc(100vh - 180px) !important;
   }
   
-  /* ✅ Rimuovi padding-bottom di standings-page per evitare scroll */
+  .chiosco-iframe-container iframe {
+    height: 120% !important; /* ✅ Più alto per ridurre scroll */
+    overflow-y: scroll !important;
+  }
+  
+  /* ✅ Nascondi scrollbar del container standings */
   .standings-page:has(.chiosco-iframe-container) {
-    padding-bottom: 80px !important;
     overflow: hidden !important;
   }
 }
@@ -1785,12 +1794,7 @@ body {
 @media (min-width: 769px) {
   .chiosco-iframe-container {
     height: calc(100vh - 240px) !important;
-    margin-top: 15px !important; /* ✅ Spazio dalla toolbar tabs */
-  }
-  
-  .standings-page:has(.chiosco-iframe-container) {
-    padding-bottom: 80px !important;
-    overflow: hidden !important;
+    margin-top: 15px !important;
   }
 }
 
