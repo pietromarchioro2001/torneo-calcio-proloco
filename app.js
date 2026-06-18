@@ -3389,19 +3389,19 @@ function showStandings() {
     const showFaseFinaleTab = isMobile ? isFinalStage : true;
     
     document.getElementById("app").innerHTML = `
-    <div class="page-container standings-page">
-        <div class="page-title">CLASSIFICHE</div>
-        <div class="standings-tabs">
-            <div class="standings-tab ${!isFinalStage ? 'active' : ''}" data-tab="gironi">GIRONI</div>
-            ${showFaseFinaleTab ? `<div class="standings-tab ${isFinalStage ? 'active' : ''}" data-tab="fasefinale">FASE FINALE</div>` : ''}
-            <div class="standings-tab" data-tab="chiosco">COPPA CHIOSCO</div>
-        </div>
-        <div id="standingsContent"></div>
-    </div>`;
+        <div class="page-container standings-page">
+            <div class="page-title">CLASSIFICHE</div>
+            <div class="standings-tabs">
+                <div class="standings-tab ${!isFinalStage ? 'active' : ''}" data-tab="gironi">GIRONI</div>
+                ${showFaseFinaleTab ? `<div class="standings-tab ${isFinalStage ? 'active' : ''}" data-tab="fasefinale">FASE FINALE</div>` : ''}
+                <div class="standings-tab" data-tab="chiosco">COPPA CHIOSCO</div>
+            </div>
+            <div id="standingsContent"></div>
+        </div>`;
     
     if (isFinalStage) {
         document.getElementById("standingsContent").innerHTML =
-        `<div style="text-align:center;padding:40px;color:#888">Caricamento fase finale...</div>`;
+            `<div style="text-align:center;padding:40px;color:#888">Caricamento fase finale...</div>`;
         loadFinalStage();
     } else {
         renderStandings(window.APP_CACHE.standings || {});
@@ -3421,13 +3421,9 @@ function showStandings() {
             document.querySelectorAll(".standings-tab").forEach(t => t.classList.remove("active"));
             tab.classList.add("active");
             const type = tab.dataset.tab;
-            
-            // ✅ FERMA SEMPRE il polling quando cambi tab
-            stopStandingsLiveRefresh();
-            window.APP_STATE._standingsActive = false;
+            window.APP_STATE._activeStandingsTab = type;
             
             if (type === "gironi") {
-                window.APP_STATE._activeStandingsTab = "gironi";
                 renderStandings(window.APP_CACHE.standings || {});
                 ApiClient.getStandings().then(data => {
                     if (data) {
@@ -3441,7 +3437,6 @@ function showStandings() {
                 startStandingsLiveRefresh();
             }
             else if (type === "fasefinale") {
-                window.APP_STATE._activeStandingsTab = "fasefinale";
                 if (!window.APP_STATE._finalStageLoaded) {
                     loadFinalStage();
                     window.APP_STATE._finalStageLoaded = true;
@@ -3450,29 +3445,49 @@ function showStandings() {
                 }
                 startStandingsLiveRefresh();
             }
-            // ✅ TAB COPPA CHIOSCO - Mostra iframe e NON avviare polling
+            // ✅ TAB COPPA CHIOSCO - CORRETTA
             else if (type === "chiosco") {
-                window.APP_STATE._activeStandingsTab = "chiosco";
-                const container = document.getElementById("standingsContent");
-                container.innerHTML = `
-                <div style="width:100%;height:calc(100vh - 220px);border-radius:12px;overflow:hidden;background:#000;">
-                    <iframe
-                    src="https://torneo.alcentro.restaurant/"
-                    style="width:100%;height:100%;border:none;"
-                    allow="autoplay; fullscreen"
-                    loading="lazy"
-                    sandbox="allow-scripts allow-same-origin allow-forms allow-popups"
-                    ></iframe>
-                </div>
-                `;
-                // ✅ Assicurati che il polling rimanga fermo
+                // ✅ FERMA COMPLETAMENTE il polling
                 stopStandingsLiveRefresh();
+                window.APP_STATE._standingsActive = false;
+                
+                const container = document.getElementById("standingsContent");
+                const CHIOSCO_URL = "https://torneo.alcentro.restaurant/";
+                
+                container.innerHTML = `
+                    <div style="position:relative;width:100%;height:calc(100vh - 220px);border-radius:12px;overflow:hidden;background:#000;">
+                        <!-- ✅ iframe che mostra la classifica -->
+                        <iframe
+                            src="${CHIOSCO_URL}"
+                            style="width:100%;height:100%;border:none;"
+                            loading="lazy"
+                            sandbox="allow-scripts allow-same-origin allow-forms allow-popups"
+                        ></iframe>
+                        <!-- ✅ Overlay trasparente cliccabile SOPRA l'iframe -->
+                        <div onclick="window.open('${CHIOSCO_URL}', '_blank')" style="
+                            position:absolute;
+                            inset:0;
+                            background:rgba(0,0,0,0.01);
+                            cursor:pointer;
+                            z-index:10;
+                            transition:background 0.3s ease;
+                        " onmouseover="this.style.background='rgba(0,0,0,0.15)'" onmouseout="this.style.background='rgba(0,0,0,0.01)'">
+                        </div>
+                    </div>
+                `;
+                
+                // ✅ BLOCCA eventuali refresh accidentali
+                setTimeout(() => {
+                    const currentTab = document.querySelector('.standings-tab[data-tab="chiosco"]');
+                    if (currentTab && currentTab.classList.contains('active')) {
+                        stopStandingsLiveRefresh();
+                    }
+                }, 1000);
             }
         };
     });
     
-    // ✅ AVVIA IL POLLING SOLO se NON siamo su chiosco
-    if (!isFinalStage && window.APP_STATE._activeStandingsTab !== "chiosco") {
+    if (!isFinalStage) {
         startStandingsLiveRefresh();
     }
 }
