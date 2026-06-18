@@ -3019,7 +3019,7 @@ function stopStandingsLiveRefresh() {
 }
 
 function startStandingsLiveRefresh() {
-  / ✅ NON ATTIVARE se siamo sul tab COPPA CHIOSCO
+
   const chioscoTab = document.querySelector('.standings-tab[data-tab="chiosco"]');
   if (chioscoTab && chioscoTab.classList.contains('active')) {
     console.log('⏸️ Polling bloccato - Tab COPPA CHIOSCO attivo');
