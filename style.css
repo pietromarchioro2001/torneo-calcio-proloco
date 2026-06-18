@@ -1752,7 +1752,7 @@ body {
    13.2 COPPA CHIOSCO
 =============================================================================================== */
 
-/* ✅ IFRAME COPPA CHIOSCO - NO SCROLLBAR */
+/* ✅ IFRAME COPPA CHIOSCO - Adattato allo schermo, scroll sulla pagina */
 .chiosco-iframe-container {
   width: 100%;
   border-radius: 12px;
@@ -1763,30 +1763,26 @@ body {
 
 .chiosco-iframe-container iframe {
   width: 100%;
+  height: 100%;
   border: none;
   display: block;
-  scrollbar-width: none; /* Firefox */
-  -ms-overflow-style: none; /* IE/Edge */
 }
 
-.chiosco-iframe-container iframe::-webkit-scrollbar {
-  display: none; /* Chrome/Safari/Opera */
-}
-
-/* ✅ MOBILE: altezza maggiore, NO scrollbar visibile */
+/* ✅ MOBILE: iframe adattato, scroll sulla pagina */
 @media (max-width: 768px) {
   .chiosco-iframe-container {
     height: calc(100vh - 180px) !important;
   }
   
-  .chiosco-iframe-container iframe {
-    height: 120% !important; /* ✅ Più alto per ridurre scroll */
-    overflow-y: scroll !important;
+  /* ✅ Nascondi scrollbar della pagina standings quando c'è l'iframe */
+  .standings-page:has(.chiosco-iframe-container) {
+    overflow-y: auto !important;
+    scrollbar-width: none; /* Firefox */
+    -ms-overflow-style: none; /* IE/Edge */
   }
   
-  /* ✅ Nascondi scrollbar del container standings */
-  .standings-page:has(.chiosco-iframe-container) {
-    overflow: hidden !important;
+  .standings-page:has(.chiosco-iframe-container)::-webkit-scrollbar {
+    display: none; /* Chrome/Safari */
   }
 }
 
