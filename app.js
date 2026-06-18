@@ -3375,166 +3375,106 @@ function renderKickIndicatorsFromHistory(history, casaId) {
 }
 
 function showStandings() {
-  window.location.hash = '#standings';
-  renderToolbar("standings");
-  const isFinalStage = window.APP_CACHE.meta?.finalStageStarted === true;
-  
-  // ✅ INIZIALIZZA CORRETTAMENTE IL TAB ATTIVO
-  // Se l'URL hash contiene "chiosco", imposta subito quel tab
-  const urlHash = window.location.hash || '';
-  if (urlHash.includes('chiosco')) {
-    window.APP_STATE._activeStandingsTab = "chiosco";
-  } else {
+    window.location.hash = '#standings';
+    renderToolbar("standings");
+    const isFinalStage = window.APP_CACHE.meta?.finalStageStarted === true;
     window.APP_STATE._activeStandingsTab = isFinalStage ? "fasefinale" : "gironi";
-  }
-  
-  window.APP_STATE._finalStageLoaded = !isFinalStage;
-  
-  if (window.APP_STATE._podiumAutoShownThisSession === undefined) {
-    window.APP_STATE._podiumAutoShownThisSession = false;
-  }
-  
-  const isMobile = window.innerWidth <= 768;
-  const showFaseFinaleTab = isMobile ? isFinalStage : true;
-  
-  // ✅ Renderizza struttura base con tab FASE FINALE condizionale
-  document.getElementById("app").innerHTML = `
+    window.APP_STATE._finalStageLoaded = !isFinalStage;
+    
+    if (window.APP_STATE._podiumAutoShownThisSession === undefined) {
+        window.APP_STATE._podiumAutoShownThisSession = false;
+    }
+    
+    const isMobile = window.innerWidth <= 768;
+    const showFaseFinaleTab = isMobile ? isFinalStage : true;
+    
+    document.getElementById("app").innerHTML = `
     <div class="page-container standings-page">
-      <div class="page-title">CLASSIFICHE</div>
-      <div class="standings-tabs">
-        <div class="standings-tab ${window.APP_STATE._activeStandingsTab === 'gironi' ? 'active' : ''}" data-tab="gironi">GIRONI</div>
-        ${showFaseFinaleTab ? `<div class="standings-tab ${window.APP_STATE._activeStandingsTab === 'fasefinale' ? 'active' : ''}" data-tab="fasefinale">FASE FINALE</div>` : ''}
-        <div class="standings-tab ${window.APP_STATE._activeStandingsTab === 'chiosco' ? 'active' : ''}" data-tab="chiosco">COPPA CHIOSCO</div>
-      </div>
-      <div id="standingsContent"></div>
-    </div>`;
-  
-  // ✅ GESTISCI SUBITO IL CONTENUTO IN BASE AL TAB ATTIVO
-  if (window.APP_STATE._activeStandingsTab === "chiosco") {
-    // Ferma polling e mostra iframe subito
-    stopStandingsLiveRefresh();
-    window.APP_STATE._standingsActive = false;
-    const container = document.getElementById("standingsContent");
-    
-    const CHIOSCO_URL = "https://torneo.alcentro.restaurant/";
-    const IFRAME_URL = "https://torneo.alcentro.restaurant/classifica";
-    
-    container.innerHTML = `
-      <div style="position:relative;width:100%;height:calc(100vh - 220px);border-radius:12px;overflow:hidden;background:#000;">
-        <!-- ✅ iframe che mostra la classifica -->
-        <iframe
-          src="${IFRAME_URL}"
-          style="width:100%;height:100%;border:none;"
-          loading="lazy"
-          sandbox="allow-scripts allow-same-origin allow-forms allow-popups"
-        ></iframe>
-        <!-- ✅ Overlay trasparente cliccabile sopra l'iframe -->
-        <div onclick="window.open('${CHIOSCO_URL}', '_blank')" style="
-          position:absolute;
-          inset:0;
-          background:rgba(0,0,0,0.01);
-          cursor:pointer;
-          z-index:10;
-          transition:background 0.3s ease;
-        " onmouseover="this.style.background='rgba(0,0,0,0.15)'" onmouseout="this.style.background='rgba(0,0,0,0.01)'">
+        <div class="page-title">CLASSIFICHE</div>
+        <div class="standings-tabs">
+            <div class="standings-tab ${!isFinalStage ? 'active' : ''}" data-tab="gironi">GIRONI</div>
+            ${showFaseFinaleTab ? `<div class="standings-tab ${isFinalStage ? 'active' : ''}" data-tab="fasefinale">FASE FINALE</div>` : ''}
+            <div class="standings-tab" data-tab="chiosco">COPPA CHIOSCO</div>
         </div>
-      </div>
-    `;
-  }
-  else if (isFinalStage) {
-    document.getElementById("standingsContent").innerHTML =
-      `<div style="text-align:center;padding:40px;color:#888">Caricamento fase finale...</div>`;
-    loadFinalStage();
-  } else {
-    renderStandings(window.APP_CACHE.standings || {});
-    ApiClient.getStandings().then(data => {
-      if (data) {
-        window.APP_CACHE.standings = data;
-        CacheManager.save(window.APP_CACHE);
-      }
-      if (window.APP_STATE._activeStandingsTab === "gironi") {
-        renderStandings(data);
-      }
-    }).catch(console.error);
-  }
-  
-  document.querySelectorAll(".standings-tab").forEach(tab => {
-    tab.onclick = () => {
-      document.querySelectorAll(".standings-tab").forEach(t => t.classList.remove("active"));
-      tab.classList.add("active");
-      const type = tab.dataset.tab;
-      window.APP_STATE._activeStandingsTab = type;
-      
-      // ✅ FERMA SEMPRE IL POLLING QUANDO CAMBI TAB
-      stopStandingsLiveRefresh();
-      window.APP_STATE._standingsActive = false;
-      
-      if (type === "gironi") {
+        <div id="standingsContent"></div>
+    </div>`;
+    
+    if (isFinalStage) {
+        document.getElementById("standingsContent").innerHTML =
+        `<div style="text-align:center;padding:40px;color:#888">Caricamento fase finale...</div>`;
+        loadFinalStage();
+    } else {
         renderStandings(window.APP_CACHE.standings || {});
         ApiClient.getStandings().then(data => {
-          if (data) {
-            window.APP_CACHE.standings = data;
-            CacheManager.save(window.APP_CACHE);
-          }
-          if (window.APP_STATE._activeStandingsTab === "gironi") {
-            renderStandings(data);
-          }
+            if (data) {
+                window.APP_CACHE.standings = data;
+                CacheManager.save(window.APP_CACHE);
+            }
+            if (window.APP_STATE._activeStandingsTab === "gironi") {
+                renderStandings(data);
+            }
         }).catch(console.error);
-        startStandingsLiveRefresh();
-      }
-      else if (type === "fasefinale") {
-        if (!window.APP_STATE._finalStageLoaded) {
-          loadFinalStage();
-          window.APP_STATE._finalStageLoaded = true;
-        } else {
-          renderFinalStage(window.APP_CACHE.finalStage || []);
-        }
-        startStandingsLiveRefresh();
-      }
-      else if (type === "chiosco") {
-      // ✅ FERMA COMPLETAMENTE il polling classifiche
-      stopStandingsLiveRefresh();
-      window.APP_STATE._standingsActive = false;
-      const container = document.getElementById("standingsContent");
-      
-      const CHIOSCO_URL = "https://torneo.alcentro.restaurant/";
-      const IFRAME_URL = "https://torneo.alcentro.restaurant/classifica"; // ✅ URL CORRETTO
-      
-      container.innerHTML = `
-        <div style="position:relative;width:100%;height:calc(100vh - 220px);border-radius:12px;overflow:hidden;background:#000;">
-          <!-- ✅ iframe che mostra la classifica -->
-          <iframe
-            src="${IFRAME_URL}"
-            style="width:100%;height:100%;border:none;"
-            loading="lazy"
-            sandbox="allow-scripts allow-same-origin allow-forms allow-popups"
-          ></iframe>
-          <!-- ✅ Overlay INVISIBILE ma cliccabile sopra l'iframe -->
-          <div onclick="window.open('${CHIOSCO_URL}', '_blank')" style="
-            position:absolute;
-            inset:0;
-            background:transparent;
-            cursor:pointer;
-            z-index:10;
-          "></div>
-        </div>
-      `;
-      
-      // ✅ BLOCCA eventuali refresh accidentali
-      setTimeout(() => {
-        const currentTab = document.querySelector('.standings-tab[data-tab="chiosco"]');
-        if (currentTab && currentTab.classList.contains('active')) {
-          stopStandingsLiveRefresh();
-        }
-      }, 1000);
     }
-    };
-  });
-  
-  // ✅ AVVIA IL POLLING SOLO SE NON SIAMO SU CHIOSCO
-  if (!isFinalStage && window.APP_STATE._activeStandingsTab !== "chiosco") {
-    startStandingsLiveRefresh();
-  }
+    
+    document.querySelectorAll(".standings-tab").forEach(tab => {
+        tab.onclick = () => {
+            document.querySelectorAll(".standings-tab").forEach(t => t.classList.remove("active"));
+            tab.classList.add("active");
+            const type = tab.dataset.tab;
+            
+            // ✅ FERMA SEMPRE il polling quando cambi tab
+            stopStandingsLiveRefresh();
+            window.APP_STATE._standingsActive = false;
+            
+            if (type === "gironi") {
+                window.APP_STATE._activeStandingsTab = "gironi";
+                renderStandings(window.APP_CACHE.standings || {});
+                ApiClient.getStandings().then(data => {
+                    if (data) {
+                        window.APP_CACHE.standings = data;
+                        CacheManager.save(window.APP_CACHE);
+                    }
+                    if (window.APP_STATE._activeStandingsTab === "gironi") {
+                        renderStandings(data);
+                    }
+                }).catch(console.error);
+                startStandingsLiveRefresh();
+            }
+            else if (type === "fasefinale") {
+                window.APP_STATE._activeStandingsTab = "fasefinale";
+                if (!window.APP_STATE._finalStageLoaded) {
+                    loadFinalStage();
+                    window.APP_STATE._finalStageLoaded = true;
+                } else {
+                    renderFinalStage(window.APP_CACHE.finalStage || []);
+                }
+                startStandingsLiveRefresh();
+            }
+            // ✅ TAB COPPA CHIOSCO - Mostra iframe e NON avviare polling
+            else if (type === "chiosco") {
+                window.APP_STATE._activeStandingsTab = "chiosco";
+                const container = document.getElementById("standingsContent");
+                container.innerHTML = `
+                <div style="width:100%;height:calc(100vh - 220px);border-radius:12px;overflow:hidden;background:#000;">
+                    <iframe
+                    src="https://torneo.alcentro.restaurant/"
+                    style="width:100%;height:100%;border:none;"
+                    allow="autoplay; fullscreen"
+                    loading="lazy"
+                    sandbox="allow-scripts allow-same-origin allow-forms allow-popups"
+                    ></iframe>
+                </div>
+                `;
+                // ✅ Assicurati che il polling rimanga fermo
+                stopStandingsLiveRefresh();
+            }
+        };
+    });
+    
+    // ✅ AVVIA IL POLLING SOLO se NON siamo su chiosco
+    if (!isFinalStage && window.APP_STATE._activeStandingsTab !== "chiosco") {
+        startStandingsLiveRefresh();
+    }
 }
 
 function renderStandings(data) {
