@@ -3395,37 +3395,56 @@ function showStandings() {
     </div>`;
   
   // ✅ GESTISCI SUBITO IL CONTENUTO IN BASE AL TAB ATTIVO
-  if (window.APP_STATE._activeStandingsTab === "chiosco") {
-    // Ferma polling e mostra iframe subito
-    stopStandingsLiveRefresh();
-    window.APP_STATE._standingsActive = false;
-    const container = document.getElementById("standingsContent");
-    
-    const CHIOSCO_URL = "https://torneo.alcentro.restaurant/";
-    const IFRAME_URL = "https://torneo.alcentro.restaurant/classifica";
-    
-    container.innerHTML = `
-      <div style="position:relative;width:100%;height:calc(100vh - 220px);border-radius:12px;overflow:hidden;background:#000;">
-        <!-- ✅ iframe che mostra la classifica -->
-        <iframe
-          src="${IFRAME_URL}"
-          style="width:100%;height:100%;border:none;"
-          loading="lazy"
-          sandbox="allow-scripts allow-same-origin allow-forms allow-popups"
-        ></iframe>
-        <!-- ✅ Overlay trasparente cliccabile sopra l'iframe -->
-        <div onclick="window.open('${CHIOSCO_URL}', '_blank')" style="
-          position:absolute;
-          inset:0;
-          background:rgba(0,0,0,0.01);
-          cursor:pointer;
-          z-index:10;
-          transition:background 0.3s ease;
-        " onmouseover="this.style.background='rgba(0,0,0,0.15)'" onmouseout="this.style.background='rgba(0,0,0,0.01)'">
+     if (window.APP_STATE._activeStandingsTab === "chiosco") {
+      stopStandingsLiveRefresh();
+      window.APP_STATE._standingsActive = false;
+      clearTimeout(standingsRefreshTimer);
+      
+      const container = document.getElementById("standingsContent");
+      const CHIOSCO_URL = "https://torneo.alcentro.restaurant/";
+      const IFRAME_URL = "https://torneo.alcentro.restaurant/classifica";
+      
+      container.innerHTML = `
+        <div class="chiosco-iframe-container">
+          <iframe
+            src="${IFRAME_URL}"
+            id="chioscoIframe"
+            loading="lazy"
+            sandbox="allow-scripts allow-same-origin allow-forms allow-popups"
+          ></iframe>
+          <div onclick="window.open('${CHIOSCO_URL}', '_blank')" style="
+            position:absolute;inset:0;background:rgba(0,0,0,0.01);cursor:pointer;z-index:10;
+          "></div>
         </div>
-      </div>
-    `;
-  }
+        <style>
+          /* ✅ Nasconde scrollbar MA mantiene lo scroll */
+          .standings-page {
+            scrollbar-width: none !important;
+            -ms-overflow-style: none !important;
+            overflow-y: scroll !important;
+          }
+          .standings-page::-webkit-scrollbar {
+            display: none !important;
+          }
+          body {
+            scrollbar-width: none !important;
+            -ms-overflow-style: none !important;
+          }
+          body::-webkit-scrollbar {
+            display: none !important;
+          }
+        </style>
+      `;
+      
+      setTimeout(() => {
+        const currentTab = document.querySelector('.standings-tab[data-tab="chiosco"]');
+        if (currentTab && currentTab.classList.contains('active')) {
+          stopStandingsLiveRefresh();
+          clearTimeout(standingsRefreshTimer);
+        }
+      }, 500);
+    }
+
   else if (isFinalStage) {
     document.getElementById("standingsContent").innerHTML =
       `<div style="text-align:center;padding:40px;color:#888">Caricamento fase finale...</div>`;
@@ -3478,72 +3497,45 @@ function showStandings() {
       }
       // Nella funzione showStandings(), quando crei l'iframe per COPPA CHIOSCO:
         else if (type === "chiosco") {
-          // ✅ FERMA COMPLETAMENTE il polling classifiche
           stopStandingsLiveRefresh();
           window.APP_STATE._standingsActive = false;
-          clearTimeout(standingsRefreshTimer); // 🔥 Pulisci anche eventuali timeout in coda
+          clearTimeout(standingsRefreshTimer);
           
           const container = document.getElementById("standingsContent");
           const CHIOSCO_URL = "https://torneo.alcentro.restaurant/";
           const IFRAME_URL = "https://torneo.alcentro.restaurant/classifica";
           
           container.innerHTML = `
-            <div style="
-              position: relative;
-              width: 100%;
-              height: calc(100vh - 220px);
-              border-radius: 12px;
-              overflow: hidden;
-              background: #000;
-            ">
-              <!-- ✅ iframe con scroll interno -->
+            <div class="chiosco-iframe-container">
               <iframe
                 src="${IFRAME_URL}"
                 id="chioscoIframe"
-                style="
-                  width: 100%;
-                  height: 100%;
-                  border: none;
-                  display: block;
-                "
-                scrolling="yes"
-                allow="autoplay; fullscreen"
                 loading="lazy"
                 sandbox="allow-scripts allow-same-origin allow-forms allow-popups"
               ></iframe>
-              <!-- ✅ Overlay trasparente cliccabile sopra l'iframe -->
               <div onclick="window.open('${CHIOSCO_URL}', '_blank')" style="
-                position: absolute;
-                inset: 0;
-                background: rgba(0,0,0,0.01);
-                cursor: pointer;
-                z-index: 10;
-                transition: background 0.3s ease;
-              " onmouseover="this.style.background='rgba(0,0,0,0.15)'" 
-                 onmouseout="this.style.background='rgba(0,0,0,0.01)'">
-              </div>
+                position:absolute;inset:0;background:rgba(0,0,0,0.01);cursor:pointer;z-index:10;
+              "></div>
             </div>
-            <!-- ✅ CSS per nascondere scrollbar ma mantenere scroll interno -->
             <style>
-              #chioscoIframe {
-                scrollbar-width: none; /* Firefox */
-                -ms-overflow-style: none; /* IE/Edge */
-              }
-              #chioscoIframe::-webkit-scrollbar {
-                display: none; /* Chrome/Safari/Opera */
-              }
-              /* 🔥 Nascondi scrollbar anche sul container esterno se appare */
-              .standings-page::-webkit-scrollbar {
-                display: none;
-              }
               .standings-page {
-                scrollbar-width: none;
-                -ms-overflow-style: none;
+                scrollbar-width: none !important;
+                -ms-overflow-style: none !important;
+                overflow-y: scroll !important;
+              }
+              .standings-page::-webkit-scrollbar {
+                display: none !important;
+              }
+              body {
+                scrollbar-width: none !important;
+                -ms-overflow-style: none !important;
+              }
+              body::-webkit-scrollbar {
+                display: none !important;
               }
             </style>
           `;
           
-          // ✅ BLOCCA eventuali refresh accidentali
           setTimeout(() => {
             const currentTab = document.querySelector('.standings-tab[data-tab="chiosco"]');
             if (currentTab && currentTab.classList.contains('active')) {
