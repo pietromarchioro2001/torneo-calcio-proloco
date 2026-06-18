@@ -1752,48 +1752,56 @@ body {
    13.2 COPPA CHIOSCO
 =============================================================================================== */
 
-/* ✅ IFRAME COPPA CHIOSCO - Adattato allo schermo, scroll sulla pagina */
+/* ✅ IFRAME COPPA CHIOSCO - Mostra tutto il contenuto, NO scroll */
 .chiosco-iframe-container {
   width: 100%;
   border-radius: 12px;
   overflow: hidden;
   background: #000;
   position: relative;
+  /* ✅ RIMOSSO height: calc() - lasciamo che si espanda */
+  min-height: 800px; /* Altezza minima per iniziare */
 }
 
 .chiosco-iframe-container iframe {
   width: 100%;
-  height: 100%;
+  /* ✅ RIMOSSO height: 100% - usiamo min-height */
+  min-height: 800px;
   border: none;
   display: block;
 }
 
-/* ✅ MOBILE: iframe adattato, scroll sulla pagina */
+/* ✅ MOBILE: NO scrollbar, mostra tutto */
 @media (max-width: 768px) {
   .chiosco-iframe-container {
-    height: calc(100vh - 180px) !important;
+    min-height: 1000px; /* Più alto su mobile per vedere tutto */
   }
   
-  /* ✅ Nascondi scrollbar della pagina standings quando c'è l'iframe */
+  .chiosco-iframe-container iframe {
+    min-height: 1000px;
+  }
+  
+  /* ✅ Nascondi scrollbar della pagina standings */
   .standings-page:has(.chiosco-iframe-container) {
-    overflow-y: auto !important;
-    scrollbar-width: none; /* Firefox */
-    -ms-overflow-style: none; /* IE/Edge */
-  }
-  
-  .standings-page:has(.chiosco-iframe-container)::-webkit-scrollbar {
-    display: none; /* Chrome/Safari */
+    overflow: hidden !important; /* ✅ BLOCCA scroll pagina */
   }
 }
 
-/* ✅ DESKTOP: spazio dalla toolbar sopra */
+/* ✅ DESKTOP: NO scrollbar, mostra tutto */
 @media (min-width: 769px) {
   .chiosco-iframe-container {
-    height: calc(100vh - 240px) !important;
+    min-height: 900px;
     margin-top: 15px !important;
   }
+  
+  .chiosco-iframe-container iframe {
+    min-height: 900px;
+  }
+  
+  .standings-page:has(.chiosco-iframe-container) {
+    overflow: hidden !important; /* ✅ BLOCCA scroll pagina */
+  }
 }
-
 /* ===========================================================================================================================================================================
    14. VERSIONE MOBILE
 ============================================================================================================================================================================= */
