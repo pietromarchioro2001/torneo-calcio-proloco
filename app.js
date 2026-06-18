@@ -3358,7 +3358,7 @@ function showStandings() {
       container.innerHTML = `
         <div style="width:100%;height:calc(100vh - 200px);border-radius:12px;overflow:hidden;">
           <iframe 
-            src="https://URL-DEL-SITO-CHIOSCO" 
+            src="https://torneo.alcentro.restaurant/" 
             style="width:100%;height:100%;border:none;"
             allow="autoplay; fullscreen"
             loading="lazy"
