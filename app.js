@@ -3492,42 +3492,39 @@ function showStandings() {
         startStandingsLiveRefresh();
       }
       else if (type === "chiosco") {
-      // ✅ FERMA COMPLETAMENTE il polling classifiche
-      stopStandingsLiveRefresh();
-      window.APP_STATE._standingsActive = false;
-      const container = document.getElementById("standingsContent");
-      
-      const CHIOSCO_URL = "https://torneo.alcentro.restaurant/";
-      const IFRAME_URL = "https://torneo.alcentro.restaurant/classifica"; // ✅ URL CORRETTO
-      
-      container.innerHTML = `
+        // ✅ FERMA COMPLETAMENTE il polling classifiche
+        stopStandingsLiveRefresh();
+        window.APP_STATE._standingsActive = false;
+        
+        const container = document.getElementById("standingsContent");
+        // ✅ FORZA il rendering immediato
+        container.innerHTML = `
         <div style="position:relative;width:100%;height:calc(100vh - 220px);border-radius:12px;overflow:hidden;background:#000;">
-          <!-- ✅ iframe che mostra la classifica -->
-          <iframe
-            src="${IFRAME_URL}"
-            style="width:100%;height:100%;border:none;"
-            loading="lazy"
-            sandbox="allow-scripts allow-same-origin allow-forms allow-popups"
-          ></iframe>
-          <!-- ✅ Overlay INVISIBILE ma cliccabile sopra l'iframe -->
-          <div onclick="window.open('${CHIOSCO_URL}', '_blank')" style="
-            position:absolute;
-            inset:0;
-            background:transparent;
-            cursor:pointer;
-            z-index:10;
-          "></div>
+        <iframe
+        src="https://torneo.alcentro.restaurant/classifica"
+        style="width:100%;height:100%;border:none;"
+        loading="lazy"
+        sandbox="allow-scripts allow-same-origin allow-forms allow-popups"
+        ></iframe>
+        <div onclick="window.open('https://torneo.alcentro.restaurant/', '_blank')" style="
+        position:absolute;
+        inset:0;
+        background:rgba(0,0,0,0.01);
+        cursor:pointer;
+        z-index:10;
+        "></div>
         </div>
-      `;
-      
-      // ✅ BLOCCA eventuali refresh accidentali
-      setTimeout(() => {
+        `;
+        
+        // ✅ BLOCCA eventuali refresh accidentali
+        setTimeout(() => {
         const currentTab = document.querySelector('.standings-tab[data-tab="chiosco"]');
         if (currentTab && currentTab.classList.contains('active')) {
-          stopStandingsLiveRefresh();
+        stopStandingsLiveRefresh();
+        window.APP_STATE._standingsActive = false;
         }
-      }, 1000);
-    }
+        }, 100); // ← Riduci a 100ms invece di 1000ms
+        }
     };
   });
   
