@@ -19,16 +19,16 @@ if (!CONFIG.BACKEND_URL || CONFIG.BACKEND_URL.includes('DEPLOYMENT_ID')) {
 // 🔐 PROTEZIONE DESKTOP CON PASSWORD
 // ============================================================================
 const DESKTOP_PASSWORD = "torneo2026"; // ✅ CAMBIA CON LA TUA PASSWORD
-const DESKTOP_AUTH_KEY = "desktop_auth_ok";
+let desktopAuthenticated = false;
 
 function checkDesktopAuth() {
   const isDesktop = window.innerWidth > 768;
   
-  // Se è mobile, non chiedere password
+  // Se è mobile, nessuna password
   if (!isDesktop) return true;
   
   // Se già autenticato in questa sessione, permetti accesso
-  if (localStorage.getItem(DESKTOP_AUTH_KEY) === "true") return true;
+  if (desktopAuthenticated) return true;
   
   // Mostra modal password
   showPasswordModal();
@@ -46,8 +46,8 @@ function showPasswordModal() {
   modal.style.cssText = `
     position: fixed;
     inset: 0;
-    background: rgba(0,0,0,0.9);
-    z-index: 99999;
+    background: rgba(0,0,0,0.95);
+    z-index: 999999;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -57,19 +57,20 @@ function showPasswordModal() {
   modal.innerHTML = `
     <div style="
       background: white;
-      padding: 40px;
-      border-radius: 16px;
+      padding: 50px 40px;
+      border-radius: 20px;
       text-align: center;
-      max-width: 400px;
+      max-width: 450px;
       width: 90%;
-      box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+      box-shadow: 0 25px 80px rgba(0,0,0,0.6);
+      animation: modalSlideIn 0.3s ease;
     ">
-      <div style="font-size: 48px; margin-bottom: 20px;">🔒</div>
-      <div style="font-size: 22px; font-weight: 700; color: #111; margin-bottom: 10px; letter-spacing: 2px;">
-        ACCESSO RISERVATO
+      <div style="font-size: 56px; margin-bottom: 25px; animation: pulse 2s infinite;">🔒</div>
+      <div style="font-size: 24px; font-weight: 800; color: #111; margin-bottom: 15px; letter-spacing: 3px; text-transform: uppercase;">
+        Accesso Riservato
       </div>
-      <div style="font-size: 13px; color: #888; margin-bottom: 30px; letter-spacing: 1px;">
-        Inserisci la password per accedere
+      <div style="font-size: 14px; color: #666; margin-bottom: 35px; letter-spacing: 1px; line-height: 1.6;">
+        Inserisci la password per accedere<br>alla gestione del torneo
       </div>
       <input 
         id="passwordInput" 
@@ -77,72 +78,88 @@ function showPasswordModal() {
         placeholder="Password"
         style="
           width: 100%;
-          padding: 14px;
-          border: 2px solid #ddd;
-          border-radius: 8px;
-          font-size: 16px;
+          padding: 16px 20px;
+          border: 3px solid #ddd;
+          border-radius: 12px;
+          font-size: 18px;
           font-family: 'Oswald', sans-serif;
-          letter-spacing: 2px;
+          letter-spacing: 3px;
           text-align: center;
           margin-bottom: 20px;
           box-sizing: border-box;
+          transition: border-color 0.3s;
         "
         onkeypress="if(event.key==='Enter') verifyPassword()"
+        onfocus="this.style.borderColor='#7a1e2c'"
+        onblur="this.style.borderColor='#ddd'"
       >
       <div id="passwordError" style="
         color: #dc2626;
-        font-size: 12px;
-        margin-bottom: 15px;
+        font-size: 13px;
+        margin-bottom: 20px;
         display: none;
         letter-spacing: 1px;
+        font-weight: 600;
+        animation: shake 0.5s;
       ">
-        Password errata
+        ❌ Password errata - Riprova
       </div>
-      <div style="display: flex; gap: 10px;">
-        <button onclick="verifyPassword()" style="
-          flex: 1;
-          padding: 14px;
-          background: #7a1e2c;
-          color: white;
-          border: none;
-          border-radius: 8px;
-          font-size: 14px;
-          font-weight: 700;
-          font-family: 'Oswald', sans-serif;
-          letter-spacing: 2px;
-          cursor: pointer;
-          text-transform: uppercase;
-        ">
-          ACCEDI
-        </button>
-        <button onclick="window.location.href='#home'" style="
-          padding: 14px 20px;
-          background: white;
-          color: #7a1e2c;
-          border: 2px solid #7a1e2c;
-          border-radius: 8px;
-          font-size: 14px;
-          font-weight: 700;
-          font-family: 'Oswald', sans-serif;
-          letter-spacing: 2px;
-          cursor: pointer;
-          text-transform: uppercase;
-        ">
-          ANNULLA
-        </button>
-      </div>
-      <div style="margin-top: 20px; font-size: 11px; color: #aaa; letter-spacing: 1px;">
-        💡 La password verrà salvata su questo dispositivo
+      <button onclick="verifyPassword()" style="
+        width: 100%;
+        padding: 16px;
+        background: #7a1e2c;
+        color: white;
+        border: none;
+        border-radius: 12px;
+        font-size: 16px;
+        font-weight: 800;
+        font-family: 'Oswald', sans-serif;
+        letter-spacing: 3px;
+        cursor: pointer;
+        text-transform: uppercase;
+        transition: all 0.3s;
+        box-shadow: 0 4px 15px rgba(122, 30, 44, 0.3);
+      " onmouseover="this.style.background='#9f2c3d'; this.style.transform='translateY(-2px)'" 
+        onmouseout="this.style.background='#7a1e2c'; this.style.transform='translateY(0)'">
+        Accedi al Sistema
+      </button>
+      <div style="margin-top: 30px; padding-top: 25px; border-top: 2px solid #f0f0f0;">
+        <div style="font-size: 12px; color: #999; letter-spacing: 1px; line-height: 1.6;">
+          💡 La password verrà richiesta<br>ad ogni accesso da desktop
+        </div>
       </div>
     </div>
   `;
   
+  // Aggiungi animazioni CSS
+  const style = document.createElement('style');
+  style.textContent = `
+    @keyframes modalSlideIn {
+      from { opacity: 0; transform: translateY(-30px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      25% { transform: translateX(-10px); }
+      75% { transform: translateX(10px); }
+    }
+    @keyframes pulse {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.05); }
+    }
+  `;
+  document.head.appendChild(style);
+  
   document.body.appendChild(modal);
   
-  // Focus sull'input
+  // Focus sull'input dopo animazione
   setTimeout(() => {
-    document.getElementById("passwordInput")?.focus();
-  }, 100);
+    const input = document.getElementById("passwordInput");
+    if (input) {
+      input.focus();
+      input.select();
+    }
+  }, 300);
 }
 
 function verifyPassword() {
@@ -151,24 +168,52 @@ function verifyPassword() {
   const password = input?.value?.trim();
   
   if (password === DESKTOP_PASSWORD) {
-    // Password corretta - salva in localStorage
-    localStorage.setItem(DESKTOP_AUTH_KEY, "true");
+    // Password corretta
+    desktopAuthenticated = true;
     
-    // Rimuovi modal
+    // Rimuovi modal con animazione
     const modal = document.getElementById("passwordModal");
-    if (modal) modal.remove();
+    if (modal) {
+      modal.style.transition = 'opacity 0.3s ease';
+      modal.style.opacity = '0';
+      setTimeout(() => modal.remove(), 300);
+    }
     
     console.log("✅ Accesso desktop autorizzato");
+    
+    // ✅ RIPRENDI IL CARICAMENTO DELL'APP
+    if (!window.APP_STATE._authCompleted) {
+      window.APP_STATE._authCompleted = true;
+      continueBootProcess();
+    }
   } else {
     // Password errata
     if (error) {
       error.style.display = "block";
       input.value = "";
       input.focus();
+      
+      // Nascondi errore dopo 3 secondi
+      setTimeout(() => {
+        error.style.display = "none";
+      }, 3000);
     }
   }
 }
 
+// ✅ FUNZIONE PER CONTINUARE IL CARICAMENTO DOPO AUTENTICAZIONE
+function continueBootProcess() {
+  console.log("🔄 Continuazione caricamento app...");
+  
+  // Ripristina il loader se necessario
+  const loader = document.getElementById("startupLoader");
+  if (loader) {
+    loader.style.display = "flex";
+  }
+  
+  // Esegui bootAdminApp normale
+  bootAdminApp();
+}
 // ============================================================================
 // 🔐 SECURITY UTILITIES
 // ============================================================================
@@ -3987,10 +4032,20 @@ if (!document.getElementById('spinLoaderStyle')) {
 
 function bootAdminApp() {
 
-    if (!checkDesktopAuth()) {
-    // Se non autenticato, blocca tutto finché non inserisce password
+      if (!checkDesktopAuth()) {
+    // Se non autenticato, aspetta che l'utente inserisca la password
     console.log("🔒 Attesa autenticazione desktop...");
-    return; // Esce e non carica il resto
+    
+    // ✅ AGGIUNGI QUESTO: continua il caricamento dopo autenticazione
+    const checkAuth = setInterval(() => {
+      if (desktopAuthenticated) {
+        clearInterval(checkAuth);
+        // Riprendi il caricamento normale
+        continueBootProcess();
+      }
+    }, 500);
+    
+    return; // Esce e aspetta
   }
     // 🔒 Protegge lastMatch da valori incompleti
     Object.defineProperty(window.APP_STATE, 'lastMatch', {
@@ -4175,7 +4230,7 @@ window.addEventListener("resize", () => {
   // Se passa da mobile a desktop e non è autenticato
   if (lastWidth <= 768 && currentWidth > 768) {
     if (!checkDesktopAuth()) {
-      console.log(" Richiesta autenticazione per desktop");
+      console.log("🔒 Richiesta autenticazione per desktop");
     }
   }
   
