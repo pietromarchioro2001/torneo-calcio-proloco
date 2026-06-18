@@ -3394,7 +3394,7 @@ function showStandings() {
       <div class="standings-tabs">
         <div class="standings-tab ${!isFinalStage ? 'active' : ''}" data-tab="gironi">GIRONI</div>
         ${showFaseFinaleTab ? `<div class="standings-tab ${isFinalStage ? 'active' : ''}" data-tab="fasefinale">FASE FINALE</div>` : ''}
-        <div class="standings-tab" data-tab="chiosco">🍺 COPPA CHIOSCO</div>
+        <div class="standings-tab" data-tab="chiosco">COPPA CHIOSCO</div>
       </div>
       <div id="standingsContent"></div>
     </div>`;
