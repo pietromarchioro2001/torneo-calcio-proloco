@@ -1752,54 +1752,40 @@ body {
    13.2 COPPA CHIOSCO
 =============================================================================================== */
 
-/* ✅ IFRAME COPPA CHIOSCO - Mostra tutto il contenuto, NO scroll */
 .chiosco-iframe-container {
   width: 100%;
   border-radius: 12px;
   overflow: hidden;
   background: #000;
   position: relative;
-  /* ✅ RIMOSSO height: calc() - lasciamo che si espanda */
-  min-height: 800px; /* Altezza minima per iniziare */
 }
 
 .chiosco-iframe-container iframe {
   width: 100%;
-  /* ✅ RIMOSSO height: 100% - usiamo min-height */
-  min-height: 800px;
   border: none;
   display: block;
 }
 
-/* ✅ MOBILE: NO scrollbar, mostra tutto */
+/* ✅ MOBILE */
 @media (max-width: 768px) {
   .chiosco-iframe-container {
-    min-height: 1000px; /* Più alto su mobile per vedere tutto */
+    height: 1400px !important; /* ✅ Altezza fissa grande per vedere tutto */
   }
   
   .chiosco-iframe-container iframe {
-    min-height: 1000px;
-  }
-  
-  /* ✅ Nascondi scrollbar della pagina standings */
-  .standings-page:has(.chiosco-iframe-container) {
-    overflow: hidden !important; /* ✅ BLOCCA scroll pagina */
+    height: 1400px !important;
   }
 }
 
-/* ✅ DESKTOP: NO scrollbar, mostra tutto */
+/* ✅ DESKTOP */
 @media (min-width: 769px) {
   .chiosco-iframe-container {
-    min-height: 900px;
+    height: 1200px !important;
     margin-top: 15px !important;
   }
   
   .chiosco-iframe-container iframe {
-    min-height: 900px;
-  }
-  
-  .standings-page:has(.chiosco-iframe-container) {
-    overflow: hidden !important; /* ✅ BLOCCA scroll pagina */
+    height: 1200px !important;
   }
 }
 /* ===========================================================================================================================================================================
