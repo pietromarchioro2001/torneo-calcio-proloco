@@ -3415,16 +3415,29 @@ function showStandings() {
     stopStandingsLiveRefresh();
     window.APP_STATE._standingsActive = false;
     const container = document.getElementById("standingsContent");
+    
+    const CHIOSCO_URL = "https://torneo.alcentro.restaurant/";
+    const IFRAME_URL = "https://torneo.alcentro.restaurant/classifica";
+    
     container.innerHTML = `
-      <div style="width:100%;height:calc(100vh - 220px);border-radius:12px;overflow:hidden;background:#000;position:relative;">
+      <div style="position:relative;width:100%;height:calc(100vh - 220px);border-radius:12px;overflow:hidden;background:#000;">
+        <!-- ✅ iframe che mostra la classifica -->
         <iframe
-          src="https://torneo.alcentro.restaurant/classifica"
-          style="width:100%;height:100%;border:none;overflow-y:auto;"
-          scrolling="yes"
-          allow="autoplay; fullscreen"
+          src="${IFRAME_URL}"
+          style="width:100%;height:100%;border:none;"
           loading="lazy"
           sandbox="allow-scripts allow-same-origin allow-forms allow-popups"
         ></iframe>
+        <!-- ✅ Overlay trasparente cliccabile sopra l'iframe -->
+        <div onclick="window.open('${CHIOSCO_URL}', '_blank')" style="
+          position:absolute;
+          inset:0;
+          background:rgba(0,0,0,0.01);
+          cursor:pointer;
+          z-index:10;
+          transition:background 0.3s ease;
+        " onmouseover="this.style.background='rgba(0,0,0,0.15)'" onmouseout="this.style.background='rgba(0,0,0,0.01)'">
+        </div>
       </div>
     `;
   }
