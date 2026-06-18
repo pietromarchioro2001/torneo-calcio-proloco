@@ -34,7 +34,7 @@ body {
 /* ============================================================================
    📱 PWA MINI BANNER - Elegante e discreto
 ============================================================================ */
-#pwa-mini-banner {
+ {
     position: fixed;
     bottom: 80px;
     left: 50%;
@@ -167,6 +167,19 @@ body {
         padding: 7px 12px;
         font-size: 11px;
     }
+}
+
+/* ✅ IFRAME COPPA CHIOSCO - Responsive senza scroll */
+@media (max-width: 768px) {
+  .chiosco-iframe-container {
+    height: calc(100vh - 180px) !important;
+  }
+}
+
+@media (min-width: 769px) {
+  .chiosco-iframe-container {
+    height: calc(100vh - 220px) !important;
+  }
 }
 
 /* =============================================================================================
