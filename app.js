@@ -3444,34 +3444,30 @@ function showStandings() {
     }
     // ✅ AGGIUNGI QUESTO BLOCCO PER IL CHIOSCO
     else if (type === "chiosco") {
-      // Ferma polling classifiche
+      // ✅ FERMA COMPLETAMENTE il polling classifiche
       stopStandingsLiveRefresh();
+      window.APP_STATE._standingsActive = false;
       
       const container = document.getElementById("standingsContent");
       container.innerHTML = `
-        <div style="
-          width: 100%;
-          height: calc(100vh - 150px); /* ✅ Altezza ottimizzata */
-          border-radius: 12px;
-          overflow: hidden;
-          background: #000;
-          padding-top: 30px; /* ✅ Spazio tra tab e iframe */
-          box-sizing: border-box;
-        ">
+        <div style="width:100%;height:calc(100vh - 220px);border-radius:12px;overflow:hidden;background:#000;">
           <iframe
             src="https://torneo.alcentro.restaurant/"
-            style="
-              width: 100%;
-              height: 100%;
-              border: none;
-              display: block; /* ✅ Rimuove spazio extra */
-            "
+            style="width:100%;height:100%;border:none;"
             allow="autoplay; fullscreen"
             loading="lazy"
             sandbox="allow-scripts allow-same-origin allow-forms allow-popups"
           ></iframe>
         </div>
       `;
+      
+      // ✅ BLOCCA eventuali refresh accidentali
+      setTimeout(() => {
+        const currentTab = document.querySelector('.standings-tab[data-tab="chiosco"]');
+        if (currentTab && currentTab.classList.contains('active')) {
+          stopStandingsLiveRefresh();
+        }
+      }, 1000);
     }
   };
 });
