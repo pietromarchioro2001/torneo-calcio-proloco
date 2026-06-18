@@ -3497,52 +3497,26 @@ function showStandings() {
       window.APP_STATE._standingsActive = false;
       const container = document.getElementById("standingsContent");
       
-      // ✅ CAMBIA QUESTO LINK CON QUELLO CHE VUOI
       const CHIOSCO_URL = "https://torneo.alcentro.restaurant/";
+      const IFRAME_URL = "https://torneo.alcentro.restaurant/classifica"; // ✅ URL CORRETTO
       
       container.innerHTML = `
         <div style="position:relative;width:100%;height:calc(100vh - 220px);border-radius:12px;overflow:hidden;background:#000;">
-          <!-- ✅ iframe SOLO VISIVO (non interattivo) -->
+          <!-- ✅ iframe che mostra la classifica -->
           <iframe
-            src="${CHIOSCO_URL}"
-            style="width:100%;height:100%;border:none;pointer-events:none;"
+            src="${IFRAME_URL}"
+            style="width:100%;height:100%;border:none;"
             loading="lazy"
-            sandbox="allow-scripts allow-same-origin"
-            tabindex="-1"
+            sandbox="allow-scripts allow-same-origin allow-forms allow-popups"
           ></iframe>
-          <!-- ✅ Overlay cliccabile sopra l'iframe -->
-          <a href="${CHIOSCO_URL}" target="_blank" rel="noopener noreferrer" style="
+          <!-- ✅ Overlay INVISIBILE ma cliccabile sopra l'iframe -->
+          <div onclick="window.open('${CHIOSCO_URL}', '_blank')" style="
             position:absolute;
             inset:0;
-            display:flex;
-            align-items:center;
-            justify-content:center;
-            background:rgba(0,0,0,0.15);
-            text-decoration:none;
-            transition:background 0.3s ease;
-            z-index:10;
+            background:transparent;
             cursor:pointer;
-          " onmouseover="this.style.background='rgba(0,0,0,0.35)'" onmouseout="this.style.background='rgba(0,0,0,0.15)'">
-            <div style="
-              background:rgba(122,30,44,0.95);
-              color:white;
-              padding:16px 28px;
-              border-radius:12px;
-              font-family:'Oswald',sans-serif;
-              font-size:14px;
-              font-weight:700;
-              letter-spacing:2px;
-              text-transform:uppercase;
-              display:flex;
-              align-items:center;
-              gap:10px;
-              box-shadow:0 4px 20px rgba(0,0,0,0.4);
-              backdrop-filter:blur(4px);
-            ">
-              <span style="font-size:20px;">🔗</span>
-              APRI COPPA CHIOSCO
-            </div>
-          </a>
+            z-index:10;
+          "></div>
         </div>
       `;
       
