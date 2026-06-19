@@ -4195,7 +4195,6 @@ function bootAdminApp() {
   // 1. Carica cache istantaneamente
   window.APP_CACHE = CacheManager.load();
   window.APP_STATE._dataReady = (window.APP_CACHE.teams?.length > 0 || window.APP_CACHE.matches?.length > 0);  
-      injectDemoMatch();
   const loader = document.getElementById("startupLoader");
   let dataLoaded = false;
   let initialRouteHandled = false;
@@ -4477,51 +4476,6 @@ function updateAppData(initialData, finalStageStarted) {
     startMatchLiveRefresh();
   }
 }
-
-   // ============================================================================
-// 🎮 PARTITA DEMO LIVE - Per testare UI mobile e desktop
-// ============================================================================
-function injectDemoMatch() {
-  // ✅ Crea partita demo tra due squadre reali del torneo
-  const demoMatch = {
-    MATCH_ID: 'DEMO_MATCH_2026',
-    CASA_ID: 'team_demo_casa',
-    TRASFERTA_ID: 'team_demo_trasferta',
-    SQUADRA_CASA: 'AMBLAR-DON',
-    SQUADRA_TRASFERTA: 'CAVARENO',
-    LOGO_CASA: null, // Sarà caricato dal backend se esiste
-    LOGO_TRASFERTA: null,
-    STATO_PARTITA: 'LIVE',
-    GOL_CASA: 2,
-    GOL_TRASFERTA: 1,
-    DATA: new Date().toISOString().split('T')[0],
-    ORA: '20:45',
-    FASE: 'GIRONI',
-    GIRONE: 'A'
-  };
-
-  // ✅ Eventi della partita
-  const demoEvents = [
-    { EVENT_ID: 'demo_1', MATCH_ID: 'DEMO_MATCH_2026', TEAM_ID: 'team_demo_casa', TIPO: 'GOAL', MINUTO: 12, PLAYER_ID: 'p1', PLAYER: 'ROSSI M.', ASSIST: 'BIANCHI L.' },
-    { EVENT_ID: 'demo_2', MATCH_ID: 'DEMO_MATCH_2026', TEAM_ID: 'team_demo_trasferta', TIPO: 'GOAL', MINUTO: 28, PLAYER_ID: 'p2', PLAYER: 'VERDI G.', ASSIST: '' },
-    { EVENT_ID: 'demo_3', MATCH_ID: 'DEMO_MATCH_2026', TEAM_ID: 'team_demo_casa', TIPO: 'AMMONIZIONE', MINUTO: 35, PLAYER_ID: 'p3', PLAYER: 'NERI A.', ASSIST: '' },
-    { EVENT_ID: 'demo_4', MATCH_ID: 'DEMO_MATCH_2026', TEAM_ID: 'team_demo_casa', TIPO: 'GOAL', MINUTO: 52, PLAYER_ID: 'p1', PLAYER: 'ROSSI M.', ASSIST: '' }
-  ];
-
-  // ✅ Inserisci nella cache SOLO se non esiste già
-  if (!window.APP_CACHE.matches.find(m => m.MATCH_ID === 'DEMO_MATCH_2026')) {
-    window.APP_CACHE.matches.unshift(demoMatch); // Aggiungi in cima alla lista
-    window.APP_CACHE.eventsByMatch['DEMO_MATCH_2026'] = demoEvents;
-    
-    // Aggiorna matchesById
-    window.APP_STATE.matchesById['DEMO_MATCH_2026'] = demoMatch;
-    
-    CacheManager.save(window.APP_CACHE);
-    console.log('✅ Partita DEMO LIVE inserita: Amblar-Don vs Cavareno');
-  }
-}
-
-// Chiama questa funzione in bootAdminApp() dopo CacheManager.load()
 
 // ✅ NUOVA FUNZIONE: Carica dati freschi in background DOPO aver mostrato la UI
 function loadFreshDataInBackground() {
