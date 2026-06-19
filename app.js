@@ -4170,192 +4170,196 @@ if (!document.getElementById('spinLoaderStyle')) {
 }
 
 function bootAdminApp() {
-
-     if (!checkDesktopAuth()) {
+  if (!checkDesktopAuth()) {
     console.log(" Attesa autenticazione desktop...");
-    
     const checkAuth = setInterval(() => {
       if (desktopAuthenticated) {
         clearInterval(checkAuth);
         continueBootProcess();
       }
     }, 500);
-    
     return;
   }
-    // 🔒 Protegge lastMatch da valori incompleti
-    Object.defineProperty(window.APP_STATE, 'lastMatch', {
-        set(value) {
-            if (value && (!value.CASA_ID || !value.TRASFERTA_ID)) {
-                console.error('️ TENTATIVO DI SALVARE lastMatch INCOMPLETO:', value);
-            }
-            this._lastMatch = value;
-        },
-        get() { return this._lastMatch; }
+
+  // 🔒 Protegge lastMatch da valori incompleti
+  Object.defineProperty(window.APP_STATE, 'lastMatch', {
+    set(value) {
+      if (value && (!value.CASA_ID || !value.TRASFERTA_ID)) {
+        console.error('️ TENTATIVO DI SALVARE lastMatch INCOMPLETO:', value);
+      }
+      this._lastMatch = value;
+    },
+    get() { return this._lastMatch; }
+  });
+
+  // 1. Carica cache istantaneamente
+  window.APP_CACHE = CacheManager.load();
+  window.APP_STATE._dataReady = (window.APP_CACHE.teams?.length > 0 || window.APP_CACHE.matches?.length > 0);
+  const loader = document.getElementById("startupLoader");
+  let dataLoaded = false;
+  let initialRouteHandled = false;
+
+  // ✅ FIX CRITICO: Mostra la home SUBITO per chiudere lo splash screen PWA
+  // Lo splash screen PWA dura finché non c'è nulla di renderizzato
+  // Mostrando la home subito, lo splash screen si chiude in pochi ms
+  setTimeout(() => {
+    if (!initialRouteHandled) {
+      initialRouteHandled = true;
+      showHome(); // Mostra home immediatamente
+      
+      // ✅ Mantiene il loader visibile SOPRA la home per 2.5s totali
+      if (loader) {
+        loader.style.display = 'flex';
+        loader.style.opacity = '1';
+        
+        // Nascondi loader dopo 2500ms totali (incluso tempo caricamento)
+        setTimeout(() => {
+          loader.style.transition = 'opacity 0.5s ease';
+          loader.style.opacity = '0';
+          setTimeout(() => {
+            loader.style.display = 'none';
+          }, 500);
+        }, 2500);
+      }
+    }
+  }, 100); // Ridotto da 2500ms a 100ms per chiudere subito lo splash PWA
+
+  // Fetch dati dal backend
+  Promise.all([
+    ApiClient.getInitialData(),
+    ApiClient.isFinalStageStarted().catch(() => false)
+  ])
+  .then(async ([initialData, finalStageStarted]) => {
+    dataLoaded = true;
+    
+    // ✅ Aggiorna cache
+    window.APP_CACHE = {
+      ...window.APP_CACHE,
+      teams: initialData.teams || window.APP_CACHE.teams,
+      matches: initialData.matches || window.APP_CACHE.matches,
+      standings: initialData.standings || window.APP_CACHE.standings,
+      fullTeams: initialData.fullTeams || window.APP_CACHE.fullTeams,
+      playersMap: initialData.playersMap || window.APP_CACHE.playersMap,
+      meta: {
+        ...window.APP_CACHE.meta,
+        initialized: true,
+        finalStageStarted: finalStageStarted
+      }
+    };
+    
+    hydrateMatches(window.APP_CACHE.matches || []);
+    preloadRecentEvents();
+    CacheManager.save(window.APP_CACHE);
+    window.APP_STATE._dataReady = true;
+
+    // 🔥 Carica fase finale se attiva
+    if (finalStageStarted) {
+      ApiClient.getFinalStageMatches().then(finalData => {
+        if (finalData) {
+          window.APP_CACHE.finalStage = finalData;
+          if (window.APP_CACHE.matches) {
+            finalData.forEach(fm => {
+              const idx = window.APP_CACHE.matches.findIndex(m =>
+                String(m.MATCH_ID) === String(fm.matchId)
+              );
+              if (idx >= 0) {
+                window.APP_CACHE.matches[idx] = {
+                  ...window.APP_CACHE.matches[idx],
+                  RIGORE_CASA: fm.rigoriCasa,
+                  RIGORE_TRASFERTA: fm.rigoriTrasferta,
+                  RIGORI_CASA: fm.rigoriCasa,
+                  RIGORI_TRASFERTA: fm.rigoriTrasferta
+                };
+              }
+            });
+          }
+          CacheManager.save(window.APP_CACHE);
+        }
+      }).catch(err => console.error('Errore caricamento fase finale:', err));
+    }
+
+    const hasLiveMatch = (window.APP_CACHE.matches || []).some(m =>
+      m.STATO_PARTITA === "LIVE" || m.STATO_PARTITA === "SUPP" || m.STATO_PARTITA === "RIGORI"
+    );
+    if (hasLiveMatch) startMatchLiveRefresh();
+
+    // ✅ Aggiorna UI con animazione fluida
+    if (document.querySelector(".home-container")) {
+      const nextCard = getNextMatchCard();
+      const existing = document.querySelector(".home-next-match");
+      if (existing && nextCard) {
+        existing.style.transition = 'opacity 0.3s ease';
+        existing.style.opacity = '0';
+        setTimeout(() => {
+          existing.outerHTML = nextCard;
+          const newCard = document.querySelector(".home-next-match");
+          if (newCard) {
+            newCard.style.opacity = '0';
+            requestAnimationFrame(() => {
+              newCard.style.transition = 'opacity 0.3s ease';
+              newCard.style.opacity = '1';
+            });
+          }
+        }, 300);
+      }
+    }
+
+    // Aggiorna altre pagine se aperte
+    if (document.querySelector(".matches-page")) renderMatches();
+    if (document.querySelector(".standings-page")) {
+      if (window.APP_STATE._activeStandingsTab === "fasefinale") {
+        loadFinalStage();
+      } else {
+        renderStandings(window.APP_CACHE.standings);
+      }
+    }
+
+    if (!initialRouteHandled) {
+      initialRouteHandled = true;
+      showHome();
+      if (finalStageStarted) {
+        window.APP_STATE._activeStandingsTab = "fasefinale";
+        window.APP_STATE._finalStageLoaded = false;
+      }
+    }
+
+    if (localStorage.getItem('podiumDismissed') === 'true') {
+      podiumDismissed = true;
+    }
+
+    window.APP_STATE._initialLoadComplete = true;
+    const queue = window.APP_STATE._apiCallQueue || [];
+    queue.forEach(item => {
+      if (Date.now() - item.timestamp < 5000) item.fn();
     });
+    window.APP_STATE._apiCallQueue = [];
+  })
+  .catch(error => {
+    console.error('❌ Errore caricamento:', error);
+    dataLoaded = true;
+    window.APP_STATE._dataReady = true;
+    
+    // ✅ Nascondi loader anche in caso di errore
+    if (loader) {
+      loader.style.transition = 'opacity 0.5s ease';
+      loader.style.opacity = '0';
+      setTimeout(() => {
+        loader.style.display = 'none';
+      }, 500);
+    }
+    
+    if (!initialRouteHandled) {
+      initialRouteHandled = true;
+      showHome();
+    }
+  });
 
-    // 1. Carica cache istantaneamente
-    window.APP_CACHE = CacheManager.load();
-    window.APP_STATE._dataReady = (window.APP_CACHE.teams?.length > 0 || window.APP_CACHE.matches?.length > 0);
-
-    const loader = document.getElementById("startupLoader");
-    let dataLoaded = false;
-    let initialRouteHandled = false;
-
-    // ✅ MOSTRA HOME SUBITO (senza aspettare il loader)
-    setTimeout(() => {
-        if (!initialRouteHandled) {
-            initialRouteHandled = true;
-            showHome(); // Mostra home con card "Caricamento..."
-            
-            // ✅ Fade out del loader SOVRAPPOSTO alla home
-            if (loader) {
-                loader.style.transition = 'opacity 0.5s ease';
-                loader.style.opacity = '0';
-                setTimeout(() => {
-                    loader.style.display = 'none';
-                }, 500);
-            }
-        }
-    }, 2500);
-
-    // Fetch dati dal backend
-    Promise.all([
-        ApiClient.getInitialData(),
-        ApiClient.isFinalStageStarted().catch(() => false)
-    ])
-    .then(async ([initialData, finalStageStarted]) => {
-        dataLoaded = true;
-        
-        // ✅ Aggiorna cache
-        window.APP_CACHE = {
-            ...window.APP_CACHE,
-            teams: initialData.teams || window.APP_CACHE.teams,
-            matches: initialData.matches || window.APP_CACHE.matches,
-            standings: initialData.standings || window.APP_CACHE.standings,
-            fullTeams: initialData.fullTeams || window.APP_CACHE.fullTeams,
-            playersMap: initialData.playersMap || window.APP_CACHE.playersMap,
-            meta: {
-                ...window.APP_CACHE.meta,
-                initialized: true,
-                finalStageStarted: finalStageStarted
-            }
-        };
-        
-        hydrateMatches(window.APP_CACHE.matches || []);
-        preloadRecentEvents();
-        CacheManager.save(window.APP_CACHE);
-        
-        window.APP_STATE._dataReady = true;
-
-        // 🔥 Carica fase finale se attiva
-        if (finalStageStarted) {
-            ApiClient.getFinalStageMatches().then(finalData => {
-                if (finalData) {
-                    window.APP_CACHE.finalStage = finalData;
-                    if (window.APP_CACHE.matches) {
-                        finalData.forEach(fm => {
-                            const idx = window.APP_CACHE.matches.findIndex(m =>
-                                String(m.MATCH_ID) === String(fm.matchId)
-                            );
-                            if (idx >= 0) {
-                                window.APP_CACHE.matches[idx] = {
-                                    ...window.APP_CACHE.matches[idx],
-                                    RIGORE_CASA: fm.rigoriCasa,
-                                    RIGORE_TRASFERTA: fm.rigoriTrasferta,
-                                    RIGORI_CASA: fm.rigoriCasa,
-                                    RIGORI_TRASFERTA: fm.rigoriTrasferta
-                                };
-                            }
-                        });
-                    }
-                    CacheManager.save(window.APP_CACHE);
-                }
-            }).catch(err => console.error('Errore caricamento fase finale:', err));
-        }
-
-        const hasLiveMatch = (window.APP_CACHE.matches || []).some(m =>
-            m.STATO_PARTITA === "LIVE" || m.STATO_PARTITA === "SUPP" || m.STATO_PARTITA === "RIGORI"
-        );
-        if (hasLiveMatch) startMatchLiveRefresh();
-
-        // ✅ Aggiorna UI con animazione fluida
-        if (document.querySelector(".home-container")) {
-            const nextCard = getNextMatchCard();
-            const existing = document.querySelector(".home-next-match");
-            if (existing && nextCard) {
-                // ✅ Animazione fade per il cambio card
-                existing.style.transition = 'opacity 0.3s ease';
-                existing.style.opacity = '0';
-                setTimeout(() => {
-                    existing.outerHTML = nextCard;
-                    const newCard = document.querySelector(".home-next-match");
-                    if (newCard) {
-                        newCard.style.opacity = '0';
-                        requestAnimationFrame(() => {
-                            newCard.style.transition = 'opacity 0.3s ease';
-                            newCard.style.opacity = '1';
-                        });
-                    }
-                }, 300);
-            }
-        }
-
-        // Aggiorna altre pagine se aperte
-        if (document.querySelector(".matches-page")) renderMatches();
-        if (document.querySelector(".standings-page")) {
-            if (window.APP_STATE._activeStandingsTab === "fasefinale") {
-                loadFinalStage();
-            } else {
-                renderStandings(window.APP_CACHE.standings);
-            }
-        }
-
-        if (!initialRouteHandled) {
-            initialRouteHandled = true;
-            showHome();
-            if (finalStageStarted) {
-                window.APP_STATE._activeStandingsTab = "fasefinale";
-                window.APP_STATE._finalStageLoaded = false;
-            }
-        }
-
-        if (localStorage.getItem('podiumDismissed') === 'true') {
-            podiumDismissed = true;
-        }
-
-        window.APP_STATE._initialLoadComplete = true;
-        const queue = window.APP_STATE._apiCallQueue || [];
-        queue.forEach(item => {
-            if (Date.now() - item.timestamp < 5000) item.fn();
-        });
-        window.APP_STATE._apiCallQueue = [];
-    })
-    .catch(error => {
-        console.error('❌ Errore caricamento:', error);
-        dataLoaded = true;
-        window.APP_STATE._dataReady = true;
-        
-        if (loader) {
-            loader.style.transition = 'opacity 0.5s ease';
-            loader.style.opacity = '0';
-            setTimeout(() => {
-                loader.style.display = 'none';
-            }, 500);
-        }
-        
-        if (!initialRouteHandled) {
-            initialRouteHandled = true;
-            showHome();
-        }
-    });
-
-    // 🔥 Global error handling
-    window.addEventListener("error", e => console.error("Global error:", e.error||e.message));
-    window.addEventListener("beforeunload", () => {
-        Cleanup.releaseAll();
-        CacheManager.save(window.APP_CACHE, 0);
-    });
+  // 🔥 Global error handling
+  window.addEventListener("error", e => console.error("Global error:", e.error||e.message));
+  window.addEventListener("beforeunload", () => {
+    Cleanup.releaseAll();
+    CacheManager.save(window.APP_CACHE, 0);
+  });
 }
 
 // ✅ UNICO RESIZE LISTENER (sostituisce i due precedenti)
