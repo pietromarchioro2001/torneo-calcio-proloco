@@ -1972,7 +1972,16 @@ body {
 }
 
   .teams-page { width: 100% !important; padding: 0 10px !important; box-sizing: border-box !important; margin: 0 !important; }
-  .teams-scroll { width: 100% !important; max-width: 100% !important; margin: 0 !important; padding: 0 !important; box-sizing: border-box !important; height: calc(100vh - 140px); }
+  .teams-scroll { 
+    width: 100% !important; 
+    max-width: 100% !important; 
+    margin: 0 !important; 
+    padding: 0 10px 180px 10px !important;  /* ✅ Mantiene padding-bottom per scroll */
+    box-sizing: border-box !important; 
+    height: calc(100vh - 140px);
+    overflow-y: auto !important;  /* ✅ Assicura scroll verticale */
+    -webkit-overflow-scrolling: touch;  /* ✅ Scroll fluido su iOS */
+  }
   .teams-header { padding: 10px 0; }
   .teams-header .phase-btn { display: none !important; }
 
