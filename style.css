@@ -1788,6 +1788,67 @@ body {
     height: 1200px !important;
   }
 }
+
+/* ============================================================================
+   📤 PULSANTE CONDIVISIONE PARTITA
+============================================================================ */
+
+/* Wrapper desktop - visibile solo su PC */
+.share-match-desktop-wrapper {
+  display: flex;
+  align-items: center;
+  margin-left: auto;
+  padding-left: 10px;
+}
+
+/* Wrapper mobile - visibile solo su mobile */
+.share-match-mobile-wrapper {
+  display: none;
+  justify-content: center;
+  margin-bottom: 5px;
+}
+
+/* Stile pulsante */
+.share-match-btn {
+  background: transparent;
+  border: 2px solid var(--granata);
+  border-radius: 8px;
+  padding: 8px 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--granata);
+}
+
+.share-match-btn:hover {
+  background: var(--granata);
+  color: white;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(122, 30, 44, 0.3);
+}
+
+.share-match-btn:active {
+  transform: translateY(0);
+}
+
+.share-match-btn svg {
+  width: 18px;
+  height: 18px;
+}
+
+/* 🔥 RESPONSIVE: Desktop */
+@media (min-width: 769px) {
+  .share-match-desktop-wrapper {
+    display: flex !important;
+  }
+  
+  .share-match-mobile-wrapper {
+    display: none !important;
+  }
+}
+
 /* ===========================================================================================================================================================================
    14. VERSIONE MOBILE
 ============================================================================================================================================================================= */
@@ -3054,6 +3115,33 @@ body {
   #mediaUploadModal .modalBox .modalTitle {
     display: block !important;
     visibility: visible !important;
+  }
+  
+  .share-match-desktop-wrapper {
+    display: none !important;
+  }
+  
+  /* Mostra wrapper mobile */
+  .share-match-mobile-wrapper {
+    display: flex !important;
+  }
+  
+  /* Stile mobile del pulsante */
+  .share-match-btn {
+    padding: 10px 14px;
+    border-radius: 10px;
+    background: white;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  }
+  
+  .share-match-btn:hover {
+    background: var(--granata);
+    color: white;
+  }
+  
+  .share-match-btn svg {
+    width: 20px;
+    height: 20px;
   }
 
 }
