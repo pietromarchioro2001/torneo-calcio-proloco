@@ -3197,100 +3197,79 @@ body {
 /* ============================================================================
 📤 PULSANTI IN ALTO (MEDIA + CONDIVIDI) - MOBILE
 ============================================================================ */
-
+/* Container pulsanti - dentro match-center, sotto il risultato */
 .match-header-actions {
-position: absolute !important;
-top: 10px !important;
-left: 50% !important;
-transform: translateX(-50%) !important;
-right: auto !important;
-display: flex !important;
-gap: 10px !important;
-z-index: 100 !important;
-align-items: center !important;
+  position: relative !important;
+  top: auto !important;
+  right: auto !important;
+  left: auto !important;
+  transform: none !important;
+  display: flex !important;
+  gap: 10px !important;
+  justify-content: center !important;
+  align-items: center !important;
+  margin-top: 4mm !important; /* ✅ 4mm sotto lo score */
+  z-index: 100 !important;
 }
 
+/* Pulsante CONDIVIDI */
 .share-match-btn-top {
-width: 40px !important;
-height: 40px !important;
-min-width: 40px !important;
-padding: 0 !important;
-border-radius: 10px !important;
-background: white !important;
-border: 2px solid #7a1e2c !important;
-display: flex !important;
-align-items: center !important;
-justify-content: center !important;
-box-shadow: 0 2px 8px rgba(0,0,0,0.1) !important;
-cursor: pointer !important;
-transition: all 0.2s ease !important;
+  width: 40px !important;
+  height: 40px !important;
+  min-width: 40px !important;
+  padding: 0 !important;
+  border-radius: 10px !important;
+  background: white !important;
+  border: 2px solid #7a1e2c !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1) !important;
+  cursor: pointer !important;
+  transition: all 0.2s ease !important;
 }
 .share-match-btn-top svg {
-width: 18px !important;
-height: 18px !important;
-fill: #7a1e2c !important;
+  width: 18px !important;
+  height: 18px !important;
+  fill: #7a1e2c !important;
 }
 .share-match-btn-top:active {
-transform: scale(0.95);
-background: #7a1e2c !important;
+  transform: scale(0.95);
+  background: #7a1e2c !important;
 }
 .share-match-btn-top:active svg {
-fill: white !important;
+  fill: white !important;
 }
-   
+
+/* Pulsante MEDIA - con icona cartella */
 .media-btn-top {
-width: 40px !important;
-height: 40px !important;
-min-width: 40px !important;
-padding: 0 !important;
-border-radius: 10px !important;
-background: #7a1e2c !important;
-color: white !important;
-border: none !important;
-display: flex !important;
-align-items: center !important;
-justify-content: center !important;
-box-shadow: 0 2px 8px rgba(122, 30, 44, 0.3) !important;
-cursor: pointer !important;
-font-size: 18px !important;
-transition: all 0.2s ease !important;
+  width: 40px !important;
+  height: 40px !important;
+  min-width: 40px !important;
+  padding: 0 !important;
+  border-radius: 10px !important;
+  background: #7a1e2c !important;
+  color: white !important;
+  border: none !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  box-shadow: 0 2px 8px rgba(122, 30, 44, 0.3) !important;
+  cursor: pointer !important;
+  font-size: 18px !important;
+  transition: all 0.2s ease !important;
 }
 .media-btn-top::before {
-content: '📁' !important;
-font-size: 18px !important;
+  content: '' !important;
+  font-size: 18px !important;
 }
 .media-btn-top span {
-display: none !important;
+  display: none !important;
 }
 .media-btn-top:active {
-transform: scale(0.95);
-background: #9f2c3d !important;
+  transform: scale(0.95);
+  background: #9f2c3d !important;
 }
-
-/* Nascondi i vecchi pulsanti su mobile */
-@media (max-width: 768px) {
-  /* Nascondi wrapper desktop condividi */
-  .share-match-desktop-wrapper {
-    display: none !important;
-  }
-  
-  /* Nascondi wrapper mobile condividi (quello vecchio dentro match-center) */
-  .share-match-mobile-wrapper {
-    display: none !important;
-  }
-  
-  /* Nascondi il vecchio pulsante MEDIA in basso */
-  .media-button {
-    display: none !important;
-  }
-  
-  /* Nascondi anche il pulsante MEDIA dentro back-btn-wrapper */
-  .back-btn-wrapper .media-button,
-  .back-btn-wrapper button[onclick*="openMediaUploadModal"] {
-    display: none !important;
-  }
-}
-
 
 }
   
