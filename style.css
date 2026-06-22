@@ -1850,6 +1850,58 @@ body {
   }
 }
 
+.share-match-desktop-wrapper {
+    display: none !important;
+  }
+  
+  /* Posiziona i pulsanti sopra il punteggio */
+  .match-header-actions {
+    position: absolute !important;
+    top: -40px !important; /* Sopra il punteggio */
+    left: 50% !important;
+    transform: translateX(-50%) !important;
+    display: flex !important;
+    gap: 10px !important;
+    z-index: 100 !important;
+  }
+  
+  /* Stile pulsanti sopra il punteggio - desktop */
+  .media-btn-top,
+  .share-match-btn-top {
+    width: 44px !important;
+    height: 44px !important;
+    min-width: 44px !important;
+    padding: 0 !important;
+    border-radius: 10px !important;
+    background: white !important;
+    border: 2px solid #7a1e2c !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1) !important;
+    cursor: pointer !important;
+    transition: all 0.2s ease !important;
+  }
+  
+  .media-btn-top svg,
+  .share-match-btn-top svg {
+    width: 20px !important;
+    height: 20px !important;
+    fill: #7a1e2c !important;
+  }
+  
+  .media-btn-top:hover,
+  .share-match-btn-top:hover {
+    background: #7a1e2c !important;
+    transform: translateY(-2px) !important;
+    box-shadow: 0 4px 12px rgba(122, 30, 44, 0.3) !important;
+  }
+  
+  .media-btn-top:hover svg,
+  .share-match-btn-top:hover svg {
+    fill: white !important;
+  }
+
 /* ===========================================================================================================================================================================
    14. VERSIONE MOBILE
 ============================================================================================================================================================================= */
