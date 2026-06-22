@@ -3189,15 +3189,15 @@ body {
     display: none !important;
   }
 
-   .match-page .phase-btn.media-btn,
-  button[onclick*="openMediaUploadModal"] {
-    display: none !important;
-  }
+   .match-page .phase-btn.media-btn:not(.media-btn-top),
+button.media-button[onclick*="openMediaUploadModal"] {
+  display: none !important;
+}
 
 /* ============================================================================
 📤 PULSANTI IN ALTO (MEDIA + CONDIVIDI) - MOBILE
 ============================================================================ */
-/* Container pulsanti - dentro match-center, sotto il risultato */
+/* Container pulsanti - SOPRA il punteggio */
 .match-header-actions {
   position: relative !important;
   top: auto !important;
@@ -3208,7 +3208,7 @@ body {
   gap: 10px !important;
   justify-content: center !important;
   align-items: center !important;
-  margin-top: 4mm !important; /* ✅ 4mm sotto lo score */
+  margin-bottom: 4mm !important; /* ✅ 4mm SOPRA lo score (era margin-top) */
   z-index: 100 !important;
 }
 
