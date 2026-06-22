@@ -3,7 +3,7 @@
 // ============================================================================
 const CONFIG = {
     // 🔥 SOSTITUISCI CON IL TUO URL APPS SCRIPT WEB APP
-    BACKEND_URL: 'https://script.google.com/macros/s/AKfycbztLb6qe9GyQ4Ln-kbDm8YU40J2CnEhNEN9FDYNqWz0k97c7XfeUMABh2JtxYQRKGE/exec',
+    BACKEND_URL: 'https://script.google.com/macros/s/AKfycbyQZYPDrEkat-BgyUKOzHbztlLBKUDi2u1KTzWvmxG45PwiEiS7KNVuSFo4YX2GWG14/exec',
     API_TIMEOUT: 30000,
     CACHE_VERSION: 'v3.0',
     CACHE_MAX_AGE: 5 * 60 * 1000
@@ -1781,6 +1781,90 @@ function openMatch(id) {
     });
 }
 
+// ============================================================================
+// 📤 CONDIVISIONE PARTITA
+// ============================================================================
+async function shareMatch() {
+  const match = window.APP_STATE.lastMatch;
+  if (!match) {
+    alert('Partita non caricata');
+    return;
+  }
+
+  // Determina quale link usare in base allo stato
+  const stato = String(match.STATO_PARTITA || "").trim().toUpperCase();
+  let shareUrl = '';
+  
+  if (stato === 'FINITA') {
+    shareUrl = match.POST_TER || match.post_ter || '';
+  } else {
+    // PROGRAMMATA, LIVE, SUPP, RIGORI
+    shareUrl = match.POST_PRO || match.post_pro || '';
+  }
+
+  if (!shareUrl) {
+    alert('Link di condivisione non disponibile');
+    return;
+  }
+
+  // Prepara testo condivisione
+  const nomeCasa = match.SQUADRA_CASA || 'CASA';
+  const nomeTrasf = match.SQUADRA_TRASFERTA || 'TRASFERTA';
+  const shareText = `${nomeCasa} vs ${nomeTrasferta} - Torneo dei Paesi Sarnonico 2026`;
+
+  // Usa Web Share API nativa del dispositivo
+  if (navigator.share) {
+    try {
+      await navigator.share({
+        title: 'Torneo dei Paesi',
+        text: shareText,
+        url: shareUrl
+      });
+      console.log('✅ Contenuto condiviso con successo');
+    } catch (error) {
+      if (error.name !== 'AbortError') {
+        console.error('❌ Errore condivisione:', error);
+        // Fallback: copia link negli appunti
+        fallbackCopyToClipboard(shareUrl);
+      }
+    }
+  } else {
+    // Fallback per browser che non supportano Web Share API
+    fallbackCopyToClipboard(shareUrl);
+  }
+}
+
+function fallbackCopyToClipboard(text) {
+  // Prova con Clipboard API moderna
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(text).then(() => {
+      alert('Link copiato negli appunti!');
+    }).catch(() => {
+      fallbackCopyOldSchool(text);
+    });
+  } else {
+    fallbackCopyOldSchool(text);
+  }
+}
+
+function fallbackCopyOldSchool(text) {
+  const textArea = document.createElement('textarea');
+  textArea.value = text;
+  textArea.style.position = 'fixed';
+  textArea.style.left = '-999999px';
+  document.body.appendChild(textArea);
+  textArea.select();
+  
+  try {
+    document.execCommand('copy');
+    alert('Link copiato negli appunti!');
+  } catch (err) {
+    alert('Impossibile copiare il link. Apri manualmente: ' + text);
+  }
+  
+  document.body.removeChild(textArea);
+}
+
 function renderMatchPage(match) {
   // ✅ VALIDAZIONE INIZIALE MIGLIORATA
   if (!match || !match.MATCH_ID) {
@@ -1884,6 +1968,15 @@ function renderMatchPage(match) {
     </button>
     ` : '';
   
+  // 🔥 PULSANTE CONDIVISIONE - Icona SVG
+  const shareButtonHtml = `
+    <button class="share-match-btn" onclick="shareMatch()" title="Condividi partita">
+      <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
+        <path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81 1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9c-1.66 0-3 1.34-3 3s1.34 3 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.16c-.05.21-.08.43-.08.65 0 1.61 1.31 2.92 2.92 2.92 1.61 0 2.92-1.31 2.92-2.92s-1.31-2.92-2.92-2.92z"/>
+      </svg>
+    </button>
+  `;
+  
   // 🔥 TEMPLATE HTML
   document.getElementById("app").innerHTML = `
     <div class="match-page">
@@ -1904,6 +1997,10 @@ function renderMatchPage(match) {
             <div class="phase-btn secondary-btn" onclick="openRigoriPopup(window.innerWidth <= 768)">RIGORI</div>
             ` : ''}
           </div>
+          <!-- 🔥 PULSANTE CONDIVIDI MOBILE (sopra al risultato) -->
+          <div class="share-match-mobile-wrapper">
+            ${shareButtonHtml}
+          </div>
           <div class="score-big ${isLive ? 'live-score-pulse' : ''}">${match.GOL_CASA || 0} - ${match.GOL_TRASFERTA || 0}</div>
           <div class="match-status" id="matchStatus"></div>
         </div>
@@ -1916,6 +2013,10 @@ function renderMatchPage(match) {
         <div class="mt-btn ${currentTab === 'diretta' ? 'active' : ''}" data-tab="diretta">DIRETTA</div>
         <div class="mt-btn ${currentTab === 'giocatori' ? 'active' : ''}" data-tab="giocatori">GIOCATORI</div>
         ${mvpTabHtml}
+        <!-- 🔥 PULSANTE CONDIVIDI DESKTOP (nella toolbar) -->
+        <div class="share-match-desktop-wrapper">
+          ${shareButtonHtml}
+        </div>
       </div>
       <div class="match-content">
         <div class="tab-content ${currentTab === 'diretta' ? 'active' : ''}" id="tab-diretta">
@@ -1957,7 +2058,7 @@ function renderMatchPage(match) {
       <div class="back-btn-wrapper">
         ${mediaButtonHtml}
         <div class="phase-btn secondary" onclick="showMatches()">INDIETRO</div>
-        </div>
+      </div>
     </div>
   `;
   
@@ -5167,3 +5268,69 @@ window.addEventListener('appinstalled', () => {
   console.log('✅ PWA installata con successo!');
   // Qui puoi aggiungere analytics o cleanup se serve
 });
+
+
+// Aggiungi al tuo app.js
+
+/**
+ * Ottieni link immagine partita
+ */
+async function getMatchImage(matchId, type = 'PROGRAMMATA') {
+  try {
+    const matchData = await ApiClient.getMatchFull(matchId);
+    const colName = type === 'PROGRAMMATA' ? 'IMMAGINE_PROGRAMMATA_URL' : 'IMMAGINE_RISULTATO_URL';
+    const imageUrl = matchData.match[colName];
+    
+    return imageUrl || null;
+  } catch (error) {
+    console.error('Errore recupero immagine:', error);
+    return null;
+  }
+}
+
+/**
+ * Condividi immagine sui social
+ */
+function shareMatchImage(matchId, platform = 'whatsapp') {
+  getMatchImage(matchId).then(imageUrl => {
+    if (!imageUrl) {
+      alert('Immagine non disponibile');
+      return;
+    }
+    
+    const match = window.APP_STATE.lastMatch;
+    const text = `🏆 ${match.SQUADRA_CASA} vs ${match.SQUADRA_TRASFERTA}\n` +
+                 `📅 ${match.DATA} ore ${match.ORA}`;
+    
+    let shareUrl = '';
+    
+    switch(platform) {
+      case 'whatsapp':
+        shareUrl = `https://wa.me/?text=${encodeURIComponent(text + '\n' + imageUrl)}`;
+        break;
+      case 'facebook':
+        shareUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(imageUrl)}`;
+        break;
+      case 'twitter':
+        shareUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(imageUrl)}`;
+        break;
+    }
+    
+    if (shareUrl) {
+      window.open(shareUrl, '_blank');
+    }
+  });
+}
+
+/**
+ * Download immagine
+ */
+async function downloadMatchImage(matchId) {
+  const imageUrl = await getMatchImage(matchId);
+  if (!imageUrl) return;
+  
+  const link = document.createElement('a');
+  link.href = imageUrl;
+  link.download = `partita_${matchId}.jpg`;
+  link.click();
+}
