@@ -1857,7 +1857,7 @@ body {
   .match-header-actions {
     display: flex !important;
     position: absolute !important;
-    top: 170px !important; /* Sotto la toolbar */
+    top: 270px !important; /* Sotto la toolbar */
     left: 50% !important;
     transform: translateX(-50%) !important;
     z-index: 100 !important;
@@ -3258,7 +3258,7 @@ button.media-button[onclick*="openMediaUploadModal"] {
   gap: 10px !important;
   justify-content: center !important;
   align-items: center !important;
-  margin-bottom: 15mm !important; /* ✅ 3mm SOPRA lo score */
+  margin-bottom: 20mm !important; /* ✅ 3mm SOPRA lo score */
   z-index: 100 !important;
 }
 
