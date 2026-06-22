@@ -3209,11 +3209,9 @@ button.media-button[onclick*="openMediaUploadModal"] {
   justify-content: center !important;
   align-items: center !important;
   margin-bottom: 3mm !important; /* ✅ 3mm SOPRA lo score */
-  order: -1 !important; /* ✅ Sposta PRIMA dello score nel flex */
   z-index: 100 !important;
 }
 
-/* Pulsante CONDIVIDI */
 .share-match-btn-top {
   width: 40px !important;
   height: 40px !important;
@@ -3243,33 +3241,31 @@ button.media-button[onclick*="openMediaUploadModal"] {
 }
 
 .media-btn-top {
-  width: 38px !important;
-  height: 38px !important;
-  min-width: 38px !important;
+  width: 40px !important;
+  height: 40px !important;
+  min-width: 40px !important;
   padding: 0 !important;
   border-radius: 10px !important;
-  background: #7a1e2c !important;
-  color: white !important;
-  border: none !important;
+  background: white !important;
+  border: 2px solid #7a1e2c !important;
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
-  box-shadow: 0 2px 8px rgba(122, 30, 44, 0.3) !important;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1) !important;
   cursor: pointer !important;
-  font-size: 18px !important;
   transition: all 0.2s ease !important;
 }
-.media-btn-top::before {
-  content: '📁' !important; /* ✅ ICONA CARTELLA VISIBILE */
-  font-size: 18px !important;
-  line-height: 1 !important;
-}
-.media-btn-top span {
-  display: none !important;
+.media-btn-top svg {
+  width: 18px !important;
+  height: 18px !important;
+  fill: #7a1e2c !important;
 }
 .media-btn-top:active {
   transform: scale(0.95);
-  background: #9f2c3d !important;
+  background: #7a1e2c !important;
+}
+.media-btn-top:active svg {
+  fill: white !important;
 }
 
 }
