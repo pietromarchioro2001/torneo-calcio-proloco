@@ -3208,7 +3208,8 @@ button.media-button[onclick*="openMediaUploadModal"] {
   gap: 10px !important;
   justify-content: center !important;
   align-items: center !important;
-  margin-bottom: 4mm !important; /* ✅ 4mm SOPRA lo score (era margin-top) */
+  margin-bottom: 3mm !important; /* ✅ 3mm SOPRA lo score */
+  order: -1 !important; /* ✅ Sposta PRIMA dello score nel flex */
   z-index: 100 !important;
 }
 
@@ -3241,11 +3242,10 @@ button.media-button[onclick*="openMediaUploadModal"] {
   fill: white !important;
 }
 
-/* Pulsante MEDIA - con icona cartella */
 .media-btn-top {
-  width: 40px !important;
-  height: 40px !important;
-  min-width: 40px !important;
+  width: 38px !important;
+  height: 38px !important;
+  min-width: 38px !important;
   padding: 0 !important;
   border-radius: 10px !important;
   background: #7a1e2c !important;
@@ -3260,8 +3260,9 @@ button.media-button[onclick*="openMediaUploadModal"] {
   transition: all 0.2s ease !important;
 }
 .media-btn-top::before {
-  content: '' !important;
+  content: '📁' !important; /* ✅ ICONA CARTELLA VISIBILE */
   font-size: 18px !important;
+  line-height: 1 !important;
 }
 .media-btn-top span {
   display: none !important;
@@ -3273,5 +3274,3 @@ button.media-button[onclick*="openMediaUploadModal"] {
 
 }
   
-
-}
