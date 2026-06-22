@@ -2462,13 +2462,13 @@ body {
 
    /* Container pulsanti in alto */
   .match-header-actions {
-    position: absolute;
-    top: 15px;
-    right: 15px;
-    display: flex;
-    gap: 10px;
-    z-index: 100;
-  }
+     position: absolute !important;
+     top: 10px !important;
+     right: 15px !important;
+     display: flex !important;
+     gap: 8px !important;
+     z-index: 100 !important;
+   }
 
   .match-page .back-btn-wrapper,
   .back-btn-wrapper {
@@ -3202,6 +3202,120 @@ body {
   button[onclick*="openMediaUploadModal"] {
     display: none !important;
   }
+
+/* ============================================================================
+📤 PULSANTI IN ALTO (MEDIA + CONDIVIDI) - MOBILE
+============================================================================ */
+
+/* Container pulsanti in alto nella zona bianca */
+.match-header-actions {
+  position: absolute !important;
+  top: 10px !important;
+  right: 15px !important;
+  display: flex !important;
+  gap: 8px !important;
+  z-index: 100 !important;
+}
+
+/* Pulsante CONDIVIDI - piccolo e compatto */
+.share-match-btn-top {
+  width: 38px !important;
+  height: 38px !important;
+  min-width: 38px !important;
+  padding: 0 !important;
+  border-radius: 10px !important;
+  background: white !important;
+  border: 2px solid #7a1e2c !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1) !important;
+  cursor: pointer !important;
+}
+
+.share-match-btn-top svg {
+  width: 18px !important;
+  height: 18px !important;
+  fill: #7a1e2c !important;
+}
+
+.share-match-btn-top:active {
+  transform: scale(0.95);
+}
+
+/* Pulsante MEDIA - con icona cartella */
+.media-btn-top {
+  width: 38px !important;
+  height: 38px !important;
+  min-width: 38px !important;
+  padding: 0 !important;
+  border-radius: 10px !important;
+  background: #7a1e2c !important;
+  color: white !important;
+  border: none !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  box-shadow: 0 2px 8px rgba(122, 30, 44, 0.3) !important;
+  cursor: pointer !important;
+  font-size: 18px !important;
+}
+
+.media-btn-top::before {
+  content: '📁' !important;
+  font-size: 18px !important;
+}
+
+.media-btn-top span {
+  display: none !important;
+}
+
+.media-btn-top:active {
+  transform: scale(0.95);
+}
+
+/* Nascondi i vecchi pulsanti su mobile */
+@media (max-width: 768px) {
+  /* Nascondi wrapper desktop condividi */
+  .share-match-desktop-wrapper {
+    display: none !important;
+  }
+  
+  /* Nascondi wrapper mobile condividi (quello vecchio dentro match-center) */
+  .share-match-mobile-wrapper {
+    display: none !important;
+  }
+  
+  /* Nascondi il vecchio pulsante MEDIA in basso */
+  .media-button {
+    display: none !important;
+  }
+  
+  /* Nascondi anche il pulsante MEDIA dentro back-btn-wrapper */
+  .back-btn-wrapper .media-button,
+  .back-btn-wrapper button[onclick*="openMediaUploadModal"] {
+    display: none !important;
+  }
+}
+
+/* Desktop: mostra solo condividi nella toolbar */
+@media (min-width: 769px) {
+  .match-header-actions {
+    display: none !important;
+  }
+  
+  .share-match-desktop-wrapper {
+    display: flex !important;
+  }
+  
+  .share-match-mobile-wrapper {
+    display: none !important;
+  }
+  
+  .media-button {
+    display: inline-flex !important;
+  }
+}
   
 
 }
