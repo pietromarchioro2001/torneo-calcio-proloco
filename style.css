@@ -2433,6 +2433,16 @@ body {
     transition: background 0.2s ease, box-shadow 0.2s ease !important;
   }
 
+   .media-button span {
+    display: none !important; /* Nascondi testo "MEDIA" su mobile */
+  }
+  
+  /* Icona cartella per MEDIA */
+  .media-button::before {
+    content: '📁' !important; /* Oppure usa un'icona SVG */
+    font-size: 20px !important;
+  }
+
   .media-button:hover {
     background: var(--granata-light) !important;
     transform: translateX(-50%) !important;
@@ -2448,6 +2458,16 @@ body {
     box-sizing: border-box !important;
     margin-top: auto !important;
     margin-bottom: 20px !important; /* ✅ AUMENTATO da 10px a 20px */
+  }
+
+   /* Container pulsanti in alto */
+  .match-header-actions {
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    display: flex;
+    gap: 10px;
+    z-index: 100;
   }
 
   .match-page .back-btn-wrapper,
@@ -3126,22 +3146,62 @@ body {
     display: flex !important;
   }
   
-  /* Stile mobile del pulsante */
+  /* Pulsante CONDIVIDI - più piccolo */
   .share-match-btn {
-    padding: 10px 14px;
-    border-radius: 10px;
-    background: white;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    width: 40px !important;
+    height: 40px !important;
+    min-width: 40px !important;
+    padding: 0 !important;
+    border-radius: 10px !important;
+    background: white !important;
+    border: 2px solid #7a1e2c !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1) !important;
+  }
+  
+  .share-match-btn svg {
+    width: 18px !important;
+    height: 18px !important;
   }
   
   .share-match-btn:hover {
     background: var(--granata);
     color: white;
   }
-  
-  .share-match-btn svg {
-    width: 20px;
-    height: 20px;
+
+   .media-upload-btn {
+    width: 40px !important;
+    height: 40px !important;
+    min-width: 40px !important;
+    padding: 0 !important;
+    border-radius: 10px !important;
+    background: #7a1e2c !important;
+    color: white !important;
+    border: none !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    box-shadow: 0 2px 8px rgba(122, 30, 44, 0.3) !important;
+    cursor: pointer !important;
+    font-size: 18px !important;
   }
+  
+  .media-upload-btn::before {
+    content: '📁' !important;
+    font-size: 20px !important;
+  }
+  
+  /* Nascondi testo MEDIA se presente */
+  .media-upload-btn span {
+    display: none !important;
+  }
+
+   .match-page .phase-btn.media-btn,
+  button[onclick*="openMediaUploadModal"] {
+    display: none !important;
+  }
+  
 
 }
