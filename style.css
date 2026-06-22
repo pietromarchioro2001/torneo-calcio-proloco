@@ -3208,7 +3208,7 @@ button.media-button[onclick*="openMediaUploadModal"] {
   gap: 10px !important;
   justify-content: center !important;
   align-items: center !important;
-  margin-bottom: 3mm !important; /* ✅ 3mm SOPRA lo score */
+  margin-bottom: 6mm !important; /* ✅ 3mm SOPRA lo score */
   z-index: 100 !important;
 }
 
