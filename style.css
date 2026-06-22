@@ -1854,18 +1854,16 @@ body {
     display: none !important;
   }
   
-  /* Posiziona i pulsanti sopra il punteggio */
   .match-header-actions {
+    display: flex !important;
     position: absolute !important;
-    top: -40px !important; /* Sopra il punteggio */
+    top: 170px !important; /* Sotto la toolbar */
     left: 50% !important;
     transform: translateX(-50%) !important;
-    display: flex !important;
-    gap: 10px !important;
     z-index: 100 !important;
+    gap: 10px !important;
   }
   
-  /* Stile pulsanti sopra il punteggio - desktop */
   .media-btn-top,
   .share-match-btn-top {
     width: 44px !important;
