@@ -2000,96 +2000,95 @@ function renderMatchPage(match) {
   `;
   
   // 🔥 TEMPLATE HTML
-  document.getElementById("app").innerHTML = `
-    <div class="match-page">
-      <div class="match-header-big">
-          <!-- 🔥 Container pulsanti in alto (solo mobile) -->
-          <div class="match-header-actions">
-            <button class="media-upload-btn" onclick="openMediaUploadModal('${Sanitizer.attr(match.MATCH_ID)}', '${String(linkDrive).replace(/'/g, "\\'")}'); event.stopPropagation();"></button>
-            <button class="share-match-btn" onclick="shareMatch('${Sanitizer.attr(match.MATCH_ID)}'); event.stopPropagation();">
-              <svg viewBox="0 0 24 24" style="width:18px;height:18px;fill:#7a1e2c;"><path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81 1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9c-1.66 0-3 1.34-3 3s1.34 3 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.16c-.05.21-.08.43-.08.65 0 1.61 1.31 2.92 2.92 2.92s2.92-1.31 2.92-2.92-1.31-2.92-2.92-2.92z"/></svg>
-            </button>
-          </div>
-        <div class="team-big left">
-          ${logoCasa}
-          <div class="team-big-name">${nomeCasa}</div>
-        </div>
-        <div class="match-center">
-          <div class="match-controls-top">
-            <div class="phase-btn start-btn ${isLive ? "active" : ""}"
-                 onclick="${canToggleMatch ? "toggleMatch()" : ""}"
-                 ${toggleBtnDisabled}>
-              ${isLive ? "CONCLUDI" : "INIZIA"}
-            </div>
-            ${match.FASE === "FINALI" && isLive ? `
-            <div class="phase-btn secondary-btn" onclick="toggleSupplementari()">SUPPLEMENTARI</div>
-            <div class="phase-btn secondary-btn" onclick="openRigoriPopup(window.innerWidth <= 768)">RIGORI</div>
-            ` : ''}
-          </div>
-          <!-- 🔥 PULSANTE CONDIVIDI MOBILE (sopra al risultato) -->
-          <div class="share-match-mobile-wrapper">
-            ${shareButtonHtml}
-          </div>
-          <div class="score-big ${isLive ? 'live-score-pulse' : ''}">${match.GOL_CASA || 0} - ${match.GOL_TRASFERTA || 0}</div>
-          <div class="match-status" id="matchStatus"></div>
-        </div>
-        <div class="team-big right">
-          <div class="team-big-name">${nomeTrasf}</div>
-          ${logoTrasf}
-        </div>
+  // 🔥 TEMPLATE HTML
+document.getElementById("app").innerHTML = `
+  <div class="match-page">
+    <div class="match-header-big">
+      <!-- 🔥 PULSANTI IN ALTO (solo mobile) -->
+      <div class="match-header-actions">
+        <button class="media-btn-top" onclick="openMediaUploadModal('${Sanitizer.attr(match.MATCH_ID)}', '${String(linkDrive).replace(/'/g, "\\'")}'); event.stopPropagation();"></button>
+        <button class="share-match-btn-top" onclick="shareMatch()" title="Condividi partita">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="#7a1e2c">
+            <path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81 1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9c-1.66 0-3 1.34-3 3s1.34 3 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.16c-.05.21-.08.43-.08.65 0 1.61 1.31 2.92 2.92 2.92s2.92-1.31 2.92-2.92-1.31-2.92-2.92-2.92z"/>
+          </svg>
+        </button>
       </div>
-      <div class="match-toolbar">
-        <div class="mt-btn ${currentTab === 'diretta' ? 'active' : ''}" data-tab="diretta">DIRETTA</div>
-        <div class="mt-btn ${currentTab === 'giocatori' ? 'active' : ''}" data-tab="giocatori">GIOCATORI</div>
-        ${mvpTabHtml}
-        <!-- 🔥 PULSANTE CONDIVIDI DESKTOP (nella toolbar) -->
-        <div class="share-match-desktop-wrapper">
-          ${shareButtonHtml}
-        </div>
+      
+      <div class="team-big left">
+        ${logoCasa}
+        <div class="team-big-name">${nomeCasa}</div>
       </div>
-      <div class="match-content">
-        <div class="tab-content ${currentTab === 'diretta' ? 'active' : ''}" id="tab-diretta">
-          <div class="teams-events">
-            <div class="events-actions">
-              <div class="left">
-                <div class="phase-btn small" onclick="${canAddEvents ? "addEvent('casa')" : ""}" ${eventBtnDisabled}>
-                  + EVENTO CASA
-                </div>
-              </div>
-              <div class="right">
-                <div class="phase-btn small" onclick="${canAddEvents ? "addEvent('trasferta')" : ""}" ${eventBtnDisabled}>
-                  + EVENTO TRASFERTA
-                </div>
-              </div>
-            </div>
-            <div class="match-banners-area">
-              <div id="mvpBanner" class="mvp-banner"></div>
-            </div>
-            <div class="cronaca-title center"><span>CRONACA</span></div>
-            <div id="eventsTimeline" class="events-timeline">
-              <div id="eventsContent"></div>
-            </div>
+      <div class="match-center">
+        <div class="match-controls-top">
+          <div class="phase-btn start-btn ${isLive ? "active" : ""}"
+               onclick="${canToggleMatch ? "toggleMatch()" : ""}"
+               ${toggleBtnDisabled}>
+            ${isLive ? "CONCLUDI" : "INIZIA"}
           </div>
+          ${match.FASE === "FINALI" && isLive ? `
+          <div class="phase-btn secondary-btn" onclick="toggleSupplementari()">SUPPLEMENTARI</div>
+          <div class="phase-btn secondary-btn" onclick="openRigoriPopup(window.innerWidth <= 768)">RIGORI</div>
+          ` : ''}
         </div>
-        <div class="tab-content ${currentTab === 'giocatori' ? 'active' : ''}" id="tab-giocatori">
-          <div class="players-columns" id="playersColumns">
-            <div style="text-align:center;padding:40px;color:#888;grid-column:1/-1">Caricamento giocatori...</div>
-          </div>
-        </div>
-        <div class="tab-content ${currentTab === 'mvp' ? 'active' : ''}" id="tab-mvp">
-          <div class="players-columns" id="mvpColumns">
-            <div style="text-align:center;padding:40px;color:#888;grid-column:1/-1">
-              ${isLive ? "Vota il MVP" : isFinished ? "MVP della partita" : "Disponibile durante la partita"}
-            </div>
-          </div>
-        </div>
+        <div class="score-big ${isLive ? 'live-score-pulse' : ''}">${match.GOL_CASA || 0} - ${match.GOL_TRASFERTA || 0}</div>
+        <div class="match-status" id="matchStatus"></div>
       </div>
-      <div class="back-btn-wrapper">
-        ${mediaButtonHtml}
-        <div class="phase-btn secondary" onclick="showMatches()">INDIETRO</div>
+      <div class="team-big right">
+        <div class="team-big-name">${nomeTrasf}</div>
+        ${logoTrasf}
       </div>
     </div>
-  `;
+    <div class="match-toolbar">
+      <div class="mt-btn ${currentTab === 'diretta' ? 'active' : ''}" data-tab="diretta">DIRETTA</div>
+      <div class="mt-btn ${currentTab === 'giocatori' ? 'active' : ''}" data-tab="giocatori">GIOCATORI</div>
+      ${mvpTabHtml}
+      <!-- 🔥 PULSANTE CONDIVIDI DESKTOP (nella toolbar) -->
+      <div class="share-match-desktop-wrapper">
+        ${shareButtonHtml}
+      </div>
+    </div>
+    <div class="match-content">
+      <div class="tab-content ${currentTab === 'diretta' ? 'active' : ''}" id="tab-diretta">
+        <div class="teams-events">
+          <div class="events-actions">
+            <div class="left">
+              <div class="phase-btn small" onclick="${canAddEvents ? "addEvent('casa')" : ""}" ${eventBtnDisabled}>
+                + EVENTO CASA
+              </div>
+            </div>
+            <div class="right">
+              <div class="phase-btn small" onclick="${canAddEvents ? "addEvent('trasferta')" : ""}" ${eventBtnDisabled}>
+                + EVENTO TRASFERTA
+              </div>
+            </div>
+          </div>
+          <div class="match-banners-area">
+            <div id="mvpBanner" class="mvp-banner"></div>
+          </div>
+          <div class="cronaca-title center"><span>CRONACA</span></div>
+          <div id="eventsTimeline" class="events-timeline">
+            <div id="eventsContent"></div>
+          </div>
+        </div>
+      </div>
+      <div class="tab-content ${currentTab === 'giocatori' ? 'active' : ''}" id="tab-giocatori">
+        <div class="players-columns" id="playersColumns">
+          <div style="text-align:center;padding:40px;color:#888;grid-column:1/-1">Caricamento giocatori...</div>
+        </div>
+      </div>
+      <div class="tab-content ${currentTab === 'mvp' ? 'active' : ''}" id="tab-mvp">
+        <div class="players-columns" id="mvpColumns">
+          <div style="text-align:center;padding:40px;color:#888;grid-column:1/-1">
+            ${isLive ? "Vota il MVP" : isFinished ? "MVP della partita" : "Disponibile durante la partita"}
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="back-btn-wrapper">
+      <div class="phase-btn secondary" onclick="showMatches()">INDIETRO</div>
+    </div>
+  </div>
+`;
   
   // Aggiorna UI
   updateMatchUI(match);
