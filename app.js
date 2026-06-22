@@ -3,7 +3,7 @@
 // ============================================================================
 const CONFIG = {
     // 🔥 SOSTITUISCI CON IL TUO URL APPS SCRIPT WEB APP
-    BACKEND_URL: 'https://script.google.com/macros/s/AKfycbyQZYPDrEkat-BgyUKOzHbztlLBKUDi2u1KTzWvmxG45PwiEiS7KNVuSFo4YX2GWG14/exec',
+    BACKEND_URL: 'https://script.google.com/macros/s/AKfycbzRqS3LvU-q0hGW90bduUbMEMc1hcLnGaWDvIYxN7PinEUM2XN3aWo9mQjET3ShFbV1/exec',
     API_TIMEOUT: 30000,
     CACHE_VERSION: 'v3.0',
     CACHE_MAX_AGE: 5 * 60 * 1000
@@ -492,6 +492,9 @@ const ApiClient = {
     resetTournament: () => ApiClient.call('resetTournament'),
     uploadMediaFile: (matchId, fileName, fileType, base64) => 
       ApiClient.call('uploadMediaFile', [matchId, fileName, fileType, base64]),
+    generateMatchPostImage: (matchId, type) => ApiClient.call('generateMatchPostImage', [matchId, type]),
+    uploadMatchPostImage: (matchId, fileName, fileType, base64, type) => 
+      ApiClient.call('uploadMatchPostImage', [matchId, fileName, fileType, base64, type]),
 };
 
 // ============================================================================
@@ -1620,16 +1623,35 @@ function openNewMatchPage() {
 }
 
 async function saveMatch() {
-    const girone = document.getElementById("matchGirone")?.value, casa = document.getElementById("teamCasa")?.value, trasferta = document.getElementById("teamTrasferta")?.value;
-    const data = document.getElementById("matchDate")?.value, ora = document.getElementById("matchTime")?.value;
-    if (!girone) { alert("Seleziona girone"); return; } if (!casa || !trasferta) { alert("Seleziona le squadre"); return; } if (casa === trasferta) { alert("Le squadre devono essere diverse"); return; }
-    try {
-        await ApiClient.createMatchGirone(girone, casa, trasferta, data, ora);
-        document.querySelector(".modalOverlay")?.remove();
-        // 🔥 AGGIUNGI QUESTA RIGA
-        await invalidateCacheAndRefresh('matches');
-        showMatches();
-    } catch (e) { alert("Errore: " + (e?.message || e)); }
+  const girone = document.getElementById("matchGirone")?.value;
+  const casa = document.getElementById("teamCasa")?.value;
+  const trasferta = document.getElementById("teamTrasferta")?.value;
+  const data = document.getElementById("matchDate")?.value;
+  const ora = document.getElementById("matchTime")?.value;
+  
+  if (!girone) { alert("Seleziona girone"); return; }
+  if (!casa || !trasferta) { alert("Seleziona le squadre"); return; }
+  if (casa === trasferta) { alert("Le squadre devono essere diverse"); return; }
+  
+  try {
+    const result = await ApiClient.createMatchGirone(girone, casa, trasferta, data, ora);
+    document.querySelector(".modalOverlay")?.remove();
+    
+    await invalidateCacheAndRefresh('matches');
+    showMatches();
+    
+    // 🔥 GENERAZIONE AUTOMATICA POST PROGRAMMATA
+    if (result?.matchId) {
+      console.log('🎨 Generazione post PROGRAMMATA in background...');
+      // Non await - lascialo in background, non deve bloccare l'utente
+      generateMatchImage(result.matchId, 'PROGRAMMATA').then(() => {
+        // Dopo la generazione, ricarica i dati per avere il link aggiornato
+        invalidateCacheAndRefresh('matches');
+      }).catch(err => console.warn('⚠️ Generazione post fallita:', err));
+    }
+  } catch (e) {
+    alert("Errore: " + (e?.message || e));
+  }
 }
 
 // ============================================================================
@@ -2202,26 +2224,29 @@ async function toggleMatch() {
             // 🔥 4. RERENDER COMPLETO DELLA PAGINA (Risolve il problema del "non si aggiorna finché non esco e rientro")
             renderMatchPage(freshMatch);
 
-            // Gestione MVP in background se la partita è appena finita
             if (newStatus === "FINITA") {
-                console.log("🏆 Partita conclusa. Gestione MVP in background...");
-                (async () => {
-                    try {
-                        await submitAllMVPVotes(freshMatch.MATCH_ID);
-                        await ApiClient.finalizeMVP(freshMatch.MATCH_ID);
-                        
-                        // Dopo la finalizzazione, ricarichiamo di nuovo per mostrare l'MVP definitivo nella UI
-                        const finalData = await ApiClient.getMatchFull(freshMatch.MATCH_ID);
-                        if (finalData?.match) {
-                            window.APP_STATE.lastMatch = finalData.match;
-                            renderMatchPage(finalData.match); // Aggiorna UI con MVP definitivo
-                        }
-                        refreshStandingsDebounced(500);
-                    } catch (err) {
-                        console.error("Errore background MVP:", err);
+            console.log("🏆 Partita conclusa. Gestione MVP + Post in background...");
+            (async () => {
+                try {
+                    await submitAllMVPVotes(freshMatch.MATCH_ID);
+                    await ApiClient.finalizeMVP(freshMatch.MATCH_ID);
+                    const finalData = await ApiClient.getMatchFull(freshMatch.MATCH_ID);
+                    if (finalData?.match) {
+                        window.APP_STATE.lastMatch = finalData.match;
+                        renderMatchPage(finalData.match);
                     }
-                })();
-            } else {
+                    refreshStandingsDebounced(500);
+                    
+                    // 🔥 GENERAZIONE AUTOMATICA POST RISULTATO
+                    console.log('🎨 Generazione post RISULTATO in background...');
+                    await generateMatchImage(freshMatch.MATCH_ID, 'RISULTATO');
+                    // Ricarica dati per avere il link POST_TER aggiornato
+                    await invalidateCacheAndRefresh('matches');
+                } catch (err) {
+                    console.error("Errore background MVP/Post:", err);
+                }
+            })();
+        } else {
                 refreshStandingsDebounced(500);
             }
         }
@@ -5333,4 +5358,220 @@ async function downloadMatchImage(matchId) {
   link.href = imageUrl;
   link.download = `partita_${matchId}.jpg`;
   link.click();
+}
+
+async function generateMatchImage(matchId, type = "PROGRAMMATA") {
+  try {
+    console.log(`🎨 Generazione post ${type} per match ${matchId}...`);
+    
+    // 1. Recupera dati partita + template base64 dal backend
+    const matchData = await ApiClient.generateMatchPostImage(matchId, type);
+    if (!matchData?.success) {
+      throw new Error(matchData?.error || "Errore recupero dati");
+    }
+    
+    const data = matchData.data;
+    
+    // 2. Carica template da base64 (niente CORS!)
+    const templateImg = await new Promise((resolve, reject) => {
+      const img = new Image();
+      img.onload = () => resolve(img);
+      img.onerror = reject;
+      img.src = `data:image/jpeg;base64,${data.templateBase64}`;
+    });
+    
+    // 3. Crea canvas
+    const canvas = document.createElement('canvas');
+    canvas.width = templateImg.naturalWidth || 1080;
+    canvas.height = templateImg.naturalHeight || 1920;
+    const ctx = canvas.getContext('2d');
+    
+    // 4. Disegna template
+    ctx.drawImage(templateImg, 0, 0, canvas.width, canvas.height);
+    
+    // 5. Carica loghi squadre
+    const logoCasaUrl = data.logoCasaId ? getCachedImage(data.logoCasaId, 200) : null;
+    const logoTrasfUrl = data.logoTrasfertaId ? getCachedImage(data.logoTrasfertaId, 200) : null;
+    
+    const [logoCasa, logoTrasf] = await Promise.all([
+      logoCasaUrl ? loadImageSafe(logoCasaUrl) : null,
+      logoTrasfUrl ? loadImageSafe(logoTrasfUrl) : null
+    ]);
+    
+    // 6. POSIZIONI (adatta al tuo template)
+    const W = canvas.width;
+    const H = canvas.height;
+    
+    const positions = {
+      header: { x: W / 2, y: H * 0.06 },
+      logoCasa: { x: W * 0.25, y: H * 0.30, size: W * 0.12 },
+      logoTrasf: { x: W * 0.75, y: H * 0.30, size: W * 0.12 },
+      nomeCasa: { x: W * 0.25, y: H * 0.42 },
+      nomeTrasf: { x: W * 0.75, y: H * 0.42 },
+      center: { x: W / 2, y: H * 0.33 },
+      eventiCasa: { x: W * 0.25, y: H * 0.52 },
+      eventiTrasf: { x: W * 0.75, y: H * 0.52 },
+      mvp: { x: W / 2, y: H * 0.88 }
+    };
+    
+    // 7. Disegna header (FASE - TURNO)
+    ctx.font = `bold ${W * 0.035}px Oswald, sans-serif`;
+    ctx.fillStyle = '#FFFFFF';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    const headerText = `${data.fase}${data.turno ? ' - ' + data.turno : ''}`;
+    ctx.fillText(headerText, positions.header.x, positions.header.y);
+    
+    // 8. Disegna loghi squadre (circolari)
+    if (logoCasa) drawCircularImage(ctx, logoCasa, positions.logoCasa.x, positions.logoCasa.y, positions.logoCasa.size);
+    if (logoTrasf) drawCircularImage(ctx, logoTrasf, positions.logoTrasf.x, positions.logoTrasf.y, positions.logoTrasf.size);
+    
+    // 9. Disegna nomi squadre
+    ctx.font = `bold ${W * 0.03}px Oswald, sans-serif`;
+    ctx.fillStyle = '#FFFFFF';
+    ctx.textAlign = 'center';
+    ctx.fillText(data.nomeCasa.toUpperCase(), positions.nomeCasa.x, positions.nomeCasa.y);
+    ctx.fillText(data.nomeTrasferta.toUpperCase(), positions.nomeTrasf.x, positions.nomeTrasf.y);
+    
+    // 10. Disegna centro (data/ora o risultato)
+    if (type === "PROGRAMMATA") {
+      const dateObj = new Date(data.data);
+      const dateStr = `${dateObj.getDate()}/${dateObj.getMonth() + 1}`;
+      ctx.font = `bold ${W * 0.055}px Oswald, sans-serif`;
+      ctx.fillStyle = '#FFFFFF';
+      ctx.fillText(dateStr, positions.center.x, positions.center.y - H * 0.02);
+      ctx.font = `bold ${W * 0.04}px Oswald, sans-serif`;
+      ctx.fillText(data.ora, positions.center.x, positions.center.y + H * 0.03);
+    } else {
+      ctx.font = `bold ${W * 0.08}px Oswald, sans-serif`;
+      ctx.fillStyle = '#FFD700';
+      ctx.fillText(`${data.golCasa} - ${data.golTrasferta}`, positions.center.x, positions.center.y);
+    }
+    
+    // 11. Disegna eventi gol (solo RISULTATO)
+    if (type === "RISULTATO" && data.eventiGol.length > 0) {
+      ctx.font = `${W * 0.022}px Oswald, sans-serif`;
+      ctx.fillStyle = '#FFFFFF';
+      ctx.textAlign = 'center';
+      
+      const eventiCasa = data.eventiGol.filter(e => e.team === "casa");
+      const eventiTrasf = data.eventiGol.filter(e => e.team === "trasferta");
+      
+      let yCasa = positions.eventiCasa.y;
+      eventiCasa.forEach(e => {
+        const text = `${e.minute}' ${e.player}${e.assist ? ' (' + e.assist + ')' : ''}`;
+        ctx.fillText(text, positions.eventiCasa.x, yCasa);
+        yCasa += H * 0.025;
+      });
+      
+      let yTrasf = positions.eventiTrasf.y;
+      eventiTrasf.forEach(e => {
+        const text = `${e.minute}' ${e.player}${e.assist ? ' (' + e.assist + ')' : ''}`;
+        ctx.fillText(text, positions.eventiTrasf.x, yTrasf);
+        yTrasf += H * 0.025;
+      });
+    }
+    
+    // 12. Disegna MVP (solo RISULTATO)
+    if (type === "RISULTATO" && data.mvpName) {
+      ctx.font = `bold ${W * 0.028}px Oswald, sans-serif`;
+      ctx.fillStyle = '#FFD700';
+      ctx.textAlign = 'center';
+      ctx.fillText(`MVP: ${data.mvpName.toUpperCase()}`, positions.mvp.x, positions.mvp.y);
+    }
+    
+    // 13. Converti canvas in blob
+    const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/jpeg', 0.92));
+    const fileName = `${type}_${data.nomeCasa}_vs_${data.nomeTrasferta}_${Date.now()}.jpg`;
+    const base64 = await blobToBase64(blob);
+    
+    // 14. Carica su Drive e salva URL nel foglio
+    const uploadResult = await ApiClient.uploadMatchPostImage(matchId, fileName, 'image/jpeg', base64, type);
+    
+    if (uploadResult?.success) {
+      console.log(`✅ Post ${type} generato:`, uploadResult.fileUrl);
+      
+      // 15. 🔥 AGGIORNA la cache locale con il nuovo link
+      if (window.APP_CACHE.matches) {
+        const idx = window.APP_CACHE.matches.findIndex(m => String(m.MATCH_ID) === String(matchId));
+        if (idx >= 0) {
+          if (type === 'PROGRAMMATA') {
+            window.APP_CACHE.matches[idx].POST_PRO = uploadResult.fileUrl;
+          } else {
+            window.APP_CACHE.matches[idx].POST_TER = uploadResult.fileUrl;
+          }
+          CacheManager.save(window.APP_CACHE);
+        }
+      }
+      
+      // 16. Aggiorna lastMatch
+      if (window.APP_STATE.lastMatch && String(window.APP_STATE.lastMatch.MATCH_ID) === String(matchId)) {
+        if (type === 'PROGRAMMATA') {
+          window.APP_STATE.lastMatch.POST_PRO = uploadResult.fileUrl;
+        } else {
+          window.APP_STATE.lastMatch.POST_TER = uploadResult.fileUrl;
+        }
+      }
+      
+      return uploadResult;
+    } else {
+      throw new Error("Errore upload immagine");
+    }
+    
+  } catch (error) {
+    console.error('❌ Errore generazione immagine:', error);
+    // Non mostrare alert - la generazione è automatica e non deve bloccare l'utente
+    return null;
+  }
+}
+
+// Helper: carica immagine in modo sicuro
+function loadImageSafe(url) {
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.onload = () => resolve(img);
+    img.onerror = () => {
+      console.warn('⚠️ Errore caricamento immagine:', url);
+      resolve(null);
+    };
+    img.src = url;
+  });
+}
+
+/**
+ * Helper: Disegna immagine circolare
+ */
+function drawCircularImage(ctx, img, x, y, size) {
+  ctx.save();
+  ctx.beginPath();
+  ctx.arc(x, y, size / 2, 0, Math.PI * 2);
+  ctx.closePath();
+  ctx.clip();
+  
+  const aspectRatio = img.width / img.height;
+  let drawWidth, drawHeight;
+  
+  if (aspectRatio > 1) {
+    drawHeight = size;
+    drawWidth = size * aspectRatio;
+  } else {
+    drawWidth = size;
+    drawHeight = size / aspectRatio;
+  }
+  
+  ctx.drawImage(img, x - drawWidth / 2, y - drawHeight / 2, drawWidth, drawHeight);
+  ctx.restore();
+}
+
+/**
+ * Helper: Converti blob in base64
+ */
+function blobToBase64(blob) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onloadend = () => resolve(reader.result.split(',')[1]);
+    reader.onerror = reject;
+    reader.readAsDataURL(blob);
+  });
 }
