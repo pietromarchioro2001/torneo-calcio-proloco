@@ -2000,7 +2000,6 @@ function renderMatchPage(match) {
   `;
   
   // 🔥 TEMPLATE HTML
-  // 🔥 TEMPLATE HTML
 document.getElementById("app").innerHTML = `
   <div class="match-page">
     <div class="match-header-big">
