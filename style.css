@@ -2461,16 +2461,6 @@ body {
     margin-bottom: 20px !important; /* ✅ AUMENTATO da 10px a 20px */
   }
 
-   /* Container pulsanti in alto */
-  .match-header-actions {
-     position: absolute !important;
-     top: 10px !important;
-     right: 15px !important;
-     display: flex !important;
-     gap: 8px !important;
-     z-index: 100 !important;
-   }
-
   .match-page .back-btn-wrapper,
   .back-btn-wrapper {
     position: fixed !important;
@@ -3208,71 +3198,73 @@ body {
 📤 PULSANTI IN ALTO (MEDIA + CONDIVIDI) - MOBILE
 ============================================================================ */
 
-/* Container pulsanti in alto nella zona bianca */
 .match-header-actions {
-  position: absolute !important;
-  top: 10px !important;
-  right: 15px !important;
-  display: flex !important;
-  gap: 8px !important;
-  z-index: 100 !important;
+position: absolute !important;
+top: 10px !important;
+left: 50% !important;
+transform: translateX(-50%) !important;
+right: auto !important;
+display: flex !important;
+gap: 10px !important;
+z-index: 100 !important;
+align-items: center !important;
 }
 
-/* Pulsante CONDIVIDI - piccolo e compatto */
 .share-match-btn-top {
-  width: 38px !important;
-  height: 38px !important;
-  min-width: 38px !important;
-  padding: 0 !important;
-  border-radius: 10px !important;
-  background: white !important;
-  border: 2px solid #7a1e2c !important;
-  display: flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.1) !important;
-  cursor: pointer !important;
+width: 40px !important;
+height: 40px !important;
+min-width: 40px !important;
+padding: 0 !important;
+border-radius: 10px !important;
+background: white !important;
+border: 2px solid #7a1e2c !important;
+display: flex !important;
+align-items: center !important;
+justify-content: center !important;
+box-shadow: 0 2px 8px rgba(0,0,0,0.1) !important;
+cursor: pointer !important;
+transition: all 0.2s ease !important;
 }
-
 .share-match-btn-top svg {
-  width: 18px !important;
-  height: 18px !important;
-  fill: #7a1e2c !important;
+width: 18px !important;
+height: 18px !important;
+fill: #7a1e2c !important;
 }
-
 .share-match-btn-top:active {
-  transform: scale(0.95);
+transform: scale(0.95);
+background: #7a1e2c !important;
 }
-
-/* Pulsante MEDIA - con icona cartella */
+.share-match-btn-top:active svg {
+fill: white !important;
+}
+   
 .media-btn-top {
-  width: 38px !important;
-  height: 38px !important;
-  min-width: 38px !important;
-  padding: 0 !important;
-  border-radius: 10px !important;
-  background: #7a1e2c !important;
-  color: white !important;
-  border: none !important;
-  display: flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-  box-shadow: 0 2px 8px rgba(122, 30, 44, 0.3) !important;
-  cursor: pointer !important;
-  font-size: 18px !important;
+width: 40px !important;
+height: 40px !important;
+min-width: 40px !important;
+padding: 0 !important;
+border-radius: 10px !important;
+background: #7a1e2c !important;
+color: white !important;
+border: none !important;
+display: flex !important;
+align-items: center !important;
+justify-content: center !important;
+box-shadow: 0 2px 8px rgba(122, 30, 44, 0.3) !important;
+cursor: pointer !important;
+font-size: 18px !important;
+transition: all 0.2s ease !important;
 }
-
 .media-btn-top::before {
-  content: '📁' !important;
-  font-size: 18px !important;
+content: '📁' !important;
+font-size: 18px !important;
 }
-
 .media-btn-top span {
-  display: none !important;
+display: none !important;
 }
-
 .media-btn-top:active {
-  transform: scale(0.95);
+transform: scale(0.95);
+background: #9f2c3d !important;
 }
 
 /* Nascondi i vecchi pulsanti su mobile */
@@ -3299,23 +3291,7 @@ body {
   }
 }
 
-/* Desktop: mostra solo condividi nella toolbar */
-@media (min-width: 769px) {
-  .match-header-actions {
-    display: none !important;
-  }
-  
-  .share-match-desktop-wrapper {
-    display: flex !important;
-  }
-  
-  .share-match-mobile-wrapper {
-    display: none !important;
-  }
-  
-  .media-button {
-    display: inline-flex !important;
-  }
+
 }
   
 
