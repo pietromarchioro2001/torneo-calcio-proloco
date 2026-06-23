@@ -434,7 +434,7 @@ const ApiClient = {
             action: action,
             payload: payload
         }),
-        redirect: 'manual'
+        redirect: 'follow'
     });
       
       if (!response.ok) {
@@ -4377,7 +4377,6 @@ function bootAdminApp() {
     };
     
     hydrateMatches(window.APP_CACHE.matches || []);
-    preloadRecentEvents();
     CacheManager.save(window.APP_CACHE);
     window.APP_STATE._dataReady = true;
 
