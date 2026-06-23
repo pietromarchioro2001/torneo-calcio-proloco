@@ -1813,28 +1813,25 @@ async function shareMatch() {
     return;
   }
 
-  // Determina quale link usare in base allo stato
   const stato = String(match.STATO_PARTITA || "").trim().toUpperCase();
+
   let shareUrl = '';
-  
   if (stato === 'FINITA') {
     shareUrl = match.POST_TER || match.post_ter || '';
   } else {
-    // PROGRAMMATA, LIVE, SUPP, RIGORI
     shareUrl = match.POST_PRO || match.post_pro || '';
   }
 
   if (!shareUrl) {
-    alert('Link di condivisione non disponibile');
+    alert('Link di condivisione non disponibile. Genera prima il post.');
     return;
   }
 
-  // Prepara testo condivisione
   const nomeCasa = match.SQUADRA_CASA || 'CASA';
   const nomeTrasf = match.SQUADRA_TRASFERTA || 'TRASFERTA';
-  const shareText = `${nomeCasa} vs ${nomeTrasferta} - Torneo dei Paesi Sarnonico 2026`;
 
-  // Usa Web Share API nativa del dispositivo
+  const shareText = `${nomeCasa} vs ${nomeTrasf} - Torneo dei Paesi Sarnonico 2026`;
+
   if (navigator.share) {
     try {
       await navigator.share({
@@ -1842,16 +1839,13 @@ async function shareMatch() {
         text: shareText,
         url: shareUrl
       });
-      console.log('✅ Contenuto condiviso con successo');
     } catch (error) {
       if (error.name !== 'AbortError') {
         console.error('❌ Errore condivisione:', error);
-        // Fallback: copia link negli appunti
         fallbackCopyToClipboard(shareUrl);
       }
     }
   } else {
-    // Fallback per browser che non supportano Web Share API
     fallbackCopyToClipboard(shareUrl);
   }
 }
