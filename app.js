@@ -3,7 +3,7 @@
 // ============================================================================
 const CONFIG = {
     // 🔥 SOSTITUISCI CON IL TUO URL APPS SCRIPT WEB APP
-    BACKEND_URL: 'https://script.google.com/macros/s/AKfycbyprRKrYWamXrgiXos4MR_Q8OqctQOH8t17MXEdW7I_ppMdT5qb36UMQrvpTJs0lRiS/exec',
+    BACKEND_URL: 'https://script.google.com/macros/s/AKfycbx9uFgWztuBUAiNgXt39eq7sVCzP7AGcNEbcrdaUHlcbZeosFEoYVr0TeTePnzYlaDk/exec',
     API_TIMEOUT: 30000,
     CACHE_VERSION: 'v3.0',
     CACHE_MAX_AGE: 5 * 60 * 1000
@@ -1812,42 +1812,164 @@ async function shareMatch() {
     alert('Partita non caricata');
     return;
   }
-
+  
   const stato = String(match.STATO_PARTITA || "").trim().toUpperCase();
-
   let shareUrl = '';
-  if (stato === 'FINITA') {
-    shareUrl = match.POST_TER || match.post_ter || '';
+  
+  // ✅ SCEGLI IL LINK GIUSTO IN BASE ALLO STATO
+  if (stato === 'FINITA' || stato === 'TERMINATA') {
+    // Usa link dalla colonna V (post risultato)
+    shareUrl = match.POST_RISULTATO || match.post_risultato || match.COLUMN_V || '';
+    
+    // Se non esiste ancora, generarlo
+    if (!shareUrl) {
+      try {
+        const result = await generateMatchResultPost(match.MATCH_ID);
+        shareUrl = result?.fileUrl || '';
+      } catch (error) {
+        console.error('Errore generazione post:', error);
+      }
+    }
   } else {
-    shareUrl = match.POST_PRO || match.post_pro || '';
+    // Usa link dalla colonna U (post programmata)
+    shareUrl = match.POST_PRO || match.post_pro || match.COLUMN_U || '';
   }
-
+  
   if (!shareUrl) {
-    alert('Link di condivisione non disponibile. Genera prima il post.');
+    alert('Link di condivisione non disponibile');
     return;
   }
-
-  const nomeCasa = match.SQUADRA_CASA || 'CASA';
-  const nomeTrasf = match.SQUADRA_TRASFERTA || 'TRASFERTA';
-
-  const shareText = `${nomeCasa} vs ${nomeTrasf} - Torneo dei Paesi Sarnonico 2026`;
-
+  
+  // Condividi...
+  const shareText = `${match.SQUADRA_CASA} vs ${match.SQUADRA_TRASFERTA} - Torneo Sarnonico 2026`;
+  
   if (navigator.share) {
     try {
       await navigator.share({
-        title: 'Torneo dei Paesi',
+        title: 'Torneo Sarnonico',
         text: shareText,
         url: shareUrl
       });
     } catch (error) {
       if (error.name !== 'AbortError') {
-        console.error('❌ Errore condivisione:', error);
         fallbackCopyToClipboard(shareUrl);
       }
     }
   } else {
     fallbackCopyToClipboard(shareUrl);
   }
+}
+
+async function generateMatchResultPost(matchId) {
+  try {
+    console.log(`🎨 Generazione post RISULTATO per match ${matchId}...`);
+    
+    // 1. Recupera dati partita
+    const matchData = await ApiClient.getMatchFull(matchId);
+    if (!matchData?.success) throw new Error("Errore recupero dati partita");
+    
+    const partita = matchData.data;
+    
+    // 2. Recupera eventi GOAL per questa partita
+    const eventsResponse = await ApiClient.call('getEventsByMatchAndType', [matchId, 'GOAL']);
+    if (!eventsResponse?.success) throw new Error("Errore recupero eventi");
+    
+    const events = eventsResponse.data || [];
+    
+    // 3. Separa eventi per squadra e costruisci liste marcatori
+    const marcatoriCasa = [];
+    const marcatoriTrasferta = [];
+    
+    for (const event of events) {
+      // Converti ID giocatore in nome
+      const marcatoreName = await getPlayerNameById(event.PLAYER_ID);
+      
+      // Converti ID assist in nome (se presente)
+      let assistName = '';
+      if (event.ASSIST_PLAYER_ID && event.ASSIST_PLAYER_ID !== '') {
+        assistName = await getPlayerNameById(event.ASSIST_PLAYER_ID);
+      }
+      
+      // Formatta stringa marcatore
+      const marcatoreStr = assistName 
+        ? `${marcatoreName} (${assistName})`
+        : marcatoreName;
+      
+      // Aggiungi alla squadra corretta
+      if (event.TEAM_ID === partita.CASA_ID) {
+        marcatoriCasa.push(marcatoreStr);
+      } else {
+        marcatoriTrasferta.push(marcatoreStr);
+      }
+    }
+    
+    // 4. Unisci con <br> per andare a capo nel template
+    const marcatoriCasaText = marcatoriCasa.join('<br>');
+    const marcatoriTrasfertaText = marcatoriTrasferta.join('<br>');
+    
+    // 5. Recupera loghi squadre da Drive
+    const logoCasaUrl = await getTeamLogoUrl(partita.CASA_ID);
+    const logoTrasfertaUrl = await getTeamLogoUrl(partita.TRASFERTA_ID);
+    
+    // 6. Converti ID MVP in nome
+    const mvpName = await getPlayerNameById(partita.MVP_ID);
+    
+    // 7. Prepara dati per il template
+    const templateData = {
+      FASE: partita.FASE || '',
+      NOME_CASA: partita.NOME_CASA || '',
+      NOME_TRASFERTA: partita.NOME_TRASFERTA || '',
+      LOGO_CASA: logoCasaUrl,
+      LOGO_TRASFERTA: logoTrasfertaUrl,
+      RIS_CASA: partita.GOL_CASA || 0,
+      RIS_TRASFERTA: partita.GOL_TRASFERTA || 0,
+      MARCATORI_CASA: marcatoriCasaText,
+      MARCATORI_TRASFERTA: marcatoriTrasfertaText,
+      MVP: mvpName
+    };
+    
+    // 8. Carica template base64 e genera immagine
+    const result = await ApiClient.call('generateMatchResultPost', [templateData]);
+    if (!result?.success) throw new Error(result?.error || "Errore generazione");
+    
+    // 9. Carica su Drive e ottieni link
+    const uploadResult = await ApiClient.call('uploadMatchPostImage', [
+      matchId,
+      `RISULTATO_${partita.NOME_CASA}_vs_${partita.NOME_TRASFERTA}_${Date.now()}.jpg`,
+      'image/jpeg',
+      result.data.base64,
+      'RISULTATO'
+    ]);
+    
+    if (uploadResult?.success) {
+      console.log(`✅ Post risultato generato:`, uploadResult.fileUrl);
+      
+      // 10. Aggiorna colonna V del foglio PARTITE con il link
+      await ApiClient.call('updateMatchPostLink', [matchId, uploadResult.fileUrl, 'RISULTATO']);
+      
+      return uploadResult;
+    } else {
+      throw new Error("Errore upload immagine");
+    }
+    
+  } catch (error) {
+    console.error('❌ Errore generazione post risultato:', error);
+    throw error;
+  }
+}
+
+// Helper: Converti ID giocatore in nome
+async function getPlayerNameById(playerId) {
+  if (!playerId || playerId === '') return 'Sconosciuto';
+  
+  const response = await ApiClient.call('getPlayerNameById', [playerId]);
+  return response?.data?.nome || 'Sconosciuto';
+}
+
+// Helper: Recupera URL logo squadra da Drive
+async function getTeamLogoUrl(teamId) {
+  const response = await ApiClient.call('getTeamLogoUrl', [teamId]);
+  return response?.data?.url || '';
 }
 
 function fallbackCopyToClipboard(text) {
