@@ -1930,34 +1930,36 @@ async function shareMatch() {
     return;
   }
 
-  // Estrai fileId dall'URL Drive
-  const fileId = extractFileIdFromUrl(shareUrl);
-  
-  // Costruisci URL diretto immagine (CORS-friendly)
-  const imageUrl = fileId 
-    ? `https://lh3.googleusercontent.com/d/${fileId}=w1080` 
-    : shareUrl;
-
   const nomeCasa = match.SQUADRA_CASA || 'CASA';
   const nomeTrasf = match.SQUADRA_TRASFERTA || 'TRASFERTA';
   const shareText = `${nomeCasa} vs ${nomeTrasf} - Torneo dei Paesi Sarnonico 2026`;
 
-  // 🔥 PROVA A CONDIVIDERE L'IMMAGINE DIRETTAMENTE
+  // 🔥 Estrai fileId dall'URL Drive
+  const fileId = extractFileIdFromUrl(shareUrl);
+  if (!fileId) {
+    fallbackShare(shareUrl, shareText);
+    return;
+  }
+
+  // 🔥 URL diretto dell'immagine (CORS-friendly)
+  const imageUrl = `https://lh3.googleusercontent.com/d/${fileId}=w1080`;
+
+  // 🔥 Prova a scaricare l'immagine e condividerla come FILE
   if (navigator.share && navigator.canShare) {
     try {
-      // Scarica l'immagine come blob
       const response = await fetch(imageUrl);
       const blob = await response.blob();
       
-      // Crea file immagine
       const file = new File(
         [blob], 
         `${nomeCasa}_vs_${nomeTrasf}.png`, 
         { type: blob.type || 'image/png' }
       );
       
-      // Verifica se il dispositivo supporta la condivisione file
-      const shareData = { files: [file], text: shareText };
+      const shareData = { 
+        files: [file], 
+        text: shareText 
+      };
       
       if (navigator.canShare(shareData)) {
         await navigator.share(shareData);
@@ -1969,44 +1971,39 @@ async function shareMatch() {
     }
   }
 
-  // 🔥 FALLBACK: condividi solo il link (se il file non funziona)
-  if (navigator.share) {
-    try {
-      await navigator.share({
-        title: 'Torneo dei Paesi',
-        text: shareText,
-        url: shareUrl
-      });
-      console.log('✅ Link condiviso');
-    } catch (error) {
-      if (error.name !== 'AbortError') {
-        fallbackCopyToClipboard(shareUrl);
-      }
-    }
-  } else {
-    fallbackCopyToClipboard(shareUrl);
-  }
+  // 🔥 Fallback: condividi solo il link
+  fallbackShare(shareUrl, shareText);
 }
 
-/**
- * Estrae il fileId da un URL Drive
- * Es: https://drive.google.com/file/d/ABC123/view → ABC123
- */
+//  Helper: estrae il fileId da un URL Drive
 function extractFileIdFromUrl(url) {
   if (!url) return null;
-  
   // Pattern 1: /file/d/FILE_ID/
   const match1 = url.match(/\/file\/d\/([a-zA-Z0-9_-]+)/);
   if (match1) return match1[1];
-  
   // Pattern 2: ?id=FILE_ID
   const match2 = url.match(/[?&]id=([a-zA-Z0-9_-]+)/);
   if (match2) return match2[1];
-  
   // Pattern 3: URL è già un fileId
   if (/^[a-zA-Z0-9_-]{20,}$/.test(url)) return url;
-  
   return null;
+}
+
+// 🔥 Helper: fallback per condivisione link
+function fallbackShare(shareUrl, shareText) {
+  if (navigator.share) {
+    navigator.share({
+      title: 'Torneo dei Paesi',
+      text: shareText,
+      url: shareUrl
+    }).catch(err => {
+      if (err.name !== 'AbortError') {
+        fallbackCopyToClipboard(shareUrl);
+      }
+    });
+  } else {
+    fallbackCopyToClipboard(shareUrl);
+  }
 }
 
 async function generateMatchResultPost(matchId) {
