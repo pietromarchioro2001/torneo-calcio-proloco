@@ -5360,8 +5360,9 @@ async function downloadMatchImage(matchId) {
 
 async function generateMatchImage(matchId, type = "PROGRAMMATA") {
   try {
-    console.log(`🎨 Generazione post ${type} per match ${matchId}`);
+    console.log(`🎨 Generazione post ${type} per match ${matchId}...`);
 
+    // 1. Chiamata al backend (che ora genera l'immagine e la carica su Drive)
     const result = await ApiClient.generateMatchPostImage(matchId, type);
 
     if (!result?.success) {
@@ -5369,70 +5370,40 @@ async function generateMatchImage(matchId, type = "PROGRAMMATA") {
     }
 
     const imageUrl = result.fileUrl;
+    console.log(`✅ Post ${type} generato:`, imageUrl);
 
-    console.log("✅ Immagine generata:", imageUrl);
+    // 2. 🔥 AGGIORNA la cache locale con il nuovo link (FONDAMENTALE per il pulsante Condividi)
+    if (window.APP_CACHE.matches) {
+      const idx = window.APP_CACHE.matches.findIndex(m => String(m.MATCH_ID) === String(matchId));
+      if (idx >= 0) {
+        if (type === 'PROGRAMMATA') {
+          window.APP_CACHE.matches[idx].POST_PRO = imageUrl;
+        } else {
+          window.APP_CACHE.matches[idx].POST_TER = imageUrl;
+        }
+        CacheManager.save(window.APP_CACHE);
+      }
+    }
 
-    alert("✅ Post generato correttamente!");
+    // 3. Aggiorna anche lastMatch se è la partita attualmente aperta
+    if (window.APP_STATE.lastMatch && String(window.APP_STATE.lastMatch.MATCH_ID) === String(matchId)) {
+      if (type === 'PROGRAMMATA') {
+        window.APP_STATE.lastMatch.POST_PRO = imageUrl;
+      } else {
+        window.APP_STATE.lastMatch.POST_TER = imageUrl;
+      }
+    }
 
-    // opzionale: apre subito il file Drive
-    window.open(imageUrl, "_blank");
+    // ⚠️ NOTA: Ho rimosso `alert()` e `window.open()` perché questa funzione viene 
+    // chiamata in BACKGROUND (es. quando crei una partita o la concludi). 
+    // Mantenere gli alert bloccherebbe l'utente e aprirebbe tab indesiderati.
 
     return imageUrl;
 
   } catch (error) {
-    console.error("❌ Errore generazione immagine:", error);
-    alert("Errore generazione immagine: " + error.message);
+    console.error('❌ Errore generazione immagine:', error);
+    // Nessun alert qui per non interrompere l'utente durante le operazioni automatiche
     return null;
   }
 }
 
-// Helper: carica immagine in modo sicuro
-function loadImageSafe(url) {
-  return new Promise((resolve) => {
-    const img = new Image();
-    img.crossOrigin = 'anonymous';
-    img.onload = () => resolve(img);
-    img.onerror = () => {
-      console.warn('⚠️ Errore caricamento immagine:', url);
-      resolve(null);
-    };
-    img.src = url;
-  });
-}
-
-/**
- * Helper: Disegna immagine circolare
- */
-function drawCircularImage(ctx, img, x, y, size) {
-  ctx.save();
-  ctx.beginPath();
-  ctx.arc(x, y, size / 2, 0, Math.PI * 2);
-  ctx.closePath();
-  ctx.clip();
-  
-  const aspectRatio = img.width / img.height;
-  let drawWidth, drawHeight;
-  
-  if (aspectRatio > 1) {
-    drawHeight = size;
-    drawWidth = size * aspectRatio;
-  } else {
-    drawWidth = size;
-    drawHeight = size / aspectRatio;
-  }
-  
-  ctx.drawImage(img, x - drawWidth / 2, y - drawHeight / 2, drawWidth, drawHeight);
-  ctx.restore();
-}
-
-/**
- * Helper: Converti blob in base64
- */
-function blobToBase64(blob) {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onloadend = () => resolve(reader.result.split(',')[1]);
-    reader.onerror = reject;
-    reader.readAsDataURL(blob);
-  });
-}
