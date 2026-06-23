@@ -366,12 +366,114 @@ const CacheManager = {
 };
 
 // ============================================================================
+// 🖼️ IMAGE CACHE & PRELOAD SYSTEM
+// ============================================================================
+const ImageCache = {
+  cache: new Map(),
+  pending: new Map(),
+  
+  get(fileId, size = 400) {
+    const key = `${fileId}_${size}`;
+    return this.cache.get(key);
+  },
+  
+  set(fileId, size, img) {
+    const key = `${fileId}_${size}`;
+    this.cache.set(key, img);
+  },
+  
+  has(fileId, size = 400) {
+    const key = `${fileId}_${size}`;
+    return this.cache.has(key);
+  },
+  
+  clear() {
+    this.cache.clear();
+    this.pending.clear();
+  }
+};
+
+function preloadImage(fileId, size = 400) {
+  if (!fileId) return Promise.resolve(null);
+  if (ImageCache.has(fileId, size)) return Promise.resolve(ImageCache.get(fileId, size));
+  
+  const key = `${fileId}_${size}`;
+  if (ImageCache.pending.has(key)) return ImageCache.pending.get(key);
+  
+  const url = getCachedImage(fileId, size);
+  const promise = new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => {
+      ImageCache.set(fileId, size, img);
+      ImageCache.pending.delete(key);
+      resolve(img);
+    };
+    img.onerror = () => {
+      console.warn(`️ Errore caricamento: ${fileId}`);
+      ImageCache.pending.delete(key);
+      reject(new Error(`Failed: ${fileId}`));
+    };
+    img.src = url;
+  });
+  
+  ImageCache.pending.set(key, promise);
+  return promise;
+}
+
+async function preloadTeamLogos() {
+  const teams = window.APP_CACHE.teams || [];
+  if (teams.length === 0) return;
+  
+  console.log(`🖼️ Precaricamento loghi di ${teams.length} squadre...`);
+  const start = Date.now();
+  
+  // Preload dimensioni usate frequentemente
+  const sizes = [32, 48, 65, 120];
+  
+  const promises = teams.flatMap(team => {
+    if (!team.LOGO_ID) return [];
+    return sizes.map(size => preloadImage(team.LOGO_ID, size).catch(() => {}));
+  });
+  
+  await Promise.allSettled(promises);
+  console.log(`✅ Loghi precaricati in ${Date.now() - start}ms`);
+}
+
+async function preloadMatchLogos(matches = []) {
+  const matchIds = matches.slice(0, 10); // Prime 10 partite
+  const promises = matchIds.flatMap(m => {
+    const p = [];
+    if (m.LOGO_CASA) p.push(preloadImage(m.LOGO_CASA, 42).catch(() => {}));
+    if (m.LOGO_TRASFERTA) p.push(preloadImage(m.LOGO_TRASFERTA, 42).catch(() => {}));
+    return p;
+  });
+  
+  await Promise.allSettled(promises);
+}
+
+// ============================================================================
 // 🎨 UTILITY FUNCTIONS
 // ============================================================================
 function getCachedImage(fileId, size = 400) {
-    if (!fileId) return null;
-    const version = localStorage.getItem("img_v_" + fileId) || '1';
-    return `https://lh3.googleusercontent.com/d/${fileId}=w${size}?v=${version}`;
+  if (!fileId) return null;
+  const version = localStorage.getItem("img_v_" + fileId) || '1';
+  return `https://lh3.googleusercontent.com/d/${fileId}=w${size}?v=${version}`;
+}
+
+// Nuova funzione che restituisce l'immagine dalla cache o l'URL
+function getTeamLogo(fileId, size = 400, fallback = '⚽') {
+  if (!fileId) return `<div class="team-logo-placeholder">${fallback}</div>`;
+  
+  const url = getCachedImage(fileId, size);
+  const cachedImg = ImageCache.get(fileId, size);
+  
+  if (cachedImg) {
+    // Immagine già in cache - usa src diretto
+    return `<img src="${url}" alt="" loading="eager" fetchpriority="high">`;
+  } else {
+    // Immagine non in cache - usa lazy loading
+    return `<img src="${url}" alt="" loading="lazy" onerror="this.style.display='none'">`;
+  }
 }
 
 function parseLocalDate(dateStr) {
@@ -4516,32 +4618,33 @@ function bootAdminApp() {
     }
   }, 100); // Ridotto da 2500ms a 100ms per chiudere subito lo splash PWA
 
-  // Fetch dati dal backend
   Promise.all([
-    ApiClient.getInitialData(),
-    ApiClient.isFinalStageStarted().catch(() => false)
-  ])
-  .then(async ([initialData, finalStageStarted]) => {
-    dataLoaded = true;
-    
-    // ✅ Aggiorna cache
-    window.APP_CACHE = {
-      ...window.APP_CACHE,
-      teams: initialData.teams || window.APP_CACHE.teams,
-      matches: initialData.matches || window.APP_CACHE.matches,
-      standings: initialData.standings || window.APP_CACHE.standings,
-      fullTeams: initialData.fullTeams || window.APP_CACHE.fullTeams,
-      playersMap: initialData.playersMap || window.APP_CACHE.playersMap,
-      meta: {
-        ...window.APP_CACHE.meta,
-        initialized: true,
-        finalStageStarted: finalStageStarted
-      }
-    };
-    
-    hydrateMatches(window.APP_CACHE.matches || []);
-    CacheManager.save(window.APP_CACHE);
-    window.APP_STATE._dataReady = true;
+  ApiClient.getInitialData(),
+  ApiClient.isFinalStageStarted().catch(() => false)
+]).then(async ([initialData, finalStageStarted]) => {
+  dataLoaded = true;
+  // ✅ Aggiorna cache
+  window.APP_CACHE = {
+    ...window.APP_CACHE,
+    teams: initialData.teams || window.APP_CACHE.teams,
+    matches: initialData.matches || window.APP_CACHE.matches,
+    standings: initialData.standings || window.APP_CACHE.standings,
+    fullTeams: initialData.fullTeams || window.APP_CACHE.fullTeams,
+    playersMap: initialData.playersMap || window.APP_CACHE.playersMap,
+    meta: {
+      ...window.APP_CACHE.meta,
+      initialized: true,
+      finalStageStarted: finalStageStarted
+    }
+  };
+  hydrateMatches(window.APP_CACHE.matches || []);
+  preloadRecentEvents();
+  CacheManager.save(window.APP_CACHE);
+  window.APP_STATE._dataReady = true;
+  
+  // 🔥 NUOVO: Precarica loghi squadre PRIMA di mostrare la UI
+  await preloadTeamLogos();
+  await preloadMatchLogos(window.APP_CACHE.matches);
 
     // 🔥 Carica fase finale se attiva
     if (finalStageStarted) {
