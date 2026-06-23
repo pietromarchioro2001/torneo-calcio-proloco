@@ -3,7 +3,7 @@
 // ============================================================================
 const CONFIG = {
     // 🔥 SOSTITUISCI CON IL TUO URL APPS SCRIPT WEB APP
-    BACKEND_URL: 'https://script.google.com/macros/s/AKfycbztimA3l8t_xSuZMXl0N2WajOjEEMYkmmsEIL9S3GWGvPHYgY4mNiqm4DUAJyHVTSyC/exec',
+    BACKEND_URL: 'https://script.google.com/macros/s/AKfycbwZYAd1kIk_DCbG8sNn4eXiUgVWTH4-0mxnzCG1w-YyxvAWpFCQ_2NsKa0bCZmaZGSF/exec',
     API_TIMEOUT: 30000,
     CACHE_VERSION: 'v3.0',
     CACHE_MAX_AGE: 5 * 60 * 1000
@@ -434,7 +434,7 @@ const ApiClient = {
             action: action,
             payload: payload
         }),
-        redirect: 'follow'
+        redirect: 'manual'
     });
       
       if (!response.ok) {
