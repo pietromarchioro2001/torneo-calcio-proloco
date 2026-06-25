@@ -1787,13 +1787,37 @@ async function forceReloadEvents(matchId, match) {
     }
 }
 
-function openMatch(id) {
-    const myNonce = ++window.APP_STATE._matchRequestNonce;
-    setCurrentMatch(id);
-    window.APP_STATE._matchLoading = true;
-    setTimeout(() => { window.APP_STATE._matchLoading = false; }, 10000);
-    window.APP_STATE.activeMatchTab = 'diretta';
-    const cachedMatch = window.APP_CACHE.matches?.find(m => String(m.MATCH_ID) === String(id));
+document.addEventListener('visibilitychange', () => {
+  if (!document.hidden && window.APP_CACHE?.teams?.length > 0) {
+    console.log('🔄 App tornata visibile, ricarico loghi...');
+    preloadTeamLogos();
+    
+    const currentMatchId = window.APP_STATE.currentMatchId;
+    if (currentMatchId) {
+      const match = window.APP_CACHE.matches?.find(m => String(m.MATCH_ID) === String(currentMatchId));
+      if (match) {
+        preloadMatchLogos([match]);
+      }
+    }
+  }
+});
+
+async function openMatch(id) {
+      const myNonce = ++window.APP_STATE._matchRequestNonce;
+      setCurrentMatch(id);
+      window.APP_STATE._matchLoading = true;
+      setTimeout(() => { window.APP_STATE._matchLoading = false; }, 10000);
+      window.APP_STATE.activeMatchTab = 'diretta';
+      
+      const cachedMatch = window.APP_CACHE.matches?.find(m => String(m.MATCH_ID) === String(id));
+      
+      // 🔥 PRECARICA I LOGHI
+      if (cachedMatch?.LOGO_CASA) {
+        await preloadImage(cachedMatch.LOGO_CASA, 120).catch(() => {});
+      }
+      if (cachedMatch?.LOGO_TRASFERTA) {
+        await preloadImage(cachedMatch.LOGO_TRASFERTA, 120).catch(() => {});
+      }
     
     // ✅ PARTE 1: Render immediato dalla cache (se disponibile)
     if (cachedMatch && cachedMatch.CASA_ID && cachedMatch.TRASFERTA_ID) {
