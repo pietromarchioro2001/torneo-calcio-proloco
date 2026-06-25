@@ -1906,7 +1906,7 @@ function openMatch(id) {
 }
 
 // ============================================================================
-// 📤 CONDIVISIONE PARTITA
+// 📤 CONDIVISIONE PARTITA - VERSIONE CORRETTA
 // ============================================================================
 async function shareMatch() {
   const match = window.APP_STATE.lastMatch;
@@ -1914,11 +1914,10 @@ async function shareMatch() {
     alert('Partita non caricata');
     return;
   }
-
-  // Determina quale link usare in base allo stato
+  
+  // 1. Determina quale URL usare
   const stato = String(match.STATO_PARTITA || "").trim().toUpperCase();
   let shareUrl = '';
-  
   if (stato === 'FINITA') {
     shareUrl = match.POST_TER || match.post_ter || '';
   } else {
@@ -1926,56 +1925,78 @@ async function shareMatch() {
   }
   
   if (!shareUrl) {
-    alert('Link di condivisione non disponibile');
+    alert('Immagine non ancora generata. Riprova tra qualche secondo.');
     return;
   }
-
+  
+  // 2. ✅ FIX: usa nomeTrasf (non nomeTrasferta che non esiste!)
   const nomeCasa = match.SQUADRA_CASA || 'CASA';
   const nomeTrasf = match.SQUADRA_TRASFERTA || 'TRASFERTA';
   const shareText = `${nomeCasa} vs ${nomeTrasf} - Torneo dei Paesi Sarnonico 2026`;
-
-  // 🔥 Estrai fileId dall'URL Drive
+  
+  // 3. Estrai fileId dall'URL Drive
   const fileId = extractFileIdFromUrl(shareUrl);
   if (!fileId) {
-    fallbackShare(shareUrl, shareText);
+    // Se non riusciamo a estrarre il fileId, condividi il link
+    shareLinkOnly(shareUrl, shareText);
     return;
   }
-
-  // 🔥 URL diretto dell'immagine (CORS-friendly)
+  
+  // 4. URL diretto per download immagine (alta qualità, CORS-friendly)
   const imageUrl = `https://lh3.googleusercontent.com/d/${fileId}=w1080`;
-
-  // 🔥 Prova a scaricare l'immagine e condividerla come FILE
+  
+  // 5. Prova a scaricare e condividere la FOTO
   if (navigator.share && navigator.canShare) {
     try {
-      const response = await fetch(imageUrl);
-      const blob = await response.blob();
-      
-      const file = new File(
-        [blob], 
-        `${nomeCasa}_vs_${nomeTrasf}.png`, 
-        { type: blob.type || 'image/png' }
-      );
-      
-      const shareData = { 
-        files: [file], 
-        text: shareText 
-      };
-      
-      if (navigator.canShare(shareData)) {
-        await navigator.share(shareData);
-        console.log('✅ Immagine condivisa con successo');
-        return;
+      const response = await fetch(imageUrl, { mode: 'cors' });
+      if (response.ok) {
+        const blob = await response.blob();
+        if (blob.size > 1000) { // Almeno 1KB = immagine valida
+          const file = new File(
+            [blob], 
+            `${nomeCasa}_vs_${nomeTrasf}.png`, 
+            { type: blob.type || 'image/png' }
+          );
+          const shareData = { files: [file], text: shareText };
+          if (navigator.canShare(shareData)) {
+            await navigator.share(shareData);
+            console.log('✅ Foto condivisa con successo');
+            return; // ✅ Exit dopo successo
+          }
+        }
       }
     } catch (err) {
-      console.warn('⚠️ Condivisione immagine fallita, fallback a link:', err.message);
+      console.warn('⚠️ Download foto fallito:', err.message);
     }
   }
-
-  // 🔥 Fallback: condividi solo il link
-  fallbackShare(shareUrl, shareText);
+  
+  // 6. Fallback: condividi il link diretto all'immagine (non la pagina di preview)
+  const directImageUrl = `https://drive.google.com/uc?export=download&id=${fileId}`;
+  if (navigator.share) {
+    try {
+      await navigator.share({ 
+        title: 'Torneo dei Paesi', 
+        text: shareText, 
+        url: directImageUrl 
+      });
+      return;
+    } catch (err) {
+      if (err.name !== 'AbortError') {
+        console.error('Errore share fallback:', err);
+      }
+    }
+  }
+  
+  // 7. Ultimo fallback (solo desktop senza share API): copia il link
+  if (!navigator.share) {
+    fallbackCopyToClipboard(shareUrl);
+  }
 }
 
-//  Helper: estrae il fileId da un URL Drive
+/**
+ * Estrae il fileId da un URL Drive
+ * Es: https://drive.google.com/file/d/ABC123/view → ABC123
+ */
 function extractFileIdFromUrl(url) {
   if (!url) return null;
   // Pattern 1: /file/d/FILE_ID/
@@ -1987,6 +2008,20 @@ function extractFileIdFromUrl(url) {
   // Pattern 3: URL è già un fileId
   if (/^[a-zA-Z0-9_-]{20,}$/.test(url)) return url;
   return null;
+}
+
+function shareLinkOnly(url, text) {
+  if (navigator.share) {
+    try {
+      navigator.share({ title: 'Torneo dei Paesi', text: text, url: url });
+    } catch (err) {
+      if (err.name !== 'AbortError') {
+        console.error('Errore share link:', err);
+      }
+    }
+  } else {
+    fallbackCopyToClipboard(url);
+  }
 }
 
 // 🔥 Helper: fallback per condivisione link
