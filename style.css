@@ -863,6 +863,28 @@ body {
   background: #fafafa !important;
 }
 
+/* ✅ Quando c'è una foto (img) dentro .player-upload: nascondi avatar */
+.player-upload:has(img)::before {
+  display: none !important;
+}
+
+.player-upload:has(img) {
+  border: none !important;
+  background: transparent !important;
+}
+
+/* ✅ Quando NON c'è foto: mostra avatar */
+.player-upload:not(:has(img))::before {
+  content: "👤" !important;
+  font-size: 60px !important;
+  opacity: 0.5 !important;
+  position: absolute !important;
+  top: 50% !important;
+  left: 50% !important;
+  transform: translate(-50%, -50%) !important;
+  color: #9ca3af !important;
+}
+
 /* =============================================================================================
    6. LISTA PARTITE
 =============================================================================================== */
@@ -2382,6 +2404,60 @@ body {
 .player-upload:not(.has-photo) {
   font-size: 0 !important;
   color: transparent !important;
+}
+
+   /* === MODAL GIOCATORE - UPLOAD FOTO === */
+
+/* Quando c'è la foto: nessun bordo, nessuno sfondo, nessun avatar */
+.player-modal .player-upload:has(img),
+.modalBox.player-modal .player-upload:has(img) {
+  border: none !important;
+  background: transparent !important;
+  border-radius: 12px !important;
+}
+
+.player-modal .player-upload:has(img)::before,
+.modalBox.player-modal .player-upload:has(img)::before {
+  display: none !important;  /* 🔥 NASCONDE l'avatar 👤 */
+}
+
+/* Foto dentro l'upload */
+.player-modal .playerPhotoBig,
+.modalBox.player-modal .playerPhotoBig {
+  width: 100% !important;
+  height: 100% !important;
+  border-radius: 12px !important;
+  object-fit: cover !important;
+  margin: 0 auto !important;
+  display: block !important;
+}
+
+/* Quando NON c'è foto: mostra avatar placeholder */
+.player-modal .player-upload:not(:has(img)),
+.modalBox.player-modal .player-upload:not(:has(img)) {
+  border: 2px dashed #ccc !important;
+  background: #f0f0f0 !important;
+  border-radius: 12px !important;
+}
+
+.player-modal .player-upload:not(:has(img))::before,
+.modalBox.player-modal .player-upload:not(:has(img))::before {
+  content: "👤" !important;
+  font-size: 60px !important;
+  opacity: 0.4 !important;
+  position: absolute !important;
+  top: 50% !important;
+  left: 50% !important;
+  transform: translate(-50%, -50%) !important;
+  color: #9ca3af !important;
+}
+
+/* Nascondi testo "FOTO GIOCATORE" */
+.player-modal .player-upload:not(:has(img)),
+.modalBox.player-modal .player-upload:not(:has(img)) {
+  color: transparent !important;
+  font-size: 0 !important;
+  line-height: 0 !important;
 }
 
   .team-editor .back-btn-wrapper .phase-btn { display: inline-block !important; visibility: visible !important; opacity: 1 !important; }
