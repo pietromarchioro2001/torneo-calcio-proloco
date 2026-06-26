@@ -2271,7 +2271,7 @@ body {
   user-select: none !important;
 }
 
-/* Centra la foto/avatar */
+/* Centra la foto/avatar - stato BASE (senza foto) */
 .player-modal .player-upload {
   display: flex !important;
   align-items: center !important;
@@ -2279,12 +2279,38 @@ body {
   width: 120px !important;
   height: 120px !important;
   border-radius: 50% !important;
-  background: #e5e7eb !important;
-  border: 3px solid transparent !important;
+  background: #e5e7eb !important;  /* Cerchio grigio di default */
+  border: 2px dashed #ccc !important;
   margin: 15px auto !important;
   pointer-events: auto !important;
   cursor: pointer !important;
   position: relative !important;
+  transition: all 0.2s ease !important;
+}
+
+/* ✅ QUANDO C'È LA FOTO: rimuovi cerchio e avatar */
+.player-modal .player-upload:has(img),
+.player-modal .player-upload:has(.playerPhotoBig) {
+  background: transparent !important;
+  border: none !important;
+}
+
+/* ✅ Quando NON c'è foto: mostra cerchio grigio con avatar */
+.player-modal .player-upload:not(:has(img))::before {
+  content: "👤" !important;
+  font-size: 50px !important;
+  opacity: 0.5 !important;
+  position: absolute !important;
+  top: 50% !important;
+  left: 50% !important;
+  transform: translate(-50%, -50%) !important;
+  color: #9ca3af !important;
+}
+
+/* Hover solo quando non c'è foto */
+.player-modal .player-upload:not(:has(img)):hover {
+  border-color: var(--granata) !important;
+  background: #fafafa !important;
 }
 
 .player-modal .player-upload:hover {
