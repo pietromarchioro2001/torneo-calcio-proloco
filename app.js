@@ -1165,15 +1165,19 @@ function initPlayerUploadBox() {
 }
 
 function loadPlayerData(player) {
-    document.getElementById("playerNameInput").value = player?.NOME || "";
-    const box = document.getElementById("playerPhotoUpload");
-    const photoId = player?.FOTO_ID || player?.FOTO_URL;
-
-if (photoId) {
+  document.getElementById("playerNameInput").value = player?.NOME || "";
+  const box = document.getElementById("playerPhotoUpload");
+  const photoId = player?.FOTO_ID || player?.FOTO_URL;
+  if (photoId) {
     box.innerHTML = `<img src="${getCachedImage(photoId, 200)}"
-                     class="playerPhotoBig"
-                     alt="${player.NOME}">`;
-} else { box.innerHTML = "FOTO GIOCATORE"; box.classList.remove("has-photo"); }
+      class="playerPhotoBig"
+      alt="${player.NOME}">`;
+    // 🔥 FIX: aggiungi la classe has-photo!
+    box.classList.add("has-photo");
+  } else {
+    box.innerHTML = "FOTO GIOCATORE";
+    box.classList.remove("has-photo");
+  }
 }
 
 function renderPlayerTempPhoto() {
