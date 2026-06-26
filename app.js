@@ -553,7 +553,12 @@ const ApiClient = {
       
       return data.data;
     } catch (error) {
-      console.error(`❌ API Error [${action}]:`, error);
+      // ✅ FIX: errori 429 (rate limit) solo in console, mai alert
+      if (error.message && error.message.includes('429')) {
+        console.warn(`⚠️ Rate limit per ${action} - riprovo tra poco`);
+      } else {
+        console.error(`❌ API Error [${action}]:`, error);
+      }
       throw error;
     }
   },
@@ -3673,12 +3678,14 @@ function startMatchLiveRefresh() {
         if (consecutiveErrors >= 5) {
           console.warn(`⚠️ Troppi errori consecutivi (${consecutiveErrors}). Polling rallentato.`);
         }
-        if (error.message?.includes('Servizio Fogli di lavoro') ||
-            error.message?.includes('rate limit') ||
-            error.message?.includes('quota')) {
-          console.warn('⚠️ Rate limit rilevato. Aumento intervallo polling.');
-          consecutiveErrors = Math.max(consecutiveErrors, 3);
-        }
+
+        // ✅ FIX: mai alert, solo console
+          if (error.message?.includes('429')) {
+            console.warn('⚠️ Rate limit rilevato. Aumento intervallo polling.');
+            consecutiveErrors = Math.max(consecutiveErrors, 3);
+          } else if (error.message?.includes('quota')) {
+            console.warn('⚠️ Quota giornaliera quasi esaurita.');
+          }
       }
     }
     if (matchLiveRefreshInterval) {
@@ -5349,28 +5356,41 @@ async function voteMVP(playerId, playerName, event) {
 }
 
 async function sendVoteWithRetry(voteData, maxRetries) {
-    for (let attempt = 1; attempt <= maxRetries; attempt++) {
-        try {
-            await ApiClient.saveMVPVote(
-                voteData.matchId,
-                voteData.voterId,
-                voteData.playerId
-            );
-            voteData.sent = true;
-            localStorage.setItem(`mvp_vote_${voteData.matchId}`, JSON.stringify(voteData));
-            console.log(`✅ Voto inviato al tentativo ${attempt}`);
-            return true;
-        } catch (error) {
-            console.warn(`⚠️ Tentativo ${attempt} fallito:`, error.message);
-            if (attempt < maxRetries) {
-                await new Promise(r => setTimeout(r, 1000 * attempt));
-            }
-        }
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      await ApiClient.saveMVPVote(
+        voteData.matchId,
+        voteData.voterId,
+        voteData.playerId
+      );
+      voteData.sent = true;
+      localStorage.setItem(`mvp_vote_${voteData.matchId}`, JSON.stringify(voteData));
+      console.log(`✅ Voto inviato al tentativo ${attempt}`);
+      return true;
+    } catch (error) {
+      // ✅ FIX: errori 429 silenziosi
+      if (error.message?.includes('429')) {
+        console.warn(`⚠️ Rate limit MVP - retry ${attempt}/${maxRetries}`);
+      } else {
+        console.warn(`⚠️ Tentativo ${attempt} fallito:`, error.message);
+      }
+      
+      if (attempt < maxRetries) {
+        await new Promise(r => setTimeout(r, 1000 * attempt));
+      }
     }
+  }
+  
+  // ✅ FIX: no alert per 429, solo log
+  if (error?.message?.includes('429')) {
+    console.warn('⚠️ Voto salvato localmente. Il server è temporaneamente occupato.');
+  } else {
     console.error('❌ Voto non inviato dopo', maxRetries, 'tentativi');
     alert('⚠️ Voto salvato localmente. Riproveremo automaticamente.');
-    setTimeout(() => sendVoteWithRetry(voteData, 2), 30000);
-    return false;
+  }
+  
+  setTimeout(() => sendVoteWithRetry(voteData, 2), 30000);
+  return false;
 }
 
 function updateMVPVoteUI(selectedPlayerId) {
