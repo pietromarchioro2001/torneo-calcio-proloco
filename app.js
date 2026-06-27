@@ -4319,17 +4319,6 @@ padding: 20px;
 max-width: 800px;
 margin: 0 auto;
 ">
-<div class="top-scorers-title" style="
-font-size: 24px;
-font-weight: 800;
-text-align: center;
-margin-bottom: 30px;
-color: #7a1e2c;
-text-transform: uppercase;
-letter-spacing: 2px;
-">
-CLASSIFICA MARCATORI
-</div>
 <table class="top-scorers-table" style="
 width: 100%;
 border-collapse: collapse;
