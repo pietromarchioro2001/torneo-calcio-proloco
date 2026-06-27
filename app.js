@@ -3973,13 +3973,15 @@ function showStandings() {
   // ✅ Renderizza struttura base con tab FASE FINALE condizionale
   document.getElementById("app").innerHTML = `
     <div class="page-container standings-page">
-      <div class="page-title">CLASSIFICHE</div>
-      <div class="standings-tabs">
-        <div class="standings-tab ${window.APP_STATE._activeStandingsTab === 'gironi' ? 'active' : ''}" data-tab="gironi">GIRONI</div>
-        ${showFaseFinaleTab ? `<div class="standings-tab ${window.APP_STATE._activeStandingsTab === 'fasefinale' ? 'active' : ''}" data-tab="fasefinale">FASE FINALE</div>` : ''}
-        <div class="standings-tab ${window.APP_STATE._activeStandingsTab === 'chiosco' ? 'active' : ''}" data-tab="chiosco">COPPA CHIOSCO</div>
-      </div>
-      <div id="standingsContent"></div>
+    <div class="page-title">CLASSIFICHE</div>
+    <div class="standings-tabs">
+    <div class="standings-tab ${window.APP_STATE._activeStandingsTab === 'gironi' ? 'active' : ''}" data-tab="gironi">GIRONI</div>
+    ${showFaseFinaleTab ? `<div class="standings-tab ${window.APP_STATE._activeStandingsTab === 'fasefinale' ? 'active' : ''}" data-tab="fasefinale">FASE FINALE</div>` : ''}
+    <div class="standings-tab ${window.APP_STATE._activeStandingsTab === 'chiosco' ? 'active' : ''}" data-tab="chiosco">COPPA CHIOSCO</div>
+    <!-- ✅ AGGIUNGI QUESTO TAB -->
+    <div class="standings-tab ${window.APP_STATE._activeStandingsTab === 'marcatori' ? 'active' : ''}" data-tab="marcatori">MARCATORI</div>
+    </div>
+    <div id="standingsContent"></div>
     </div>`;
   
   // ✅ GESTISCI SUBITO IL CONTENUTO IN BASE AL TAB ATTIVO
@@ -4132,6 +4134,11 @@ function showStandings() {
             }
           }, 500);
         }
+
+        else if (type === "marcatori") {
+    stopStandingsLiveRefresh();
+    renderTopScorers();
+}
     };
   });
   
@@ -4281,6 +4288,191 @@ function renderNextPhaseButton() {
     if (pageContainer) {
         pageContainer.appendChild(btnWrapper);
     }
+}
+
+function renderTopScorers() {
+const container = document.getElementById("standingsContent");
+if (!container) return;
+
+// Recupera tutti i giocatori da tutte le squadre
+const allPlayers = [];
+const fullTeams = window.APP_CACHE.fullTeams || {};
+
+Object.values(fullTeams).forEach(teamData => {
+if (teamData?.players) {
+teamData.players.forEach(player => {
+allPlayers.push({
+...player,
+TEAM_ID: teamData.team?.TEAM_ID || player.TEAM_ID,
+TEAM_NAME: teamData.team?.NOME_SQUADRA || '',
+LOGO_ID: teamData.team?.LOGO_ID || ''
+});
+});
+}
+});
+
+// Filtra solo giocatori con gol > 0 e ordina
+const scorers = allPlayers
+.filter(p => (Number(p.GOL) || 0) > 0)
+.sort((a, b) => (Number(b.GOL) || 0) - (Number(a.GOL) || 0));
+
+// Renderizza tabella
+let html = `
+<div class="top-scorers-container" style="
+padding: 20px;
+max-width: 800px;
+margin: 0 auto;
+">
+<div class="top-scorers-title" style="
+font-size: 24px;
+font-weight: 800;
+text-align: center;
+margin-bottom: 30px;
+color: #7a1e2c;
+text-transform: uppercase;
+letter-spacing: 2px;
+">
+🥅 CLASSIFICA MARCATORI
+</div>
+<table class="top-scorers-table" style="
+width: 100%;
+border-collapse: collapse;
+background: white;
+border-radius: 12px;
+overflow: hidden;
+box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+">
+<thead>
+<tr style="
+background: #7a1e2c;
+color: white;
+">
+<th style="
+padding: 16px 12px;
+text-align: center;
+width: 60px;
+font-weight: 700;
+text-transform: uppercase;
+letter-spacing: 1px;
+font-size: 12px;
+">POS</th>
+<th style="
+padding: 16px;
+text-align: left;
+font-weight: 700;
+text-transform: uppercase;
+letter-spacing: 1px;
+font-size: 12px;
+">GIOCATORE</th>
+<th style="
+padding: 16px;
+text-align: center;
+width: 80px;
+font-weight: 700;
+text-transform: uppercase;
+letter-spacing: 1px;
+font-size: 12px;
+">SQUADRA</th>
+<th style="
+padding: 16px;
+text-align: center;
+width: 80px;
+font-weight: 700;
+text-transform: uppercase;
+letter-spacing: 1px;
+font-size: 12px;
+">GOL</th>
+</tr>
+</thead>
+<tbody>
+`;
+
+scorers.forEach((player, index) => {
+const position = index + 1;
+const logoHtml = player.LOGO_ID 
+? `<img src="${getCachedImage(player.LOGO_ID, 48)}" 
+alt="${player.TEAM_NAME}" 
+style="width: 48px; height: 48px; object-fit: contain;"
+onerror="this.style.display='none'; this.parentElement.innerHTML='⚽'">`
+: '<div style="width:48px;height:48px;background:#f0f0f0;border-radius:50%;display:flex;align-items:center;justify-content:center;">⚽</div>';
+
+// Badge per primi 3
+let posBadge = position;
+if (position === 1) posBadge = '🥇';
+else if (position === 2) posBadge = '🥈';
+else if (position === 3) posBadge = '🥉';
+
+html += `
+<tr style="
+border-bottom: 1px solid #e5e5e5;
+transition: background 0.2s;
+${position <= 3 ? 'background: #fffef0;' : ''}
+" onmouseover="this.style.background='${position <= 3 ? '#fffef0' : '#f9f9f9'}'" 
+onmouseout="this.style.background='${position <= 3 ? '#fffef0' : 'white'}'">
+<td style="
+padding: 16px 12px;
+text-align: center;
+font-weight: ${position <= 3 ? '800' : '600'};
+font-size: ${position <= 3 ? '20px' : '14px'};
+color: ${position <= 3 ? '#7a1e2c' : '#666'};
+">
+${posBadge}
+</td>
+<td style="
+padding: 16px;
+">
+<div style="display: flex; align-items: center; gap: 12px;">
+${logoHtml}
+<div style="font-weight: 700; color: #333; text-transform: uppercase; letter-spacing: 0.5px;">
+${(player.NOME || '').toUpperCase()}
+</div>
+</div>
+</td>
+<td style="
+padding: 16px;
+text-align: center;
+font-size: 12px;
+color: #666;
+text-transform: uppercase;
+letter-spacing: 0.5px;
+">
+${(player.TEAM_NAME || '').substring(0, 15)}${(player.TEAM_NAME || '').length > 15 ? '...' : ''}
+</td>
+<td style="
+padding: 16px;
+text-align: center;
+font-weight: 800;
+font-size: 20px;
+color: #7a1e2c;
+">
+${player.GOL}
+</td>
+</tr>
+`;
+});
+
+if (scorers.length === 0) {
+html += `
+<tr>
+<td colspan="4" style="
+padding: 40px;
+text-align: center;
+color: #888;
+font-size: 14px;
+">
+Nessun gol segnato ancora
+</td>
+</tr>
+`;
+}
+
+html += `
+</tbody>
+</table>
+</div>
+`;
+
+container.innerHTML = html;
 }
 
 function renderFinalStage(data) {
