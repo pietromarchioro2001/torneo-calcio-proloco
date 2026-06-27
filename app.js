@@ -3977,10 +3977,10 @@ function showStandings() {
     <div class="standings-tabs">
     <div class="standings-tab ${window.APP_STATE._activeStandingsTab === 'gironi' ? 'active' : ''}" data-tab="gironi">GIRONI</div>
     ${showFaseFinaleTab ? `<div class="standings-tab ${window.APP_STATE._activeStandingsTab === 'fasefinale' ? 'active' : ''}" data-tab="fasefinale">FASE FINALE</div>` : ''}
-    <div class="standings-tab ${window.APP_STATE._activeStandingsTab === 'chiosco' ? 'active' : ''}" data-tab="chiosco">COPPA CHIOSCO</div>
     <!-- ✅ AGGIUNGI QUESTO TAB -->
     <div class="standings-tab ${window.APP_STATE._activeStandingsTab === 'marcatori' ? 'active' : ''}" data-tab="marcatori">MARCATORI</div>
     </div>
+    <div class="standings-tab ${window.APP_STATE._activeStandingsTab === 'chiosco' ? 'active' : ''}" data-tab="chiosco">COPPA CHIOSCO</div>
     <div id="standingsContent"></div>
     </div>`;
   
@@ -4332,7 +4332,7 @@ color: #7a1e2c;
 text-transform: uppercase;
 letter-spacing: 2px;
 ">
-🥅 CLASSIFICA MARCATORI
+CLASSIFICA MARCATORI
 </div>
 <table class="top-scorers-table" style="
 width: 100%;
@@ -4365,9 +4365,9 @@ letter-spacing: 1px;
 font-size: 12px;
 ">GIOCATORE</th>
 <th style="
-padding: 16px;
-text-align: center;
-width: 80px;
+padding: 16px 16px 16px 8px;
+text-align: left;
+width: 100px;
 font-weight: 700;
 text-transform: uppercase;
 letter-spacing: 1px;
@@ -4429,8 +4429,8 @@ ${(player.NOME || '').toUpperCase()}
 </div>
 </td>
 <td style="
-padding: 16px;
-text-align: center;
+padding: 16px 16px 16px 8px;
+text-align: left;
 font-size: 12px;
 color: #666;
 text-transform: uppercase;
