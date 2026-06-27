@@ -2326,6 +2326,11 @@ function renderMatchPage(match) {
   const isLive = ["LIVE", "SUPP", "RIGORI"].includes(match.STATO_PARTITA);
   const isFinished = match.STATO_PARTITA === "FINITA";
   const finalStageStarted = window.APP_CACHE.meta?.finalStageStarted;
+
+// 🔥 NUOVA LOGICA MVP: attivo finché non viene chiuso manualmente
+const mvpFinalized = match.MVP && String(match.MVP).trim() !== "";
+const isMVPActive = isLive || (isFinished && !mvpFinalized);
+const isMVPDisabled = !isMVPActive;
   
   // 🔥 TAB ATTIVA DINAMICA
   const currentTab = window.APP_STATE.activeMatchTab || 'diretta';
@@ -2372,16 +2377,22 @@ document.getElementById("app").innerHTML = `
       </div>
       <div class="match-center">
         <div class="match-controls-top">
-          <div class="phase-btn start-btn ${isLive ? "active" : ""}"
-               onclick="${canToggleMatch ? "toggleMatch()" : ""}"
-               ${toggleBtnDisabled}>
+        <div class="phase-btn start-btn ${isLive ? "active" : ""}"
+            onclick="${canToggleMatch ? "toggleMatch()" : ""}"
+            ${toggleBtnDisabled}>
             ${isLive ? "CONCLUDI" : "INIZIA"}
-          </div>
-          ${match.FASE === "FINALI" && isLive ? `
-          <div class="phase-btn secondary-btn" onclick="toggleSupplementari()">SUPPLEMENTARI</div>
-          <div class="phase-btn secondary-btn" onclick="openRigoriPopup(window.innerWidth <= 768)">RIGORI</div>
-          ` : ''}
         </div>
+        ${match.FASE === "FINALI" && isLive ? `
+            <div class="phase-btn secondary-btn" onclick="toggleSupplementari()">SUPPLEMENTARI</div>
+            <div class="phase-btn secondary-btn" onclick="openRigoriPopup(window.innerWidth <= 768)">RIGORI</div>
+        ` : ''}
+        ${/* 🔥 NUOVO: PULSANTE CHIUDI MVP */''}
+        ${isMVPActive ? `
+            <div class="phase-btn secondary-btn" onclick="closeMVPVoting()" style="background:#7a1e2c;color:white;border:2px solid #ffd700;">
+                🏆 CHIUDI MVP
+            </div>
+        ` : ''}
+    </div>
         <!-- 🔥 PULSANTI SOPRA IL PUNTEGGIO -->
         <div class="match-header-actions">
           <button class="media-btn-top" onclick="openMediaUploadModal('${Sanitizer.attr(match.MATCH_ID)}', '${String(linkDrive).replace(/'/g, "\\'")}'); event.stopPropagation();" title="Media">
@@ -5941,5 +5952,87 @@ function showMVPVoteConfirm(playerId, playerName, event) {
     cancelBtn.onmouseout = () => {
         cancelBtn.style.background = 'white';
     };
+}
+
+/**
+ * 🏆 CHIUDE LA VOTAZIONE MVP
+ * Chiede conferma, calcola il vincitore e salva
+ * La partita può essere già finita ma MVP resta attivo finché non chiudi
+ */
+async function closeMVPVoting() {
+    const match = window.APP_STATE.lastMatch;
+    if (!match) return;
+    
+    // Chiedi conferma
+    if (!confirm("⚠️ Vuoi chiudere definitivamente la votazione MVP?\n\nI tifosi non potranno più votare e verrà calcolato il vincitore.")) {
+        return;
+    }
+    
+    try {
+        console.log('🏆 Chiusura MVP in corso...');
+        
+        // Chiama il backend che calcola il vincitore e salva
+        const result = await ApiClient.finalizeMVP(match.MATCH_ID);
+        
+        if (result?.winner) {
+            // Trova il nome del vincitore dalla cache
+            const allPlayers = [
+                ...(window.APP_CACHE.fullTeams?.[match.CASA_ID]?.players || []),
+                ...(window.APP_CACHE.fullTeams?.[match.TRASFERTA_ID]?.players || [])
+            ];
+            const winnerPlayer = allPlayers.find(p => 
+                String(p.PLAYER_ID) === String(result.winner)
+            );
+            
+            // Aggiorna stato locale
+            match.MVP = winnerPlayer?.NOME || result.winner;
+            window.APP_STATE.lastMatch = match;
+            
+            // Aggiorna cache
+            if (window.APP_CACHE.matches) {
+                const idx = window.APP_CACHE.matches.findIndex(m => 
+                    String(m.MATCH_ID) === String(match.MATCH_ID)
+                );
+                if (idx >= 0) {
+                    window.APP_CACHE.matches[idx].MVP = match.MVP;
+                    CacheManager.save(window.APP_CACHE);
+                }
+            }
+            
+            // 🔥 Rimuovi SOLO il pulsante MVP (più efficiente di ricaricare tutta la pagina)
+            const mvpBtn = document.querySelector('[onclick="closeMVPVoting()"]');
+            if (mvpBtn) {
+                mvpBtn.style.transition = 'all 0.3s';
+                mvpBtn.style.opacity = '0';
+                mvpBtn.style.transform = 'scale(0.8)';
+                setTimeout(() => mvpBtn.remove(), 300);
+            }
+            
+            // Aggiorna banner MVP e tab
+            updateMVPBanner(match);
+            renderMVPTab(
+                window.APP_CACHE.fullTeams?.[match.CASA_ID],
+                window.APP_CACHE.fullTeams?.[match.TRASFERTA_ID],
+                match
+            );
+            
+            console.log('✅ MVP chiuso! Vincitore:', match.MVP);
+            
+            // Feedback visivo
+            setTimeout(() => {
+                const banner = document.getElementById('mvpBanner');
+                if (banner) {
+                    banner.style.animation = 'pulse 0.5s ease';
+                }
+            }, 400);
+            
+        } else {
+            alert('⚠️ Nessun voto ricevuto. MVP non assegnato.');
+        }
+        
+    } catch (error) {
+        console.error('❌ Errore chiusura MVP:', error);
+        alert('Errore durante la chiusura MVP: ' + error.message);
+    }
 }
 
