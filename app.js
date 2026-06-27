@@ -2376,22 +2376,22 @@ document.getElementById("app").innerHTML = `
       </div>
       <div class="match-center">
         <div class="match-controls-top">
-        <div class="phase-btn start-btn ${isLive ? "active" : ""}"
-            onclick="${canToggleMatch ? "toggleMatch()" : ""}"
-            ${toggleBtnDisabled}>
-            ${isLive ? "CONCLUDI" : "INIZIA"}
-        </div>
-        ${match.FASE === "FINALI" && isLive ? `
-            <div class="phase-btn secondary-btn" onclick="toggleSupplementari()">SUPPLEMENTARI</div>
-            <div class="phase-btn secondary-btn" onclick="openRigoriPopup(window.innerWidth <= 768)">RIGORI</div>
-        ` : ''}
-        ${/* 🔥 NUOVO: PULSANTE CHIUDI MVP */''}
-        ${isMVPActive ? `
-            <div class="phase-btn secondary-btn" onclick="closeMVPVoting()" style="background:#7a1e2c;color:white;border:2px solid #ffd700;">
-                CHIUDI MVP
+            <div class="phase-btn start-btn ${isLive ? "active" : ""}"
+                onclick="${canToggleMatch ? "toggleMatch()" : ""}"
+                ${toggleBtnDisabled}>
+                ${isLive ? "CONCLUDI" : "INIZIA"}
             </div>
-        ` : ''}
-    </div>
+            ${match.FASE === "FINALI" && isLive ? `
+                <div class="phase-btn secondary-btn" onclick="toggleSupplementari()">SUPPLEMENTARI</div>
+                <div class="phase-btn secondary-btn" onclick="openRigoriPopup(window.innerWidth <= 768)">RIGORI</div>
+            ` : ''}
+            ${/* 🔥 PULSANTE CHIUDI MVP */''}
+            ${isMVPActive ? `
+                <div class="phase-btn secondary-btn" onclick="closeMVPVoting()" style="background:#7a1e2c;color:white;border:2px solid #ffd700;">
+                    🏆 CHIUDI MVP
+                </div>
+            ` : ''}
+        </div>
         <!-- 🔥 PULSANTI SOPRA IL PUNTEGGIO -->
         <div class="match-header-actions">
           <button class="media-btn-top" onclick="openMediaUploadModal('${Sanitizer.attr(match.MATCH_ID)}', '${String(linkDrive).replace(/'/g, "\\'")}'); event.stopPropagation();" title="Media">
