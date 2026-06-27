@@ -2930,6 +2930,92 @@ body {
   border-radius: 2px !important;
 }
 
+.top-scorers-container {
+padding: 10px !important;
+margin: 0 !important;
+}
+
+.top-scorers-title {
+font-size: 18px !important;
+margin-bottom: 15px !important;
+letter-spacing: 1px !important;
+}
+
+.top-scorers-table {
+font-size: 11px !important;
+border-radius: 8px !important;
+}
+
+.top-scorers-table thead th {
+padding: 8px 4px !important;
+font-size: 9px !important;
+letter-spacing: 0.5px !important;
+}
+
+.top-scorers-table tbody td {
+padding: 10px 4px !important;
+font-size: 11px !important;
+}
+
+/* Colonna POS */
+.top-scorers-table td:first-child,
+.top-scorers-table th:first-child {
+width: 30px !important;
+padding: 8px 2px !important;
+font-size: 12px !important;
+}
+
+/* Colonna GIOCATORE */
+.top-scorers-table td:nth-child(2),
+.top-scorers-table th:nth-child(2) {
+min-width: 120px !important;
+padding: 8px 6px !important;
+}
+
+/* Colonna SQUADRA */
+.top-scorers-table td:nth-child(3),
+.top-scorers-table th:nth-child(3) {
+width: 80px !important;
+padding: 8px 4px !important;
+font-size: 10px !important;
+}
+
+/* Colonna GOL */
+.top-scorers-table td:last-child,
+.top-scorers-table th:last-child {
+width: 40px !important;
+padding: 8px 4px !important;
+font-size: 14px !important;
+font-weight: 800 !important;
+}
+
+/* Logo squadra più piccolo */
+.top-scorers-table img {
+width: 24px !important;
+height: 24px !important;
+}
+
+/* Avatar fallback più piccolo */
+.top-scorers-table .team-logo-placeholder {
+width: 24px !important;
+height: 24px !important;
+font-size: 12px !important;
+}
+
+/* Medaglie più piccole */
+.top-scorers-table td:first-child {
+font-size: 14px !important;
+}
+
+/* Righe primi 3 classificati */
+.top-scorers-table tbody tr:nth-child(-n+3) {
+background: #fffef0 !important;
+}
+
+.top-scorers-table tbody tr:nth-child(-n+3) td:first-child {
+font-size: 16px !important;
+}
+
   #toolbar { padding: 6px 0; }
   .toolbar-btn { font-size: 9px; gap: 3px; }
   .tb-icon { width: 20px; height: 20px; }
