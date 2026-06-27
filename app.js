@@ -2825,7 +2825,24 @@ async function saveEvent(team) {
     window.APP_CACHE.eventsByMatch[match.MATCH_ID].push(tempEvent);
     renderEvents(window.APP_CACHE.eventsByMatch[match.MATCH_ID], match); renderPlayersTab(window.APP_CACHE.fullTeams?.[String(match.CASA_ID)], window.APP_CACHE.fullTeams?.[String(match.TRASFERTA_ID)], match);
     updateScoreFromEvents(match.MATCH_ID); document.querySelector(".modalOverlay")?.remove();
-    ApiClient.addEventAdmin(match.MATCH_ID, teamId, type, minute, playerId, assistId).then(() => { refreshStandingsDebounced(500); }).catch(error => { console.error('Errore salvataggio:', error); if (error.message?.includes('teamId') || error.message?.includes('non valido')) { alert('Errore: ' + error.message); location.reload(); } });
+    ApiClient.addEventAdmin(match.MATCH_ID, teamId, type, minute, playerId, assistId).then(() => {
+    refreshStandingsDebounced(500);
+    
+    // 🔥 RICARICA IMMEDIATAMENTE I GIOCATORI CON LE NUOVE STATS
+    // Invalida cache giocatori per forzare reload dal backend
+    if (window.APP_CACHE.fullTeams) {
+        delete window.APP_CACHE.fullTeams[String(match.CASA_ID)];
+        delete window.APP_CACHE.fullTeams[String(match.TRASFERTA_ID)];
+    }
+    
+    // Ricarica dopo 500ms (tempo per il backend di scrivere)
+    setTimeout(() => {
+        if (window.APP_STATE.lastMatch?.MATCH_ID === match.MATCH_ID) {
+            loadPlayersForMatch(window.APP_STATE.lastMatch);
+            console.log('📊 Statistiche giocatori ricaricate');
+        }
+    }, 500);
+}).catch(error => { console.error('Errore salvataggio:', error); if (error.message?.includes('teamId') || error.message?.includes('non valido')) { alert('Errore: ' + error.message); location.reload(); } });
 }
 
 function updateScoreFromEvents(matchId) {
@@ -3761,13 +3778,8 @@ function startMatchLiveRefresh() {
                 console.log('📋 Eventi aggiornati:', mergedEvents.length);
             }
             
-            // ✅ Aggiorna giocatori SOLO se necessario (non ad ogni refresh)
-            // I giocatori cambiano raramente durante la partita, quindi li aggiorniamo solo al primo caricamento
-            if (!window.APP_STATE._playersLoadedForMatch || 
-                window.APP_STATE._playersLoadedForMatch !== updatedMatch.MATCH_ID) {
-                loadPlayersForMatch(updatedMatch);
-                window.APP_STATE._playersLoadedForMatch = updatedMatch.MATCH_ID;
-            }
+            // 🔥 AGGIORNA GIOCATORI AD OGNI REFRESH (le stats cambiano con gli eventi!)
+            loadPlayersForMatch(updatedMatch);
         }
           
           // 🔥 AGGIORNAMENTO LISTA PARTITE
@@ -5242,15 +5254,43 @@ async function resetTournament() {
 // ============================================================================
 if (document.readyState === "loading") { document.addEventListener("DOMContentLoaded", bootAdminApp); } else { bootAdminApp(); }
 
-function loadPlayersForMatch(match) {
-    const casaId = match?.CASA_ID; const trasfId = match?.TRASFERTA_ID;
-    const casaData = window.APP_CACHE.fullTeams?.[casaId]; const trasfData = window.APP_CACHE.fullTeams?.[trasfId];
-    if (casaData && trasfData) { renderPlayersTab(casaData, trasfData, match); renderMVPTab(casaData, trasfData, match); return; }
-    Promise.all([ApiClient.getTeamFull(casaId).catch(() => null), ApiClient.getTeamFull(trasfId).catch(() => null)]).then(([casaRes, trasfRes]) => {
-        if (casaRes) { if (!window.APP_CACHE.fullTeams) window.APP_CACHE.fullTeams = {}; window.APP_CACHE.fullTeams[casaId] = casaRes; }
-        if (trasfRes) { if (!window.APP_CACHE.fullTeams) window.APP_CACHE.fullTeams = {}; window.APP_CACHE.fullTeams[trasfId] = trasfRes; }
-        renderPlayersTab(casaRes, trasfRes, match); renderMVPTab(casaRes, trasfRes, match);
-    }).catch(err => console.error('Error loading players:', err));
+async function loadPlayersForMatch(match) {
+    if (!match?.CASA_ID || !match?.TRASFERTA_ID) return;
+    
+    const casaId = String(match.CASA_ID);
+    const trasfId = String(match.TRASFERTA_ID);
+    
+    // 🔥 FORZA RELOAD DAL BACKEND (non usare solo cache)
+    try {
+        const [casaData, trasfData] = await Promise.all([
+            ApiClient.getTeamFull(casaId),
+            ApiClient.getTeamFull(trasfId)
+        ]);
+        
+        // Aggiorna cache
+        if (!window.APP_CACHE.fullTeams) window.APP_CACHE.fullTeams = {};
+        if (casaData) window.APP_CACHE.fullTeams[casaId] = casaData;
+        if (trasfData) window.APP_CACHE.fullTeams[trasfId] = trasfData;
+        CacheManager.save(window.APP_CACHE);
+        
+        // Renderizza la tab giocatori
+        renderPlayersTab(
+            window.APP_CACHE.fullTeams[casaId],
+            window.APP_CACHE.fullTeams[trasfId],
+            match
+        );
+        
+        console.log('✅ Giocatori caricati dal backend con stats aggiornate');
+        
+    } catch (error) {
+        console.warn('⚠️ Errore caricamento giocatori, uso cache:', error);
+        // Fallback alla cache
+        renderPlayersTab(
+            window.APP_CACHE.fullTeams?.[casaId],
+            window.APP_CACHE.fullTeams?.[trasfId],
+            match
+        );
+    }
 }
 
 // ✅ AGGIUNGI QUESTA FUNZIONE HELPER PRIMA DI renderPlayersTab
