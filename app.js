@@ -2323,20 +2323,19 @@ function renderMatchPage(match) {
   const nomeTrasf = (match.SQUADRA_TRASFERTA || "TRASFERTA").toUpperCase();
   
   // 🔥 GESTIONE STATI
-  const isLive = ["LIVE", "SUPP", "RIGORI"].includes(match.STATO_PARTITA);
-  const isFinished = match.STATO_PARTITA === "FINITA";
-  const finalStageStarted = window.APP_CACHE.meta?.finalStageStarted;
+const isLive = ["LIVE", "SUPP", "RIGORI"].includes(match.STATO_PARTITA);
+const isFinished = match.STATO_PARTITA === "FINITA";
+const finalStageStarted = window.APP_CACHE.meta?.finalStageStarted;
 
 // 🔥 NUOVA LOGICA MVP: attivo finché non viene chiuso manualmente
 const mvpFinalized = match.MVP && String(match.MVP).trim() !== "";
 const isMVPActive = isLive || (isFinished && !mvpFinalized);
 const isMVPDisabled = !isMVPActive;
-  
-  // 🔥 TAB ATTIVA DINAMICA
-  const currentTab = window.APP_STATE.activeMatchTab || 'diretta';
-  const isMVPDisabled = !isLive;
-  const mvpActiveClass = currentTab === 'mvp' ? 'active' : (isMVPDisabled ? 'disabled' : '');
-  const mvpTabHtml = `<div class="mt-btn ${mvpActiveClass}" data-tab="mvp">${isLive ? "MVP" : "🏆 MVP"}</div>`;
+
+// 🔥 TAB ATTIVA DINAMICA
+const currentTab = window.APP_STATE.activeMatchTab || 'diretta';
+const mvpActiveClass = currentTab === 'mvp' ? 'active' : (isMVPDisabled ? 'disabled' : '');
+const mvpTabHtml = `<div class="mt-btn ${mvpActiveClass}" data-tab="mvp">${isLive ? "MVP" : "🏆 MVP"}</div>`;
   
   // Pulsanti evento
   const canAddEvents = (match.STATO_PARTITA === "LIVE" || match.STATO_PARTITA === "SUPP") &&
