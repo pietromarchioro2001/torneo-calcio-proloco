@@ -1860,6 +1860,7 @@ async function forceReloadEvents(matchId, match) {
         if (scoreEl) {
             scoreEl.textContent = `${updatedMatch.GOL_CASA || 0} - ${updatedMatch.GOL_TRASFERTA || 0}`;
         }
+        await loadPlayersForMatch(updatedMatch);
     } catch (error) { 
         console.error('❌ [FORCE RELOAD] Errore:', error); 
     }
@@ -3775,6 +3776,7 @@ function startMatchLiveRefresh() {
             if (eventsChanged) {
                 renderEvents(mergedEvents, updatedMatch);
                 renderPenaltyIndicators(mergedEvents, updatedMatch);
+                await loadPlayersForMatch(updatedMatch);
                 console.log('📋 Eventi aggiornati:', mergedEvents.length);
             }
             
