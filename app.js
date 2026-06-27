@@ -5274,7 +5274,7 @@ function renderMVPTab(casaData, trasfData, match) {
     const isSelected = String(p.PLAYER_ID) === String(selectedPlayerId); 
     const bgStyle = isSelected ? 'background:#fef3c7;opacity:1;' : 'background:transparent;opacity:0.6;';
     // ✅ RIMOSSA la spunta verde - ora c'è solo il highlight giallo
-    html += `<div class="player-row mvp-vote-row" onclick="voteMVP('${p.PLAYER_ID}', '${p.NOME.replace(/'/g, "\\'")}', event); event.stopPropagation();" style="cursor:pointer;transition:all 0.3s;${bgStyle}"><div class="player-avatar">${photoHtml}</div><div class="player-name">${formatPlayerName(p.NOME)}</div></div>`;
+    html += `<div class="player-row mvp-vote-row" onclick="showMVPVoteConfirm('${p.PLAYER_ID}', '${p.NOME.replace(/'/g, "\\'")}', event);" style="cursor:pointer;transition:all 0.3s;${bgStyle}"><div class="player-avatar">${photoHtml}</div><div class="player-name">${formatPlayerName(p.NOME)}</div></div>`;
   });
   html += "</div>"; return html;
 };
@@ -5751,5 +5751,161 @@ async function generateMatchImage(matchId, type = "PROGRAMMATA") {
     // Nessun alert qui per non interrompere l'utente durante le operazioni automatiche
     return null;
   }
+}
+
+/**
+ * 🏆 POPUP CONFERMA VOTO MVP
+ * Mostra un popup di conferma quando si clicca su un giocatore
+ * Sia "CONFERMA" che "ANNULLA" selezionano il giocatore (solo visivo)
+ */
+function showMVPVoteConfirm(playerId, playerName, event) {
+    if (event) {
+        event.stopPropagation();
+    }
+    
+    // Rimuovi popup esistente se presente
+    const existing = document.getElementById('mvpConfirmPopup');
+    if (existing) existing.remove();
+    
+    const popup = document.createElement('div');
+    popup.id = 'mvpConfirmPopup';
+    popup.className = 'modalOverlay';
+    popup.style.cssText = `
+        position: fixed;
+        inset: 0;
+        background: rgba(0,0,0,0.7);
+        z-index: 99999;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        backdrop-filter: blur(4px);
+        animation: fadeIn 0.2s ease;
+    `;
+    
+    popup.innerHTML = `
+        <div style="
+            background: white;
+            border-radius: 16px;
+            padding: 30px 25px;
+            max-width: 340px;
+            width: 90%;
+            text-align: center;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.4);
+            animation: slideUp 0.3s ease;
+        ">
+            <div style="
+                font-size: 48px;
+                margin-bottom: 15px;
+            ">🏆</div>
+            <div style="
+                font-size: 18px;
+                font-weight: 800;
+                color: #111;
+                letter-spacing: 1px;
+                margin-bottom: 10px;
+                text-transform: uppercase;
+                font-family: 'Oswald', sans-serif;
+            ">Vota MVP</div>
+            <div style="
+                font-size: 14px;
+                color: #666;
+                margin-bottom: 20px;
+                line-height: 1.4;
+            ">Vuoi votare<br><strong style="color: #7a1e2c; font-size: 16px;">${playerName.toUpperCase()}</strong><br>come MVP della partita?</div>
+            <div style="
+                display: flex;
+                gap: 10px;
+                margin-top: 20px;
+            ">
+                <button id="mvpConfirmBtn" style="
+                    flex: 1;
+                    padding: 14px;
+                    background: #7a1e2c;
+                    color: white;
+                    border: none;
+                    border-radius: 10px;
+                    font-size: 14px;
+                    font-weight: 800;
+                    font-family: 'Oswald', sans-serif;
+                    letter-spacing: 2px;
+                    cursor: pointer;
+                    text-transform: uppercase;
+                    transition: all 0.2s;
+                ">✓ CONFERMA</button>
+                <button id="mvpCancelBtn" style="
+                    flex: 1;
+                    padding: 14px;
+                    background: white;
+                    color: #7a1e2c;
+                    border: 2px solid #7a1e2c;
+                    border-radius: 10px;
+                    font-size: 14px;
+                    font-weight: 800;
+                    font-family: 'Oswald', sans-serif;
+                    letter-spacing: 2px;
+                    cursor: pointer;
+                    text-transform: uppercase;
+                    transition: all 0.2s;
+                ">✗ ANNULLA</button>
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(popup);
+    
+    // Aggiungi animazione CSS se non esiste
+    if (!document.getElementById('mvpPopupAnimations')) {
+        const style = document.createElement('style');
+        style.id = 'mvpPopupAnimations';
+        style.textContent = `
+            @keyframes slideUp {
+                from { transform: translateY(30px); opacity: 0; }
+                to { transform: translateY(0); opacity: 1; }
+            }
+        `;
+        document.head.appendChild(style);
+    }
+    
+    // Event listeners
+    const confirmBtn = document.getElementById('mvpConfirmBtn');
+    const cancelBtn = document.getElementById('mvpCancelBtn');
+    
+    // ✅ ENTRAMBI i bottoni chiudono il popup e votano
+    const closeAndVote = () => {
+        popup.style.transition = 'opacity 0.2s ease';
+        popup.style.opacity = '0';
+        setTimeout(() => {
+            popup.remove();
+            // ✅ Vota il giocatore (come prima)
+            voteMVP(playerId, playerName, null);
+        }, 200);
+    };
+    
+    confirmBtn.onclick = closeAndVote;
+    cancelBtn.onclick = closeAndVote;
+    
+    // Click fuori dal popup = annulla (ma vota comunque)
+    popup.onclick = (e) => {
+        if (e.target === popup) {
+            closeAndVote();
+        }
+    };
+    
+    // Hover effects
+    confirmBtn.onmouseover = () => {
+        confirmBtn.style.background = '#9f2c3d';
+        confirmBtn.style.transform = 'translateY(-2px)';
+    };
+    confirmBtn.onmouseout = () => {
+        confirmBtn.style.background = '#7a1e2c';
+        confirmBtn.style.transform = 'translateY(0)';
+    };
+    
+    cancelBtn.onmouseover = () => {
+        cancelBtn.style.background = '#fef3c7';
+    };
+    cancelBtn.onmouseout = () => {
+        cancelBtn.style.background = 'white';
+    };
 }
 
