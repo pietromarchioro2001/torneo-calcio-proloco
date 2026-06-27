@@ -1096,13 +1096,52 @@ function openTeamEditor(teamId) {
 
 function loadTeamData(teamId) {
     const cached = window.APP_CACHE.fullTeams?.[teamId];
-    if (cached?.team) { renderTeamEditor(cached.team, cached.players || []); }
+    if (cached?.team) { 
+        renderTeamEditor(cached.team, cached.players || []); 
+    }
+    
+    // ✅ Aggiungi refresh periodico per le statistiche
+    if (window.APP_STATE._teamStatsInterval) {
+        clearInterval(window.APP_STATE._teamStatsInterval);
+    }
+    
+    // Refresh immediato
+    refreshTeamStats(teamId);
+    
+    // Poi ogni 5 secondi
+    window.APP_STATE._teamStatsInterval = setInterval(() => {
+        if (window.APP_STATE.currentTeamId === teamId) {
+            refreshTeamStats(teamId);
+        }
+    }, 5000);
+    
     ApiClient.getTeamFull(teamId).then(data => {
         if (window.APP_STATE._currentOpenTeam !== teamId) return;
         if (!window.APP_CACHE.fullTeams) window.APP_CACHE.fullTeams = {};
-        window.APP_CACHE.fullTeams[teamId] = data; CacheManager.save(window.APP_CACHE);
+        window.APP_CACHE.fullTeams[teamId] = data; 
+        CacheManager.save(window.APP_CACHE);
         if (data?.team) renderTeamEditor(data.team, data.players || []);
-    }).catch(error => { console.warn('Failed to load team from backend:', error); });
+    }).catch(error => { 
+        console.warn('Failed to load team from backend:', error); 
+    });
+}
+
+// ✅ NUOVA FUNZIONE: Refresh statistiche giocatori
+async function refreshTeamStats(teamId) {
+    try {
+        const freshData = await ApiClient.getTeamFull(teamId);
+        if (freshData?.players && window.APP_STATE.currentTeamId === teamId) {
+            // Aggiorna cache
+            if (!window.APP_CACHE.fullTeams) window.APP_CACHE.fullTeams = {};
+            window.APP_CACHE.fullTeams[teamId] = freshData;
+            CacheManager.save(window.APP_CACHE);
+            
+            // Re-renderizza solo se siamo ancora nella pagina
+            renderTeamEditor(freshData.team, freshData.players || []);
+        }
+    } catch (error) {
+        console.warn('Errore refresh stats:', error);
+    }
 }
 
 function renderTeamEditor(team, players = []) {
