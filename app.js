@@ -22,9 +22,39 @@ const DESKTOP_PASSWORD = "torneo2026";
 const LOGIN_STORAGE_KEY = "desktop_login_saved";
 let desktopAuthenticated = false;
 
+/**
+ * 📱 RILEVAMENTO MOBILE ROBUSTO
+ * Combina user agent, dimensioni schermo e touch support
+ */
+function isMobileDevice() {
+  // 1. Controllo User Agent (più affidabile)
+  const ua = navigator.userAgent || navigator.vendor || window.opera || '';
+  const mobileRegex = /android|webos|iphone|ipad|ipod|blackberry|iemobile|opera mini|mobile|tablet|silk/i;
+  const isMobileUA = mobileRegex.test(ua.toLowerCase());
+  
+  // 2. Controllo dimensioni viewport
+  const isSmallScreen = window.innerWidth <= 768;
+  
+  // 3. Controllo touch support
+  const hasTouch = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+  
+  // 4. Controllo orientamento (solo per dispositivi con orientamento)
+  const isPortrait = window.matchMedia('(orientation: portrait)').matches;
+  
+  // ✅ È mobile se:
+  // - User agent indica mobile/tablet
+  // - OPPURE (schermo piccolo E ha touch)
+  // - OPPURE (schermo molto piccolo < 500px, anche senza touch)
+  return isMobileUA || (isSmallScreen && hasTouch) || window.innerWidth <= 500;
+}
+
 function checkDesktopAuth() {
-  const isDesktop = window.innerWidth > 768;
-  if (!isDesktop) return true;
+  // ✅ SKIP COMPLETO per dispositivi mobile
+  if (isMobileDevice()) {
+    console.log('📱 Dispositivo mobile rilevato - skip autenticazione desktop');
+    return true;
+  }
+  
   if (desktopAuthenticated) return true;
   
   // ✅ Controlla se ci sono credenziali salvate
@@ -40,7 +70,7 @@ function checkDesktopAuth() {
     } catch(e) {}
   }
   
-  // Mostra schermata login
+  // Mostra schermata login (solo per desktop)
   showLoginScreen();
   return false;
 }
@@ -4868,62 +4898,58 @@ function bootAdminApp() {
 }
 
 // ✅ UNICO RESIZE LISTENER (sostituisce i due precedenti)
+// ✅ UNICO RESIZE LISTENER con rilevamento mobile robusto
 let resizeTimer;
 let lastWidth = window.innerWidth;
+let wasMobile = isMobileDevice();
 
 window.addEventListener('resize', () => {
   clearTimeout(resizeTimer);
   resizeTimer = setTimeout(() => {
     const currentWidth = window.innerWidth;
-    const isMobile = currentWidth <= 768;
-    const wasDesktop = lastWidth > 768;
-    const nowDesktop = currentWidth > 768;
+    const isMobileNow = isMobileDevice();
     
-    console.log('📱 Resize rilevato:', isMobile ? 'MOBILE' : 'DESKTOP', 
-                `(${lastWidth}px → ${currentWidth}px)`);
+    console.log(' Resize rilevato:', isMobileNow ? 'MOBILE' : 'DESKTOP',
+      `(${lastWidth}px → ${currentWidth}px)`);
     
     // 🔐 Se passa da mobile a desktop, richiedi autenticazione
-    if (!wasDesktop && nowDesktop) {
+    if (wasMobile && !isMobileNow) {
+      console.log('🔄 Transizione: mobile → desktop');
       if (!desktopAuthenticated) {
         checkDesktopAuth();
-        console.log("🔒 Richiesta autenticazione per desktop");
       }
     }
     
     // 🛡️ SE SIAMO SU COPPA CHIOSCO → NON FARE NULLA (protegge l'iframe)
-    if (window.APP_STATE._activeStandingsTab === 'chiosco' && 
+    if (window.APP_STATE._activeStandingsTab === 'chiosco' &&
         document.querySelector('.standings-page')) {
       console.log('🛡️ Resize ignorato - tab COPPA CHIOSCO attivo (iframe protetto)');
       lastWidth = currentWidth;
+      wasMobile = isMobileNow;
       return;
     }
     
     // 🔄 Se siamo nella pagina standings, ri-renderizza SOLO se non siamo su chiosco
     if (document.querySelector('.standings-page')) {
       const currentTab = window.APP_STATE._activeStandingsTab;
-      
-      // Salva lo stato PRIMA del re-render
       const savedTab = currentTab;
       const savedFinalStageLoaded = window.APP_STATE._finalStageLoaded;
       
-      // Ri-renderizza
       showStandings();
       
-      // Ripristina il tab attivo DOPO il re-render (aspetta che il DOM sia pronto)
       setTimeout(() => {
         const tabToClick = document.querySelector(`[data-tab="${savedTab}"]`);
         if (tabToClick) {
           tabToClick.click();
           console.log(`✅ Tab ripristinato: ${savedTab}`);
         }
-        
-        // Ripristina lo stato fase finale
         window.APP_STATE._finalStageLoaded = savedFinalStageLoaded;
       }, 100);
     }
     
     lastWidth = currentWidth;
-  }, 300); // Debounce 300ms (leggermente più lungo per sicurezza)
+    wasMobile = isMobileNow;
+  }, 300);
 });
 
 // ✅ NUOVA FUNZIONE: Aggiorna dati app
