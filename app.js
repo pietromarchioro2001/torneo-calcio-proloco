@@ -2389,7 +2389,7 @@ document.getElementById("app").innerHTML = `
         ${/* 🔥 NUOVO: PULSANTE CHIUDI MVP */''}
         ${isMVPActive ? `
             <div class="phase-btn secondary-btn" onclick="closeMVPVoting()" style="background:#7a1e2c;color:white;border:2px solid #ffd700;">
-                🏆 CHIUDI MVP
+                CHIUDI MVP
             </div>
         ` : ''}
     </div>
