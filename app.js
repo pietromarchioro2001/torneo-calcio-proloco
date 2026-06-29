@@ -5,7 +5,7 @@ const CONFIG = {
     // 🔥 SOSTITUISCI CON IL TUO URL APPS SCRIPT WEB APP
     BACKEND_URL: 'https://script.google.com/macros/s/AKfycbywCZanc1GnlQ1WybcQ0631dHlGqDdM0jls0pKfBKeQ1KTteJ4nnB1YGVZe1qTU5Srz/exec',
     API_TIMEOUT: 30000,
-    CACHE_VERSION: 'v3.3',
+    CACHE_VERSION: 'v3.4',
     CACHE_MAX_AGE: 5 * 60 * 1000
 };
 
@@ -6255,77 +6255,68 @@ function showMVPVoteConfirm(playerId, playerName, event) {
  * Chiede conferma, calcola il vincitore e salva
  * La partita può essere già finita ma MVP resta attivo finché non chiudi
  */
-async function closeMVPVoting() {
-    const match = window.APP_STATE.lastMatch;
-    if (!match) return;
-    
-    // Chiedi conferma
-    if (!confirm("⚠️ Vuoi chiudere definitivamente la votazione MVP?\n\nI tifosi non potranno più votare e verrà calcolato il vincitore.")) {
-        return;
-    }
-    
-    try {
-        console.log('🏆 Chiusura MVP in corso...');
-        
-        if (result?.winner) {
-            // Trova il nome del vincitore dalla cache
-            const allPlayers = [
-                ...(window.APP_CACHE.fullTeams?.[match.CASA_ID]?.players || []),
-                ...(window.APP_CACHE.fullTeams?.[match.TRASFERTA_ID]?.players || [])
-            ];
-            const winnerPlayer = allPlayers.find(p => 
-                String(p.PLAYER_ID) === String(result.winner)
-            );
-            
-            // Aggiorna stato locale
-            match.MVP = winnerPlayer?.NOME || result.winner;
-            window.APP_STATE.lastMatch = match;
-            
-            // Aggiorna cache
-            if (window.APP_CACHE.matches) {
-                const idx = window.APP_CACHE.matches.findIndex(m => 
-                    String(m.MATCH_ID) === String(match.MATCH_ID)
-                );
-                if (idx >= 0) {
-                    window.APP_CACHE.matches[idx].MVP = match.MVP;
-                    CacheManager.save(window.APP_CACHE);
-                }
-            }
-            
-            // 🔥 Rimuovi SOLO il pulsante MVP (più efficiente di ricaricare tutta la pagina)
-            const mvpBtn = document.querySelector('[onclick="closeMVPVoting()"]');
-            if (mvpBtn) {
-                mvpBtn.style.transition = 'all 0.3s';
-                mvpBtn.style.opacity = '0';
-                mvpBtn.style.transform = 'scale(0.8)';
-                setTimeout(() => mvpBtn.remove(), 300);
-            }
-            
-            // Aggiorna banner MVP e tab
-            updateMVPBanner(match);
-            renderMVPTab(
-                window.APP_CACHE.fullTeams?.[match.CASA_ID],
-                window.APP_CACHE.fullTeams?.[match.TRASFERTA_ID],
-                match
-            );
-            
-            console.log('✅ MVP chiuso! Vincitore:', match.MVP);
-            
-            // Feedback visivo
-            setTimeout(() => {
-                const banner = document.getElementById('mvpBanner');
-                if (banner) {
-                    banner.style.animation = 'pulse 0.5s ease';
-                }
-            }, 400);
-            
-        } else {
-            alert('⚠️ Nessun voto ricevuto. MVP non assegnato.');
-        }
-        
-    } catch (error) {
-        console.error('❌ Errore chiusura MVP:', error);
-        alert('Errore durante la chiusura MVP: ' + error.message);
-    }
+aasync function closeMVPVoting() {
+const match = window.APP_STATE.lastMatch;
+if (!match) return;
+// Chiedi conferma
+if (!confirm("⚠️ Vuoi chiudere definitivamente la votazione MVP?\nI tifosi non potranno più votare e verrà calcolato il vincitore.")) {
+return;
+}
+try {
+console.log('🏆 Chiusura MVP in corso...');
+// ✅ CHIAMA IL BACKEND che calcola il vincitore e salva
+const result = await ApiClient.finalizeMVP(match.MATCH_ID);
+if (result?.winner) {
+// Trova il nome del vincitore dalla cache
+const allPlayers = [
+...(window.APP_CACHE.fullTeams?.[match.CASA_ID]?.players || []),
+...(window.APP_CACHE.fullTeams?.[match.TRASFERTA_ID]?.players || [])
+];
+const winnerPlayer = allPlayers.find(p =>
+String(p.PLAYER_ID) === String(result.winner)
+);
+// Aggiorna stato locale
+match.MVP = winnerPlayer?.NOME || result.winner;
+window.APP_STATE.lastMatch = match;
+// Aggiorna cache
+if (window.APP_CACHE.matches) {
+const idx = window.APP_CACHE.matches.findIndex(m =>
+String(m.MATCH_ID) === String(match.MATCH_ID)
+);
+if (idx >= 0) {
+window.APP_CACHE.matches[idx].MVP = match.MVP;
+CacheManager.save(window.APP_CACHE);
+}
+}
+// 🔥 Rimuovi SOLO il pulsante MVP
+const mvpBtn = document.querySelector('[onclick="closeMVPVoting()"]');
+if (mvpBtn) {
+mvpBtn.style.transition = 'all 0.3s';
+mvpBtn.style.opacity = '0';
+mvpBtn.style.transform = 'scale(0.8)';
+setTimeout(() => mvpBtn.remove(), 300);
+}
+// Aggiorna banner MVP e tab
+updateMVPBanner(match);
+renderMVPTab(
+window.APP_CACHE.fullTeams?.[match.CASA_ID],
+window.APP_CACHE.fullTeams?.[match.TRASFERTA_ID],
+match
+);
+console.log('✅ MVP chiuso! Vincitore:', match.MVP);
+// Feedback visivo
+setTimeout(() => {
+const banner = document.getElementById('mvpBanner');
+if (banner) {
+banner.style.animation = 'pulse 0.5s ease';
+}
+}, 400);
+} else {
+alert('⚠️ Nessun voto ricevuto. MVP non assegnato.');
+}
+} catch (error) {
+console.error('❌ Errore chiusura MVP:', error);
+alert('Errore durante la chiusura MVP: ' + error.message);
+}
 }
 
