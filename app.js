@@ -5,7 +5,7 @@ const CONFIG = {
     // 🔥 SOSTITUISCI CON IL TUO URL APPS SCRIPT WEB APP
     BACKEND_URL: 'https://script.google.com/macros/s/AKfycbywCZanc1GnlQ1WybcQ0631dHlGqDdM0jls0pKfBKeQ1KTteJ4nnB1YGVZe1qTU5Srz/exec',
     API_TIMEOUT: 30000,
-    CACHE_VERSION: 'v3.2',
+    CACHE_VERSION: 'v3.3',
     CACHE_MAX_AGE: 5 * 60 * 1000
 };
 
@@ -27,25 +27,32 @@ let desktopAuthenticated = false;
  * Combina user agent, dimensioni schermo e touch support
  */
 function isMobileDevice() {
-  // 1. Controllo User Agent (più affidabile)
-  const ua = navigator.userAgent || navigator.vendor || window.opera || '';
-  const mobileRegex = /android|webos|iphone|ipad|ipod|blackberry|iemobile|opera mini|mobile|tablet|silk/i;
-  const isMobileUA = mobileRegex.test(ua.toLowerCase());
-  
-  // 2. Controllo dimensioni viewport
-  const isSmallScreen = window.innerWidth <= 768;
-  
-  // 3. Controllo touch support
-  const hasTouch = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
-  
-  // 4. Controllo orientamento (solo per dispositivi con orientamento)
-  const isPortrait = window.matchMedia('(orientation: portrait)').matches;
-  
-  // ✅ È mobile se:
-  // - User agent indica mobile/tablet
-  // - OPPURE (schermo piccolo E ha touch)
-  // - OPPURE (schermo molto piccolo < 500px, anche senza touch)
-  return isMobileUA || (isSmallScreen && hasTouch) || window.innerWidth <= 500;
+    // 1. Controllo User Agent (più affidabile)
+    const ua = navigator.userAgent || navigator.vendor || window.opera || '';
+    const mobileRegex = /android|webos|iphone|ipad|ipod|blackberry|iemobile|opera mini|mobile|tablet|silk/i;
+    const isMobileUA = mobileRegex.test(ua.toLowerCase());
+    
+    // 2. Controllo touch support (fondamentale!)
+    const hasTouch = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+    
+    // 3. Controllo dimensioni viewport
+    const screenWidth = window.innerWidth;
+    const isSmallScreen = screenWidth <= 768;
+    const isMediumScreen = screenWidth <= 1024;
+    
+    // 4. Controllo orientamento
+    const isPortrait = window.matchMedia('(orientation: portrait)').matches;
+    
+    // ✅ LOGICA MIGLIORATA:
+    // - User agent mobile/tablet → SEMPRE mobile
+    // - Ha touch E schermo <= 1024px → mobile (copre tablet)
+    // - Ha touch E orientamento portrait → mobile (telefoni grandi in verticale)
+    // - Schermo molto piccolo <= 600px → mobile (anche senza touch)
+    
+    return isMobileUA || 
+           (hasTouch && isMediumScreen) || 
+           (hasTouch && isPortrait && screenWidth <= 900) ||
+           screenWidth <= 600;
 }
 
 function checkDesktopAuth() {
