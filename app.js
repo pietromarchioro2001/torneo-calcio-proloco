@@ -5,7 +5,7 @@ const CONFIG = {
     // 🔥 SOSTITUISCI CON IL TUO URL APPS SCRIPT WEB APP
     BACKEND_URL: 'https://script.google.com/macros/s/AKfycbywCZanc1GnlQ1WybcQ0631dHlGqDdM0jls0pKfBKeQ1KTteJ4nnB1YGVZe1qTU5Srz/exec',
     API_TIMEOUT: 30000,
-    CACHE_VERSION: 'v3.4',
+    CACHE_VERSION: 'v3.5',
     CACHE_MAX_AGE: 5 * 60 * 1000
 };
 
@@ -6255,7 +6255,7 @@ function showMVPVoteConfirm(playerId, playerName, event) {
  * Chiede conferma, calcola il vincitore e salva
  * La partita può essere già finita ma MVP resta attivo finché non chiudi
  */
-aasync function closeMVPVoting() {
+async function closeMVPVoting() {
 const match = window.APP_STATE.lastMatch;
 if (!match) return;
 // Chiedi conferma
