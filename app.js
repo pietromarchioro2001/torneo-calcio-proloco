@@ -5,7 +5,7 @@ const CONFIG = {
     // 🔥 SOSTITUISCI CON IL TUO URL APPS SCRIPT WEB APP
     BACKEND_URL: 'https://script.google.com/macros/s/AKfycbywCZanc1GnlQ1WybcQ0631dHlGqDdM0jls0pKfBKeQ1KTteJ4nnB1YGVZe1qTU5Srz/exec',
     API_TIMEOUT: 30000,
-    CACHE_VERSION: 'v3.1',
+    CACHE_VERSION: 'v3.2',
     CACHE_MAX_AGE: 5 * 60 * 1000
 };
 
@@ -2676,7 +2676,6 @@ async function toggleMatch() {
             (async () => {
                 try {
                     await submitAllMVPVotes(freshMatch.MATCH_ID);
-                    await ApiClient.finalizeMVP(freshMatch.MATCH_ID);
                     const finalData = await ApiClient.getMatchFull(freshMatch.MATCH_ID);
                     if (finalData?.match) {
                         window.APP_STATE.lastMatch = finalData.match;
@@ -5595,9 +5594,10 @@ function renderMVPTab(casaData, trasfData, match) {
     return;
   }
   if (isFinished && !currentMVP) {
-    container.innerHTML = `<div style="text-align:center;padding:40px;color:#888;grid-column:1/-1"><div style="font-size:3rem;margin-bottom:16px">⏳</div><div>Calcolo MVP in corso...</div><div style="font-size:12px;margin-top:8px;opacity:0.7">Attendere prego</div></div>`;
-    return;
-  }
+// ✅ Partita finita ma MVP non ancora chiuso: permetti ancora la votazione
+// (non fare return, lascia che il codice sotto mostri la lista votazione)
+console.log('⏳ Partita finita, MVP ancora aperto - mostro lista votazione');
+}
   const renderMVPVoteList = (players, teamId) => {
   if (!players.length) return `<div style="text-align:center;padding:20px;color:#888">Nessun giocatore</div>`;
   const savedVote = localStorage.getItem(`mvp_vote_${match.MATCH_ID}`); let selectedPlayerId = null;
@@ -6259,9 +6259,6 @@ async function closeMVPVoting() {
     
     try {
         console.log('🏆 Chiusura MVP in corso...');
-        
-        // Chiama il backend che calcola il vincitore e salva
-        const result = await ApiClient.finalizeMVP(match.MATCH_ID);
         
         if (result?.winner) {
             // Trova il nome del vincitore dalla cache
