@@ -5434,42 +5434,48 @@ async function resetTournament() {
 if (document.readyState === "loading") { document.addEventListener("DOMContentLoaded", bootAdminApp); } else { bootAdminApp(); }
 
 async function loadPlayersForMatch(match) {
-    if (!match?.CASA_ID || !match?.TRASFERTA_ID) return;
-    
-    const casaId = String(match.CASA_ID);
-    const trasfId = String(match.TRASFERTA_ID);
-    
-    // 🔥 FORZA RELOAD DAL BACKEND (non usare solo cache)
-    try {
-        const [casaData, trasfData] = await Promise.all([
-            ApiClient.getTeamFull(casaId),
-            ApiClient.getTeamFull(trasfId)
-        ]);
-        
-        // Aggiorna cache
-        if (!window.APP_CACHE.fullTeams) window.APP_CACHE.fullTeams = {};
-        if (casaData) window.APP_CACHE.fullTeams[casaId] = casaData;
-        if (trasfData) window.APP_CACHE.fullTeams[trasfId] = trasfData;
-        CacheManager.save(window.APP_CACHE);
-        
-        // Renderizza la tab giocatori
-        renderPlayersTab(
-            window.APP_CACHE.fullTeams[casaId],
-            window.APP_CACHE.fullTeams[trasfId],
-            match
-        );
-        
-        console.log('✅ Giocatori caricati dal backend con stats aggiornate');
-        
-    } catch (error) {
-        console.warn('⚠️ Errore caricamento giocatori, uso cache:', error);
-        // Fallback alla cache
-        renderPlayersTab(
-            window.APP_CACHE.fullTeams?.[casaId],
-            window.APP_CACHE.fullTeams?.[trasfId],
-            match
-        );
-    }
+if (!match?.CASA_ID || !match?.TRASFERTA_ID) return;
+const casaId = String(match.CASA_ID);
+const trasfId = String(match.TRASFERTA_ID);
+// 🔥 FORZA RELOAD DAL BACKEND (non usare solo cache)
+try {
+const [casaData, trasfData] = await Promise.all([
+ApiClient.getTeamFull(casaId),
+ApiClient.getTeamFull(trasfId)
+]);
+// Aggiorna cache
+if (!window.APP_CACHE.fullTeams) window.APP_CACHE.fullTeams = {};
+if (casaData) window.APP_CACHE.fullTeams[casaId] = casaData;
+if (trasfData) window.APP_CACHE.fullTeams[trasfId] = trasfData;
+CacheManager.save(window.APP_CACHE);
+// Renderizza la tab giocatori
+renderPlayersTab(
+window.APP_CACHE.fullTeams[casaId],
+window.APP_CACHE.fullTeams[trasfId],
+match
+);
+// 🔥 NUOVO: Renderizza anche il tab MVP
+renderMVPTab(
+window.APP_CACHE.fullTeams[casaId],
+window.APP_CACHE.fullTeams[trasfId],
+match
+);
+console.log('✅ Giocatori e MVP caricati dal backend');
+} catch (error) {
+console.warn('⚠️ Errore caricamento giocatori, uso cache:', error);
+// Fallback alla cache
+renderPlayersTab(
+window.APP_CACHE.fullTeams?.[casaId],
+window.APP_CACHE.fullTeams?.[trasfId],
+match
+);
+// 🔥 NUOVO: Renderizza anche il tab MVP con cache
+renderMVPTab(
+window.APP_CACHE.fullTeams?.[casaId],
+window.APP_CACHE.fullTeams?.[trasfId],
+match
+);
+}
 }
 
 // ✅ AGGIUNGI QUESTA FUNZIONE HELPER PRIMA DI renderPlayersTab
