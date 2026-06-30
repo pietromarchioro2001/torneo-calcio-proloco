@@ -5,7 +5,7 @@ const CONFIG = {
     // 🔥 SOSTITUISCI CON IL TUO URL APPS SCRIPT WEB APP
     BACKEND_URL: 'https://script.google.com/macros/s/AKfycbz41PIgcp1bjllyNrHJ4SE5lBb15_TSbZRUtOVxVLGnxEkaA56_cnj06NdDuRBKC8b7/exec',
     API_TIMEOUT: 30000,
-    CACHE_VERSION: 'v3.8',
+    CACHE_VERSION: 'v3.9',
     CACHE_MAX_AGE: 5 * 60 * 1000
 };
 
@@ -2785,12 +2785,7 @@ async function toggleMatch() {
                         renderMatchPage(finalData.match);
                     }
                     refreshStandingsDebounced(500);
-                    
-                    // 🔥 GENERAZIONE AUTOMATICA POST RISULTATO
-                    console.log('🎨 Generazione post RISULTATO in background...');
-                    await generateMatchImage(freshMatch.MATCH_ID, 'RISULTATO');
-                    // Ricarica dati per avere il link POST_TER aggiornato
-                    await invalidateCacheAndRefresh('matches');
+
                 } catch (err) {
                     console.error("Errore background MVP/Post:", err);
                 }
@@ -6412,6 +6407,24 @@ window.APP_CACHE.fullTeams?.[match.TRASFERTA_ID],
 match
 );
 console.log('✅ MVP chiuso! Vincitore:', match.MVP);
+// 🔥 GENERAZIONE AUTOMATICA POST RISULTATO DOPO CHIUSURA MVP
+console.log('🎨 Generazione post RISULTATO con MVP definitivo...');
+
+try {
+  await generateMatchImage(match.MATCH_ID, 'RISULTATO');
+  await invalidateCacheAndRefresh('matches');
+
+  // Ricarica partita aggiornata con POST_TER nuovo
+  const freshData = await ApiClient.getMatchFull(match.MATCH_ID);
+  if (freshData?.match) {
+    window.APP_STATE.lastMatch = freshData.match;
+    renderMatchPage(freshData.match);
+  }
+
+  console.log('✅ Post RISULTATO generato dopo CHIUDI MVP');
+} catch (postError) {
+  console.error('⚠️ MVP chiuso, ma errore nella generazione post:', postError);
+}
 // Feedback visivo
 setTimeout(() => {
 const banner = document.getElementById('mvpBanner');
