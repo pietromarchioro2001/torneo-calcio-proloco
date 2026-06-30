@@ -2276,21 +2276,22 @@ body {
   .playersTable td { padding: 8px 4px !important; font-size: 12px !important; text-align: center !important; }
   .playersTable th:first-child, .playersTable td:first-child { width: 28px !important; padding: 8px 4px 8px 8px !important; text-align: center !important; }
   .playersTable th:nth-child(n+3):nth-child(-n+7), .playersTable td:nth-child(n+3):nth-child(-n+7) { width: 35px !important; text-align: center !important; padding: 8px 2px !important; }
-  .playersTable th:last-child, .playersTable td:last-child { width: 40px !important; padding-right: 12px !important; text-align: center !important; }
+  .playersTable th:last-child, .playersTable td:last-child { width: 32px !important; padding-right: 16px !important; text-align: center !important; }
   .playersTable td:nth-child(2) { font-size: 11px !important; letter-spacing: 0.5px !important; line-height: 1.3 !important; white-space: normal !important; word-break: break-word !important; }
 
    .playersTable td:nth-child(1), 
     .playersTable th:nth-child(1) {
-        width: 40px !important; /* Foto */
-        padding-right: 0 !important; /* Nessun spazio extra */
+        width: 32px !important; /* Foto */
+        padding-right: 2px !important; /* Nessun spazio extra */
     }
 
     .playersTable td:nth-child(2), 
     .playersTable th:nth-child(2) {
-        width: 35px !important; /* Colonna N. stretta */
+        width: 28px !important; /* Colonna N. stretta */
         padding: 8px 2px 8px 4px !important; /* Vicinissimo al nome */
         text-align: center !important;
         font-weight: 600 !important;
+        font-size: 10px !important;
         color: #999 !important;
     }
 
@@ -2300,7 +2301,7 @@ body {
         width: auto !important; /* Occupa tutto lo spazio disponibile */
         min-width: 140px !important; /* Larghezza minima per i nomi lunghi */
         text-align: left !important; /* Allineato a sinistra */
-        padding-left: 4px !important; /* Poco spazio dal numero */
+        padding-left: 2px !important; /* Poco spazio dal numero */
         padding-right: 4px !important;
         white-space: nowrap !important; /* ✅ VIETA DI ANDARE A CAPO */
         overflow: visible !important;
@@ -2312,8 +2313,8 @@ body {
     /* Colonne Statistiche (GOL, ASS, AMM, ESP, MVP) */
     .playersTable th:nth-child(n+4):nth-child(-n+8),
    .playersTable td:nth-child(n+4):nth-child(-n+8) {
-     width: 28px !important; /* Più strette */
-     padding: 8px 1px !important; /* Padding ridotto */
+     width: 26px !important; /* Più strette */
+     padding: 8px 0px !important; /* Padding ridotto */
      text-align: center !important;
      font-size: 11px !important; /* Stessa dimensione di NOME */
      font-weight: 600 !important;
