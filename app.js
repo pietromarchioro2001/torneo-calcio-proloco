@@ -1224,15 +1224,52 @@ function teamPhotoAction() {
 
 let currentPlayerId = null; let playerPhotoTemp = null;
 function openPlayerPopup(playerId = null) {
-    currentPlayerId = playerId; playerPhotoTemp = null; const teamId = window.APP_STATE.currentTeamId; const title = playerId ? "MODIFICA GIOCATORE" : "NUOVO GIOCATORE";
-    const modal = document.createElement("div"); modal.className = "modalOverlay";
-    modal.innerHTML = `<div class="modalBox player-modal" id="playerBox"><div class="modalTitle">${title}</div><div class="player-form"><label>NOME</label><input id="playerNameInput" class="player-input" placeholder="Inserisci nome giocatore"><div id="playerPhotoUpload" class="player-upload">FOTO GIOCATORE</div><div class="modalActions"><div class="phase-btn" onclick="savePlayerPopup()">SALVA</div>${playerId ? '<div class="phase-btn secondary" onclick="deletePlayer(\'' + playerId + '\'); this.closest(\'.modalOverlay\').remove()">ELIMINA</div>' : ''}</div></div></div>`;
-    document.body.appendChild(modal); modal.onclick = (e) => { if (e.target === modal) modal.remove(); }; document.getElementById("playerBox").onclick = (e) => e.stopPropagation();
-    initPlayerUploadBox();
-    if (playerId) {
-        const player = window.APP_CACHE.playersMap?.[playerId];
-        if (player) { loadPlayerData(player); } else { ApiClient.getPlayerDetail(playerId).then(p => { if (p) { loadPlayerData(p); if (!window.APP_CACHE.playersMap) window.APP_CACHE.playersMap = {}; window.APP_CACHE.playersMap[playerId] = p; CacheManager.save(window.APP_CACHE); } }).catch(err => console.error('Error loading player:', err)); }
+  currentPlayerId = playerId; 
+  playerPhotoTemp = null; 
+  const teamId = window.APP_STATE.currentTeamId; 
+  const title = playerId ? "MODIFICA GIOCATORE" : "NUOVO GIOCATORE";
+  
+  const modal = document.createElement("div"); 
+  modal.className = "modalOverlay";
+  
+  modal.innerHTML = `
+    <div class="modalBox player-modal" id="playerBox">
+      <div class="modalTitle">${title}</div>
+      <div class="player-form">
+        <label>NOME</label>
+        <div style="display:flex; gap:10px; align-items:center;">
+          <input id="playerNameInput" class="player-input" placeholder="Inserisci nome giocatore" style="flex:1;">
+          <input id="playerNumberInput" class="player-number-input" placeholder="N." maxlength="2" style="width:60px; text-align:center;">
+        </div>
+        <div id="playerPhotoUpload" class="player-upload">FOTO GIOCATORE</div>
+        <div class="modalActions">
+          <div class="phase-btn" onclick="savePlayerPopup()">SALVA</div>
+          ${playerId ? '<div class="phase-btn secondary" onclick="deletePlayer(\'' + playerId + '\'); this.closest(\'.modalOverlay\').remove()">ELIMINA</div>' : ''}
+        </div>
+      </div>
+    </div>`;
+    
+  document.body.appendChild(modal); 
+  modal.onclick = (e) => { if (e.target === modal) modal.remove(); }; 
+  document.getElementById("playerBox").onclick = (e) => e.stopPropagation();
+  
+  initPlayerUploadBox();
+  
+  if (playerId) {
+    const player = window.APP_CACHE.playersMap?.[playerId];
+    if (player) { 
+      loadPlayerData(player); 
+    } else { 
+      ApiClient.getPlayerDetail(playerId).then(p => { 
+        if (p) { 
+          loadPlayerData(p); 
+          if (!window.APP_CACHE.playersMap) window.APP_CACHE.playersMap = {}; 
+          window.APP_CACHE.playersMap[playerId] = p; 
+          CacheManager.save(window.APP_CACHE); 
+        } 
+      }).catch(err => console.error('Error loading player:', err)); 
     }
+  }
 }
 
 function initPlayerUploadBox() {
@@ -1242,13 +1279,22 @@ function initPlayerUploadBox() {
 
 function loadPlayerData(player) {
   document.getElementById("playerNameInput").value = player?.NOME || "";
+  // ✅ CARICA NUMERO MAGLIA
+  const numberInput = document.getElementById("playerNumberInput");
+  if(numberInput) {
+    numberInput.value = player?.N_MAGLIA || "";
+    // Su mobile, disabilita la modifica
+    if(window.innerWidth <= 768) {
+      numberInput.disabled = true;
+      numberInput.style.opacity = "0.5";
+      numberInput.style.cursor = "not-allowed";
+    }
+  }
+  
   const box = document.getElementById("playerPhotoUpload");
   const photoId = player?.FOTO_ID || player?.FOTO_URL;
   if (photoId) {
-    box.innerHTML = `<img src="${getCachedImage(photoId, 200)}"
-      class="playerPhotoBig"
-      alt="${player.NOME}">`;
-    // 🔥 FIX: aggiungi la classe has-photo!
+    box.innerHTML = `<img src="${getCachedImage(photoId, 200)}" class="playerPhotoBig" alt="${player.NOME}">`;
     box.classList.add("has-photo");
   } else {
     box.innerHTML = "FOTO GIOCATORE";
@@ -1262,25 +1308,38 @@ function renderPlayerTempPhoto() {
 }
 
 async function savePlayerPopup() {
-    const name = document.getElementById("playerNameInput")?.value?.trim();
-    if (!name) { alert("Inserisci nome giocatore"); return; }
-    const teamId = window.APP_STATE.currentTeamId;
-    try {
-        const playerId = await ApiClient.savePlayerAdmin(currentPlayerId, teamId, name.toUpperCase(), "");
-        currentPlayerId = playerId;
-        if (playerPhotoTemp) {
-            const base64 = await fileToBase64(playerPhotoTemp);
-            const newPhotoId = await ApiClient.uploadPlayerPhotoReplace(playerId, teamId, name.toUpperCase(), playerPhotoTemp.name, playerPhotoTemp.type, base64);
-            if (window.APP_CACHE.playersMap) {
-                window.APP_CACHE.playersMap[playerId] = { ...window.APP_CACHE.playersMap[playerId], FOTO_ID: newPhotoId, NOME: name.toUpperCase() };
-                CacheManager.save(window.APP_CACHE);
-            }
-        }
-        document.querySelector(".modalOverlay")?.remove();
-        // 🔥 AGGIUNGI QUESTA RIGA
-        await invalidateCacheAndRefresh('teams');
-        await loadTeamData(teamId);
-    } catch (error) { console.error('Save player error:', error); alert("Errore salvataggio: " + error.message); }
+  const name = document.getElementById("playerNameInput")?.value?.trim();
+  const number = document.getElementById("playerNumberInput")?.value?.trim();
+  
+  if (!name) { alert("Inserisci nome giocatore"); return; }
+  
+  const teamId = window.APP_STATE.currentTeamId;
+  
+  try {
+    const playerId = await ApiClient.savePlayerAdmin(currentPlayerId, teamId, name.toUpperCase(), "", number);
+    currentPlayerId = playerId;
+    
+    if (playerPhotoTemp) {
+      const base64 = await fileToBase64(playerPhotoTemp);
+      const newPhotoId = await ApiClient.uploadPlayerPhotoReplace(playerId, teamId, name.toUpperCase(), playerPhotoTemp.name, playerPhotoTemp.type, base64);
+      if (window.APP_CACHE.playersMap) {
+        window.APP_CACHE.playersMap[playerId] = { 
+          ...window.APP_CACHE.playersMap[playerId], 
+          FOTO_ID: newPhotoId, 
+          NOME: name.toUpperCase(),
+          N_MAGLIA: number // ✅ SALVA NUMERO
+        };
+        CacheManager.save(window.APP_CACHE);
+      }
+    }
+    
+    document.querySelector(".modalOverlay")?.remove();
+    await invalidateCacheAndRefresh('teams');
+    await loadTeamData(teamId);
+  } catch (error) { 
+    console.error('Save player error:', error); 
+    alert("Errore salvataggio: " + error.message); 
+  }
 }
 
 async function deletePlayer(playerId) {
@@ -5508,12 +5567,14 @@ function formatPlayerName(fullName, forceBreak = false) {
 function renderPlayersTab(casaData, trasfData, match) {
   const container = document.getElementById("playersColumns");
   if (!container) return;
+  
   const casaPlayers = casaData?.players || [];
   const trasfPlayers = trasfData?.players || [];
   const isFinished = match.STATO_PARTITA === "FINITA";
   const mvpName = match.MVP;
   const events = window.APP_CACHE.eventsByMatch?.[match.MATCH_ID] || [];
   const eventMap = {};
+  
   events.forEach(e => {
     if (e.PLAYER_ID) {
       if (!eventMap[e.PLAYER_ID]) eventMap[e.PLAYER_ID] = [];
@@ -5521,24 +5582,17 @@ function renderPlayersTab(casaData, trasfData, match) {
     }
   });
 
-  // ✅ FUNZIONE HELPER: raggruppa eventi e crea badge compatti
   const renderCompactBadges = (playerEvents) => {
     if (!playerEvents.length) return "";
-    
     const counts = { GOAL: 0, AMMONIZIONE: 0, ESPULSIONE: 0 };
     playerEvents.forEach(t => {
       if (counts[t] !== undefined) counts[t]++;
     });
-    
     let html = "";
-    
-    // ✅ Gol con conteggio (es: ⚽x5)
     if (counts.GOAL > 0) {
       const goalText = counts.GOAL > 1 ? `⚽x${counts.GOAL}` : "⚽";
       html += `<span class="player-badges">${goalText}</span>`;
     }
-    
-    // ✅ Ammonizioni/Espulsioni - le mostriamo subito dopo i gol
     const cards = [];
     if (counts.AMMONIZIONE > 0) {
       cards.push(counts.AMMONIZIONE > 1 ? `🟨x${counts.AMMONIZIONE}` : "🟨");
@@ -5546,36 +5600,53 @@ function renderPlayersTab(casaData, trasfData, match) {
     if (counts.ESPULSIONE > 0) {
       cards.push(counts.ESPULSIONE > 1 ? `🟥x${counts.ESPULSIONE}` : "🟥");
     }
-    
     if (cards.length > 0) {
       html += `<span class="player-badges" style="margin-left:2px;">${cards.join("")}</span>`;
     }
-    
     return html;
   };
 
   const renderPlayerList = (players, teamName) => {
     if (!players.length) return `<div style="text-align:center;padding:20px;color:#888">Nessun giocatore</div>`;
     let html = "<div class='players-list'>";
+    
     players.forEach(p => {
       const playerEvents = eventMap[p.PLAYER_ID] || [];
       const badgesHtml = renderCompactBadges(playerEvents);
       const isMVP = isFinished && p.NOME === mvpName;
       const mvpClass = isMVP ? "mvp-player-row" : "";
       const crownHtml = isMVP ? '<div class="mvp-crown">👑</div>' : '';
-      const photoHtml = p.FOTO_ID ? `<img src="${getCachedImage(p.FOTO_ID, 40)}" alt="${p.NOME}" class="${isMVP ? 'mvp-player-photo' : ''}" onerror="this.style.display='none'">` : `<div class="player-avatar-fallback ${isMVP ? 'mvp-player-avatar' : ''}">👤</div>`;
+      const number = p.N_MAGLIA || "";
+      const numberHtml = number ? `<span class="player-number">${number}</span>` : '';
       
-      // ✅ NOME GIOCATORE: text-overflow gestito dal CSS
+      const photoHtml = p.FOTO_ID 
+        ? `<img src="${getCachedImage(p.FOTO_ID, 40)}" alt="${p.NOME}" class="${isMVP ? 'mvp-player-photo' : ''}" onerror="this.style.display='none'">` 
+        : `<div class="player-avatar-fallback ${isMVP ? 'mvp-player-avatar' : ''}">👤</div>`;
+      
       html += `<div class="player-row ${mvpClass}" onclick="openPlayerPopup('${p.PLAYER_ID}'); event.stopPropagation();" style="cursor:pointer;">
-        <div class="player-avatar ${isMVP ? 'mvp-player-avatar-wrapper' : ''}">${photoHtml}${crownHtml}</div>
+        <div class="player-avatar ${isMVP ? 'mvp-player-avatar-wrapper' : ''}">
+          ${numberHtml}
+          ${photoHtml}
+          ${crownHtml}
+        </div>
         <div class="player-name">${(p.NOME || "").toUpperCase()}</div>
         ${badgesHtml ? `<div style="flex-shrink:0; display:flex; align-items:center;">${badgesHtml}</div>` : ''}
       </div>`;
     });
+    
     html += "</div>";
     return html;
   };
-  container.innerHTML = `<div class="players-col"><div class="players-team">${(casaData?.team?.NOME_SQUADRA || match.SQUADRA_CASA || "").toUpperCase()}</div>${renderPlayerList(casaPlayers, match.SQUADRA_CASA)}</div><div class="players-col"><div class="players-team">${(trasfData?.team?.NOME_SQUADRA || match.SQUADRA_TRASFERTA || "").toUpperCase()}</div>${renderPlayerList(trasfPlayers, match.SQUADRA_TRASFERTA)}</div>`;
+
+  container.innerHTML = `
+    <div class="players-col">
+      <div class="players-team">${(casaData?.team?.NOME_SQUADRA || match.SQUADRA_CASA || "").toUpperCase()}</div>
+      ${renderPlayerList(casaPlayers, match.SQUADRA_CASA)}
+    </div>
+    <div class="players-col">
+      <div class="players-team">${(trasfData?.team?.NOME_SQUADRA || match.SQUADRA_TRASFERTA || "").toUpperCase()}</div>
+      ${renderPlayerList(trasfPlayers, match.SQUADRA_TRASFERTA)}
+    </div>`;
 }
 function renderMVPTab(casaData, trasfData, match) {
   const container = document.getElementById("mvpColumns"); if (!container) return;
