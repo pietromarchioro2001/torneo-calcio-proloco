@@ -2274,7 +2274,7 @@ body {
   .playersTable { font-size: 11px !important; width: 100% !important; table-layout: fixed !important; }
   .playersTable th { padding: 8px 4px !important; font-size: 9px !important; letter-spacing: 1px !important; }
   .playersTable td { padding: 8px 4px !important; font-size: 12px !important; text-align: center !important; }
-  .playersTable th:first-child, .playersTable td:first-child { width: 32px !important; padding: 8px 4px 8px 8px !important; text-align: center !important; }
+  .playersTable th:first-child, .playersTable td:first-child { width: 28px !important; padding: 8px 0px !important; text-align: center !important; }
   .playersTable th:nth-child(3), 
   .playersTable td:nth-child(3) { 
         width: auto !important; /* Larghezza automatica per occupare spazio */
@@ -2283,7 +2283,7 @@ body {
         padding-left: 6px !important;
         padding-right: 4px !important;
     }
-  .playersTable th:nth-child(2), .playersTable td:nth-child(2) { width: auto !important; min-width: 130px !important; text-align: left !important; padding-left: 4px !important; padding-right: 8px !important; }
+  .playersTable th:nth-child(2), .playersTable td:nth-child(2) { width: auto !important; min-width: 150px !important; text-align: left !important; padding-left: 4px !important; padding-right: 8px !important; }
   .playersTable th:nth-child(2) { text-align: left !important; }
   .playersTable th:nth-child(n+3):nth-child(-n+7), .playersTable td:nth-child(n+3):nth-child(-n+7) { width: 35px !important; text-align: center !important; padding: 8px 2px !important; }
   .playersTable th:last-child, .playersTable td:last-child { width: 40px !important; padding-right: 12px !important; text-align: center !important; }
