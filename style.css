@@ -884,6 +884,69 @@ body {
   color: #9ca3af !important;
 }
 
+.player-number-input {
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  padding: 10px;
+  font-size: 16px;
+  font-family: 'Oswald', sans-serif;
+  letter-spacing: 2px;
+  text-align: center;
+  font-weight: 600;
+  color: #7a1e2c;
+  transition: 0.2s;
+}
+
+.player-number-input:focus {
+  outline: none;
+  border-color: #7a1e2c;
+}
+
+.player-number-input:disabled {
+  background: #f5f5f5;
+  cursor: not-allowed;
+}
+
+/* Numero nella tabella giocatori */
+.playersTable td:nth-child(2) {
+  text-align: center;
+  font-weight: 600;
+  color: #7a1e2c;
+  width: 50px;
+}
+
+/* Numero nella lista giocatori pagina partita */
+.player-avatar {
+  position: relative;
+  width: 40px;
+  height: 40px;
+  min-width: 40px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: visible;
+  flex-shrink: 0;
+}
+
+.player-number {
+  position: absolute;
+  top: -5px;
+  left: -5px;
+  background: #7a1e2c;
+  color: white;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  font-weight: 700;
+  border: 2px solid white;
+  z-index: 10;
+}
+
 /* =============================================================================================
    6. LISTA PARTITE
 =============================================================================================== */
@@ -3091,6 +3154,19 @@ font-size: 16px !important;
 
   .players-team { font-size: 12px !important; margin-bottom: 8px !important; letter-spacing: 1px !important; }
   .players-list { gap: 2px !important; }
+
+   .player-number-input:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+  
+  .player-number {
+    width: 18px;
+    height: 18px;
+    font-size: 9px;
+    top: -3px;
+    left: -3px;
+  }
 
    /* Pulsante Reset Torneo */
    .admin-reset-btn,
