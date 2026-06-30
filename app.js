@@ -3,9 +3,9 @@
 // ============================================================================
 const CONFIG = {
     // 🔥 SOSTITUISCI CON IL TUO URL APPS SCRIPT WEB APP
-    BACKEND_URL: 'https://script.google.com/macros/s/AKfycbz41PIgcp1bjllyNrHJ4SE5lBb15_TSbZRUtOVxVLGnxEkaA56_cnj06NdDuRBKC8b7/exec',
+    BACKEND_URL: 'https://script.google.com/macros/s/AKfycbzuXc51p8zDvhfogYymtWzTN83ejUknhR_q-HHKFr0wgWUQvJEh5QDsUTimo41tON9q/exec',
     API_TIMEOUT: 30000,
-    CACHE_VERSION: 'v3.9',
+    CACHE_VERSION: 'v4.0',
     CACHE_MAX_AGE: 5 * 60 * 1000
 };
 
@@ -617,7 +617,7 @@ const ApiClient = {
     addEventAdmin: (matchId, teamId, type, minute, playerId, assistId) => ApiClient.call('addEventAdmin', [matchId, teamId, type, minute, playerId, assistId]),
     editEventAdmin: (eventId, data) => ApiClient.call('editEventAdmin', [eventId, data]),
     deleteEventAdmin: (id) => ApiClient.call('deleteEventAdmin', [id]),
-    savePlayerAdmin: (id, teamId, name, photo) => ApiClient.call('savePlayerAdmin', [id, teamId, name, photo]),
+    savePlayerAdmin: (id, teamId, name, photo, number) => ApiClient.call('savePlayerAdmin', [id, teamId, name, photo, number]),
     deletePlayerAdmin: (id) => ApiClient.call('deletePlayerAdmin', [id]),
     uploadTeamLogoReplace: (teamId, fileName, fileType, base64) => ApiClient.call('uploadTeamLogoReplace', [teamId, fileName, fileType, base64]),
     uploadTeamPhotoReplace: (teamId, fileName, fileType, base64) => ApiClient.call('uploadTeamPhotoReplace', [teamId, fileName, fileType, base64]),
