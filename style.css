@@ -671,11 +671,43 @@ body {
 .playersTable tr { border-bottom: 1px solid #eee; transition: 0.2s; }
 .playersTable tr:hover { background: #fafafa; }
 .playersTable td { padding: 12px 16px; }
-.playersTable td:nth-child(2) { font-size: 14px; letter-spacing: 3px; text-transform: uppercase; font-weight: 400; text-align: left; }
-.playersTable th:nth-child(2) { text-align: left; }
 .playersTable th:nth-child(n+3), .playersTable td:nth-child(n+3) { text-align: center; width: 70px; }
 .playersTable td:last-child { position: relative; width: 60px; text-align: center; }
 .playersTable th:last-child { text-align: center; width: 60px; }
+
+/* Colonna FOTO - padding destro ridotto */
+.playersTable th:first-child,
+.playersTable td:first-child {
+    width: 40px !important;
+    padding: 12px 4px 12px 18px !important; /* ✅ padding-right ridotto da 8px a 4px */
+    text-align: center !important;
+}
+
+/* Colonna N. - spostata vicino alla foto */
+.playersTable th:nth-child(2),
+.playersTable td:nth-child(2) {
+    width: 35px !important;
+    padding: 12px 8px 12px 4px !important; /* ✅ padding-left ridotto, padding-right aumentato */
+    text-align: center !important;
+    font-weight: 600 !important;
+    color: #999 !important;
+    font-size: 13px !important;
+}
+
+/* Colonna NOME - spostata a sinistra, allineata a sinistra */
+.playersTable th:nth-child(3),
+.playersTable td:nth-child(3) {
+    width: auto !important;
+    min-width: 120px !important; /* ✅ ridotto da 140px */
+    text-align: left !important;
+    padding-left: 8px !important; /* ✅ ridotto da 12px */
+    padding-right: 12px !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    font-weight: 600 !important;
+    font-size: 13px !important;
+}
 
 .playerPhoto { width: 42px; height: 42px; object-fit: cover; border-radius: 8px; }
 .playerPhotoEmpty {
