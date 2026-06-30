@@ -3,9 +3,9 @@
 // ============================================================================
 const CONFIG = {
     // 🔥 SOSTITUISCI CON IL TUO URL APPS SCRIPT WEB APP
-    BACKEND_URL: 'https://script.google.com/macros/s/AKfycbx05DLtisYzDhSJtTyqjAA5BP9rgkv2L2HZSjA11btEXOGDk39Y07iI5Zl6cyS_hSxx/exec',
+    BACKEND_URL: 'https://script.google.com/macros/s/AKfycbz41PIgcp1bjllyNrHJ4SE5lBb15_TSbZRUtOVxVLGnxEkaA56_cnj06NdDuRBKC8b7/exec',
     API_TIMEOUT: 30000,
-    CACHE_VERSION: 'v3.7',
+    CACHE_VERSION: 'v3.8',
     CACHE_MAX_AGE: 5 * 60 * 1000
 };
 
@@ -1348,15 +1348,52 @@ async function deletePlayer(playerId) {
 }
 
 function renderPlayersList(players) {
-    const container = document.getElementById("playersSection"); if (!container) return;
-    if (!players?.length) { container.innerHTML = `<div style="text-align:center;padding:20px;color:#888">Nessun giocatore</div>`; return; }
-    let html = `<table class='playersTable'><tr><th></th><th>NOME</th><th>GOL</th><th>ASS</th><th>AMM</th><th>ESP</th><th>MVP</th></tr>`;
-    players.forEach(p => {
-        const photoHtml = p.FOTO_ID ? `<img src="${getCachedImage(p.FOTO_ID, 42)}" class="playerPhoto" alt="${p.NOME}" onerror="this.style.display='none';this.parentElement.innerHTML='<div class=\'playerPhotoEmpty\'></div>'">` : "<div class='playerPhotoEmpty'></div>";
-        const gol = Number(p.GOL) || 0; const assist = Number(p.ASSIST) || 0; const amm = Number(p.AMMONIZIONI) || 0; const esp = Number(p.ESPULSIONI) || 0; const mvp = Number(p.MVP_VINTI) || 0;
-        html += `<tr onclick="openPlayerPopup('${p.PLAYER_ID}')"><td>${photoHtml}</td><td>${(p.NOME || "").toUpperCase()}</td><td>${gol}</td><td>${assist}</td><td>${amm}</td><td>${esp}</td><td class="mvp-cell">${mvp}</td></tr>`;
-    });
-    html += "</table>"; container.innerHTML = html;
+const container = document.getElementById("playersSection"); 
+if (!container) return;
+
+if (!players?.length) { 
+    container.innerHTML = `<div style="text-align:center;padding:20px;color:#888">Nessun giocatore</div>`; 
+    return; 
+}
+
+let html = `<table class='playersTable'>
+<tr>
+<th></th>
+<th>N.</th>
+<th>NOME</th>
+<th>GOL</th>
+<th>ASS</th>
+<th>AMM</th>
+<th>ESP</th>
+<th>MVP</th>
+</tr>`;
+
+players.forEach(p => {
+const photoHtml = p.FOTO_ID 
+    ? `<img src="${getCachedImage(p.FOTO_ID, 42)}" class="playerPhoto" alt="${p.NOME}" onerror="this.style.display='none';this.parentElement.innerHTML='<div class=\'playerPhotoEmpty\'></div>'">` 
+    : "<div class='playerPhotoEmpty'></div>";
+    
+const gol = Number(p.GOL) || 0; 
+const assist = Number(p.ASSIST) || 0; 
+const amm = Number(p.AMMONIZIONI) || 0; 
+const esp = Number(p.ESPULSIONI) || 0; 
+const mvp = Number(p.MVP_VINTI) || 0;
+const number = p.N_MAGLIA || "-";  // ✅ Numero maglia
+
+html += `<tr onclick="openPlayerPopup('${p.PLAYER_ID}')">
+<td>${photoHtml}</td>
+<td style="text-align:center; font-weight:600; color:#7a1e2c;">${number}</td>
+<td>${(p.NOME || "").toUpperCase()}</td>
+<td>${gol}</td>
+<td>${assist}</td>
+<td>${amm}</td>
+<td>${esp}</td>
+<td class="mvp-cell">${mvp}</td>
+</tr>`;
+});
+
+html += "</table>"; 
+container.innerHTML = html;
 }
 
 function deleteTeam(id) {
