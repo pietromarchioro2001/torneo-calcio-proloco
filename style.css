@@ -749,7 +749,7 @@ body {
 .playersTable .delete-btn { opacity: 0; pointer-events: none; transition: 0.2s; position: static; transform: none; margin: auto; }
 .playersTable tr:hover .delete-btn { opacity: 1; pointer-events: auto; }
 
-.player-avatar { position: relative; width: 40px; height: 40px; min-width: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; overflow: hidden; flex-shrink: 0; }
+.player-avatar { position: relative; width: 40px; height: 40px; min-width: 40px; margin-right: 4px !important; border-radius: 50%; display: flex; align-items: center; justify-content: center; overflow: hidden; flex-shrink: 0; }
 .player-avatar img { width: 100%; height: 100%; border-radius: 50%; object-fit: cover; display: block; }
 .player-avatar-fallback { width: 40px; height: 40px; border-radius: 50%; background: #e5e7eb; display: flex; align-items: center; justify-content: center; font-size: 18px; }
 .player-avatar-fallback.big { width: 140px; height: 140px; border-radius: 50%; background: #ddd; display: flex; align-items: center; justify-content: center; font-size: 50px; margin: 20px auto 0; }
@@ -2271,10 +2271,18 @@ body {
   .players-title { font-size: 18px !important; letter-spacing: 3px !important; margin: 20px 0 12px !important; }
   .players-title::after { width: 50px !important; margin-top: 5px !important; }
 
-  .playersTable { font-size: 12px !important; width: 100% !important; table-layout: fixed !important; }
+  .playersTable { font-size: 11px !important; width: 100% !important; table-layout: fixed !important; }
   .playersTable th { padding: 8px 4px !important; font-size: 9px !important; letter-spacing: 1px !important; }
   .playersTable td { padding: 8px 4px !important; font-size: 12px !important; text-align: center !important; }
-  .playersTable th:first-child, .playersTable td:first-child { width: 35px !important; padding: 8px 2px !important; text-align: center !important; }
+  .playersTable th:first-child, .playersTable td:first-child { width: 32px !important; padding: 8px 0px !important; text-align: center !important; }
+  .playersTable th:nth-child(3), 
+  .playersTable td:nth-child(3) { 
+        width: auto !important; /* Larghezza automatica per occupare spazio */
+        min-width: 80px !important; /* Minimo garantito */
+        text-align: left !important;
+        padding-left: 6px !important;
+        padding-right: 4px !important;
+    }
   .playersTable th:nth-child(2), .playersTable td:nth-child(2) { width: auto !important; min-width: 90px !important; text-align: left !important; padding-left: 4px !important; padding-right: 8px !important; }
   .playersTable th:nth-child(2) { text-align: left !important; }
   .playersTable th:nth-child(n+3):nth-child(-n+6), .playersTable td:nth-child(n+3):nth-child(-n+6) { width: 35px !important; text-align: center !important; padding: 8px 2px !important; }
@@ -2297,6 +2305,14 @@ body {
 }
 .playerPhotoEmpty::before {
   content: "👤" !important;
+}
+   .playersTable td:first-child { 
+    padding-right: 8px !important; /* Ridotto da 18px */
+    width: 50px !important; /* Ridotto da 90px */
+}
+
+.playersTable td:nth-child(2) { 
+    padding-left: 8px !important; /* Ridotto da 18px */
 }
 
   .player-avatar {
@@ -3138,6 +3154,9 @@ font-size: 16px !important;
   }
   
   .player-number {
+     position: static !important; /* Rimosso absolute per centrarlo */
+    display: inline-block !important;
+    margin: 0 auto !important;
     width: 18px;
     height: 18px;
     font-size: 9px;
