@@ -573,7 +573,6 @@ const ApiClient = {
             action: action,
             payload: payload
         }),
-        redirect: 'follow'
     });
       
       if (!response.ok) {
