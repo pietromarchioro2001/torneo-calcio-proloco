@@ -3681,7 +3681,7 @@ button.media-button[onclick*="openMediaUploadModal"] {
 .playersTable th:last-child,
 .playersTable td:last-child {
     width: 28px !important; /* ✅ Uguale a GOL/ASS/AMM/ESP */
-    padding: 8px 1px 8px 16px !important; /* Leggero padding destro per respiro */
+    padding: 8px 16px 8px 1px !important; /* Leggero padding destro per respiro */
     text-align: center !important;
     font-size: 11px !important;
     font-weight: 600 !important;
