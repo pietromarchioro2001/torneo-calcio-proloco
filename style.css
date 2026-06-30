@@ -2273,10 +2273,6 @@ body {
 
   .playersTable { font-size: 11px !important; width: 100% !important; table-layout: fixed !important; }
   .playersTable th { padding: 8px 4px !important; font-size: 9px !important; letter-spacing: 1px !important; }
-  .playersTable td { padding: 8px 4px !important; font-size: 12px !important; text-align: center !important; }
-  .playersTable th:first-child, .playersTable td:first-child { width: 28px !important; padding: 8px 4px 8px 8px !important; text-align: center !important; }
-  .playersTable th:nth-child(n+3):nth-child(-n+7), .playersTable td:nth-child(n+3):nth-child(-n+7) { width: 35px !important; text-align: center !important; padding: 8px 2px !important; }
-  .playersTable th:last-child, .playersTable td:last-child { width: 32px !important; padding-right: 16px !important; text-align: center !important; }
   .playersTable td:nth-child(2) { font-size: 11px !important; letter-spacing: 0.5px !important; line-height: 1.3 !important; white-space: normal !important; word-break: break-word !important; }
 
    .playersTable td:nth-child(1), 
@@ -2293,21 +2289,6 @@ body {
         font-weight: 600 !important;
         font-size: 10px !important;
         color: #999 !important;
-    }
-
-    /* Colonna NOME */
-    .playersTable td:nth-child(3), 
-    .playersTable th:nth-child(3) {
-        width: auto !important; /* Occupa tutto lo spazio disponibile */
-        min-width: 0 !important; /* Larghezza minima per i nomi lunghi */
-        text-align: left !important; /* Allineato a sinistra */
-        padding-left: 6px !important; /* Poco spazio dal numero */
-        padding-right: 4px !important;
-        white-space: nowrap !important; /* ✅ VIETA DI ANDARE A CAPO */
-        overflow: visible !important;
-        text-overflow: ellipsis !important;
-        font-weight: 600 !important;
-        font-size: 10px !important;
     }
 
     /* Colonne Statistiche (GOL, ASS, AMM, ESP, MVP) */
@@ -2337,11 +2318,6 @@ body {
 .playerPhotoEmpty::before {
   content: "👤" !important;
 }
-   .playersTable td:first-child { 
-    padding-right: 8px !important; /* Ridotto da 18px */
-    width: 50px !important; /* Ridotto da 90px */
-}
-
   .player-avatar {
     width: 28px !important; height: 28px !important; min-width: 28px !important; min-height: 28px !important;
     max-width: 28px !important; max-height: 28px !important; border-radius: 50% !important;
@@ -3639,6 +3615,138 @@ button.media-button[onclick*="openMediaUploadModal"] {
 }
 .media-btn-top:active svg {
   fill: white !important;
+}
+
+/* ===================================================================
+   📱 TABELLA GIOCATORI - MOBILE (versione compatta e corretta)
+   =================================================================== */
+.playersTable {
+    font-size: 11px !important;
+    width: 100% !important;
+    table-layout: fixed !important;
+}
+
+.playersTable th {
+    padding: 8px 2px !important;
+    font-size: 9px !important;
+    letter-spacing: 1px !important;
+}
+
+/* Colonna 1 - FOTO (ridotta) */
+.playersTable th:first-child,
+.playersTable td:first-child {
+    width: 32px !important;
+    padding: 8px 0px 8px 8px !important;
+    text-align: center !important;
+}
+
+/* Colonna 2 - N. (ridotta) */
+.playersTable th:nth-child(2),
+.playersTable td:nth-child(2) {
+    width: 28px !important;
+    padding: 8px 0px 8px 2px !important;
+    text-align: center !important;
+    font-weight: 600 !important;
+    color: #999 !important;
+    font-size: 10px !important;
+}
+
+/* Colonna 3 - NOME (allineata a sinistra, occupa lo spazio rimanente) */
+.playersTable th:nth-child(3),
+.playersTable td:nth-child(3) {
+    width: auto !important;
+    min-width: 0 !important;
+    text-align: left !important; /* ✅ Forza allineamento a sinistra */
+    padding-left: 6px !important;
+    padding-right: 4px !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    font-weight: 600 !important;
+    font-size: 10px !important;
+    letter-spacing: 0.3px !important;
+}
+
+/* Colonne 4-7 - GOL / ASS / AMM / ESP (compatte) */
+.playersTable th:nth-child(n+4):nth-child(-n+7),
+.playersTable td:nth-child(n+4):nth-child(-n+7) {
+    width: 28px !important;
+    padding: 8px 1px !important;
+    text-align: center !important;
+    font-size: 11px !important;
+    font-weight: 600 !important;
+}
+
+/* Colonna 8 - MVP (uguale alle altre, NON più larga) */
+.playersTable th:last-child,
+.playersTable td:last-child {
+    width: 28px !important; /* ✅ Uguale a GOL/ASS/AMM/ESP */
+    padding: 8px 1px 8px 4px !important; /* Leggero padding destro per respiro */
+    text-align: center !important;
+    font-size: 11px !important;
+    font-weight: 600 !important;
+}
+
+/* Header statistiche ancora più piccoli */
+.playersTable th:nth-child(n+4):nth-child(-n+8) {
+    font-size: 8px !important;
+    letter-spacing: 0.5px !important;
+}
+
+/* Avatar giocatore */
+.playerPhoto {
+    width: 28px !important;
+    height: 28px !important;
+    border-radius: 6px !important;
+}
+
+.playerPhotoEmpty {
+    width: 28px !important;
+    height: 28px !important;
+    border: none !important;
+    border-radius: 50% !important;
+    background: #f0f0f0 !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    font-size: 14px !important;
+    color: #aaa !important;
+    flex-shrink: 0 !important;
+}
+
+.playerPhotoEmpty::before {
+    content: "👤" !important;
+}
+
+.player-avatar {
+    width: 28px !important;
+    height: 28px !important;
+    min-width: 28px !important;
+    min-height: 28px !important;
+    max-width: 28px !important;
+    max-height: 28px !important;
+    border-radius: 50% !important;
+    overflow: hidden !important;
+    flex-shrink: 0 !important;
+    aspect-ratio: 1 / 1 !important;
+    background: #e5e7eb !important;
+}
+
+.player-avatar img {
+    width: 28px !important;
+    height: 28px !important;
+    border-radius: 50% !important;
+    object-fit: cover !important;
+}
+
+.player-avatar-fallback {
+    width: 28px !important;
+    height: 28px !important;
+    border-radius: 50% !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    font-size: 14px !important;
 }
 
 }
