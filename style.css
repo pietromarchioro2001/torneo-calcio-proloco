@@ -2281,14 +2281,14 @@ body {
 
    .playersTable td:nth-child(1), 
     .playersTable th:nth-child(1) {
-        width: 32px !important; /* Foto */
-        padding-right: 2px !important; /* Nessun spazio extra */
+        width: 28px !important; /* Foto */
+        padding: 8px 0px 8px 8px !important;
     }
 
     .playersTable td:nth-child(2), 
     .playersTable th:nth-child(2) {
         width: 28px !important; /* Colonna N. stretta */
-        padding: 8px 2px 8px 4px !important; /* Vicinissimo al nome */
+        padding: 8px 0px 8px 2px !important; /* Vicinissimo al nome */
         text-align: center !important;
         font-weight: 600 !important;
         font-size: 10px !important;
@@ -2299,9 +2299,9 @@ body {
     .playersTable td:nth-child(3), 
     .playersTable th:nth-child(3) {
         width: auto !important; /* Occupa tutto lo spazio disponibile */
-        min-width: 140px !important; /* Larghezza minima per i nomi lunghi */
+        min-width: 0 !important; /* Larghezza minima per i nomi lunghi */
         text-align: left !important; /* Allineato a sinistra */
-        padding-left: 2px !important; /* Poco spazio dal numero */
+        padding-left: 6px !important; /* Poco spazio dal numero */
         padding-right: 4px !important;
         white-space: nowrap !important; /* ✅ VIETA DI ANDARE A CAPO */
         overflow: visible !important;
@@ -2311,8 +2311,8 @@ body {
     }
 
     /* Colonne Statistiche (GOL, ASS, AMM, ESP, MVP) */
-    .playersTable th:nth-child(n+4):nth-child(-n+8),
-   .playersTable td:nth-child(n+4):nth-child(-n+8) {
+    .playersTable th:nth-child(n+4):nth-child(-n+7),
+   .playersTable td:nth-child(n+4):nth-child(-n+7) {
      width: 26px !important; /* Più strette */
      padding: 8px 0px !important; /* Padding ridotto */
      text-align: center !important;
