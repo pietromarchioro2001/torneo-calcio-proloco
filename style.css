@@ -2289,6 +2289,45 @@ body {
   .playersTable th:last-child, .playersTable td:last-child { width: 40px !important; padding-right: 12px !important; text-align: center !important; }
   .playersTable td:nth-child(2) { font-size: 11px !important; letter-spacing: 0.5px !important; line-height: 1.3 !important; white-space: normal !important; word-break: break-word !important; }
 
+   .playersTable td:nth-child(1), 
+    .playersTable th:nth-child(1) {
+        width: 40px !important; /* Foto */
+        padding-right: 0 !important; /* Nessun spazio extra */
+    }
+
+    .playersTable td:nth-child(2), 
+    .playersTable th:nth-child(2) {
+        width: 25px !important; /* Colonna N. stretta */
+        padding-right: 2px !important; /* Vicinissimo al nome */
+        padding-left: 0 !important;
+        text-align: center !important;
+        font-weight: bold !important;
+        color: #7a1e2c !important;
+    }
+
+    /* Colonna NOME */
+    .playersTable td:nth-child(3), 
+    .playersTable th:nth-child(3) {
+        width: auto !important; /* Occupa tutto lo spazio disponibile */
+        min-width: 110px !important; /* Larghezza minima per i nomi lunghi */
+        text-align: left !important; /* Allineato a sinistra */
+        padding-left: 4px !important; /* Poco spazio dal numero */
+        padding-right: 4px !important;
+        white-space: nowrap !important; /* ✅ VIETA DI ANDARE A CAPO */
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+        font-weight: 600 !important;
+    }
+
+    /* Colonne Statistiche (GOL, ASS, AMM, ESP, MVP) */
+    .playersTable td:nth-child(n+4), 
+    .playersTable th:nth-child(n+4) {
+        width: 28px !important; /* Uniformi e compatte */
+        padding: 6px 1px !important;
+        text-align: center !important;
+        font-size: 11px !important;
+    }
+
   .playerPhoto { width: 28px !important; height: 28px !important; border-radius: 6px !important; }
   .playerPhotoEmpty {
   width: 28px !important;
