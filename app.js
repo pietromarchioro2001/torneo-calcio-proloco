@@ -5,7 +5,7 @@ const CONFIG = {
     // 🔥 SOSTITUISCI CON IL TUO URL APPS SCRIPT WEB APP
     BACKEND_URL: 'https://script.google.com/macros/s/AKfycbyZSxz0aXWFhoUmlw8_bNEbSu48D5pVch2T94yxFVJbZfze-KvL9okqGTV1NkReu8c/exec',
     API_TIMEOUT: 30000,
-    CACHE_VERSION: 'v4.4',
+    CACHE_VERSION: 'v4.5',
     CACHE_MAX_AGE: 5 * 60 * 1000
 };
 
@@ -2023,54 +2023,56 @@ async function openMatch(id) {
     await preloadImage(cachedMatch.LOGO_TRASFERTA, 120).catch(() => {});
   }
   
-  // 🔥 FIX: Per partite FINITE, carica SUBITO dal backend (no cache)
-  if (cachedMatch && cachedMatch.STATO_PARTITA === "FINITA") {
-    // Mostra loader mentre carica
-    renderMatchPage({
-      ...cachedMatch,
-      GOL_CASA: cachedMatch.GOL_CASA || 0,
-      GOL_TRASFERTA: cachedMatch.GOL_TRASFERTA || 0
-    });
-    
-    // Carica dati freschi IMMEDIATAMENTE
-    try {
-      const [freshData, freshEvents] = await Promise.all([
-        ApiClient.getMatchFull(id),
-        ApiClient.getEventsAdmin(id)
-      ]);
+if (cachedMatch && cachedMatch.STATO_PARTITA === "FINITA") {
+  // Mostra subito con cache
+  renderMatchPage({
+    ...cachedMatch,
+    GOL_CASA: cachedMatch.GOL_CASA || 0,
+    GOL_TRASFERTA: cachedMatch.GOL_TRASFERTA || 0
+  });
+  
+  // ✅ Carica giocatori subito (con cache se disponibile)
+  loadPlayersForMatch(cachedMatch);
+  
+  // ✅ Aggiorna dati match in background (NON bloccante)
+  Promise.all([
+    ApiClient.getMatchFull(id),
+    ApiClient.getEventsAdmin(id)
+  ]).then(([freshData, freshEvents]) => {
+    if (myNonce !== window.APP_STATE._matchRequestNonce) return;
+    if (freshData?.match) {
+      const mergedEvents = mergeEventsWithLocal(freshEvents, id);
+      window.APP_CACHE.eventsByMatch[id] = mergedEvents;
+      const calculatedScore = calculateMatchScore(freshData.match, mergedEvents);
+      const finalMatch = {...freshData.match, ...calculatedScore};
       
-      if (myNonce !== window.APP_STATE._matchRequestNonce) return;
-      
-      if (freshData?.match) {
-        const mergedEvents = mergeEventsWithLocal(freshEvents, id);
-        window.APP_CACHE.eventsByMatch[id] = mergedEvents;
-        
-        const calculatedScore = calculateMatchScore(freshData.match, mergedEvents);
-        const finalMatch = {...freshData.match, ...calculatedScore};
-        
-        // Aggiorna cache
-        if (window.APP_CACHE.matches) {
-          const idx = window.APP_CACHE.matches.findIndex(m => String(m.MATCH_ID) === String(id));
-          if (idx >= 0) {
-            window.APP_CACHE.matches[idx] = finalMatch;
-            CacheManager.save(window.APP_CACHE);
-          }
+      // Aggiorna cache
+      if (window.APP_CACHE.matches) {
+        const idx = window.APP_CACHE.matches.findIndex(m => String(m.MATCH_ID) === String(id));
+        if (idx >= 0) {
+          window.APP_CACHE.matches[idx] = finalMatch;
+          CacheManager.save(window.APP_CACHE);
         }
-        
-        // Renderizza con dati completi
-        renderMatchPage(finalMatch);
-        updateMatchUI(finalMatch);
-        window.APP_STATE.lastMatch = finalMatch;
-        renderEvents(mergedEvents, finalMatch);
-        loadPlayersForMatch(finalMatch);
-        renderPenaltyIndicators(mergedEvents, finalMatch);
       }
-    } catch (error) {
-      console.error('❌ Errore caricamento partita finita:', error);
+      
+      // ✅ Aggiornamento mirato (NO re-render completo)
+      window.APP_STATE.lastMatch = finalMatch;
+      updateMatchUI(finalMatch);
+      renderEvents(mergedEvents, finalMatch);
+      renderPenaltyIndicators(mergedEvents, finalMatch);
+      
+      // Aggiorna punteggio se cambiato
+      const scoreEl = document.querySelector(".score-big");
+      if (scoreEl) {
+        scoreEl.textContent = `${finalMatch.GOL_CASA || 0} - ${finalMatch.GOL_TRASFERTA || 0}`;
+      }
     }
-    
-    return;
-  }
+  }).catch(error => {
+    console.error('❌ Errore caricamento partita finita:', error);
+  });
+  
+  return;
+}
   
   // ✅ PARTE 1: Render immediato dalla cache (solo per partite NON finite)
   if (cachedMatch && cachedMatch.CASA_ID && cachedMatch.TRASFERTA_ID) {
@@ -2165,6 +2167,82 @@ async function openMatch(id) {
   }).catch(err => {
     console.error('❌ Errore backend:', err);
   });
+}
+
+// ✅ NUOVA FUNZIONE: Mostra skeleton mentre carica
+function showPlayersSkeleton() {
+  const playersContainer = document.getElementById("playersColumns");
+  const mvpContainer = document.getElementById("mvpColumns");
+  
+  if (playersContainer) {
+    playersContainer.innerHTML = `
+      <div class="players-col">
+        <div class="players-team">
+          <div class="skeleton-text" style="width: 120px; height: 20px;"></div>
+        </div>
+        ${Array(8).fill(0).map(() => `
+          <div class="player-row skeleton-row">
+            <div class="player-avatar">
+              <div class="skeleton-circle"></div>
+            </div>
+            <div class="player-name">
+              <div class="skeleton-text" style="width: 80%;"></div>
+            </div>
+          </div>
+        `).join('')}
+      </div>
+      <div class="players-col">
+        <div class="players-team">
+          <div class="skeleton-text" style="width: 120px; height: 20px;"></div>
+        </div>
+        ${Array(8).fill(0).map(() => `
+          <div class="player-row skeleton-row">
+            <div class="player-avatar">
+              <div class="skeleton-circle"></div>
+            </div>
+            <div class="player-name">
+              <div class="skeleton-text" style="width: 80%;"></div>
+            </div>
+          </div>
+        `).join('')}
+      </div>
+    `;
+  }
+  
+  if (mvpContainer) {
+    mvpContainer.innerHTML = `
+      <div class="players-col">
+        <div class="players-team">
+          <div class="skeleton-text" style="width: 120px; height: 20px;"></div>
+        </div>
+        ${Array(8).fill(0).map(() => `
+          <div class="player-row skeleton-row">
+            <div class="player-avatar">
+              <div class="skeleton-circle"></div>
+            </div>
+            <div class="player-name">
+              <div class="skeleton-text" style="width: 80%;"></div>
+            </div>
+          </div>
+        `).join('')}
+      </div>
+      <div class="players-col">
+        <div class="players-team">
+          <div class="skeleton-text" style="width: 120px; height: 20px;"></div>
+        </div>
+        ${Array(8).fill(0).map(() => `
+          <div class="player-row skeleton-row">
+            <div class="player-avatar">
+              <div class="skeleton-circle"></div>
+            </div>
+            <div class="player-name">
+              <div class="skeleton-text" style="width: 80%;"></div>
+            </div>
+          </div>
+        `).join('')}
+      </div>
+    `;
+  }
 }
 
 // ============================================================================
@@ -5554,48 +5632,81 @@ async function resetTournament() {
 if (document.readyState === "loading") { document.addEventListener("DOMContentLoaded", bootAdminApp); } else { bootAdminApp(); }
 
 async function loadPlayersForMatch(match) {
-if (!match?.CASA_ID || !match?.TRASFERTA_ID) return;
-const casaId = String(match.CASA_ID);
-const trasfId = String(match.TRASFERTA_ID);
-// 🔥 FORZA RELOAD DAL BACKEND (non usare solo cache)
-try {
-const [casaData, trasfData] = await Promise.all([
-ApiClient.getTeamFull(casaId),
-ApiClient.getTeamFull(trasfId)
-]);
-// Aggiorna cache
-if (!window.APP_CACHE.fullTeams) window.APP_CACHE.fullTeams = {};
-if (casaData) window.APP_CACHE.fullTeams[casaId] = casaData;
-if (trasfData) window.APP_CACHE.fullTeams[trasfId] = trasfData;
-CacheManager.save(window.APP_CACHE);
-// Renderizza la tab giocatori
-renderPlayersTab(
-window.APP_CACHE.fullTeams[casaId],
-window.APP_CACHE.fullTeams[trasfId],
-match
-);
-// 🔥 NUOVO: Renderizza anche il tab MVP
-renderMVPTab(
-window.APP_CACHE.fullTeams[casaId],
-window.APP_CACHE.fullTeams[trasfId],
-match
-);
-console.log('✅ Giocatori e MVP caricati dal backend');
-} catch (error) {
-console.warn('⚠️ Errore caricamento giocatori, uso cache:', error);
-// Fallback alla cache
-renderPlayersTab(
-window.APP_CACHE.fullTeams?.[casaId],
-window.APP_CACHE.fullTeams?.[trasfId],
-match
-);
-// 🔥 NUOVO: Renderizza anche il tab MVP con cache
-renderMVPTab(
-window.APP_CACHE.fullTeams?.[casaId],
-window.APP_CACHE.fullTeams?.[trasfId],
-match
-);
+  if (!match?.CASA_ID || !match?.TRASFERTA_ID) return;
+  const casaId = String(match.CASA_ID);
+  const trasfId = String(match.TRASFERTA_ID);
+  
+  // ✅ CONTROLLA SE I DATI SONO GIÀ IN CACHE
+  const cachedCasa = window.APP_CACHE.fullTeams?.[casaId];
+  const cachedTrasf = window.APP_CACHE.fullTeams?.[trasfId];
+  
+  // ✅ Se entrambi in cache con giocatori, renderizza SUBITO
+  if (cachedCasa?.players?.length > 0 && cachedTrasf?.players?.length > 0) {
+    console.log('⚡ Giocatori caricati dalla cache');
+    renderPlayersTab(cachedCasa, cachedTrasf, match);
+    renderMVPTab(cachedCasa, cachedTrasf, match);
+    
+    // ✅ Aggiorna in background (non bloccante)
+    refreshPlayersInBackground(casaId, trasfId, match);
+    return;
+  }
+  
+  // ✅ Se non in cache, mostra skeleton e carica
+  showPlayersSkeleton();
+  
+  try {
+    const [casaData, trasfData] = await Promise.all([
+      ApiClient.getTeamFull(casaId),
+      ApiClient.getTeamFull(trasfId)
+    ]);
+    
+    if (!window.APP_CACHE.fullTeams) window.APP_CACHE.fullTeams = {};
+    if (casaData) window.APP_CACHE.fullTeams[casaId] = casaData;
+    if (trasfData) window.APP_CACHE.fullTeams[trasfId] = trasfData;
+    CacheManager.save(window.APP_CACHE);
+    
+    renderPlayersTab(casaData, trasfData, match);
+    renderMVPTab(casaData, trasfData, match);
+  } catch (error) {
+    console.warn('⚠️ Errore caricamento giocatori:', error);
+    // Fallback alla cache se disponibile
+    if (cachedCasa || cachedTrasf) {
+      renderPlayersTab(cachedCasa, cachedTrasf, match);
+      renderMVPTab(cachedCasa, cachedTrasf, match);
+    }
+  }
 }
+
+// ✅ NUOVA FUNZIONE: Aggiornamento background non bloccante
+async function refreshPlayersInBackground(casaId, trasfId, match) {
+  try {
+    const [casaData, trasfData] = await Promise.all([
+      ApiClient.getTeamFull(casaId),
+      ApiClient.getTeamFull(trasfId)
+    ]);
+    
+    // Aggiorna cache solo se i dati sono cambiati
+    let changed = false;
+    if (casaData?.players?.length !== window.APP_CACHE.fullTeams[casaId]?.players?.length) {
+      changed = true;
+    }
+    
+    if (changed) {
+      if (!window.APP_CACHE.fullTeams) window.APP_CACHE.fullTeams = {};
+      if (casaData) window.APP_CACHE.fullTeams[casaId] = casaData;
+      if (trasfData) window.APP_CACHE.fullTeams[trasfId] = trasfData;
+      CacheManager.save(window.APP_CACHE);
+      
+      // Re-renderizza solo se siamo ancora nella stessa partita
+      if (window.APP_STATE.currentMatchId === match.MATCH_ID) {
+        renderPlayersTab(casaData, trasfData, match);
+        renderMVPTab(casaData, trasfData, match);
+        console.log('🔄 Giocatori aggiornati in background');
+      }
+    }
+  } catch (error) {
+    console.warn('️ Errore refresh background:', error);
+  }
 }
 
 // ✅ AGGIUNGI QUESTA FUNZIONE HELPER PRIMA DI renderPlayersTab
