@@ -5,7 +5,7 @@ const CONFIG = {
     // 🔥 SOSTITUISCI CON IL TUO URL APPS SCRIPT WEB APP
     BACKEND_URL: 'https://script.google.com/macros/s/AKfycbyZSxz0aXWFhoUmlw8_bNEbSu48D5pVch2T94yxFVJbZfze-KvL9okqGTV1NkReu8c/exec',
     API_TIMEOUT: 30000,
-    CACHE_VERSION: 'v4.2',
+    CACHE_VERSION: 'v4.3',
     CACHE_MAX_AGE: 5 * 60 * 1000
 };
 
@@ -5189,6 +5189,7 @@ function bootAdminApp() {
     }
 
     window.APP_STATE._initialLoadComplete = true;
+    flushPendingMVPVotes().catch(err => console.warn('⚠️ Errore flush MVP:', err));
     const queue = window.APP_STATE._apiCallQueue || [];
     queue.forEach(item => {
       if (Date.now() - item.timestamp < 5000) item.fn();
@@ -5765,28 +5766,33 @@ function getDeviceFingerprint() {
 async function voteMVP(playerId, playerName, event) {
     const match = window.APP_STATE.lastMatch;
     if (!match) return;
-    
-    // ✅ PERMETTI VOTO ANCHE DURANTE RIGORI E SUPPLEMENTARI
-    const canVote = ["LIVE", "SUPP", "RIGORI"].includes(match.STATO_PARTITA);
+
+    // ✅ FIX: Permetti voto durante la partita E dopo la fine (se MVP non ancora chiuso)
+    const isLive = ["LIVE", "SUPP", "RIGORI"].includes(match.STATO_PARTITA);
+    const isFinishedWithoutMVP = match.STATO_PARTITA === "FINITA" &&
+                                  (!match.MVP || String(match.MVP).trim() === "");
+    const canVote = isLive || isFinishedWithoutMVP;
+
     if (!canVote) {
+        console.log('⛔ Voto bloccato: partita finita e MVP già assegnato');
         return;
     }
-    
+
     const fingerprint = getDeviceFingerprint();
     let voterId = localStorage.getItem('mvp_voter_id');
     const savedFingerprint = localStorage.getItem('mvp_fingerprint');
-    
+
     if (voterId && savedFingerprint !== fingerprint) {
         alert('⚠️ Hai già votato da un altro dispositivo');
         return;
     }
-    
+
     if (!voterId) {
         voterId = fingerprint + '_' + Date.now();
         localStorage.setItem('mvp_voter_id', voterId);
         localStorage.setItem('mvp_fingerprint', fingerprint);
     }
-    
+
     const voteData = {
         matchId: match.MATCH_ID,
         playerId: playerId,
@@ -5795,49 +5801,100 @@ async function voteMVP(playerId, playerName, event) {
         timestamp: Date.now(),
         sent: false
     };
-    
+
     localStorage.setItem(`mvp_vote_${match.MATCH_ID}`, JSON.stringify(voteData));
     updateMVPVoteUI(playerId);
-    
     await sendVoteWithRetry(voteData, 3);
 }
 
-async function sendVoteWithRetry(voteData, maxRetries) {
-  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+async function sendVoteWithRetry(voteData, maxRetries = 5) {
+    // ✅ Mantieni una coda locale di voti non inviati (persistente)
+    let pendingQueue = [];
     try {
-      await ApiClient.saveMVPVote(
-        voteData.matchId,
-        voteData.voterId,
-        voteData.playerId
-      );
-      voteData.sent = true;
-      localStorage.setItem(`mvp_vote_${voteData.matchId}`, JSON.stringify(voteData));
-      console.log(`✅ Voto inviato al tentativo ${attempt}`);
-      return true;
-    } catch (error) {
-      // ✅ FIX: errori 429 silenziosi
-      if (error.message?.includes('429')) {
-        console.warn(`⚠️ Rate limit MVP - retry ${attempt}/${maxRetries}`);
-      } else {
-        console.warn(`⚠️ Tentativo ${attempt} fallito:`, error.message);
-      }
-      
-      if (attempt < maxRetries) {
-        await new Promise(r => setTimeout(r, 1000 * attempt));
-      }
+        pendingQueue = JSON.parse(localStorage.getItem('mvp_pending_votes') || '[]');
+    } catch(e) { pendingQueue = []; }
+
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+        try {
+            await ApiClient.saveMVPVote(
+                voteData.matchId,
+                voteData.voterId,
+                voteData.playerId
+            );
+            voteData.sent = true;
+            localStorage.setItem(`mvp_vote_${voteData.matchId}`, JSON.stringify(voteData));
+
+            // ✅ Rimuovi dalla coda pending se presente
+            pendingQueue = pendingQueue.filter(v => v.voterId !== voteData.voterId || v.matchId !== voteData.matchId);
+            localStorage.setItem('mvp_pending_votes', JSON.stringify(pendingQueue));
+
+            console.log(`✅ Voto inviato al tentativo ${attempt}`);
+            return true;
+        } catch (error) {
+            const isRateLimit = error.message?.includes('429') || error.message?.includes('quota');
+
+            if (isRateLimit) {
+                console.warn(`⚠️ Rate limit MVP - retry ${attempt}/${maxRetries}`);
+            } else {
+                console.warn(`⚠️ Tentativo ${attempt} fallito:`, error.message);
+            }
+
+            if (attempt < maxRetries) {
+                // ✅ Backoff esponenziale più lungo per rate limit
+                const delay = isRateLimit ? (3000 * attempt) : (1000 * attempt);
+                await new Promise(r => setTimeout(r, delay));
+            }
+        }
     }
-  }
-  
-  // ✅ FIX: no alert per 429, solo log
-  if (error?.message?.includes('429')) {
-    console.warn('⚠️ Voto salvato localmente. Il server è temporaneamente occupato.');
-  } else {
-    console.error('❌ Voto non inviato dopo', maxRetries, 'tentativi');
-    alert('⚠️ Voto salvato localmente. Riproveremo automaticamente.');
-  }
-  
-  setTimeout(() => sendVoteWithRetry(voteData, 2), 30000);
-  return false;
+
+    // ✅ Tutti i tentativi falliti: salva in coda persistente per retry successivo
+    voteData.sent = false;
+    voteData.lastAttempt = Date.now();
+    if (!pendingQueue.some(v => v.voterId === voteData.voterId && v.matchId === voteData.matchId)) {
+        pendingQueue.push(voteData);
+        localStorage.setItem('mvp_pending_votes', JSON.stringify(pendingQueue));
+    }
+
+    console.warn('⚠️ Voto salvato in coda locale. Verrà ritentato al prossimo caricamento.');
+
+    // ✅ Pianifica un retry differito (30s) se l'utente resta sulla pagina
+    setTimeout(() => {
+        if (!voteData.sent) {
+            console.log('🔄 Retry differito per voto pendente...');
+            sendVoteWithRetry(voteData, 3);
+        }
+    }, 30000);
+
+    return false;
+}
+
+async function flushPendingMVPVotes() {
+    let pendingQueue = [];
+    try {
+        pendingQueue = JSON.parse(localStorage.getItem('mvp_pending_votes') || '[]');
+    } catch(e) { return; }
+
+    if (pendingQueue.length === 0) return;
+
+    console.log(`📤 Svuotamento coda MVP: ${pendingQueue.length} voti pendenti`);
+
+    // ✅ Invia in batch con piccoli delay per non saturare il backend
+    for (const voteData of pendingQueue) {
+        try {
+            await ApiClient.saveMVPVote(voteData.matchId, voteData.voterId, voteData.playerId);
+            voteData.sent = true;
+            localStorage.setItem(`mvp_vote_${voteData.matchId}`, JSON.stringify(voteData));
+            await new Promise(r => setTimeout(r, 300)); // 300ms tra un voto e l'altro
+        } catch (error) {
+            console.warn('⚠️ Voto pendente ancora non inviabile:', error.message);
+            break; // Esce e riproverà al prossimo boot
+        }
+    }
+
+    // ✅ Aggiorna la coda mantenendo solo quelli ancora pendenti
+    const stillPending = pendingQueue.filter(v => !v.sent);
+    localStorage.setItem('mvp_pending_votes', JSON.stringify(stillPending));
+    console.log(`✅ Coda MVP aggiornata: ${stillPending.length} voti ancora pendenti`);
 }
 
 function updateMVPVoteUI(selectedPlayerId) {
