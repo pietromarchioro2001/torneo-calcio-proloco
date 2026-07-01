@@ -5,7 +5,7 @@ const CONFIG = {
     // 🔥 SOSTITUISCI CON IL TUO URL APPS SCRIPT WEB APP
     BACKEND_URL: 'https://script.google.com/macros/s/AKfycbyZSxz0aXWFhoUmlw8_bNEbSu48D5pVch2T94yxFVJbZfze-KvL9okqGTV1NkReu8c/exec',
     API_TIMEOUT: 30000,
-    CACHE_VERSION: 'v4.3',
+    CACHE_VERSION: 'v4.4',
     CACHE_MAX_AGE: 5 * 60 * 1000
 };
 
@@ -1164,7 +1164,30 @@ function renderTeamEditor(team, players = []) {
       } 
     }
     const nameDisplay = document.getElementById("teamNameDisplay"); const nameInput = document.getElementById("teamNameInput");
-    if (nameDisplay && nameInput) { nameDisplay.textContent = team.NOME_SQUADRA || ""; nameInput.value = team.NOME_SQUADRA || ""; nameDisplay.onclick = () => { nameDisplay.style.display="none"; nameInput.style.display="block"; nameInput.focus(); }; nameInput.onblur = async () => { const newName = nameInput.value.trim().toUpperCase(); if (newName && newName !== team.NOME_SQUADRA) { nameDisplay.textContent = newName; await ApiClient.updateTeamName(team.TEAM_ID, newName); if (window.APP_CACHE.teams) { const idx = window.APP_CACHE.teams.findIndex(t=>t.TEAM_ID===team.TEAM_ID); if (idx >= 0) { window.APP_CACHE.teams[idx].NOME_SQUADRA = newName; CacheManager.save(window.APP_CACHE); } } } nameInput.style.display="none"; nameDisplay.style.display="block"; }; }
+    if (nameDisplay && nameInput) { nameDisplay.textContent = team.NOME_SQUADRA || ""; nameInput.value = team.NOME_SQUADRA || ""; nameDisplay.onclick = () => { nameDisplay.style.display="none"; nameInput.style.display="block"; nameInput.focus(); }; 
+                                   nameInput.onblur = async () => {
+                                      const newName = nameInput.value.trim().toUpperCase();
+                                      const originalName = team.NOME_SQUADRA;
+                                      if (newName && newName !== originalName) {
+                                        nameDisplay.textContent = newName;
+                                        try {
+                                          await ApiClient.updateTeamName(team.TEAM_ID, newName);
+                                          // aggiorna cache solo dopo successo
+                                          if (window.APP_CACHE.teams) {
+                                            const idx = window.APP_CACHE.teams.findIndex(t => t.TEAM_ID === team.TEAM_ID);
+                                            if (idx >= 0) window.APP_CACHE.teams[idx].NOME_SQUADRA = newName;
+                                            CacheManager.save(window.APP_CACHE);
+                                          }
+                                        } catch (e) {
+                                          console.error('Errore update nome:', e);
+                                          nameDisplay.textContent = originalName;  // ← rollback
+                                          alert('Errore salvataggio nome');
+                                        }
+                                      }
+                                      nameInput.style.display = "none";
+                                      nameDisplay.style.display = "block";
+                                    }; 
+                                  }
     const gironeDisplay = document.getElementById("teamGironeDisplay"); const gironeSelect = document.getElementById("teamGironeSelect");
     if (gironeDisplay && gironeSelect) { gironeDisplay.textContent = "GIRONE " + (team.GIRONE || "-"); gironeSelect.value = team.GIRONE || "A"; gironeDisplay.onclick = () => { gironeDisplay.style.display="none"; gironeSelect.style.display="block"; gironeSelect.focus(); }; gironeSelect.onchange = async () => { const newGirone = gironeSelect.value; gironeDisplay.textContent = "GIRONE " + newGirone; await ApiClient.updateTeamGirone(team.TEAM_ID, newGirone); if (window.APP_CACHE.teams) { const idx = window.APP_CACHE.teams.findIndex(t=>t.TEAM_ID===team.TEAM_ID); if (idx >= 0) { window.APP_CACHE.teams[idx].GIRONE = newGirone; CacheManager.save(window.APP_CACHE); } } refreshStandingsDebounced(); }; gironeSelect.onblur = () => { gironeSelect.style.display="none"; gironeDisplay.style.display="block"; }; }
     renderPlayersList(players);
@@ -5725,23 +5748,6 @@ console.log('⏳ Partita finita, MVP ancora aperto - mostro lista votazione');
 container.innerHTML = `<div class="players-col"><div class="players-team">${(casaData?.team?.NOME_SQUADRA || match.SQUADRA_CASA || "").toUpperCase()}</div>${renderMVPVoteList(casaPlayers, match.CASA_ID)}</div><div class="players-col"><div class="players-team">${(trasfData?.team?.NOME_SQUADRA || match.SQUADRA_TRASFERTA || "").toUpperCase()}</div>${renderMVPVoteList(trasfPlayers, match.TRASFERTA_ID)}</div>`;
 setTimeout(() => loadExistingMVPVote(match.MATCH_ID), 50);
 
-async function selectMVP(playerId, playerName) {
-    const match = window.APP_STATE.lastMatch; if (!match) return;
-    try { await ApiClient.saveMVPFinal(match.MATCH_ID, playerId); match.MVP = playerName; window.APP_STATE.lastMatch = match; updateMVPBanner(match); renderMVPTab(window.APP_CACHE.fullTeams?.[match.CASA_ID], window.APP_CACHE.fullTeams?.[match.TRASFERTA_ID], match); console.log('✅ MVP salvato:', playerName); } catch (error) { console.error('Error saving MVP:', error); alert('Errore salvataggio MVP: ' + error.message); }
-}
-
-function updateLocalMVPCounter() {
-    const votes = window.APP_STATE.localMVPVotes || {}; const matchId = window.APP_STATE.currentMatchId;
-    const matchVotes = Object.values(votes).filter(v => v.matchId === matchId); const counts = {};
-    matchVotes.forEach(v => { counts[v.playerId] = (counts[v.playerId] || 0) + 1; });
-    console.log('📊 Voti locali:', counts);
-}
-
-function pollForMVPUpdate(matchId) {
-    let attempts = 0; const maxAttempts = 20;
-    const check = async () => { attempts++; try { const data = await ApiClient.getMatchFull(matchId); if (data?.match?.MVP) { console.log('🏆 MVP trovato:', data.match.MVP); window.APP_STATE.lastMatch = data.match; updateMVPBanner(data.match); loadPlayersForMatch(data.match); refreshStandingsDebounced(500); } else if (attempts < maxAttempts) { setTimeout(check, 1000); } } catch (e) { console.error('Errore polling MVP', e); } };
-    setTimeout(check, 1000);
-}
 }
 
 function getDeviceFingerprint() {
@@ -6204,53 +6210,87 @@ async function downloadMatchImage(matchId) {
   link.click();
 }
 
+// 🔒 Lock globale per evitare generazioni duplicate (doppio click, chiamate concorrenti)
+const _generatingPostFor = new Set();
+
 async function generateMatchImage(matchId, type = "PROGRAMMATA") {
-  try {
-    console.log(`🎨 Generazione post ${type} per match ${matchId}...`);
-
-    // 1. Chiamata al backend (che ora genera l'immagine e la carica su Drive)
-    const result = await ApiClient.generateMatchPostImage(matchId, type);
-
-    if (!result?.success) {
-      throw new Error(result?.error || "Errore generazione immagine");
+    if (!matchId) {
+        console.warn('⚠️ generateMatchImage: matchId mancante');
+        return null;
     }
 
-    const imageUrl = result.fileUrl;
-    console.log(`✅ Post ${type} generato:`, imageUrl);
+    const key = `${matchId}_${type}`;
 
-    // 2. 🔥 AGGIORNA la cache locale con il nuovo link (FONDAMENTALE per il pulsante Condividi)
-    if (window.APP_CACHE.matches) {
-      const idx = window.APP_CACHE.matches.findIndex(m => String(m.MATCH_ID) === String(matchId));
-      if (idx >= 0) {
-        if (type === 'PROGRAMMATA') {
-          window.APP_CACHE.matches[idx].POST_PRO = imageUrl;
-        } else {
-          window.APP_CACHE.matches[idx].POST_TER = imageUrl;
+    // 🔒 1. BLOCCO DUPLICATI: se una generazione è già in corso, esci subito
+    if (_generatingPostFor.has(key)) {
+        console.log('⏸️ Generazione già in corso per', key, '- skip');
+        return null;
+    }
+
+    // 🔒 2. ACQUISTO DEL LOCK
+    _generatingPostFor.add(key);
+    const startTime = Date.now();
+
+    console.log(`🎨 [${key}] Inizio generazione post ${type}...`);
+
+    try {
+        // ⏱️ 3. TIMEOUT DI SICUREZZA: se il backend impiega troppo, abortisci
+        // La generazione immagine può richiedere fino a ~60s, ma mettiamo un limite
+        const TIMEOUT_MS = 90000; // 90 secondi
+
+        const timeoutPromise = new Promise((_, reject) => {
+            setTimeout(() => reject(new Error(`Timeout generazione (${TIMEOUT_MS/1000}s)`)), TIMEOUT_MS);
+        });
+
+        // 4. Chiamata al backend con race contro il timeout
+        const result = await Promise.race([
+            ApiClient.generateMatchPostImage(matchId, type),
+            timeoutPromise
+        ]);
+
+        if (!result?.success) {
+            throw new Error(result?.error || "Errore generazione immagine");
         }
-        CacheManager.save(window.APP_CACHE);
-      }
+
+        const imageUrl = result.fileUrl;
+        if (!imageUrl) {
+            throw new Error("URL immagine vuoto dal backend");
+        }
+
+        console.log(`✅ [${key}] Post generato in ${((Date.now() - startTime) / 1000).toFixed(1)}s:`, imageUrl);
+
+        // 5. 🔥 AGGIORNA la cache locale con il nuovo link
+        if (window.APP_CACHE.matches) {
+            const idx = window.APP_CACHE.matches.findIndex(m => String(m.MATCH_ID) === String(matchId));
+            if (idx >= 0) {
+                const field = type === 'PROGRAMMATA' ? 'POST_PRO' : 'POST_TER';
+                window.APP_CACHE.matches[idx][field] = imageUrl;
+                CacheManager.save(window.APP_CACHE);
+            }
+        }
+
+        // 6. Aggiorna anche lastMatch se è la partita attualmente aperta
+        if (window.APP_STATE.lastMatch &&
+            String(window.APP_STATE.lastMatch.MATCH_ID) === String(matchId)) {
+            const field = type === 'PROGRAMMATA' ? 'POST_PRO' : 'POST_TER';
+            window.APP_STATE.lastMatch[field] = imageUrl;
+        }
+
+        return imageUrl;
+
+    } catch (error) {
+        console.error(`❌ [${key}] Errore generazione immagine:`, error.message);
+        return null;
+
+    } finally {
+        // 🔓 7. RILASCIO DEL LOCK con delay di sicurezza
+        // Mantengo il lock per 5 secondi dopo la fine, così se l'utente clicca
+        // "Condividi" due volte ravvicinate, la seconda chiamata viene ignorata
+        setTimeout(() => {
+            _generatingPostFor.delete(key);
+            console.log(`🔓 [${key}] Lock rilasciato`);
+        }, 5000);
     }
-
-    // 3. Aggiorna anche lastMatch se è la partita attualmente aperta
-    if (window.APP_STATE.lastMatch && String(window.APP_STATE.lastMatch.MATCH_ID) === String(matchId)) {
-      if (type === 'PROGRAMMATA') {
-        window.APP_STATE.lastMatch.POST_PRO = imageUrl;
-      } else {
-        window.APP_STATE.lastMatch.POST_TER = imageUrl;
-      }
-    }
-
-    // ⚠️ NOTA: Ho rimosso `alert()` e `window.open()` perché questa funzione viene 
-    // chiamata in BACKGROUND (es. quando crei una partita o la concludi). 
-    // Mantenere gli alert bloccherebbe l'utente e aprirebbe tab indesiderati.
-
-    return imageUrl;
-
-  } catch (error) {
-    console.error('❌ Errore generazione immagine:', error);
-    // Nessun alert qui per non interrompere l'utente durante le operazioni automatiche
-    return null;
-  }
 }
 
 /**
@@ -6381,14 +6421,25 @@ function showMVPVoteConfirm(playerId, playerName, event) {
         }, 200);
     };
     
-    confirmBtn.onclick = closeAndVote;
-    cancelBtn.onclick = closeAndVote;
+    confirmBtn.onclick = () => {
+      popup.style.transition = 'opacity 0.2s ease';
+      popup.style.opacity = '0';
+      setTimeout(() => {
+        popup.remove();
+        voteMVP(playerId, playerName, null);
+      }, 200);
+    };
     
-    // Click fuori dal popup = annulla (ma vota comunque)
+    cancelBtn.onclick = () => {
+      popup.style.transition = 'opacity 0.2s ease';
+      popup.style.opacity = '0';
+      setTimeout(() => popup.remove(), 200);  // ← solo chiude, NON vota
+    };
+    
     popup.onclick = (e) => {
-        if (e.target === popup) {
-            closeAndVote();
-        }
+      if (e.target === popup) {
+        popup.remove();  // ← click fuori = annulla
+      }
     };
     
     // Hover effects
@@ -6418,7 +6469,8 @@ async function closeMVPVoting() {
 const match = window.APP_STATE.lastMatch;
 if (!match) return;
 // Chiedi conferma
-if (!confirm("⚠️ Vuoi chiudere definitivamente la votazione MVP?\nI tifosi non potranno più votare e verrà calcolato il vincitore.")) {
+if (!confirm(`⚠️ Vuoi chiudere definitivamente la votazione MVP?
+I tifosi non potranno più votare e verrà calcolato il vincitore.`)) {
 return;
 }
 try {
