@@ -1989,7 +1989,7 @@ body {
   .match-header-actions {
     display: flex !important;
     position: absolute !important;
-    top: 500px !important; /* Sotto la toolbar */
+    bottom: 75px !important; 
     left: 50% !important;
     transform: translateX(-50%) !important;
     z-index: 100 !important;
