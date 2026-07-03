@@ -5,7 +5,7 @@ const CONFIG = {
     // 🔥 SOSTITUISCI CON IL TUO URL APPS SCRIPT WEB APP
     BACKEND_URL: 'https://script.google.com/macros/s/AKfycbyZSxz0aXWFhoUmlw8_bNEbSu48D5pVch2T94yxFVJbZfze-KvL9okqGTV1NkReu8c/exec',
     API_TIMEOUT: 30000,
-    CACHE_VERSION: 'v4.5',
+    CACHE_VERSION: 'v4.6',
     CACHE_MAX_AGE: 5 * 60 * 1000
 };
 
@@ -675,6 +675,10 @@ window.APP_STATE = {
 // 🔥 AGGIUNGI in GLOBAL STATE (dopo window.APP_STATE)
 window.APP_STATE._initialLoadComplete = false;
 window.APP_STATE._apiCallQueue = [];
+window.APP_STATE._editingEvent = false;        // true mentre si edita un evento
+window.APP_STATE._editingMatchSnapshot = null; // snapshot del match durante editing
+window.APP_STATE._editingTeamId = null;        // teamId in editing
+window.APP_STATE._pendingEventSave = null;     // evento in attesa di salvataggio
 
 let podiumDismissed = false;
 
@@ -910,26 +914,108 @@ function calculateMatchScore(match, events) {
 
 function mergeEventsWithLocal(freshEvents, matchId) {
     const localEvents = window.APP_CACHE.eventsByMatch?.[matchId] || [];
-    const mergedEvents = [...freshEvents];
+    const mergedEvents = [...(freshEvents || [])];
     
+    // ✅ Usa un Set per tracking eventi già presenti (più efficiente)
+    const freshKeys = new Set();
+    freshEvents.forEach(fe => {
+        if (fe.EVENT_ID) {
+            freshKeys.add(String(fe.EVENT_ID));
+        } else {
+            // Per eventi senza ID, crea una chiave univoca
+            const key = `${fe.MINUTO}_${fe.TEAM_ID}_${fe.TIPO}_${fe.PLAYER_ID}`;
+            freshKeys.add(key);
+        }
+    });
+    
+    // Aggiungi solo eventi temporanei locali non ancora nel backend
     localEvents.forEach(localEv => {
         if (localEv.EVENT_ID && String(localEv.EVENT_ID).startsWith('temp_')) {
-            // Verifica se l'evento è già stato salvato nel backend (confronto approssimativo)
-            const alreadySaved = freshEvents.some(fe => 
-                String(fe.MINUTO) === String(localEv.MINUTO) &&
-                String(fe.TEAM_ID) === String(localEv.TEAM_ID) &&
-                String(fe.TIPO) === String(localEv.TIPO) &&
-                String(fe.PLAYER_ID) === String(localEv.PLAYER_ID)
-            );
+            // Verifica se l'evento è già stato salvato nel backend
+            const key = `${localEv.MINUTO}_${localEv.TEAM_ID}_${localEv.TIPO}_${localEv.PLAYER_ID}`;
+            const alreadySaved = freshKeys.has(key) || 
+                                 freshEvents.some(fe =>
+                                    String(fe.MINUTO) === String(localEv.MINUTO) &&
+                                    String(fe.TEAM_ID) === String(localEv.TEAM_ID) &&
+                                    String(fe.TIPO) === String(localEv.TIPO) &&
+                                    String(fe.PLAYER_ID) === String(localEv.PLAYER_ID)
+                                 );
             
-            // Se non è ancora nel backend, lo manteniamo in cache per evitare che scompaia dalla UI
             if (!alreadySaved) {
                 mergedEvents.push(localEv);
+                console.log('🔄 Evento temporaneo mantenuto:', localEv.EVENT_ID);
+            } else {
+                console.log('✅ Evento temporaneo già salvato nel backend, rimosso:', localEv.EVENT_ID);
             }
         }
     });
     
     return mergedEvents;
+}
+
+// ✅ AGGIUNGI in bootAdminApp() dopo flushPendingMVPVotes()
+async function flushPendingEvents() {
+    const matchIds = new Set();
+    
+    // Trova tutte le chiavi pending_events_*
+    Object.keys(localStorage).forEach(key => {
+        if (key.startsWith('pending_events_')) {
+            const matchId = key.replace('pending_events_', '');
+            matchIds.add(matchId);
+        }
+    });
+    
+    if (matchIds.size === 0) return;
+    
+    console.log(`📤 Svuotamento coda eventi: ${matchIds.size} partite con eventi pendenti`);
+    
+    for (const matchId of matchIds) {
+        const pendingKey = 'pending_events_' + matchId;
+        let pending = [];
+        try {
+            pending = JSON.parse(localStorage.getItem(pendingKey) || '[]');
+        } catch(e) { continue; }
+        
+        if (pending.length === 0) {
+            localStorage.removeItem(pendingKey);
+            continue;
+        }
+        
+        console.log(`🔄 Tentativo invio ${pending.length} eventi pendenti per match ${matchId}`);
+        
+        const stillPending = [];
+        for (const event of pending) {
+            // Skip eventi troppo vecchi (> 1 ora)
+            if (Date.now() - event.timestamp > 3600000) {
+                console.log('⏭️ Evento troppo vecchio, skip:', event);
+                continue;
+            }
+            
+            try {
+                await ApiClient.addEventAdmin(
+                    event.matchId,
+                    event.teamId,
+                    event.type,
+                    event.minute,
+                    event.playerId,
+                    event.assistId
+                );
+                console.log('✅ Evento pendente inviato:', event);
+                await new Promise(r => setTimeout(r, 300)); // delay tra invii
+            } catch (error) {
+                console.warn('⚠️ Evento pendente ancora non inviabile:', error.message);
+                stillPending.push(event);
+                break; // Esce e riproverà al prossimo boot
+            }
+        }
+        
+        // Aggiorna coda
+        if (stillPending.length > 0) {
+            localStorage.setItem(pendingKey, JSON.stringify(stillPending));
+        } else {
+            localStorage.removeItem(pendingKey);
+        }
+    }
 }
 
 function renderHomeMatchCard(match, isLive) {
@@ -2982,65 +3068,348 @@ function addEvent(team) {
 }
 
 function openEventPopup(team) {
-    const match = window.APP_STATE.lastMatch; if (!match) { alert("Partita non caricata correttamente"); return; }
+    const match = window.APP_STATE.lastMatch;
+    if (!match) { alert("Partita non caricata correttamente"); return; }
+    
     const teamId = team === "casa" ? String(match.CASA_ID || "").trim() : String(match.TRASFERTA_ID || "").trim();
     const teamName = team === "casa" ? match.SQUADRA_CASA : match.SQUADRA_TRASFERTA;
-    if (!teamId || teamId === "undefined" || teamId === "null" || teamId === "") { console.error('❌ teamId invalido:', { team, match }); alert("Errore: ID squadra non valido. Ricarica la pagina."); return; }
-    const modal = document.createElement("div"); modal.className = "modalOverlay";
-    modal.innerHTML = `<div class="modalBox" id="eventBox"><div class="modalTitle">NUOVO EVENTO - ${teamName || "???"}</div><div class="match-form"><select id="eventType" class="match-select"><option value="GOAL">⚽ Gol</option><option value="AMMONIZIONE">🟨 Ammonizione</option><option value="ESPULSIONE">🟥 Espulsione</option></select><input id="eventMinute" class="match-input" type="number" placeholder="Minuto" min="1" max="120"><select id="eventPlayer" class="match-select"><option value="">Caricamento...</option></select><select id="eventAssist" class="match-select"><option value="">Nessun assist</option></select><div class="modalActions"><div class="phase-btn" onclick="saveEvent('${team}')">SALVA</div><div class="phase-btn secondary" onclick="this.closest('.modalOverlay').remove()">ANNULLA</div></div></div></div>`;
-    document.body.appendChild(modal); modal.onclick = (e) => { if (e.target === modal) modal.remove(); }; document.getElementById("eventBox").onclick = (e) => e.stopPropagation();
+    
+    if (!teamId || teamId === "undefined" || teamId === "null" || teamId === "") {
+        console.error('❌ teamId invalido:', { team, match });
+        alert("Errore: ID squadra non valido. Ricarica la pagina.");
+        return;
+    }
+    
+    // 🔒 1. CONGELA LO STATO: salva snapshot del match
+    window.APP_STATE._editingEvent = true;
+    window.APP_STATE._editingMatchSnapshot = { ...match };
+    window.APP_STATE._editingTeamId = teamId;
+    console.log('🔒 Editing iniziato - snapshot salvato:', teamId);
+    
+    const modal = document.createElement("div");
+    modal.className = "modalOverlay";
+    modal.innerHTML = `
+        <div class="modalBox" id="eventBox">
+            <div class="modalTitle">NUOVO EVENTO - ${teamName || "???"}</div>
+            <div class="match-form">
+                <select id="eventType" class="match-select">
+                    <option value="GOAL">⚽ Gol</option>
+                    <option value="AMMONIZIONE">🟨 Ammonizione</option>
+                    <option value="ESPULSIONE">🟥 Espulsione</option>
+                </select>
+                <input id="eventMinute" class="match-input" type="number" placeholder="Minuto" min="1" max="120">
+                <select id="eventPlayer" class="match-select">
+                    <option value="">Caricamento...</option>
+                </select>
+                <select id="eventAssist" class="match-select">
+                    <option value="">Nessun assist</option>
+                </select>
+                <div id="eventLoadingWarning" style="display:none; color:#dc2626; font-size:11px; margin-top:8px; text-align:center;">
+                    ⚠️ Aggiornamento giocatori in corso...
+                </div>
+                <div class="modalActions">
+                    <div class="phase-btn" onclick="saveEvent('${team}')">SALVA</div>
+                    <div class="phase-btn secondary" onclick="cancelEventEditing()">ANNULLA</div>
+                </div>
+            </div>
+        </div>`;
+    document.body.appendChild(modal);
+    modal.onclick = (e) => { if (e.target === modal) cancelEventEditing(); };
+    document.getElementById("eventBox").onclick = (e) => e.stopPropagation();
+    
     let userHasSelected = false;
     const playerSelect = document.getElementById("eventPlayer");
-    if (playerSelect) { playerSelect.addEventListener('change', () => { userHasSelected = true; console.log('👤 Utente ha selezionato giocatore:', playerSelect.value); }, { once: false }); }
-    const cachedTeam = window.APP_CACHE.fullTeams?.[teamId]; const cachedPlayers = cachedTeam?.players || [];
-    if (cachedPlayers.length > 0) { populateEventSelects(cachedPlayers, false); }
-    ApiClient.getPlayersByTeam(teamId).then(freshPlayers => { if (!window.APP_CACHE.fullTeams) window.APP_CACHE.fullTeams = {}; window.APP_CACHE.fullTeams[teamId] = { team: cachedTeam?.team || {}, players: freshPlayers || [] }; CacheManager.save(window.APP_CACHE); if (document.getElementById("eventPlayer")) { populateEventSelects(freshPlayers, userHasSelected); } }).catch(err => console.error('Errore refresh giocatori:', err));
+    if (playerSelect) {
+        playerSelect.addEventListener('change', () => {
+            userHasSelected = true;
+            console.log('👤 Utente ha selezionato giocatore:', playerSelect.value);
+        }, { once: false });
+    }
+    
+    // 🔒 2. CARICA GIOCATORI: prima da cache (istantaneo), poi refresh silenzioso
+    const cachedTeam = window.APP_CACHE.fullTeams?.[teamId];
+    const cachedPlayers = cachedTeam?.players || [];
+    
+    if (cachedPlayers.length > 0) {
+        populateEventSelects(cachedPlayers, false);
+    }
+    
+    // Refresh in background - NON sovrascrive la selezione utente
+    ApiClient.getPlayersByTeam(teamId)
+        .then(freshPlayers => {
+            if (!window.APP_STATE._editingEvent) return; // editing già chiuso
+            
+            if (!window.APP_CACHE.fullTeams) window.APP_CACHE.fullTeams = {};
+            window.APP_CACHE.fullTeams[teamId] = {
+                team: cachedTeam?.team || {},
+                players: freshPlayers || []
+            };
+            CacheManager.save(window.APP_CACHE);
+            
+            // 🔒 3. AGGIORNA SELECT mantenendo la selezione utente
+            if (document.getElementById("eventPlayer")) {
+                populateEventSelects(freshPlayers, userHasSelected);
+            }
+        })
+        .catch(err => {
+            console.warn('⚠️ Errore refresh giocatori (non critico):', err);
+            // Non bloccare l'utente se il refresh fallisce
+        });
 }
 
 function populateEventSelects(players, preserveSelections = true) {
-    const playerSelect = document.getElementById("eventPlayer"); const assistSelect = document.getElementById("eventAssist");
+    const playerSelect = document.getElementById("eventPlayer");
+    const assistSelect = document.getElementById("eventAssist");
     if (!playerSelect || !assistSelect) return;
-    const selectedPlayer = preserveSelections ? playerSelect.value : ""; const selectedAssist = preserveSelections ? assistSelect.value : "";
-    console.log('🔄 populateEventSelects:', { playersCount: players?.length, preserve: preserveSelections, wasPlayerSelected: selectedPlayer, wasAssistSelected: selectedAssist });
-    let playerOpts = `<option value="">Seleziona giocatore</option>`; let assistOpts = `<option value="">Nessun assist</option>`;
-    (players || []).forEach(p => { const name = (p.NOME || "").toUpperCase(); const pid = String(p.PLAYER_ID); playerOpts += `<option value="${pid}">${name}</option>`; assistOpts += `<option value="${pid}">${name}</option>`; });
-    playerSelect.innerHTML = playerOpts; assistSelect.innerHTML = assistOpts;
-    if (preserveSelections && selectedPlayer) { const playerStillExists = players?.some(p => String(p.PLAYER_ID) === String(selectedPlayer)); if (playerStillExists) { playerSelect.value = selectedPlayer; console.log('✅ Ripristinata selezione giocatore:', selectedPlayer); } }
-    if (preserveSelections && selectedAssist) { const assistStillExists = players?.some(p => String(p.PLAYER_ID) === String(selectedAssist)); if (assistStillExists) { assistSelect.value = selectedAssist; console.log('✅ Ripristinata selezione assist:', selectedAssist); } }
+    
+    const selectedPlayer = preserveSelections ? playerSelect.value : "";
+    const selectedAssist = preserveSelections ? assistSelect.value : "";
+    
+    console.log('🔄 populateEventSelects:', {
+        playersCount: players?.length,
+        preserve: preserveSelections,
+        wasPlayerSelected: selectedPlayer,
+        wasAssistSelected: selectedAssist
+    });
+    
+    // ✅ VALIDAZIONE: players deve essere un array
+    if (!Array.isArray(players) || players.length === 0) {
+        console.warn('⚠️ Lista giocatori vuota o non valida');
+        playerSelect.innerHTML = '<option value="">Nessun giocatore disponibile</option>';
+        assistSelect.innerHTML = '<option value="">Nessun assist disponibile</option>';
+        return;
+    }
+    
+    let playerOpts = `<option value="">Seleziona giocatore</option>`;
+    let assistOpts = `<option value="">Nessun assist</option>`;
+    
+    // ✅ DEDUPLICAZIONE: evita giocatori doppi
+    const seenIds = new Set();
+    (players || []).forEach(p => {
+        if (!p.PLAYER_ID) return; // skip giocatori senza ID
+        if (seenIds.has(String(p.PLAYER_ID))) return; // skip duplicati
+        seenIds.add(String(p.PLAYER_ID));
+        
+        const name = (p.NOME || "SENZA NOME").toUpperCase();
+        const pid = String(p.PLAYER_ID);
+        playerOpts += `<option value="${pid}">${name}</option>`;
+        assistOpts += `<option value="${pid}">${name}</option>`;
+    });
+    
+    playerSelect.innerHTML = playerOpts;
+    assistSelect.innerHTML = assistOpts;
+    
+    // 🔒 RIPRISTINA SELEZIONE se il giocatore esiste ancora
+    if (preserveSelections && selectedPlayer) {
+        const playerStillExists = players.some(p => String(p.PLAYER_ID) === String(selectedPlayer));
+        if (playerStillExists) {
+            playerSelect.value = selectedPlayer;
+            console.log('✅ Ripristinata selezione giocatore:', selectedPlayer);
+        } else {
+            console.warn('⚠️ Giocatore selezionato non più presente, reset selezione');
+            playerSelect.value = "";
+        }
+    }
+    
+    if (preserveSelections && selectedAssist) {
+        const assistStillExists = players.some(p => String(p.PLAYER_ID) === String(selectedAssist));
+        if (assistStillExists) {
+            assistSelect.value = selectedAssist;
+            console.log('✅ Ripristinata selezione assist:', selectedAssist);
+        } else {
+            console.warn('⚠️ Assist selezionato non più presente, reset selezione');
+            assistSelect.value = "";
+        }
+    }
 }
 
 async function saveEvent(team) {
-    const match = window.APP_STATE.lastMatch; if (!match) { alert("Partita non caricata"); return; }
-    const type = document.getElementById("eventType")?.value; const minute = parseInt(document.getElementById("eventMinute")?.value);
-    const playerId = document.getElementById("eventPlayer")?.value; const assistId = document.getElementById("eventAssist")?.value || "";
-    if (!type || !minute || minute < 1 || !playerId) { alert("Compila tutti i campi"); return; }
-    const teamId = String(team === "casa" ? match.CASA_ID : match.TRASFERTA_ID);
-    const players = window.APP_CACHE.fullTeams?.[teamId]?.players || [];
-    const player = players.find(p => String(p.PLAYER_ID) === String(playerId)); const playerName = player?.NOME || "";
-    const assistPlayer = assistId ? players.find(p => String(p.PLAYER_ID) === String(assistId)) : null; const assistName = assistPlayer?.NOME || "";
-    const tempEvent = { EVENT_ID: 'temp_' + Date.now(), MATCH_ID: match.MATCH_ID, TEAM_ID: teamId, TIPO: type, MINUTO: minute, PLAYER_ID: playerId, PLAYER: playerName, ASSIST: assistName };
-    if (!window.APP_CACHE.eventsByMatch) window.APP_CACHE.eventsByMatch = {}; if (!window.APP_CACHE.eventsByMatch[match.MATCH_ID]) { window.APP_CACHE.eventsByMatch[match.MATCH_ID] = []; }
-    window.APP_CACHE.eventsByMatch[match.MATCH_ID].push(tempEvent);
-    renderEvents(window.APP_CACHE.eventsByMatch[match.MATCH_ID], match); renderPlayersTab(window.APP_CACHE.fullTeams?.[String(match.CASA_ID)], window.APP_CACHE.fullTeams?.[String(match.TRASFERTA_ID)], match);
-    updateScoreFromEvents(match.MATCH_ID); document.querySelector(".modalOverlay")?.remove();
-    ApiClient.addEventAdmin(match.MATCH_ID, teamId, type, minute, playerId, assistId).then(() => {
-    refreshStandingsDebounced(500);
-    
-    // 🔥 RICARICA IMMEDIATAMENTE I GIOCATORI CON LE NUOVE STATS
-    // Invalida cache giocatori per forzare reload dal backend
-    if (window.APP_CACHE.fullTeams) {
-        delete window.APP_CACHE.fullTeams[String(match.CASA_ID)];
-        delete window.APP_CACHE.fullTeams[String(match.TRASFERTA_ID)];
+    // 🔒 USA LO SNAPSHOT invece di lastMatch (che può essere cambiato)
+    const match = window.APP_STATE._editingMatchSnapshot || window.APP_STATE.lastMatch;
+    if (!match) {
+        alert("Partita non caricata");
+        return;
     }
     
-    // Ricarica dopo 500ms (tempo per il backend di scrivere)
-    setTimeout(() => {
-        if (window.APP_STATE.lastMatch?.MATCH_ID === match.MATCH_ID) {
-            loadPlayersForMatch(window.APP_STATE.lastMatch);
-            console.log('📊 Statistiche giocatori ricaricate');
+    const type = document.getElementById("eventType")?.value;
+    const minute = parseInt(document.getElementById("eventMinute")?.value);
+    const playerId = document.getElementById("eventPlayer")?.value;
+    const assistId = document.getElementById("eventAssist")?.value || "";
+    
+    // ✅ VALIDAZIONE RAFFORZATA
+    if (!type || !minute || minute < 1 || !playerId) {
+        alert("Compila tutti i campi correttamente");
+        return;
+    }
+    
+    // 🔒 USA IL teamId dello snapshot (non quello che potrebbe essere cambiato)
+    const teamId = window.APP_STATE._editingTeamId || 
+                   String(team === "casa" ? match.CASA_ID : match.TRASFERTA_ID);
+    
+    // ✅ VALIDAZIONE teamId
+    if (!teamId || teamId === "undefined" || teamId === "null") {
+        console.error('❌ teamId non valido al salvataggio:', { team, teamId, match });
+        alert("Errore interno: ID squadra non valido. Ricarica la pagina.");
+        cancelEventEditing();
+        return;
+    }
+    
+    const players = window.APP_CACHE.fullTeams?.[teamId]?.players || [];
+    const player = players.find(p => String(p.PLAYER_ID) === String(playerId));
+    
+    // ✅ VALIDAZIONE CRITICA: il giocatore deve esistere!
+    if (!player) {
+        console.error('❌ Giocatore non trovato:', { playerId, teamId, playersCount: players.length });
+        alert("⚠️ Errore: giocatore non trovato. Chiudi e riprova.");
+        return;
+    }
+    
+    const playerName = player.NOME || "";
+    const assistPlayer = assistId ? players.find(p => String(p.PLAYER_ID) === String(assistId)) : null;
+    const assistName = assistPlayer?.NOME || "";
+    
+    // ✅ LOG per debug
+    console.log('💾 Salvataggio evento:', {
+        matchId: match.MATCH_ID,
+        teamId: teamId,
+        teamName: team === "casa" ? match.SQUADRA_CASA : match.SQUADRA_TRASFERTA,
+        type: type,
+        minute: minute,
+        playerId: playerId,
+        playerName: playerName,
+        assistId: assistId,
+        assistName: assistName
+    });
+    
+    // 1. Crea evento temporaneo per UI immediata
+    const tempEvent = {
+        EVENT_ID: 'temp_' + Date.now(),
+        MATCH_ID: match.MATCH_ID,
+        TEAM_ID: teamId,
+        TIPO: type,
+        MINUTO: minute,
+        PLAYER_ID: playerId,
+        PLAYER: playerName,
+        ASSIST: assistName
+    };
+    
+    if (!window.APP_CACHE.eventsByMatch) window.APP_CACHE.eventsByMatch = {};
+    if (!window.APP_CACHE.eventsByMatch[match.MATCH_ID]) {
+        window.APP_CACHE.eventsByMatch[match.MATCH_ID] = [];
+    }
+    window.APP_CACHE.eventsByMatch[match.MATCH_ID].push(tempEvent);
+    
+    // 2. Aggiorna UI immediatamente
+    renderEvents(window.APP_CACHE.eventsByMatch[match.MATCH_ID], match);
+    renderPlayersTab(
+        window.APP_CACHE.fullTeams?.[String(match.CASA_ID)],
+        window.APP_CACHE.fullTeams?.[String(match.TRASFERTA_ID)],
+        match
+    );
+    updateScoreFromEvents(match.MATCH_ID);
+    
+    // 3. Chiudi popup
+    document.querySelector(".modalOverlay")?.remove();
+    window.APP_STATE._editingEvent = false;
+    window.APP_STATE._editingMatchSnapshot = null;
+    window.APP_STATE._editingTeamId = null;
+    console.log('🔓 Editing terminato');
+    
+    // 🔒 4. SALVATAGGIO BACKEND CON RETRY
+    await saveEventWithRetry(match.MATCH_ID, teamId, type, minute, playerId, assistId, tempEvent);
+}
+
+// ✅ NUOVA FUNZIONE: Salvataggio con retry e backoff
+async function saveEventWithRetry(matchId, teamId, type, minute, playerId, assistId, tempEvent, maxRetries = 4) {
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+        try {
+            console.log(`📤 Tentativo salvataggio evento ${attempt}/${maxRetries}...`);
+            await ApiClient.addEventAdmin(matchId, teamId, type, minute, playerId, assistId);
+            
+            console.log('✅ Evento salvato con successo');
+            
+            // Refresh classifiche e giocatori
+            refreshStandingsDebounced(500);
+            
+            // Invalida cache giocatori per forzare reload
+            if (window.APP_CACHE.fullTeams) {
+                delete window.APP_CACHE.fullTeams[String(teamId)];
+            }
+            
+            // Ricarica giocatori dopo 500ms
+            setTimeout(() => {
+                if (window.APP_STATE.lastMatch?.MATCH_ID === matchId) {
+                    loadPlayersForMatch(window.APP_STATE.lastMatch);
+                    console.log('📊 Statistiche giocatori ricaricate');
+                }
+            }, 500);
+            
+            return true;
+            
+        } catch (error) {
+            console.error(`❌ Tentativo ${attempt} fallito:`, error.message);
+            
+            const isRateLimit = error.message?.includes('429') || error.message?.includes('quota');
+            const isNetworkError = error.message?.includes('Failed to fetch') || 
+                                   error.message?.includes('NetworkError') ||
+                                   error.message?.includes('timeout');
+            
+            if (attempt < maxRetries) {
+                // Backoff esponenziale: 2s, 4s, 8s
+                const delay = isRateLimit ? (5000 * attempt) : (2000 * attempt);
+                console.log(`⏳ Retry tra ${delay/1000}s...`);
+                await new Promise(r => setTimeout(r, delay));
+            } else {
+                // Tutti i tentativi falliti
+                console.error('❌ Salvataggio evento fallito definitivamente');
+                
+                // Rimuovi evento temporaneo dalla cache
+                if (window.APP_CACHE.eventsByMatch?.[matchId]) {
+                    window.APP_CACHE.eventsByMatch[matchId] = 
+                        window.APP_CACHE.eventsByMatch[matchId].filter(e => e.EVENT_ID !== tempEvent.EVENT_ID);
+                    CacheManager.save(window.APP_CACHE);
+                }
+                
+                // Re-renderizza senza l'evento fallito
+                const match = window.APP_STATE.lastMatch;
+                if (match) {
+                    renderEvents(window.APP_CACHE.eventsByMatch[matchId] || [], match);
+                    updateScoreFromEvents(matchId);
+                }
+                
+                // Salva in coda locale per retry manuale
+                const pendingKey = 'pending_events_' + matchId;
+                let pending = [];
+                try {
+                    pending = JSON.parse(localStorage.getItem(pendingKey) || '[]');
+                } catch(e) { pending = []; }
+                
+                pending.push({
+                    matchId, teamId, type, minute, playerId, assistId,
+                    timestamp: Date.now(),
+                    tempEventId: tempEvent.EVENT_ID
+                });
+                localStorage.setItem(pendingKey, JSON.stringify(pending));
+                
+                alert(`⚠️ Errore salvataggio evento dopo ${maxRetries} tentativi.
+                
+L'evento è stato salvato in locale e verrà ritentato al prossimo caricamento.
+Errore: ${error.message}`);
+                
+                return false;
+            }
         }
-    }, 500);
-}).catch(error => { console.error('Errore salvataggio:', error); if (error.message?.includes('teamId') || error.message?.includes('non valido')) { alert('Errore: ' + error.message); location.reload(); } });
+    }
+    return false;
+}
+
+// ✅ NUOVA FUNZIONE: Annulla editing e ripristina stato
+function cancelEventEditing() {
+    console.log('❌ Editing annullato');
+    window.APP_STATE._editingEvent = false;
+    window.APP_STATE._editingMatchSnapshot = null;
+    window.APP_STATE._editingTeamId = null;
+    document.querySelector(".modalOverlay")?.remove();
 }
 
 function updateScoreFromEvents(matchId) {
@@ -3954,8 +4323,12 @@ function startMatchLiveRefresh() {
             // Salva hash eventi per confronto futuro
             updatedMatch._eventsHash = mergedEvents.length + '_' + (mergedEvents[mergedEvents.length-1]?.EVENT_ID || '');
             
-            // ✅ AGGIORNA lastMatch PRIMA di qualsiasi altra cosa
-            window.APP_STATE.lastMatch = updatedMatch;
+            // 🔒 NON sovrascrivere lastMatch durante editing evento
+            if (!window.APP_STATE._editingEvent) {
+                window.APP_STATE.lastMatch = updatedMatch;
+            } else {
+                console.log('⏸️ lastMatch non aggiornato - editing in corso');
+            }
             
             // 🔥 AGGIORNAMENTO MIRATO (solo elementi cambiati, NO re-render completo)
             if (scoreChanged || statusChanged) {
@@ -5291,6 +5664,7 @@ function bootAdminApp() {
 
     window.APP_STATE._initialLoadComplete = true;
     flushPendingMVPVotes().catch(err => console.warn('⚠️ Errore flush MVP:', err));
+    flushPendingEvents().catch(err => console.warn('⚠️ Errore flush eventi:', err));
     const queue = window.APP_STATE._apiCallQueue || [];
     queue.forEach(item => {
       if (Date.now() - item.timestamp < 5000) item.fn();
