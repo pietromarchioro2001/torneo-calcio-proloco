@@ -5,7 +5,7 @@ const CONFIG = {
     // 🔥 SOSTITUISCI CON IL TUO URL APPS SCRIPT WEB APP
     BACKEND_URL: 'https://script.google.com/macros/s/AKfycbyZSxz0aXWFhoUmlw8_bNEbSu48D5pVch2T94yxFVJbZfze-KvL9okqGTV1NkReu8c/exec',
     API_TIMEOUT: 30000,
-    CACHE_VERSION: 'v4.6',
+    CACHE_VERSION: 'v4.7',
     CACHE_MAX_AGE: 5 * 60 * 1000
 };
 
@@ -2651,24 +2651,27 @@ function renderMatchPage(match) {
   
   // 🔥 FORZA RICARICAMENTO EVENTI
   const events = window.APP_CACHE.eventsByMatch?.[match.MATCH_ID] || [];
-  if (events.length === 0) {
-    ApiClient.getEventsAdmin(match.MATCH_ID).then(freshEvents => {
-      const mergedEvents = mergeEventsWithLocal(freshEvents, match.MATCH_ID);
-      window.APP_CACHE.eventsByMatch[match.MATCH_ID] = mergedEvents;
-      CacheManager.save(window.APP_CACHE);
-      const calculatedScore = calculateMatchScore(match, mergedEvents);
-      const updatedMatch = { ...match, ...calculatedScore };
-      renderEvents(mergedEvents, updatedMatch);
-      renderPenaltyIndicators(mergedEvents, updatedMatch);
-      const scoreEl = document.querySelector(".score-big");
-      if (scoreEl) scoreEl.textContent = `${updatedMatch.GOL_CASA || 0} - ${updatedMatch.GOL_TRASFERTA || 0}`;
-    }).catch(err => {
-      console.error('❌ Errore caricamento eventi:', err);
-      renderEvents([], match);
-    });
-  } else {
-    renderEvents(events, match);
-  }
+    if (events.length === 0) {
+        ApiClient.getEventsAdmin(match.MATCH_ID).then(freshEvents => {
+            const mergedEvents = mergeEventsWithLocal(freshEvents, match.MATCH_ID);
+            
+            // ✅ SALVA IN CACHE per la prossima volta
+            window.APP_CACHE.eventsByMatch[match.MATCH_ID] = mergedEvents;
+            CacheManager.save(window.APP_CACHE);
+            
+            const calculatedScore = calculateMatchScore(match, mergedEvents);
+            const updatedMatch = { ...match, ...calculatedScore };
+            renderEvents(mergedEvents, updatedMatch);
+            renderPenaltyIndicators(mergedEvents, updatedMatch);
+            const scoreEl = document.querySelector(".score-big");
+            if (scoreEl) scoreEl.textContent = `${updatedMatch.GOL_CASA || 0} - ${updatedMatch.GOL_TRASFERTA || 0}`;
+        }).catch(err => {
+            console.error('❌ Errore caricamento eventi:', err);
+            renderEvents([], match);
+        });
+    } else {
+        renderEvents(events, match);
+    }
   
   // 🔥 DEFINISCI LOGHI
   const logoCasa = match.LOGO_CASA
@@ -5843,12 +5846,45 @@ function loadFreshDataInBackground() {
 }
 
 function preloadRecentEvents() {
-    const matches = window.APP_CACHE.matches || []; const now = new Date();
-    const recentMatches = matches.filter(m => { if (m.STATO_PARTITA === "LIVE") return true; if (m.DATA) { const matchDate = parseLocalDate(m.DATA); if (matchDate) { const diffHours = (now - matchDate) / (1000 * 60 * 60); return diffHours < 24; } } return false; });
+    const matches = window.APP_CACHE.matches || [];
+    const now = new Date();
+    
+    // ✅ ESTESO: includi partite finite degli ultimi 3 giorni (non solo 24h)
+    const recentMatches = matches.filter(m => {
+        if (m.STATO_PARTITA === "LIVE" || m.STATO_PARTITA === "SUPP" || m.STATO_PARTITA === "RIGORI") {
+            return true;
+        }
+        if (m.DATA) {
+            const matchDate = parseLocalDate(m.DATA);
+            if (matchDate) {
+                const diffHours = (now - matchDate) / (1000 * 60 * 60);
+                // ✅ AUMENTATO da 24h a 72h (3 giorni)
+                return diffHours < 72;
+            }
+        }
+        return false;
+    });
+    
+    console.log(`🔄 Precaricamento eventi per ${recentMatches.length} partite recenti...`);
+    
     recentMatches.forEach(m => {
         if (!window.APP_CACHE.eventsByMatch) window.APP_CACHE.eventsByMatch = {};
-        if (!window.APP_CACHE.eventsByMatch[m.MATCH_ID]) { ApiClient.getEventsAdmin(m.MATCH_ID).then(events => { window.APP_CACHE.eventsByMatch[m.MATCH_ID] = events; CacheManager.save(window.APP_CACHE); }).catch(err => console.error(`❌ Errore eventi ${m.MATCH_ID}:`, err)); }
-        ApiClient.getMatchFull(m.MATCH_ID).then(data => { if (data?.match && data.match.CASA_ID && data.match.TRASFERTA_ID) { window.APP_STATE.matchesById[m.MATCH_ID] = data.match; } }).catch(err => console.error(`❌ Errore precaricamento match ${m.MATCH_ID}:`, err));
+        
+        // ✅ PRECARICA EVENTI anche per partite finite (non solo LIVE)
+        if (!window.APP_CACHE.eventsByMatch[m.MATCH_ID]) {
+            ApiClient.getEventsAdmin(m.MATCH_ID).then(events => {
+                window.APP_CACHE.eventsByMatch[m.MATCH_ID] = events;
+                CacheManager.save(window.APP_CACHE);
+                console.log(`✅ Eventi precaricati per match ${m.MATCH_ID}`);
+            }).catch(err => console.warn(`⚠️ Errore precaricamento eventi ${m.MATCH_ID}:`, err));
+        }
+        
+        // Precarica dati match completi
+        ApiClient.getMatchFull(m.MATCH_ID).then(data => {
+            if (data?.match && data.match.CASA_ID && data.match.TRASFERTA_ID) {
+                window.APP_STATE.matchesById[m.MATCH_ID] = data.match;
+            }
+        }).catch(err => console.warn(`⚠️ Errore precaricamento match ${m.MATCH_ID}:`, err));
     });
 }
 
