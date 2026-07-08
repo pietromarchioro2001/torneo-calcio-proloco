@@ -5,7 +5,7 @@ const CONFIG = {
     // 🔥 SOSTITUISCI CON IL TUO URL APPS SCRIPT WEB APP
     BACKEND_URL: 'https://script.google.com/macros/s/AKfycbyZSxz0aXWFhoUmlw8_bNEbSu48D5pVch2T94yxFVJbZfze-KvL9okqGTV1NkReu8c/exec',
     API_TIMEOUT: 30000,
-    CACHE_VERSION: 'v4.9',
+    CACHE_VERSION: 'v5.0',
     CACHE_MAX_AGE: 5 * 60 * 1000
 };
 
@@ -1313,18 +1313,154 @@ function uploadNewTeamPhoto() {
 }
 
 function teamPhotoAction() {
-    if (window.innerWidth <= 768) {
-        return; // Non fare nulla su mobile
-      }
-      const teamId = window.APP_STATE.currentTeamId; 
-      const team = window.APP_CACHE.fullTeams?.[teamId]?.team;
-      if (!team?.FOTO_SQUADRA_FILE_ID) { 
-        uploadNewTeamPhoto(); 
-        return; 
-      }
-    const modal = document.createElement("div"); modal.className = "modalOverlay";
-    modal.innerHTML = `<div class="modalBox" style="max-width:800px;"><div class="modalTitle">FOTO SQUADRA</div><img src="${getCachedImage(team.FOTO_SQUADRA_FILE_ID, 1200)}" style="max-width:100%;border-radius:12px;margin:20px 0;"><div class="modalActions"><div class="phase-btn secondary" onclick="window.open('https://drive.google.com/file/d/${team.FOTO_SQUADRA_FILE_ID}/view', '_blank'); this.closest('.modalOverlay').remove()">APRI</div><div class="phase-btn" onclick="this.closest('.modalOverlay').remove(); uploadNewTeamPhoto()">CAMBIA</div></div></div>`;
-    document.body.appendChild(modal); modal.onclick = (e) => { if (e.target === modal) modal.remove(); };
+    const teamId = window.APP_STATE.currentTeamId;
+    const team = window.APP_CACHE.fullTeams?.[teamId]?.team;
+    
+    if (!team?.FOTO_SQUADRA_FILE_ID) {
+        uploadNewTeamPhoto();
+        return;
+    }
+    
+    // ✅ CREAZIONE POPUP FULLSCREEN
+    const modal = document.createElement("div");
+    modal.className = "modalOverlay";
+    modal.style.cssText = `
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.95);
+        z-index: 999999;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 20px;
+        animation: fadeIn 0.3s ease;
+    `;
+    
+    const photoUrl = getCachedImage(team.FOTO_SQUADRA_FILE_ID, 1200);
+    
+    modal.innerHTML = `
+        <div style="
+            position: relative;
+            max-width: 100%;
+            max-height: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        ">
+            <!-- Pulsante chiudi -->
+            <button onclick="this.closest('.modalOverlay').remove()" style="
+                position: absolute;
+                top: -50px;
+                right: 0;
+                background: rgba(255, 255, 255, 0.2);
+                border: none;
+                color: white;
+                width: 44px;
+                height: 44px;
+                border-radius: 50%;
+                font-size: 24px;
+                cursor: pointer;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                transition: all 0.2s;
+            " onmouseover="this.style.background='rgba(255,255,255,0.4)'" 
+               onmouseout="this.style.background='rgba(255,255,255,0.2)'">
+                ✕
+            </button>
+            
+            <!-- Nome squadra -->
+            <div style="
+                color: white;
+                font-size: 18px;
+                font-weight: 700;
+                text-transform: uppercase;
+                letter-spacing: 2px;
+                margin-bottom: 20px;
+                text-align: center;
+                font-family: 'Oswald', sans-serif;
+            ">
+                ${team.NOME_SQUADRA || "SQUADRA"}
+            </div>
+            
+            <!-- Foto -->
+            <img src="${photoUrl}" 
+                 alt="${team.NOME_SQUADRA || 'Foto squadra'}" 
+                 style="
+                    max-width: 100%;
+                    max-height: 80vh;
+                    object-fit: contain;
+                    border-radius: 12px;
+                    box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+                    animation: zoomIn 0.4s ease;
+                 ">
+            
+            <!-- Pulsante cambia (solo desktop) -->
+            ${window.innerWidth > 768 ? `
+                <button onclick="this.closest('.modalOverlay').remove(); uploadNewTeamPhoto()" style="
+                    margin-top: 20px;
+                    padding: 12px 24px;
+                    background: #7a1e2c;
+                    color: white;
+                    border: none;
+                    border-radius: 8px;
+                    font-size: 14px;
+                    font-weight: 700;
+                    font-family: 'Oswald', sans-serif;
+                    letter-spacing: 2px;
+                    cursor: pointer;
+                    text-transform: uppercase;
+                    transition: all 0.2s;
+                " onmouseover="this.style.background='#9f2c3d'" 
+                   onmouseout="this.style.background='#7a1e2c'">
+                    CAMBIA FOTO
+                </button>
+            ` : ''}
+        </div>
+    `;
+    
+    document.body.appendChild(modal);
+    
+    // Chiudi con click fuori
+    modal.onclick = (e) => {
+        if (e.target === modal) {
+            modal.style.transition = 'opacity 0.3s ease';
+            modal.style.opacity = '0';
+            setTimeout(() => modal.remove(), 300);
+        }
+    };
+    
+    // Chiudi con tasto ESC
+    const escHandler = (e) => {
+        if (e.key === 'Escape') {
+            modal.remove();
+            document.removeEventListener('keydown', escHandler);
+        }
+    };
+    document.addEventListener('keydown', escHandler);
+}
+
+if (!document.getElementById('photoModalAnimations')) {
+    const style = document.createElement('style');
+    style.id = 'photoModalAnimations';
+    style.textContent = `
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        @keyframes zoomIn {
+            from { 
+                opacity: 0;
+                transform: scale(0.8);
+            }
+            to { 
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+    `;
+    document.head.appendChild(style);
 }
 
 let currentPlayerId = null; let playerPhotoTemp = null;
