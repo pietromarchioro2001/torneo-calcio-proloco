@@ -5,7 +5,7 @@ const CONFIG = {
     // 🔥 SOSTITUISCI CON IL TUO URL APPS SCRIPT WEB APP
     BACKEND_URL: 'https://script.google.com/macros/s/AKfycbyZSxz0aXWFhoUmlw8_bNEbSu48D5pVch2T94yxFVJbZfze-KvL9okqGTV1NkReu8c/exec',
     API_TIMEOUT: 30000,
-    CACHE_VERSION: 'v4.8',
+    CACHE_VERSION: 'v4.9',
     CACHE_MAX_AGE: 5 * 60 * 1000
 };
 
@@ -22,10 +22,7 @@ const DESKTOP_PASSWORD = "torneo2026";
 const LOGIN_STORAGE_KEY = "desktop_login_saved";
 let desktopAuthenticated = false;
 
-/**
- * 📱 RILEVAMENTO MOBILE ROBUSTO
- * Combina user agent, dimensioni schermo e touch support
- */
+
 function isMobileDevice() {
     // 1. Controllo User Agent (più affidabile)
     const ua = navigator.userAgent || navigator.vendor || window.opera || '';
@@ -39,20 +36,20 @@ function isMobileDevice() {
     const screenWidth = window.innerWidth;
     const isSmallScreen = screenWidth <= 768;
     const isMediumScreen = screenWidth <= 1024;
+    const isLargeTablet = screenWidth <= 1280; // ✅ NUOVO: tablet grandi
     
     // 4. Controllo orientamento
     const isPortrait = window.matchMedia('(orientation: portrait)').matches;
     
-    // ✅ LOGICA MIGLIORATA:
+    // ✅ LOGICA AGGIORNATA:
     // - User agent mobile/tablet → SEMPRE mobile
-    // - Ha touch E schermo <= 1024px → mobile (copre tablet)
-    // - Ha touch E orientamento portrait → mobile (telefoni grandi in verticale)
-    // - Schermo molto piccolo <= 600px → mobile (anche senza touch)
-    
-    return isMobileUA || 
-           (hasTouch && isMediumScreen) || 
-           (hasTouch && isPortrait && screenWidth <= 900) ||
-           screenWidth <= 600;
+    // - Ha touch E schermo <= 1280px → mobile (include tablet grandi)
+    // - Ha touch E orientamento portrait → mobile
+    // - Schermo <= 768px → mobile
+    return isMobileUA ||
+        (hasTouch && isLargeTablet) ||  // ← CAMBIATO: da 1024 a 1280
+        (hasTouch && isPortrait && screenWidth <= 900) ||
+        isSmallScreen;
 }
 
 function checkDesktopAuth() {
