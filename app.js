@@ -5,7 +5,7 @@ const CONFIG = {
     // 🔥 SOSTITUISCI CON IL TUO URL APPS SCRIPT WEB APP
     BACKEND_URL: 'https://script.google.com/macros/s/AKfycbyZSxz0aXWFhoUmlw8_bNEbSu48D5pVch2T94yxFVJbZfze-KvL9okqGTV1NkReu8c/exec',
     API_TIMEOUT: 30000,
-    CACHE_VERSION: 'v5.1',
+    CACHE_VERSION: 'v5.2',
     CACHE_MAX_AGE: 5 * 60 * 1000
 };
 
@@ -1323,9 +1323,10 @@ function teamPhotoAction() {
     
     const photoUrl = getCachedImage(team.FOTO_SQUADRA_FILE_ID, 1200);
     
-    // ✅ CREAZIONE POPUP FULLSCREEN CON ZOOM
+    // ✅ CREAZIONE POPUP FULLSCREEN
     const modal = document.createElement("div");
     modal.className = "modalOverlay";
+    modal.id = 'photoModal';
     modal.style.cssText = `
         position: fixed;
         inset: 0;
@@ -1339,7 +1340,7 @@ function teamPhotoAction() {
     `;
     
     modal.innerHTML = `
-        <div id="photoZoomContainer" style="
+        <div style="
             position: relative;
             max-width: 100%;
             max-height: 100%;
@@ -1347,7 +1348,7 @@ function teamPhotoAction() {
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            overflow: hidden;
+            width: 100%;
         ">
             <!-- Pulsante chiudi -->
             <button id="photoCloseBtn" style="
@@ -1365,30 +1366,23 @@ function teamPhotoAction() {
                 display: flex;
                 align-items: center;
                 justify-content: center;
-                transition: all 0.2s;
                 z-index: 10001;
                 backdrop-filter: blur(10px);
-            " onmouseover="this.style.background='rgba(255,255,255,0.4)'" 
-               onmouseout="this.style.background='rgba(255,255,255,0.2)'">
-                ✕
-            </button>
+            ">✕</button>
             
             <!-- Nome squadra -->
-            <div id="photoTeamName" style="
+            <div style="
                 color: white;
-                font-size: 18px;
+                font-size: 16px;
                 font-weight: 700;
                 text-transform: uppercase;
                 letter-spacing: 2px;
                 margin-bottom: 15px;
                 text-align: center;
                 font-family: 'Oswald', sans-serif;
-                transition: opacity 0.3s;
-            ">
-                ${team.NOME_SQUADRA || "SQUADRA"}
-            </div>
+            ">${team.NOME_SQUADRA || "SQUADRA"}</div>
             
-            <!-- Container immagine con zoom -->
+            <!-- 🔥 WRAPPER IMMAGINE CON touch-action: none -->
             <div id="photoImageWrapper" style="
                 position: relative;
                 max-width: 100%;
@@ -1398,6 +1392,9 @@ function teamPhotoAction() {
                 box-shadow: 0 20px 60px rgba(0,0,0,0.5);
                 animation: zoomIn 0.4s ease;
                 touch-action: none;
+                -webkit-user-select: none;
+                user-select: none;
+                -webkit-touch-callout: none;
                 cursor: grab;
             ">
                 <img id="photoZoomImage" 
@@ -1410,21 +1407,22 @@ function teamPhotoAction() {
                         object-fit: contain;
                         display: block;
                         transform-origin: center center;
-                        transition: transform 0.1s ease-out;
+                        transition: transform 0.15s ease-out;
                         user-select: none;
                         -webkit-user-select: none;
+                        -webkit-user-drag: none;
                         pointer-events: none;
                      ">
             </div>
             
-            <!-- Controlli zoom (sempre visibili) -->
+            <!-- Controlli zoom -->
             <div id="photoZoomControls" style="
                 display: flex;
                 align-items: center;
-                gap: 15px;
-                margin-top: 20px;
+                gap: 12px;
+                margin-top: 15px;
                 background: rgba(255, 255, 255, 0.1);
-                padding: 10px 20px;
+                padding: 8px 16px;
                 border-radius: 30px;
                 backdrop-filter: blur(10px);
             ">
@@ -1432,24 +1430,20 @@ function teamPhotoAction() {
                     background: rgba(255,255,255,0.2);
                     border: none;
                     color: white;
-                    width: 40px;
-                    height: 40px;
+                    width: 36px;
+                    height: 36px;
                     border-radius: 50%;
                     font-size: 20px;
                     cursor: pointer;
                     display: flex;
                     align-items: center;
                     justify-content: center;
-                    transition: all 0.2s;
-                " onmouseover="this.style.background='rgba(255,255,255,0.4)'" 
-                   onmouseout="this.style.background='rgba(255,255,255,0.2)'">
-                    −
-                </button>
+                ">−</button>
                 <div id="zoomLevel" style="
                     color: white;
-                    font-size: 14px;
+                    font-size: 13px;
                     font-weight: 700;
-                    min-width: 50px;
+                    min-width: 45px;
                     text-align: center;
                     font-family: 'Oswald', sans-serif;
                 ">100%</div>
@@ -1457,49 +1451,40 @@ function teamPhotoAction() {
                     background: rgba(255,255,255,0.2);
                     border: none;
                     color: white;
-                    width: 40px;
-                    height: 40px;
+                    width: 36px;
+                    height: 36px;
                     border-radius: 50%;
                     font-size: 20px;
                     cursor: pointer;
                     display: flex;
                     align-items: center;
                     justify-content: center;
-                    transition: all 0.2s;
-                " onmouseover="this.style.background='rgba(255,255,255,0.4)'" 
-                   onmouseout="this.style.background='rgba(255,255,255,0.2)'">
-                    +
-                </button>
+                ">+</button>
                 <button id="zoomResetBtn" style="
                     background: rgba(122, 30, 44, 0.8);
                     border: none;
                     color: white;
-                    padding: 8px 16px;
+                    padding: 6px 14px;
                     border-radius: 20px;
-                    font-size: 12px;
+                    font-size: 11px;
                     font-weight: 700;
                     cursor: pointer;
                     text-transform: uppercase;
                     letter-spacing: 1px;
                     font-family: 'Oswald', sans-serif;
-                    transition: all 0.2s;
-                " onmouseover="this.style.background='#9f2c3d'" 
-                   onmouseout="this.style.background='rgba(122, 30, 44, 0.8)'">
-                    Reset
-                </button>
+                ">Reset</button>
             </div>
             
-            <!-- Hint zoom (solo mobile) -->
+            <!-- Hint -->
             <div id="zoomHint" style="
                 color: rgba(255,255,255,0.5);
                 font-size: 11px;
-                margin-top: 10px;
+                margin-top: 8px;
                 text-align: center;
                 font-family: 'Oswald', sans-serif;
                 letter-spacing: 1px;
-            ">
-                ${window.innerWidth <= 768 ? '🤏 PINCH PER ZOOMARE • DOPPIO TAP PER ZOOM 2X' : 'SCROLL PER ZOOMARE • TRASCINA PER SPOSTARE'}
-            </div>
+                transition: opacity 0.3s;
+            ">${window.innerWidth <= 768 ? '🤏 PINCH O DOPPIO TAP PER ZOOMARE' : 'SCROLL O DOPPIO CLICK PER ZOOMARE'}</div>
             
             <!-- Pulsante cambia (solo desktop) -->
             ${window.innerWidth > 768 ? `
@@ -1516,18 +1501,25 @@ function teamPhotoAction() {
                     letter-spacing: 2px;
                     cursor: pointer;
                     text-transform: uppercase;
-                    transition: all 0.2s;
-                " onmouseover="this.style.background='#9f2c3d'" 
-                   onmouseout="this.style.background='#7a1e2c'">
-                    CAMBIA FOTO
-                </button>
+                ">CAMBIA FOTO</button>
             ` : ''}
         </div>
     `;
     
     document.body.appendChild(modal);
     
-    // ✅ INIZIALIZZAZIONE ZOOM
+    // ✅ AGGIUNGI CSS per animazioni (se non esiste già)
+    if (!document.getElementById('photoModalAnimations')) {
+        const style = document.createElement('style');
+        style.id = 'photoModalAnimations';
+        style.textContent = `
+            @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+            @keyframes zoomIn { from { opacity: 0; transform: scale(0.8); } to { opacity: 1; transform: scale(1); } }
+        `;
+        document.head.appendChild(style);
+    }
+    
+    // 🔥 INIZIALIZZAZIONE ZOOM - DOPO che il popup è nel DOM
     const img = document.getElementById('photoZoomImage');
     const wrapper = document.getElementById('photoImageWrapper');
     const zoomLevelDisplay = document.getElementById('zoomLevel');
@@ -1550,20 +1542,19 @@ function teamPhotoAction() {
     let isDragging = false;
     let startX = 0;
     let startY = 0;
+    
+    // 🔥 DOPPIO TAP - gestito con timer (dblclick non funziona su mobile)
     let lastTapTime = 0;
+    let tapTimeout = null;
     
     function updateTransform(smooth = false) {
-        img.style.transition = smooth ? 'transform 0.3s ease' : 'transform 0.1s ease-out';
+        img.style.transition = smooth ? 'transform 0.25s ease' : 'transform 0.1s ease-out';
         img.style.transform = `translate(${translateX}px, ${translateY}px) scale(${currentScale})`;
         zoomLevelDisplay.textContent = `${Math.round(currentScale * 100)}%`;
         
-        // Nascondi hint dopo primo zoom
         if (currentScale > 1 && zoomHint) {
             zoomHint.style.opacity = '0';
         }
-        
-        // Cambia cursore
-        wrapper.style.cursor = currentScale > 1 ? 'grab' : 'default';
     }
     
     function clampTranslation() {
@@ -1572,57 +1563,83 @@ function teamPhotoAction() {
             translateY = 0;
             return;
         }
-        
         const rect = wrapper.getBoundingClientRect();
-        const imgRect = img.getBoundingClientRect();
-        
-        const maxX = (imgRect.width - rect.width) / 2;
-        const maxY = (imgRect.height - rect.height) / 2;
-        
+        const imgWidth = img.offsetWidth * currentScale;
+        const imgHeight = img.offsetHeight * currentScale;
+        const maxX = Math.max(0, (imgWidth - rect.width) / 2);
+        const maxY = Math.max(0, (imgHeight - rect.height) / 2);
         translateX = Math.max(-maxX, Math.min(maxX, translateX));
         translateY = Math.max(-maxY, Math.min(maxY, translateY));
     }
     
-    // ✅ PINCH TO ZOOM (mobile)
-    wrapper.addEventListener('touchstart', (e) => {
+    function resetZoom() {
+        currentScale = 1;
+        translateX = 0;
+        translateY = 0;
+        updateTransform(true);
+        if (zoomHint) zoomHint.style.opacity = '1';
+    }
+    
+    function zoomAt(factor, centerX, centerY) {
+        const newScale = Math.max(MIN_SCALE, Math.min(MAX_SCALE, currentScale * factor));
+        if (newScale === currentScale) return;
+        
+        // Calcola il punto focale dello zoom
+        const rect = wrapper.getBoundingClientRect();
+        const pointX = centerX !== undefined ? centerX - rect.left - rect.width/2 : 0;
+        const pointY = centerY !== undefined ? centerY - rect.top - rect.height/2 : 0;
+        
+        translateX = translateX * (newScale / currentScale) - pointX * (newScale / currentScale - 1);
+        translateY = translateY * (newScale / currentScale) - pointY * (newScale / currentScale - 1);
+        currentScale = newScale;
+        
+        clampTranslation();
+        updateTransform(true);
+    }
+    
+    // 🔥 TOUCH EVENTS (mobile) - CON preventDefault
+    wrapper.addEventListener('touchstart', function(e) {
         if (e.touches.length === 2) {
+            // 🔥 PINCH - due dita
             e.preventDefault();
             const dx = e.touches[0].clientX - e.touches[1].clientX;
             const dy = e.touches[0].clientY - e.touches[1].clientY;
             initialDistance = Math.sqrt(dx * dx + dy * dy);
             initialScale = currentScale;
         } else if (e.touches.length === 1) {
-            // ✅ DOPPIO TAP per zoom 2x
+            // 🔥 SINGOLO TOUCH - controlla doppio tap o drag
             const now = Date.now();
-            if (now - lastTapTime < 300) {
-                e.preventDefault();
-                if (currentScale > 1) {
-                    // Reset zoom
-                    currentScale = 1;
-                    translateX = 0;
-                    translateY = 0;
-                } else {
-                    // Zoom a 2x
-                    currentScale = 2;
-                }
-                updateTransform(true);
-                clampTranslation();
-                updateTransform(true);
-            }
-            lastTapTime = now;
+            const timeSinceLastTap = now - lastTapTime;
             
-            // ✅ DRAG per spostare (quando zoomato)
-            if (currentScale > 1) {
-                isDragging = true;
-                startX = e.touches[0].clientX - translateX;
-                startY = e.touches[0].clientY - translateY;
-                wrapper.style.cursor = 'grabbing';
+            if (timeSinceLastTap < 300 && timeSinceLastTap > 0) {
+                // DOPPIO TAP rilevato
+                e.preventDefault();
+                clearTimeout(tapTimeout);
+                lastTapTime = 0;
+                
+                if (currentScale > 1.1) {
+                    resetZoom();
+                } else {
+                    // Zoom a 2.5x centrato sul punto toccato
+                    zoomAt(2.5, e.touches[0].clientX, e.touches[0].clientY);
+                }
+            } else {
+                // Primo tap - avvia timer
+                lastTapTime = now;
+                
+                // Se già zoomato, permetti drag
+                if (currentScale > 1) {
+                    isDragging = true;
+                    startX = e.touches[0].clientX - translateX;
+                    startY = e.touches[0].clientY - translateY;
+                }
             }
         }
-    }, { passive: false });
+    }, { passive: false }); // ← 🔥 FONDAMENTALE: passive: false
     
-    wrapper.addEventListener('touchmove', (e) => {
-        if (e.touches.length === 2) {
+    wrapper.addEventListener('touchmove', function(e) {
+        if (e.touches.length === 2 && initialDistance > 0) {
+            // 🔥 PINCH IN CORSO
             e.preventDefault();
             const dx = e.touches[0].clientX - e.touches[1].clientX;
             const dy = e.touches[0].clientY - e.touches[1].clientY;
@@ -1632,43 +1649,36 @@ function teamPhotoAction() {
             clampTranslation();
             updateTransform();
         } else if (e.touches.length === 1 && isDragging && currentScale > 1) {
+            // 🔥 DRAG con un dito
             e.preventDefault();
             translateX = e.touches[0].clientX - startX;
             translateY = e.touches[0].clientY - startY;
             clampTranslation();
             updateTransform();
         }
-    }, { passive: false });
+    }, { passive: false }); // ← 🔥 FONDAMENTALE: passive: false
     
-    wrapper.addEventListener('touchend', (e) => {
+    wrapper.addEventListener('touchend', function(e) {
         if (e.touches.length < 2) {
             initialDistance = 0;
         }
         if (e.touches.length === 0) {
             isDragging = false;
-            wrapper.style.cursor = currentScale > 1 ? 'grab' : 'default';
             // Snap back se scale è vicino a 1
             if (currentScale < 1.1) {
-                currentScale = 1;
-                translateX = 0;
-                translateY = 0;
-                updateTransform(true);
+                resetZoom();
             }
         }
-    });
+    }, { passive: true });
     
-    // ✅ SCROLL ZOOM (desktop)
-    wrapper.addEventListener('wheel', (e) => {
+    // 🔥 MOUSE EVENTS (desktop)
+    wrapper.addEventListener('wheel', function(e) {
         e.preventDefault();
-        const delta = e.deltaY > 0 ? 0.9 : 1.1;
-        const newScale = currentScale * delta;
-        currentScale = Math.max(MIN_SCALE, Math.min(MAX_SCALE, newScale));
-        clampTranslation();
-        updateTransform();
+        const factor = e.deltaY > 0 ? 0.9 : 1.1;
+        zoomAt(factor, e.clientX, e.clientY);
     }, { passive: false });
     
-    // ✅ DRAG con mouse (desktop)
-    wrapper.addEventListener('mousedown', (e) => {
+    wrapper.addEventListener('mousedown', function(e) {
         if (currentScale > 1) {
             isDragging = true;
             startX = e.clientX - translateX;
@@ -1678,7 +1688,7 @@ function teamPhotoAction() {
         }
     });
     
-    document.addEventListener('mousemove', (e) => {
+    document.addEventListener('mousemove', function photoMouseMove(e) {
         if (isDragging && currentScale > 1) {
             translateX = e.clientX - startX;
             translateY = e.clientY - startY;
@@ -1687,70 +1697,59 @@ function teamPhotoAction() {
         }
     });
     
-    document.addEventListener('mouseup', () => {
+    document.addEventListener('mouseup', function photoMouseUp() {
         if (isDragging) {
             isDragging = false;
             wrapper.style.cursor = currentScale > 1 ? 'grab' : 'default';
         }
     });
     
-    // ✅ DOPPIO CLICK per zoom 2x (desktop)
-    wrapper.addEventListener('dblclick', (e) => {
-        if (currentScale > 1) {
-            currentScale = 1;
-            translateX = 0;
-            translateY = 0;
+    // 🔥 DOPPIO CLICK (desktop)
+    wrapper.addEventListener('dblclick', function(e) {
+        if (currentScale > 1.1) {
+            resetZoom();
         } else {
-            currentScale = 2;
+            zoomAt(2.5, e.clientX, e.clientY);
         }
-        updateTransform(true);
-        clampTranslation();
-        updateTransform(true);
     });
     
-    // ✅ PULSANTI ZOOM
-    zoomInBtn.addEventListener('click', (e) => {
+    // 🔥 PULSANTI ZOOM
+    zoomInBtn.addEventListener('click', function(e) {
         e.stopPropagation();
-        currentScale = Math.min(MAX_SCALE, currentScale * 1.3);
-        clampTranslation();
-        updateTransform(true);
+        zoomAt(1.3);
     });
     
-    zoomOutBtn.addEventListener('click', (e) => {
+    zoomOutBtn.addEventListener('click', function(e) {
         e.stopPropagation();
-        currentScale = Math.max(MIN_SCALE, currentScale / 1.3);
-        clampTranslation();
-        updateTransform(true);
-        if (currentScale <= 1) {
-            translateX = 0;
-            translateY = 0;
+        const newScale = Math.max(MIN_SCALE, currentScale / 1.3);
+        if (newScale === currentScale) {
+            resetZoom();
+        } else {
+            currentScale = newScale;
+            clampTranslation();
             updateTransform(true);
         }
     });
     
-    zoomResetBtn.addEventListener('click', (e) => {
+    zoomResetBtn.addEventListener('click', function(e) {
         e.stopPropagation();
-        currentScale = 1;
-        translateX = 0;
-        translateY = 0;
-        updateTransform(true);
-        if (zoomHint) zoomHint.style.opacity = '1';
+        resetZoom();
     });
     
-    // ✅ CHIUSURA
+    // 🔥 CHIUSURA
     function closeModal() {
         modal.style.transition = 'opacity 0.3s ease';
         modal.style.opacity = '0';
         setTimeout(() => modal.remove(), 300);
     }
     
-    closeBtn.addEventListener('click', (e) => {
+    closeBtn.addEventListener('click', function(e) {
         e.stopPropagation();
         closeModal();
     });
     
     if (changeBtn) {
-        changeBtn.addEventListener('click', (e) => {
+        changeBtn.addEventListener('click', function(e) {
             e.stopPropagation();
             modal.remove();
             uploadNewTeamPhoto();
@@ -1758,14 +1757,14 @@ function teamPhotoAction() {
     }
     
     // Click fuori per chiudere (solo se non zoomato)
-    modal.addEventListener('click', (e) => {
+    modal.addEventListener('click', function(e) {
         if (e.target === modal && currentScale <= 1) {
             closeModal();
         }
     });
     
     // ESC per chiudere
-    const escHandler = (e) => {
+    const escHandler = function(e) {
         if (e.key === 'Escape') {
             closeModal();
             document.removeEventListener('keydown', escHandler);
@@ -1773,27 +1772,17 @@ function teamPhotoAction() {
     };
     document.addEventListener('keydown', escHandler);
     
-    // ✅ KEYBOARD ZOOM
-    document.addEventListener('keydown', (e) => {
+    // Keyboard zoom (desktop)
+    document.addEventListener('keydown', function(e) {
         if (!document.body.contains(modal)) return;
         if (e.key === '+' || e.key === '=') {
-            currentScale = Math.min(MAX_SCALE, currentScale * 1.2);
-            clampTranslation();
-            updateTransform(true);
+            zoomAt(1.2);
         } else if (e.key === '-' || e.key === '_') {
-            currentScale = Math.max(MIN_SCALE, currentScale / 1.2);
-            clampTranslation();
-            updateTransform(true);
-            if (currentScale <= 1) {
-                translateX = 0;
-                translateY = 0;
-                updateTransform(true);
-            }
+            const newScale = Math.max(MIN_SCALE, currentScale / 1.2);
+            if (newScale === currentScale) resetZoom();
+            else { currentScale = newScale; clampTranslation(); updateTransform(true); }
         } else if (e.key === '0') {
-            currentScale = 1;
-            translateX = 0;
-            translateY = 0;
-            updateTransform(true);
+            resetZoom();
         }
     });
 }
