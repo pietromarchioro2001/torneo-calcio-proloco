@@ -3,9 +3,9 @@
 // ============================================================================
 const CONFIG = {
     // 🔥 SOSTITUISCI CON IL TUO URL APPS SCRIPT WEB APP
-    BACKEND_URL: 'https://script.google.com/macros/s/AKfycbzSqDKwX0pno5iqcJJ_x_SN76DuIZuNRP5RDqIkMZM8swu09WkevkJmIFDW61d9oqUw/exec',
+    BACKEND_URL: 'https://script.google.com/macros/s/AKfycbyNyzvQHCgKn3cVrKIstacoUwGnNp6Oa2XHnA-b0OCteYTTg8lJoBYaNTioDRMMHu2F/exec',
     API_TIMEOUT: 30000,
-    CACHE_VERSION: 'v5.9',
+    CACHE_VERSION: 'v6.0',
     CACHE_MAX_AGE: 5 * 60 * 1000
 };
 
@@ -2553,35 +2553,41 @@ function openNewMatchPage() {
 }
 
 async function saveMatch() {
-  const girone = document.getElementById("matchGirone")?.value;
-  const casa = document.getElementById("teamCasa")?.value;
-  const trasferta = document.getElementById("teamTrasferta")?.value;
-  const data = document.getElementById("matchDate")?.value;
-  const ora = document.getElementById("matchTime")?.value;
-  
-  if (!girone) { alert("Seleziona girone"); return; }
-  if (!casa || !trasferta) { alert("Seleziona le squadre"); return; }
-  if (casa === trasferta) { alert("Le squadre devono essere diverse"); return; }
-  
-  try {
-    const result = await ApiClient.createMatchGirone(girone, casa, trasferta, data, ora);
-    document.querySelector(".modalOverlay")?.remove();
+    const girone = document.getElementById("matchGirone")?.value;
+    const casa = document.getElementById("teamCasa")?.value;
+    const trasferta = document.getElementById("teamTrasferta")?.value;
+    const data = document.getElementById("matchDate")?.value;
+    const ora = document.getElementById("matchTime")?.value;
     
-    await invalidateCacheAndRefresh('matches');
-    showMatches();
+    if (!girone) { alert("Seleziona girone"); return; }
+    if (!casa || !trasferta) { alert("Seleziona le squadre"); return; }
+    if (casa === trasferta) { alert("Le squadre devono essere diverse"); return; }
     
-    // 🔥 GENERAZIONE AUTOMATICA POST PROGRAMMATA
-    if (result?.matchId) {
-      console.log('🎨 Generazione post PROGRAMMATA in background...');
-      // Non await - lascialo in background, non deve bloccare l'utente
-      generateMatchImage(result.matchId, 'PROGRAMMATA').then(() => {
-        // Dopo la generazione, ricarica i dati per avere il link aggiornato
-        invalidateCacheAndRefresh('matches');
-      }).catch(err => console.warn('⚠️ Generazione post fallita:', err));
+    try {
+        const result = await ApiClient.createMatchGirone(girone, casa, trasferta, data, ora);
+        document.querySelector(".modalOverlay")?.remove();
+        await invalidateCacheAndRefresh('matches');
+        showMatches();
+        
+        // 🔥 GENERAZIONE AUTOMATICA POST - GESTISCI FASE FINALE
+        if (result?.matchId) {
+            // ✅ RECUPERA INFO MATCH PER CAPIRE SE È FASE FINALE
+            const matchInfo = window.APP_CACHE.matches?.find(m => String(m.MATCH_ID) === String(result.matchId));
+            const isFinalStage = matchInfo?.FASE === "FINALI" || 
+                                 matchInfo?.turno?.includes("Q") || 
+                                 matchInfo?.turno?.includes("SF") ||
+                                 matchInfo?.matchKey?.match(/^(Q|SF|F|TP)/);
+            
+            console.log('🎨 Generazione post in background...', isFinalStage ? '(FASE FINALE)' : '(GIRONI)');
+            
+            // Non await - lascialo in background
+            generateMatchImage(result.matchId, 'PROGRAMMATA').then(() => {
+                invalidateCacheAndRefresh('matches');
+            }).catch(err => console.warn('⚠️ Generazione post fallita:', err));
+        }
+    } catch (e) {
+        alert("Errore: " + (e?.message || e));
     }
-  } catch (e) {
-    alert("Errore: " + (e?.message || e));
-  }
 }
 
 // ============================================================================
@@ -7459,74 +7465,72 @@ async function generateMatchImage(matchId, type = "PROGRAMMATA") {
         console.warn('⚠️ generateMatchImage: matchId mancante');
         return null;
     }
-
+    
     const key = `${matchId}_${type}`;
-
-    // 🔒 1. BLOCCO DUPLICATI: se una generazione è già in corso, esci subito
+    
+    // 🔒 Blocco duplicati
     if (_generatingPostFor.has(key)) {
         console.log('⏸️ Generazione già in corso per', key, '- skip');
         return null;
     }
-
-    // 🔒 2. ACQUISTO DEL LOCK
+    
     _generatingPostFor.add(key);
     const startTime = Date.now();
-
     console.log(`🎨 [${key}] Inizio generazione post ${type}...`);
-
+    
     try {
-        // ⏱️ 3. TIMEOUT DI SICUREZZA: se il backend impiega troppo, abortisci
-        // La generazione immagine può richiedere fino a ~60s, ma mettiamo un limite
-        const TIMEOUT_MS = 90000; // 90 secondi
-
+        const TIMEOUT_MS = 90000;
         const timeoutPromise = new Promise((_, reject) => {
-            setTimeout(() => reject(new Error(`Timeout generazione (${TIMEOUT_MS/1000}s)`)), TIMEOUT_MS);
+            setTimeout(() => reject(new Error(`Timeout generazione (${TIMEOUT_MS/1000}s`)), TIMEOUT_MS);
         });
-
-        // 4. Chiamata al backend con race contro il timeout
+        
+        // ✅ VERIFICA SE SIAMO IN FASE FINALE
+        const matchData = await ApiClient.getMatchFull(matchId);
+        const match = matchData.match || matchData;
+        const isFinalStage = match.FASE === "FINALI" || match.finalStage === true;
+        
+        // ✅ USA COLONNA DIVERSA IN BASE ALLA FASE
+        // In FASE FINALE: leggi colonna O (POST_FINALE o simile)
+        // In GIRONI: usa le colonne normali
         const result = await Promise.race([
-            ApiClient.generateMatchPostImage(matchId, type),
+            ApiClient.generateMatchPostImage(matchId, type, isFinalStage), // ✅ Passa il flag isFinalStage
             timeoutPromise
         ]);
-
+        
         if (!result?.success) {
             throw new Error(result?.error || "Errore generazione immagine");
         }
-
+        
         const imageUrl = result.fileUrl;
         if (!imageUrl) {
             throw new Error("URL immagine vuoto dal backend");
         }
-
+        
         console.log(`✅ [${key}] Post generato in ${((Date.now() - startTime) / 1000).toFixed(1)}s:`, imageUrl);
-
-        // 5. 🔥 AGGIORNA la cache locale con il nuovo link
+        
+        // 🔥 AGGIORNA la cache locale
         if (window.APP_CACHE.matches) {
             const idx = window.APP_CACHE.matches.findIndex(m => String(m.MATCH_ID) === String(matchId));
             if (idx >= 0) {
-                const field = type === 'PROGRAMMATA' ? 'POST_PRO' : 'POST_TER';
+                // ✅ AGGIORNA LA COLONNA GIUSTA IN BASE ALLA FASE
+                const field = isFinalStage ? 'POST_FINALE' : (type === 'PROGRAMMATA' ? 'POST_PRO' : 'POST_TER');
                 window.APP_CACHE.matches[idx][field] = imageUrl;
                 CacheManager.save(window.APP_CACHE);
             }
         }
-
-        // 6. Aggiorna anche lastMatch se è la partita attualmente aperta
+        
+        // Aggiorna anche lastMatch
         if (window.APP_STATE.lastMatch &&
             String(window.APP_STATE.lastMatch.MATCH_ID) === String(matchId)) {
-            const field = type === 'PROGRAMMATA' ? 'POST_PRO' : 'POST_TER';
+            const field = isFinalStage ? 'POST_FINALE' : (type === 'PROGRAMMATA' ? 'POST_PRO' : 'POST_TER');
             window.APP_STATE.lastMatch[field] = imageUrl;
         }
-
+        
         return imageUrl;
-
     } catch (error) {
         console.error(`❌ [${key}] Errore generazione immagine:`, error.message);
         return null;
-
     } finally {
-        // 🔓 7. RILASCIO DEL LOCK con delay di sicurezza
-        // Mantengo il lock per 5 secondi dopo la fine, così se l'utente clicca
-        // "Condividi" due volte ravvicinate, la seconda chiamata viene ignorata
         setTimeout(() => {
             _generatingPostFor.delete(key);
             console.log(`🔓 [${key}] Lock rilasciato`);
