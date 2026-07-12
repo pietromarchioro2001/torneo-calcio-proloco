@@ -3,9 +3,9 @@
 // ============================================================================
 const CONFIG = {
     // 🔥 SOSTITUISCI CON IL TUO URL APPS SCRIPT WEB APP
-    BACKEND_URL: 'https://script.google.com/macros/s/AKfycbwxsV2rsRphlGyMts5WFN696p802W4QaFKTAjvRPt18yNP3tB3ibET4ZteGJ8yGTNg2/exec',
+    BACKEND_URL: 'https://script.google.com/macros/s/AKfycbz5Ond8AmLBbpM8Opni6UOLv5UeFVChrkaS8gMjYc9yGpKKsz_SlHJK-Zm51g899kZG/exec',
     API_TIMEOUT: 30000,
-    CACHE_VERSION: 'v5.6',
+    CACHE_VERSION: 'v5.7',
     CACHE_MAX_AGE: 5 * 60 * 1000
 };
 
@@ -6010,68 +6010,185 @@ function recoverMatchFromCache(matchId) {
 }
 
 async function createFinalStage() {
-  if (!confirm("⚠️ Confermi il passaggio alla FASE FINALE?\n\nVerranno create automaticamente:\n• 2 Semifinali\n• Finale 1°-2° posto\n• Finale 3°-4° posto\n\nLe squadre saranno determinate dalla classifica dei gironi.")) return;
-  
-  // Mostra loader
-  const loader = document.createElement('div');
-  loader.id = 'finalStageLoader';
-  loader.style.cssText = `
-    position: fixed; inset: 0; background: rgba(0,0,0,0.85);
-    z-index: 999999; display: flex; flex-direction: column;
-    align-items: center; justify-content: center; color: white;
-    font-family: 'Oswald', sans-serif; backdrop-filter: blur(4px);
-  `;
-  loader.innerHTML = `
-    <div style="font-size: 64px; margin-bottom: 20px;">🏆</div>
-    <div style="font-size: 28px; letter-spacing: 3px; margin-bottom: 10px;">CREAZIONE FASE FINALE...</div>
-    <div style="font-size: 14px; opacity: 0.7;">Calcolo classifiche e creazione tabellone</div>
-    <div style="width: 200px; height: 4px; background: rgba(255,255,255,0.2); border-radius: 2px; margin-top: 20px; overflow: hidden;">
-      <div id="fsProgress" style="width: 0%; height: 100%; background: #7a1e2c; transition: width 0.5s;"></div>
-    </div>
-  `;
-  document.body.appendChild(loader);
-  
   try {
-    const progress = document.getElementById('fsProgress');
-    if (progress) progress.style.width = '30%';
+    // 1. Chiama il backend per calcolare i quarti
+    const result = await ApiClient.prepareFinalStage();
     
-    // ✅ CHIAMA IL BACKEND tramite ApiClient
-    const result = await ApiClient.call('createFinalStageFromGroups');
-    
-    if (progress) progress.style.width = '80%';
-    
-    if (result?.success) {
-      if (progress) progress.style.width = '100%';
-      
-      await new Promise(r => setTimeout(r, 500));
-      loader.remove();
-      
-      // ✅ Aggiorna cache e UI
-      window.APP_CACHE.meta = {
-        ...window.APP_CACHE.meta,
-        finalStageStarted: true
-      };
-      CacheManager.save(window.APP_CACHE);
-      
-      await invalidateCacheAndRefresh('finalStage');
-      await invalidateCacheAndRefresh('matches');
-      await invalidateCacheAndRefresh('standings');
-      
-      alert(`✅ FASE FINALE CREATA CON SUCCESSO!\n\n${result.message || ''}`);
-      
-      // Vai alla classifica fase finale
-      if (document.querySelector('.standings-page')) {
-        const faseFinaleTab = document.querySelector('.standings-tab[data-tab="fasefinale"]');
-        if (faseFinaleTab) faseFinaleTab.click();
-      }
-    } else {
-      throw new Error(result?.error || 'Errore sconosciuto');
+    if (!result?.ok) {
+      alert('⚠️ ' + (result?.error || 'Impossibile creare la fase finale'));
+      return;
     }
     
+    const matches = result.matches; // Array di 4 oggetti { key, casa, trasferta }
+    
+    if (!matches || matches.length !== 4) {
+      alert('⚠️ Errore: dati quarti non validi');
+      return;
+    }
+    
+    // 2. Mostra popup con le 4 partite
+    const modal = document.createElement('div');
+    modal.className = 'modalOverlay';
+    modal.id = 'finalStageModal';
+    modal.style.cssText = `
+      position: fixed; inset: 0; background: rgba(0,0,0,0.85);
+      z-index: 999999; display: flex; align-items: center; justify-content: center;
+      font-family: 'Oswald', sans-serif; backdrop-filter: blur(4px);
+    `;
+    
+    // Genera HTML per ogni quarto
+    let matchesHtml = '';
+    matches.forEach((m, idx) => {
+      const casaNome = m.casa?.nome || 'Sconosciuta';
+      const trasfNome = m.trasferta?.nome || 'Sconosciuta';
+      const casaLogo = m.casa?.logo ? `<img src="${getCachedImage(m.casa.logo, 32)}" style="width:32px;height:32px;border-radius:50%;object-fit:contain;">` : '⚽';
+      const trasfLogo = m.trasferta?.logo ? `<img src="${getCachedImage(m.trasferta.logo, 32)}" style="width:32px;height:32px;border-radius:50%;object-fit:contain;">` : '⚽';
+      
+      matchesHtml += `
+        <div style="
+          background: white; border-radius: 12px; padding: 20px;
+          margin-bottom: 15px; box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        ">
+          <div style="font-size: 14px; font-weight: 800; color: #7a1e2c; letter-spacing: 2px; margin-bottom: 12px; text-transform: uppercase;">
+            QUARTO ${idx + 1} (${m.key})
+          </div>
+          <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 15px;">
+            <div style="display: flex; align-items: center; gap: 10px; flex: 1;">
+              ${casaLogo}
+              <span style="font-size: 14px; font-weight: 700; text-transform: uppercase;">${casaNome}</span>
+            </div>
+            <div style="font-size: 18px; font-weight: 900; color: #7a1e2c; padding: 0 15px;">VS</div>
+            <div style="display: flex; align-items: center; gap: 10px; flex: 1; justify-content: flex-end;">
+              <span style="font-size: 14px; font-weight: 700; text-transform: uppercase;">${trasfNome}</span>
+              ${trasfLogo}
+            </div>
+          </div>
+          <div style="display: flex; gap: 10px;">
+            <div style="flex: 1;">
+              <label style="display:block; font-size:10px; color:#888; letter-spacing:1px; margin-bottom:4px; text-transform:uppercase;">DATA</label>
+              <input type="date" id="qDate${idx}" class="match-input" style="width:100%; padding:8px; border:2px solid #ddd; border-radius:6px; font-family:'Oswald',sans-serif;">
+            </div>
+            <div style="flex: 1;">
+              <label style="display:block; font-size:10px; color:#888; letter-spacing:1px; margin-bottom:4px; text-transform:uppercase;">ORA</label>
+              <input type="time" id="qTime${idx}" class="match-input" style="width:100%; padding:8px; border:2px solid #ddd; border-radius:6px; font-family:'Oswald',sans-serif;">
+            </div>
+          </div>
+        </div>
+      `;
+    });
+    
+    modal.innerHTML = `
+      <div style="
+        background: #f5f5f5; border-radius: 16px; padding: 30px;
+        max-width: 600px; width: 90%; max-height: 90vh; overflow-y: auto;
+        box-shadow: 0 25px 80px rgba(0,0,0,0.5);
+      ">
+        <div style="text-align:center; margin-bottom: 25px;">
+          <div style="font-size: 48px; margin-bottom: 10px;">🏆</div>
+          <div style="font-size: 24px; font-weight: 800; color: #111; letter-spacing: 3px; text-transform: uppercase;">
+            QUARTI DI FINALE
+          </div>
+          <div style="font-size: 12px; color: #666; margin-top: 5px; letter-spacing: 1px;">
+            Inserisci data e ora per ogni partita
+          </div>
+        </div>
+        <div id="quartersContainer">
+          ${matchesHtml}
+        </div>
+        <div style="display: flex; gap: 10px; margin-top: 20px;">
+          <button id="btnCreateQuarters" style="
+            flex: 1; padding: 14px; background: #7a1e2c; color: white;
+            border: none; border-radius: 10px; font-size: 16px; font-weight: 800;
+            font-family: 'Oswald', sans-serif; letter-spacing: 3px; cursor: pointer;
+            text-transform: uppercase; transition: all 0.3s;
+          ">✓ CREA QUARTI</button>
+          <button id="btnCancelQuarters" style="
+            flex: 1; padding: 14px; background: white; color: #7a1e2c;
+            border: 2px solid #7a1e2c; border-radius: 10px; font-size: 16px;
+            font-weight: 800; font-family: 'Oswald', sans-serif; letter-spacing: 3px;
+            cursor: pointer; text-transform: uppercase; transition: all 0.3s;
+          ">✗ ANNULLA</button>
+        </div>
+      </div>
+    `;
+    
+    document.body.appendChild(modal);
+    
+    // Event listeners
+    document.getElementById('btnCancelQuarters').onclick = () => modal.remove();
+    modal.onclick = (e) => { if (e.target === modal) modal.remove(); };
+    
+    document.getElementById('btnCreateQuarters').onclick = async () => {
+      // Raccogli data e ora per ogni quarto
+      const matchesToCreate = [];
+      let allValid = true;
+      
+      for (let i = 0; i < 4; i++) {
+        const dateEl = document.getElementById(`qDate${i}`);
+        const timeEl = document.getElementById(`qTime${i}`);
+        
+        if (!dateEl?.value || !timeEl?.value) {
+          allValid = false;
+          dateEl.style.borderColor = !dateEl?.value ? '#dc2626' : '#ddd';
+          timeEl.style.borderColor = !timeEl?.value ? '#dc2626' : '#ddd';
+        } else {
+          dateEl.style.borderColor = '#ddd';
+          timeEl.style.borderColor = '#ddd';
+        }
+        
+        matchesToCreate.push({
+          key: matches[i].key,
+          casa: matches[i].casa,
+          trasferta: matches[i].trasferta,
+          data: dateEl?.value || '',
+          ora: timeEl?.value || ''
+        });
+      }
+      
+      if (!allValid) {
+        alert('⚠️ Compila data e ora per tutte le partite!');
+        return;
+      }
+      
+      // Disabilita pulsante e mostra loading
+      const btn = document.getElementById('btnCreateQuarters');
+      btn.disabled = true;
+      btn.textContent = 'CREAZIONE...';
+      btn.style.opacity = '0.6';
+      
+      try {
+        // Chiama il backend per creare le partite
+        const result = await ApiClient.createFinalStageMatches(matchesToCreate);
+        
+        if (result?.success) {
+          modal.remove();
+          alert('✅ QUARTI DI FINALE CREATI CON SUCCESSO!');
+          
+          // Aggiorna cache e UI
+          await invalidateCacheAndRefresh('matches');
+          await invalidateCacheAndRefresh('finalStage');
+          await invalidateCacheAndRefresh('standings');
+          
+          // Vai alla classifica fase finale
+          if (document.querySelector('.standings-page')) {
+            const faseFinaleTab = document.querySelector('.standings-tab[data-tab="fasefinale"]');
+            if (faseFinaleTab) faseFinaleTab.click();
+          }
+        } else {
+          throw new Error(result?.error || 'Errore sconosciuto');
+        }
+      } catch (error) {
+        console.error('❌ Errore creazione quarti:', error);
+        btn.disabled = false;
+        btn.textContent = '✓ CREA QUARTI';
+        btn.style.opacity = '1';
+        alert('❌ Errore: ' + (error.message || 'Controlla la console'));
+      }
+    };
+    
   } catch (error) {
-    console.error('❌ Errore creazione fase finale:', error);
-    loader.remove();
-    alert('❌ Errore: ' + (error.message || 'Controlla la console per dettagli'));
+    console.error('❌ Errore preparazione fase finale:', error);
+    alert('❌ Errore: ' + (error.message || 'Controlla la console'));
   }
 }
 
