@@ -5,7 +5,7 @@ const CONFIG = {
     // 🔥 SOSTITUISCI CON IL TUO URL APPS SCRIPT WEB APP
     BACKEND_URL: 'https://script.google.com/macros/s/AKfycbx-Ba00IoB6Bn16XIo_Ulrmg7_8Eyd3FAApqps31CXog8H0285lrD5Avb5_-Hm_ICdq/exec',
     API_TIMEOUT: 30000,
-    CACHE_VERSION: 'v6.1',
+    CACHE_VERSION: 'v6.2',
     CACHE_MAX_AGE: 5 * 60 * 1000
 };
 
@@ -5932,9 +5932,9 @@ async function invalidateCacheAndRefresh(type) {
 function renderPlaceholderCard(label, cls="") { return `<div class="bracket-match bracket-placeholder ${cls}"><div style="text-align:center; width:100%; display:flex; align-items:center; justify-content:center; height:100%;"><div style="font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:1px; color:#666;">${Sanitizer.html(label)}</div></div></div>`; }
 
 function renderBracketMatch(match, cls="") {
-if (!match || !match.casa?.nome) { 
-return `<div class="bracket-placeholder ${cls}"><div class="bracket-placeholder-title"></div></div>`; 
-}
+if (!match) {
+        return `<div class="bracket-placeholder ${cls}"><div class="bracket-placeholder-title"></div></div>`;
+    }
 
 const logoCasa = match.casa?.logo ? `<img src="${getCachedImage(match.casa.logo, 24)}" alt="${match.casa.nome}" onerror="this.style.display='none'">` : `<div style="width:24px;height:24px;border-radius:50%;background:#f0f0f0"></div>`;
 const logoTrasf = match.trasferta?.logo ? `<img src="${getCachedImage(match.trasferta.logo, 24)}" alt="${match.trasferta.nome}" onerror="this.style.display='none'">` : `<div style="width:24px;height:24px;border-radius:50%;background:#f0f0f0"></div>`;
