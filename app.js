@@ -3,9 +3,9 @@
 // ============================================================================
 const CONFIG = {
     // 🔥 SOSTITUISCI CON IL TUO URL APPS SCRIPT WEB APP
-    BACKEND_URL: 'https://script.google.com/macros/s/AKfycbyNyzvQHCgKn3cVrKIstacoUwGnNp6Oa2XHnA-b0OCteYTTg8lJoBYaNTioDRMMHu2F/exec',
+    BACKEND_URL: 'https://script.google.com/macros/s/AKfycbx-Ba00IoB6Bn16XIo_Ulrmg7_8Eyd3FAApqps31CXog8H0285lrD5Avb5_-Hm_ICdq/exec',
     API_TIMEOUT: 30000,
-    CACHE_VERSION: 'v6.0',
+    CACHE_VERSION: 'v6.1',
     CACHE_MAX_AGE: 5 * 60 * 1000
 };
 
@@ -6025,7 +6025,7 @@ async function createFinalStage() {
       return;
     }
     
-    const matches = result.matches; // Array di 4 oggetti { key, casa, trasferta }
+    const matches = result.matches;
     
     if (!matches || matches.length !== 4) {
       alert('⚠️ Errore: dati quarti non validi');
@@ -6042,7 +6042,6 @@ async function createFinalStage() {
       font-family: 'Oswald', sans-serif; backdrop-filter: blur(4px);
     `;
     
-    // Genera HTML per ogni quarto
     let matchesHtml = '';
     matches.forEach((m, idx) => {
       const casaNome = m.casa?.nome || 'Sconosciuta';
@@ -6051,10 +6050,7 @@ async function createFinalStage() {
       const trasfLogo = m.trasferta?.logo ? `<img src="${getCachedImage(m.trasferta.logo, 32)}" style="width:32px;height:32px;border-radius:50%;object-fit:contain;">` : '⚽';
       
       matchesHtml += `
-        <div style="
-          background: white; border-radius: 12px; padding: 20px;
-          margin-bottom: 15px; box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-        ">
+        <div style="background: white; border-radius: 12px; padding: 20px; margin-bottom: 15px; box-shadow: 0 4px 12px rgba(0,0,0,0.1);">
           <div style="font-size: 14px; font-weight: 800; color: #7a1e2c; letter-spacing: 2px; margin-bottom: 12px; text-transform: uppercase;">
             QUARTO ${idx + 1} (${m.key})
           </div>
@@ -6084,11 +6080,7 @@ async function createFinalStage() {
     });
     
     modal.innerHTML = `
-      <div style="
-        background: #f5f5f5; border-radius: 16px; padding: 30px;
-        max-width: 600px; width: 90%; max-height: 90vh; overflow-y: auto;
-        box-shadow: 0 25px 80px rgba(0,0,0,0.5);
-      ">
+      <div style="background: #f5f5f5; border-radius: 16px; padding: 30px; max-width: 600px; width: 90%; max-height: 90vh; overflow-y: auto; box-shadow: 0 25px 80px rgba(0,0,0,0.5);">
         <div style="text-align:center; margin-bottom: 25px;">
           <div style="font-size: 48px; margin-bottom: 10px;">🏆</div>
           <div style="font-size: 24px; font-weight: 800; color: #111; letter-spacing: 3px; text-transform: uppercase;">
@@ -6102,30 +6094,18 @@ async function createFinalStage() {
           ${matchesHtml}
         </div>
         <div style="display: flex; gap: 10px; margin-top: 20px;">
-          <button id="btnCreateQuarters" style="
-            flex: 1; padding: 14px; background: #7a1e2c; color: white;
-            border: none; border-radius: 10px; font-size: 16px; font-weight: 800;
-            font-family: 'Oswald', sans-serif; letter-spacing: 3px; cursor: pointer;
-            text-transform: uppercase; transition: all 0.3s;
-          ">✓ CREA QUARTI</button>
-          <button id="btnCancelQuarters" style="
-            flex: 1; padding: 14px; background: white; color: #7a1e2c;
-            border: 2px solid #7a1e2c; border-radius: 10px; font-size: 16px;
-            font-weight: 800; font-family: 'Oswald', sans-serif; letter-spacing: 3px;
-            cursor: pointer; text-transform: uppercase; transition: all 0.3s;
-          ">✗ ANNULLA</button>
+          <button id="btnCreateQuarters" style="flex: 1; padding: 14px; background: #7a1e2c; color: white; border: none; border-radius: 10px; font-size: 16px; font-weight: 800; font-family: 'Oswald', sans-serif; letter-spacing: 3px; cursor: pointer; text-transform: uppercase; transition: all 0.3s;">✓ CREA QUARTI</button>
+          <button id="btnCancelQuarters" style="flex: 1; padding: 14px; background: white; color: #7a1e2c; border: 2px solid #7a1e2c; border-radius: 10px; font-size: 16px; font-weight: 800; font-family: 'Oswald', sans-serif; letter-spacing: 3px; cursor: pointer; text-transform: uppercase; transition: all 0.3s;">✗ ANNULLA</button>
         </div>
       </div>
     `;
     
     document.body.appendChild(modal);
     
-    // Event listeners
     document.getElementById('btnCancelQuarters').onclick = () => modal.remove();
     modal.onclick = (e) => { if (e.target === modal) modal.remove(); };
     
     document.getElementById('btnCreateQuarters').onclick = async () => {
-      // Raccogli data e ora per ogni quarto
       const matchesToCreate = [];
       let allValid = true;
       
@@ -6156,7 +6136,6 @@ async function createFinalStage() {
         return;
       }
       
-      // Disabilita pulsante e mostra loading
       const btn = document.getElementById('btnCreateQuarters');
       btn.disabled = true;
       btn.textContent = 'CREAZIONE...';
@@ -6168,12 +6147,30 @@ async function createFinalStage() {
         
         if (result?.success) {
           modal.remove();
-          alert('✅ QUARTI DI FINALE CREATI CON SUCCESSO!');
+          alert('✅ QUARTI DI FINALE CREATI CON SUCCESSO!\n\nGenerazione post in corso...');
           
           // Aggiorna cache e UI
           await invalidateCacheAndRefresh('matches');
           await invalidateCacheAndRefresh('finalStage');
           await invalidateCacheAndRefresh('standings');
+          
+          // 🔥 GENERAZIONE AUTOMATICA POST IN BACKGROUND
+          if (result.createdMatchIds && result.createdMatchIds.length > 0) {
+            console.log(`🎨 Generazione post per ${result.createdMatchIds.length} partite...`);
+            
+            // Genera i post in parallelo (non bloccante)
+            result.createdMatchIds.forEach((matchId, idx) => {
+              setTimeout(() => {
+                console.log(`🎨 Generazione post ${idx + 1}/${result.createdMatchIds.length}...`);
+                generateMatchImage(matchId, 'PROGRAMMATA')
+                  .then(() => {
+                    console.log(`✅ Post ${idx + 1} generato`);
+                    invalidateCacheAndRefresh('matches');
+                  })
+                  .catch(err => console.warn(`⚠️ Errore generazione post ${idx + 1}:`, err));
+              }, idx * 2000); // Delay di 2 secondi tra ogni generazione per evitare rate limit
+            });
+          }
           
           // Vai alla classifica fase finale
           if (document.querySelector('.standings-page')) {
