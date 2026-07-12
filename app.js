@@ -3,9 +3,9 @@
 // ============================================================================
 const CONFIG = {
     // 🔥 SOSTITUISCI CON IL TUO URL APPS SCRIPT WEB APP
-    BACKEND_URL: 'https://script.google.com/macros/s/AKfycbyZSxz0aXWFhoUmlw8_bNEbSu48D5pVch2T94yxFVJbZfze-KvL9okqGTV1NkReu8c/exec',
+    BACKEND_URL: 'https://script.google.com/macros/s/AKfycbzLVkgom0QETZTUcGa9_rCOegO9MjiYz_6-aQnOnrgJ-JZrg5tYzY6u-MWucbDlTX8Q/exec',
     API_TIMEOUT: 30000,
-    CACHE_VERSION: 'v5.3',
+    CACHE_VERSION: 'v5.4',
     CACHE_MAX_AGE: 5 * 60 * 1000
 };
 
@@ -6009,7 +6009,54 @@ function recoverMatchFromCache(matchId) {
     return null;
 }
 
-function createFinalStage() { if (!confirm("Confermi il passaggio alla FASE FINALE?")) return; alert("Demo: fase finale creata! (backend non configurato)"); }
+async function createFinalStage() {
+  if (!confirm("Confermi il passaggio alla FASE FINALE?")) return;
+  
+  try {
+    // Mostra loading
+    const loadingEl = document.createElement('div');
+    loadingEl.className = 'loading-overlay';
+    loadingEl.innerHTML = '<div>Creazione fase finale...</div>';
+    document.body.appendChild(loadingEl);
+    
+    // Controlla quante partite dei gironi sono finite
+    const matches = window.APP_CACHE.matches || [];
+    const finishedGroupMatches = matches.filter(m => 
+      m.FASE === "GIRONI" && m.STATO_PARTITA === "FINITA"
+    ).length;
+    
+    if (finishedGroupMatches < matches.filter(m => m.FASE === "GIRONI").length) {
+      alert("⚠️ Non tutte le partite dei gironi sono state completate!");
+      loadingEl.remove();
+      return;
+    }
+    
+    // Chiama il backend per creare semifinali e finali
+    // Qui dovresti avere una funzione Apps Script che crea automaticamente
+    // le semifinali basandosi sui risultati dei gironi
+    
+    await new Promise((resolve, reject) => {
+      google.script.run
+        .withSuccessHandler(function(result) {
+          loadingEl.remove();
+          alert("✅ Fase finale creata con successo!");
+          // Invalida cache e ricarica
+          invalidateCacheAndRefresh('matches');
+          invalidateCacheAndRefresh('finalStage');
+          resolve(result);
+        })
+        .withFailureHandler(function(error) {
+          loadingEl.remove();
+          alert(" Errore: " + error.message);
+          reject(error);
+        })
+        .createFinalStageFromGroups(); // ← Questa funzione devi crearla nel backend
+    });
+    
+  } catch (error) {
+    console.error('Errore creazione fase finale:', error);
+  }
+}
 
 // ============================================================================
 // ⚙️ UTILS & BOOT
