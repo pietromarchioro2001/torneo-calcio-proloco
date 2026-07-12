@@ -3,9 +3,9 @@
 // ============================================================================
 const CONFIG = {
     // 🔥 SOSTITUISCI CON IL TUO URL APPS SCRIPT WEB APP
-    BACKEND_URL: 'https://script.google.com/macros/s/AKfycbzLVkgom0QETZTUcGa9_rCOegO9MjiYz_6-aQnOnrgJ-JZrg5tYzY6u-MWucbDlTX8Q/exec',
+    BACKEND_URL: 'https://script.google.com/macros/s/AKfycbwDW6qBgqn04hgFCDUq39lQsHuqYVoXUv7SJg4prEackg8hL6oRK3wKPY3KhFpncyTQ/exec',
     API_TIMEOUT: 30000,
-    CACHE_VERSION: 'v5.4',
+    CACHE_VERSION: 'v5.5',
     CACHE_MAX_AGE: 5 * 60 * 1000
 };
 
@@ -6010,51 +6010,68 @@ function recoverMatchFromCache(matchId) {
 }
 
 async function createFinalStage() {
-  if (!confirm("Confermi il passaggio alla FASE FINALE?")) return;
+  if (!confirm("⚠️ Confermi il passaggio alla FASE FINALE?\n\nVerranno create automaticamente:\n• 2 Semifinali\n• Finale 1°-2° posto\n• Finale 3°-4° posto\n\nLe squadre saranno determinate dalla classifica dei gironi.")) return;
+  
+  // Mostra loader
+  const loader = document.createElement('div');
+  loader.id = 'finalStageLoader';
+  loader.style.cssText = `
+    position: fixed; inset: 0; background: rgba(0,0,0,0.85);
+    z-index: 999999; display: flex; flex-direction: column;
+    align-items: center; justify-content: center; color: white;
+    font-family: 'Oswald', sans-serif; backdrop-filter: blur(4px);
+  `;
+  loader.innerHTML = `
+    <div style="font-size: 64px; margin-bottom: 20px;">🏆</div>
+    <div style="font-size: 28px; letter-spacing: 3px; margin-bottom: 10px;">CREAZIONE FASE FINALE...</div>
+    <div style="font-size: 14px; opacity: 0.7;">Calcolo classifiche e creazione tabellone</div>
+    <div style="width: 200px; height: 4px; background: rgba(255,255,255,0.2); border-radius: 2px; margin-top: 20px; overflow: hidden;">
+      <div id="fsProgress" style="width: 0%; height: 100%; background: #7a1e2c; transition: width 0.5s;"></div>
+    </div>
+  `;
+  document.body.appendChild(loader);
   
   try {
-    // Mostra loading
-    const loadingEl = document.createElement('div');
-    loadingEl.className = 'loading-overlay';
-    loadingEl.innerHTML = '<div>Creazione fase finale...</div>';
-    document.body.appendChild(loadingEl);
+    const progress = document.getElementById('fsProgress');
+    if (progress) progress.style.width = '30%';
     
-    // Controlla quante partite dei gironi sono finite
-    const matches = window.APP_CACHE.matches || [];
-    const finishedGroupMatches = matches.filter(m => 
-      m.FASE === "GIRONI" && m.STATO_PARTITA === "FINITA"
-    ).length;
+    // ✅ CHIAMA IL BACKEND tramite ApiClient
+    const result = await ApiClient.call('createFinalStageFromGroups');
     
-    if (finishedGroupMatches < matches.filter(m => m.FASE === "GIRONI").length) {
-      alert("⚠️ Non tutte le partite dei gironi sono state completate!");
-      loadingEl.remove();
-      return;
+    if (progress) progress.style.width = '80%';
+    
+    if (result?.success) {
+      if (progress) progress.style.width = '100%';
+      
+      await new Promise(r => setTimeout(r, 500));
+      loader.remove();
+      
+      // ✅ Aggiorna cache e UI
+      window.APP_CACHE.meta = {
+        ...window.APP_CACHE.meta,
+        finalStageStarted: true
+      };
+      CacheManager.save(window.APP_CACHE);
+      
+      await invalidateCacheAndRefresh('finalStage');
+      await invalidateCacheAndRefresh('matches');
+      await invalidateCacheAndRefresh('standings');
+      
+      alert(`✅ FASE FINALE CREATA CON SUCCESSO!\n\n${result.message || ''}`);
+      
+      // Vai alla classifica fase finale
+      if (document.querySelector('.standings-page')) {
+        const faseFinaleTab = document.querySelector('.standings-tab[data-tab="fasefinale"]');
+        if (faseFinaleTab) faseFinaleTab.click();
+      }
+    } else {
+      throw new Error(result?.error || 'Errore sconosciuto');
     }
     
-    // Chiama il backend per creare semifinali e finali
-    // Qui dovresti avere una funzione Apps Script che crea automaticamente
-    // le semifinali basandosi sui risultati dei gironi
-    
-    await new Promise((resolve, reject) => {
-      google.script.run
-        .withSuccessHandler(function(result) {
-          loadingEl.remove();
-          alert("✅ Fase finale creata con successo!");
-          // Invalida cache e ricarica
-          invalidateCacheAndRefresh('matches');
-          invalidateCacheAndRefresh('finalStage');
-          resolve(result);
-        })
-        .withFailureHandler(function(error) {
-          loadingEl.remove();
-          alert(" Errore: " + error.message);
-          reject(error);
-        })
-        .createFinalStageFromGroups(); // ← Questa funzione devi crearla nel backend
-    });
-    
   } catch (error) {
-    console.error('Errore creazione fase finale:', error);
+    console.error('❌ Errore creazione fase finale:', error);
+    loader.remove();
+    alert('❌ Errore: ' + (error.message || 'Controlla la console per dettagli'));
   }
 }
 
