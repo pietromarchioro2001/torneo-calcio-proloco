@@ -5,7 +5,7 @@ const CONFIG = {
     // 🔥 SOSTITUISCI CON IL TUO URL APPS SCRIPT WEB APP
     BACKEND_URL: 'https://script.google.com/macros/s/AKfycbx-Ba00IoB6Bn16XIo_Ulrmg7_8Eyd3FAApqps31CXog8H0285lrD5Avb5_-Hm_ICdq/exec',
     API_TIMEOUT: 30000,
-    CACHE_VERSION: 'v6.2',
+    CACHE_VERSION: 'v6.3',
     CACHE_MAX_AGE: 5 * 60 * 1000
 };
 
@@ -5300,31 +5300,57 @@ function loadFinalStage() {
 }
 
 function renderFinalBracket(matches) {
-  const container = document.getElementById("finalBracketContainer");
-  if (!container) return;
-  const matchMap = {};
-  (matches || []).forEach(m => {
-    const key = m.matchKey || m.TURNO || m.turno;
-    if (key) {
-      matchMap[key] = m;
-    }
-  });
-  const sf1Match = matchMap["SF1"];
-  const sf2Match = matchMap["SF2"];
-  const finalMatch = matchMap["F"];
-  const thirdPlaceMatch = matchMap["TP"];
-  container.innerHTML = `
-    <div class="tournament-wrapper">
-      ${renderBracketMatch(matchMap["Q1"], "qf1")}
-      ${renderBracketMatch(matchMap["Q2"], "qf2")}
-      ${renderBracketMatch(matchMap["Q3"], "qf3")}
-      ${renderBracketMatch(matchMap["Q4"], "qf4")}
-      ${sf1Match ? renderBracketMatch(sf1Match, "sf1") : renderPlaceholderCard("SF1", "sf1")}
-      ${sf2Match ? renderBracketMatch(sf2Match, "sf2") : renderPlaceholderCard("SF2", "sf2")}
-      ${finalMatch ? renderBracketMatch(finalMatch, "final-match") : renderPlaceholderCard("FINALE 1°-2°", "final-match")}
-      ${thirdPlaceMatch ? renderBracketMatch(thirdPlaceMatch, "third-place") : renderPlaceholderCard("FINALE 3°-4°", "third-place")}
-    </div>
-  `;
+    const container = document.getElementById("finalBracketContainer");
+    if (!container) return;
+    
+    const matchMap = {};
+    
+    // ✅ FIX: Normalizza i matchKey per i quarti
+    const normalizedMatches = (matches || []).map(m => {
+        const key = m.matchKey || m.TURNO || m.turno;
+        
+        // Se è un quarto senza matchKey specifico, assegnalo in base all'ordine
+        if ((key === "QUARTI" || key === "quarti") && !m.matchKey) {
+            // Trova l'indice di questo quarto nell'array
+            const quartiIndex = matches.filter(x => 
+                (x.matchKey || x.TURNO || x.turno) === "QUARTI" || 
+                (x.matchKey || x.TURNO || x.turno) === "quarti"
+            ).indexOf(m);
+            m.matchKey = `Q${quartiIndex + 1}`;
+        }
+        
+        return m;
+    });
+    
+    // Build matchMap con i key normalizzati
+    normalizedMatches.forEach(m => {
+        const key = m.matchKey || m.TURNO || m.turno;
+        if (key) {
+            matchMap[key] = m;
+        }
+    });
+    
+    // Debug log
+    console.log('🏆 Match map keys:', Object.keys(matchMap));
+    console.log('🏆 Quarti:', {
+        Q1: matchMap["Q1"],
+        Q2: matchMap["Q2"],
+        Q3: matchMap["Q3"],
+        Q4: matchMap["Q4"]
+    });
+    
+    container.innerHTML = `
+        <div class="tournament-wrapper">
+            ${renderBracketMatch(matchMap["Q1"], "qf1")}
+            ${renderBracketMatch(matchMap["Q2"], "qf2")}
+            ${renderBracketMatch(matchMap["Q3"], "qf3")}
+            ${renderBracketMatch(matchMap["Q4"], "qf4")}
+            ${matchMap["SF1"] ? renderBracketMatch(matchMap["SF1"], "sf1") : renderPlaceholderCard("SEMIFINALE 1", "sf1")}
+            ${matchMap["SF2"] ? renderBracketMatch(matchMap["SF2"], "sf2") : renderPlaceholderCard("SEMIFINALE 2", "sf2")}
+            ${matchMap["F"] ? renderBracketMatch(matchMap["F"], "final-match") : renderPlaceholderCard("FINALE 1°-2°", "final-match")}
+            ${matchMap["TP"] ? renderBracketMatch(matchMap["TP"], "third-place") : renderPlaceholderCard("FINALE 3°-4°", "third-place")}
+        </div>
+    `;
 }
 
 function renderNextPhaseButton() {
