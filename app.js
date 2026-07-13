@@ -5,7 +5,7 @@ const CONFIG = {
     // 🔥 SOSTITUISCI CON IL TUO URL APPS SCRIPT WEB APP
     BACKEND_URL: 'https://script.google.com/macros/s/AKfycbx-Ba00IoB6Bn16XIo_Ulrmg7_8Eyd3FAApqps31CXog8H0285lrD5Avb5_-Hm_ICdq/exec',
     API_TIMEOUT: 30000,
-    CACHE_VERSION: 'v6.4',
+    CACHE_VERSION: 'v6.5',
     CACHE_MAX_AGE: 5 * 60 * 1000
 };
 
@@ -3969,63 +3969,76 @@ function updateScoreFromEvents(matchId) {
 }
 
 function renderPenaltyIndicators(events, match) {
+    // ✅ ESCI SILENZIOSAMENTE SE NON TROVIAMO L'ELEMENTO
+    // (non è un errore critico, può succedere se chiamiamo la funzione sulla pagina sbagliata)
     const timeline = document.getElementById('eventsTimeline');
     if (!timeline) {
-        console.error("❌ eventsTimeline element not found!");
+        // console.log('⏭️ renderPenaltyIndicators skip - eventsTimeline non trovato');
         return;
     }
+    
+    // ✅ VERIFICA CHE SIAMO NELLA PAGINA MATCH
+    if (!document.querySelector('.match-page')) {
+        // console.log('⏭️ renderPenaltyIndicators skip - non siamo in match-page');
+        return;
+    }
+    
     // ✅ ESCI SUBITO SE NON SIAMO IN FASE FINALE
     const fase = String(match.FASE || "").trim().toUpperCase();
     if (fase !== "FINALI") {
         return;
     }
-    // ✅ VERIFICA CHE CI SIANO I VALORI DEI RIGORI (da colonne J/K del foglio)
+    
+    // ... resto del codice rimane uguale ...
     const rc = match.RIGORE_CASA ?? match.RIGORI_CASA;
     const rt = match.RIGORE_TRASFERTA ?? match.RIGORI_TRASFERTA;
-    // 🔥 FIX CRITICO: deve essere > 0, non solo "esistente"
-    // Il backend restituisce 0 quando le colonne J/K sono vuote!
+    
     const hasValidRigori = (
         rc !== null && rc !== undefined && rc !== "" && Number(rc) > 0 &&
         rt !== null && rt !== undefined && rt !== "" && Number(rt) > 0
     );
-    // ✅ ESCI SE NON CI SONO RIGORI
+    
     if (!hasValidRigori) {
         return;
     }
+    
     // Rimuovi eventuali indicatori precedenti
     const existing = document.getElementById('penalty-indicators');
     if (existing) existing.remove();
-    // Filtra eventi rigore: cerca RIGORE_RESULT (colonna E del foglio)
+    
+    // Filtra eventi rigore
     const penaltyEvents = events.filter(e => {
         const rigoreResult = String(e.RIGORE_RESULT || "").toUpperCase();
         return rigoreResult === 'RIGORE_SEGNO' || rigoreResult === 'RIGORE_SBAGLIO';
     });
+    
     const casaId = String(match.CASA_ID || "").trim();
     const casaTiri = [];
     const trasfTiri = [];
-    // Organizza i tiri per squadra
+    
     penaltyEvents.forEach(e => {
         const isGoal = (e.RIGORE_RESULT === 'RIGORE_SEGNO');
         const isCasa = String(e.TEAM_ID) === casaId;
         if (isCasa) casaTiri.push(isGoal);
         else trasfTiri.push(isGoal);
     });
-    // Crea HTML bollini
+    
     const createDots = (tiri) => tiri.map(isGoal =>
         `<span class="penalty-dot ${isGoal ? 'goal' : 'miss'}"></span>`
     ).join('');
-    // 🔥 LETTURA PUNTEGGI - CON FALLBACK
-    // Prima prova a leggere dalle colonne J/K
+    
     let scoreCasa = match.RIGORE_CASA !== undefined ? match.RIGORE_CASA : match.RIGORI_CASA;
     let scoreTrasf = match.RIGORE_TRASFERTA !== undefined ? match.RIGORE_TRASFERTA : match.RIGORI_TRASFERTA;
-    // Se sono null/undefined/vuoti, calcolali dai pallini verdi
+    
     if (scoreCasa === null || scoreCasa === undefined || scoreCasa === "") {
         scoreCasa = casaTiri.filter(t => t === true).length;
     }
     if (scoreTrasf === null || scoreTrasf === undefined || scoreTrasf === "") {
         scoreTrasf = trasfTiri.filter(t => t === true).length;
     }
+    
     const scoreText = `${scoreCasa} - ${scoreTrasf}`;
+    
     const indicatorsDiv = document.createElement('div');
     indicatorsDiv.id = 'penalty-indicators';
     indicatorsDiv.className = 'penalty-indicators-container';
@@ -4043,7 +4056,7 @@ function renderPenaltyIndicators(events, match) {
             </div>
         </div>
     `;
-    // 🔥 INSERISCI DOPO GLI EVENTI (sotto la timeline, non sopra)
+    
     if (timeline.parentNode) {
         timeline.parentNode.insertBefore(indicatorsDiv, timeline.nextSibling);
     }
