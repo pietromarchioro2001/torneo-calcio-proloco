@@ -5,7 +5,7 @@ const CONFIG = {
     // 🔥 SOSTITUISCI CON IL TUO URL APPS SCRIPT WEB APP
     BACKEND_URL: 'https://script.google.com/macros/s/AKfycbx-Ba00IoB6Bn16XIo_Ulrmg7_8Eyd3FAApqps31CXog8H0285lrD5Avb5_-Hm_ICdq/exec',
     API_TIMEOUT: 30000,
-    CACHE_VERSION: 'v6.3',
+    CACHE_VERSION: 'v6.4',
     CACHE_MAX_AGE: 5 * 60 * 1000
 };
 
@@ -5304,40 +5304,33 @@ function renderFinalBracket(matches) {
     if (!container) return;
     
     const matchMap = {};
+    const quarti = [];
     
-    // ✅ FIX: Normalizza i matchKey per i quarti
-    const normalizedMatches = (matches || []).map(m => {
+    (matches || []).forEach(m => {
         const key = m.matchKey || m.TURNO || m.turno;
+        if (!key) return;
         
-        // Se è un quarto senza matchKey specifico, assegnalo in base all'ordine
-        if ((key === "QUARTI" || key === "quarti") && !m.matchKey) {
-            // Trova l'indice di questo quarto nell'array
-            const quartiIndex = matches.filter(x => 
-                (x.matchKey || x.TURNO || x.turno) === "QUARTI" || 
-                (x.matchKey || x.TURNO || x.turno) === "quarti"
-            ).indexOf(m);
-            m.matchKey = `Q${quartiIndex + 1}`;
-        }
-        
-        return m;
-    });
-    
-    // Build matchMap con i key normalizzati
-    normalizedMatches.forEach(m => {
-        const key = m.matchKey || m.TURNO || m.turno;
-        if (key) {
+        // ✅ Raccogli tutti i quarti in un array separato
+        if (key === "Q1" || key === "Q2" || key === "Q3" || key === "Q4" || 
+            key === "QUARTI" || key === "quarti") {
+            quarti.push(m);
+        } else {
             matchMap[key] = m;
         }
     });
     
-    // Debug log
-    console.log('🏆 Match map keys:', Object.keys(matchMap));
-    console.log('🏆 Quarti:', {
-        Q1: matchMap["Q1"],
-        Q2: matchMap["Q2"],
-        Q3: matchMap["Q3"],
-        Q4: matchMap["Q4"]
+    // ✅ Assegna i quarti in ordine a Q1, Q2, Q3, Q4
+    quarti.forEach((q, idx) => {
+        if (idx < 4) {
+            matchMap[`Q${idx + 1}`] = q;
+        }
     });
+    
+    // ✅ Supporta anche varianti di chiavi per semi e finali
+    const sf1Match = matchMap["SF1"] || matchMap["SEMIFINALE 1"] || matchMap["SEMIFINALE"];
+    const sf2Match = matchMap["SF2"] || matchMap["SEMIFINALE 2"];
+    const finalMatch = matchMap["F"] || matchMap["FINALE 1-2"] || matchMap["FINALE"];
+    const thirdPlaceMatch = matchMap["TP"] || matchMap["FINALE 3-4"];
     
     container.innerHTML = `
         <div class="tournament-wrapper">
@@ -5345,10 +5338,10 @@ function renderFinalBracket(matches) {
             ${renderBracketMatch(matchMap["Q2"], "qf2")}
             ${renderBracketMatch(matchMap["Q3"], "qf3")}
             ${renderBracketMatch(matchMap["Q4"], "qf4")}
-            ${matchMap["SF1"] ? renderBracketMatch(matchMap["SF1"], "sf1") : renderPlaceholderCard("SEMIFINALE 1", "sf1")}
-            ${matchMap["SF2"] ? renderBracketMatch(matchMap["SF2"], "sf2") : renderPlaceholderCard("SEMIFINALE 2", "sf2")}
-            ${matchMap["F"] ? renderBracketMatch(matchMap["F"], "final-match") : renderPlaceholderCard("FINALE 1°-2°", "final-match")}
-            ${matchMap["TP"] ? renderBracketMatch(matchMap["TP"], "third-place") : renderPlaceholderCard("FINALE 3°-4°", "third-place")}
+            ${sf1Match ? renderBracketMatch(sf1Match, "sf1") : renderPlaceholderCard("SEMIFINALE 1", "sf1")}
+            ${sf2Match ? renderBracketMatch(sf2Match, "sf2") : renderPlaceholderCard("SEMIFINALE 2", "sf2")}
+            ${finalMatch ? renderBracketMatch(finalMatch, "final-match") : renderPlaceholderCard("FINALE 1°-2°", "final-match")}
+            ${thirdPlaceMatch ? renderBracketMatch(thirdPlaceMatch, "third-place") : renderPlaceholderCard("FINALE 3°-4°", "third-place")}
         </div>
     `;
 }
