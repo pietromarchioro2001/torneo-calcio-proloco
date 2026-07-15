@@ -5,7 +5,7 @@ const CONFIG = {
     // 🔥 SOSTITUISCI CON IL TUO URL APPS SCRIPT WEB APP
     BACKEND_URL: 'https://script.google.com/macros/s/AKfycbwvLUEgEUXXczdSno__Yk2ZQLR-3a1T4E8rbZYoFOzPndauWpVVpnmmWbCP3khEy08Y/exec',
     API_TIMEOUT: 30000,
-    CACHE_VERSION: 'v7.6',
+    CACHE_VERSION: 'v7.7',
     CACHE_MAX_AGE: 5 * 60 * 1000
 };
 
@@ -5798,9 +5798,9 @@ async function saveNextPhase(phase) {
   const date2 = document.getElementById("date2")?.value;
   const time2 = document.getElementById("time2")?.value;
   
-  if (!date1 || !time1 || !date2 || !time2) { 
-    alert("Compila tutte le date e gli orari"); 
-    return; 
+  if (!date1 || !time1 || !date2 || !time2) {
+    alert("Compila tutte le date e gli orari");
+    return;
   }
   
   try {
@@ -5808,27 +5808,50 @@ async function saveNextPhase(phase) {
     
     if (phase === "SEMIFINALI") {
       const result = await ApiClient.createSemiFinals(date1, time1, date2, time2);
-      // Recupera gli ID delle semifinali appena create
-      const matches = window.APP_CACHE.matches || [];
-      const semis = matches.filter(m => 
-        (m.TURNO === "SEMIFINALE" || m.turno === "SEMIFINALE") && 
-        m.stato === "PROGRAMMATA"
-      );
-      createdMatchIds = semis.map(s => s.MATCH_ID);
+      
+      // 🔥 RECUPERA GLI ID DAL RESULT (se il backend li restituisce)
+      if (result?.createdMatchIds && result.createdMatchIds.length > 0) {
+        createdMatchIds = result.createdMatchIds;
+        console.log('✅ ID semifinali dal backend:', createdMatchIds);
+      } else {
+        // Fallback: cerca le semifinali appena create
+        await new Promise(r => setTimeout(r, 500));
+        const matches = await ApiClient.getMatches();
+        const semis = matches.filter(m =>
+          (m.TURNO === "SEMIFINALE" || m.turno === "SEMIFINALE") &&
+          (m.stato === "PROGRAMMATA" || m.STATO_PARTITA === "PROGRAMMATA") &&
+          m.DATA === date1 || m.DATA === date2
+        );
+        createdMatchIds = semis.map(s => s.MATCH_ID);
+        console.log('🔍 ID semifinali trovati:', createdMatchIds);
+      }
+      
     } else {
       const result = await ApiClient.createFinals(date1, time1, date2, time2);
-      // Recupera gli ID delle finali appena create
-      const matches = window.APP_CACHE.matches || [];
-      const finals = matches.filter(m => 
-        (m.TURNO === "FINALE" || m.turno === "FINALE" || 
-         m.matchKey === "F" || m.matchKey === "TP") && 
-        m.stato === "PROGRAMMATA"
-      );
-      createdMatchIds = finals.map(f => f.MATCH_ID);
+      
+      // 🔥 RECUPERA GLI ID DAL RESULT (se il backend li restituisce)
+      if (result?.createdMatchIds && result.createdMatchIds.length > 0) {
+        createdMatchIds = result.createdMatchIds;
+        console.log('✅ ID finali dal backend:', createdMatchIds);
+      } else {
+        // Fallback: cerca le finali appena create
+        await new Promise(r => setTimeout(r, 500));
+        const matches = await ApiClient.getMatches();
+        const finals = matches.filter(m =>
+          (m.TURNO === "FINALE" || m.turno === "FINALE" ||
+           m.matchKey === "F" || m.matchKey === "TP") &&
+          (m.stato === "PROGRAMMATA" || m.STATO_PARTITA === "PROGRAMMATA") &&
+          m.DATA === date1 || m.DATA === date2
+        );
+        createdMatchIds = finals.map(f => f.MATCH_ID);
+        console.log('🔍 ID finali trovati:', createdMatchIds);
+      }
     }
     
+    // Chiudi modale
     document.querySelector(".modalOverlay")?.remove();
     
+    // Aggiorna cache
     await invalidateCacheAndRefresh('finalStage');
     await invalidateCacheAndRefresh('matches');
     
@@ -5840,20 +5863,33 @@ async function saveNextPhase(phase) {
     if (createdMatchIds.length > 0) {
       console.log(`🎨 Generazione post per ${createdMatchIds.length} partite...`);
       
-      createdMatchIds.forEach((matchId, idx) => {
+      // Genera i post in sequenza con delay per evitare rate limit
+      for (let i = 0; i < createdMatchIds.length; i++) {
+        const matchId = createdMatchIds[i];
+        
         setTimeout(() => {
-          console.log(`🎨 Generazione post ${idx + 1}/${createdMatchIds.length}...`);
+          console.log(`🎨 Generazione post ${i + 1}/${createdMatchIds.length} per ${matchId}...`);
+          
           generateMatchImage(matchId, 'PROGRAMMATA')
-            .then(() => {
-              console.log(`✅ Post ${idx + 1} generato`);
+            .then((imageUrl) => {
+              console.log(`✅ Post ${i + 1} generato:`, imageUrl);
               invalidateCacheAndRefresh('matches');
             })
-            .catch(err => console.warn(`️ Errore generazione post ${idx + 1}:`, err));
-        }, idx * 2000); // Delay di 2 secondi tra ogni generazione
-      });
+            .catch(err => {
+              console.warn(`⚠️ Errore generazione post ${i + 1}:`, err);
+            });
+        }, i * 2000); // Delay di 2 secondi tra ogni generazione
+      }
+      
+      // Mostra notifica
+      setTimeout(() => {
+        alert(`✅ ${phase} create con successo!
+ Generazione post in corso...`);
+      }, 500);
+      
+    } else {
+      alert("Partite create con successo!");
     }
-    
-    alert("Partite create con successo!");
     
   } catch (error) {
     console.error('Error creating next phase:', error);
