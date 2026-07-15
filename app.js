@@ -3,9 +3,9 @@
 // ============================================================================
 const CONFIG = {
     // 🔥 SOSTITUISCI CON IL TUO URL APPS SCRIPT WEB APP
-    BACKEND_URL: 'https://script.google.com/macros/s/AKfycbxNC4MHcPs4BNc98XeS4qxivjiI6Q3W-U0_r1PFDTs-_g3xJer__HWeBIs6OK-9paNm/exec',
+    BACKEND_URL: 'https://script.google.com/macros/s/AKfycbzIpki95pkmsi05Mo16KpTA9ctO__xb5yOZmrScP71cnaKERTTRD_mBtxw5yXnrPfHc/exec',
     API_TIMEOUT: 30000,
-    CACHE_VERSION: 'v7.1',
+    CACHE_VERSION: 'v7.2',
     CACHE_MAX_AGE: 5 * 60 * 1000
 };
 
@@ -5793,31 +5793,72 @@ function closePodium() {
 }
 
 async function saveNextPhase(phase) {
-    const date1 = document.getElementById("date1")?.value;
-    const time1 = document.getElementById("time1")?.value;
-    const date2 = document.getElementById("date2")?.value;
-    const time2 = document.getElementById("time2")?.value;
-    if (!date1 || !time1 || !date2 || !time2) { alert("Compila tutte le date e gli orari"); return; }
-    try {
-        if (phase === "SEMIFINALI") {
-            await ApiClient.createSemiFinals(date1, time1, date2, time2);
-        } else {
-            await ApiClient.createFinals(date1, time1, date2, time2);
-        }
-        document.querySelector(".modalOverlay")?.remove();
-        
-        // 🔥 MODIFICA QUESTA RIGA
-        await invalidateCacheAndRefresh('finalStage');
-        await invalidateCacheAndRefresh('matches');
-        
-        if (document.querySelector(".final-stage-page")) {
-            loadFinalStage();
-        }
-        alert("Partite create con successo!");
-    } catch (error) {
-        console.error('Error creating next phase:', error);
-        alert('Errore: ' + error.message);
+  const date1 = document.getElementById("date1")?.value;
+  const time1 = document.getElementById("time1")?.value;
+  const date2 = document.getElementById("date2")?.value;
+  const time2 = document.getElementById("time2")?.value;
+  
+  if (!date1 || !time1 || !date2 || !time2) { 
+    alert("Compila tutte le date e gli orari"); 
+    return; 
+  }
+  
+  try {
+    let createdMatchIds = [];
+    
+    if (phase === "SEMIFINALI") {
+      const result = await ApiClient.createSemiFinals(date1, time1, date2, time2);
+      // Recupera gli ID delle semifinali appena create
+      const matches = window.APP_CACHE.matches || [];
+      const semis = matches.filter(m => 
+        (m.TURNO === "SEMIFINALE" || m.turno === "SEMIFINALE") && 
+        m.stato === "PROGRAMMATA"
+      );
+      createdMatchIds = semis.map(s => s.MATCH_ID);
+    } else {
+      const result = await ApiClient.createFinals(date1, time1, date2, time2);
+      // Recupera gli ID delle finali appena create
+      const matches = window.APP_CACHE.matches || [];
+      const finals = matches.filter(m => 
+        (m.TURNO === "FINALE" || m.turno === "FINALE" || 
+         m.matchKey === "F" || m.matchKey === "TP") && 
+        m.stato === "PROGRAMMATA"
+      );
+      createdMatchIds = finals.map(f => f.MATCH_ID);
     }
+    
+    document.querySelector(".modalOverlay")?.remove();
+    
+    await invalidateCacheAndRefresh('finalStage');
+    await invalidateCacheAndRefresh('matches');
+    
+    if (document.querySelector(".final-stage-page")) {
+      loadFinalStage();
+    }
+    
+    // 🔥 GENERAZIONE AUTOMATICA POST PER SEMIFINALI/FINALI
+    if (createdMatchIds.length > 0) {
+      console.log(`🎨 Generazione post per ${createdMatchIds.length} partite...`);
+      
+      createdMatchIds.forEach((matchId, idx) => {
+        setTimeout(() => {
+          console.log(`🎨 Generazione post ${idx + 1}/${createdMatchIds.length}...`);
+          generateMatchImage(matchId, 'PROGRAMMATA')
+            .then(() => {
+              console.log(`✅ Post ${idx + 1} generato`);
+              invalidateCacheAndRefresh('matches');
+            })
+            .catch(err => console.warn(`️ Errore generazione post ${idx + 1}:`, err));
+        }, idx * 2000); // Delay di 2 secondi tra ogni generazione
+      });
+    }
+    
+    alert("Partite create con successo!");
+    
+  } catch (error) {
+    console.error('Error creating next phase:', error);
+    alert('Errore: ' + error.message);
+  }
 }
 
 // 🔥 FUNZIONE PER AGGIORNARE TUTTI I DATI (ESTESA)
