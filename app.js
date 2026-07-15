@@ -5,7 +5,7 @@ const CONFIG = {
     // 🔥 SOSTITUISCI CON IL TUO URL APPS SCRIPT WEB APP
     BACKEND_URL: 'https://script.google.com/macros/s/AKfycbzIpki95pkmsi05Mo16KpTA9ctO__xb5yOZmrScP71cnaKERTTRD_mBtxw5yXnrPfHc/exec',
     API_TIMEOUT: 30000,
-    CACHE_VERSION: 'v7.2',
+    CACHE_VERSION: 'v7.3',
     CACHE_MAX_AGE: 5 * 60 * 1000
 };
 
