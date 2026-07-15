@@ -3,9 +3,9 @@
 // ============================================================================
 const CONFIG = {
     // 🔥 SOSTITUISCI CON IL TUO URL APPS SCRIPT WEB APP
-    BACKEND_URL: 'https://script.google.com/macros/s/AKfycbxHBpL7MdkqdIuVbqGSv718SdSz-NsryIyrFyNPizwywKaVgSe2OfC8is4Q31IA5cMP/exec',
+    BACKEND_URL: 'https://script.google.com/macros/s/AKfycbyHqbZJRrDGC12ArXJFag68zyUSDKt7rez49kd2WLilGaAeORqI86x6yB6zePc1jp1b/exec',
     API_TIMEOUT: 30000,
-    CACHE_VERSION: 'v7.4',
+    CACHE_VERSION: 'v7.5',
     CACHE_MAX_AGE: 5 * 60 * 1000
 };
 
@@ -6087,19 +6087,17 @@ async function createFinalStage() {
   try {
     // 1. Chiama il backend per calcolare i quarti
     const result = await ApiClient.prepareFinalStage();
-    
     if (!result?.ok) {
       alert('⚠️ ' + (result?.error || 'Impossibile creare la fase finale'));
       return;
     }
     
     const matches = result.matches;
-    
     if (!matches || matches.length !== 4) {
       alert('⚠️ Errore: dati quarti non validi');
       return;
     }
-    
+
     // 2. Mostra popup con le 4 partite
     const modal = document.createElement('div');
     modal.className = 'modalOverlay';
@@ -6109,7 +6107,7 @@ async function createFinalStage() {
       z-index: 999999; display: flex; align-items: center; justify-content: center;
       font-family: 'Oswald', sans-serif; backdrop-filter: blur(4px);
     `;
-    
+
     let matchesHtml = '';
     matches.forEach((m, idx) => {
       const casaNome = m.casa?.nome || 'Sconosciuta';
@@ -6146,7 +6144,7 @@ async function createFinalStage() {
         </div>
       `;
     });
-    
+
     modal.innerHTML = `
       <div style="background: #f5f5f5; border-radius: 16px; padding: 30px; max-width: 600px; width: 90%; max-height: 90vh; overflow-y: auto; box-shadow: 0 25px 80px rgba(0,0,0,0.5);">
         <div style="text-align:center; margin-bottom: 25px;">
@@ -6167,12 +6165,11 @@ async function createFinalStage() {
         </div>
       </div>
     `;
-    
+
     document.body.appendChild(modal);
-    
     document.getElementById('btnCancelQuarters').onclick = () => modal.remove();
     modal.onclick = (e) => { if (e.target === modal) modal.remove(); };
-    
+
     document.getElementById('btnCreateQuarters').onclick = async () => {
       const matchesToCreate = [];
       let allValid = true;
@@ -6198,24 +6195,24 @@ async function createFinalStage() {
           ora: timeEl?.value || ''
         });
       }
-      
+
       if (!allValid) {
         alert('⚠️ Compila data e ora per tutte le partite!');
         return;
       }
-      
+
       const btn = document.getElementById('btnCreateQuarters');
       btn.disabled = true;
       btn.textContent = 'CREAZIONE...';
       btn.style.opacity = '0.6';
-      
+
       try {
         // Chiama il backend per creare le partite
         const result = await ApiClient.createFinalStageMatches(matchesToCreate);
         
         if (result?.success) {
           modal.remove();
-          alert('✅ QUARTI DI FINALE CREATI CON SUCCESSO!\n\nGenerazione post in corso...');
+          alert('✅ QUARTI DI FINALE CREATI CON SUCCESSO!\nGenerazione post in corso...');
           
           // Aggiorna cache e UI
           await invalidateCacheAndRefresh('matches');
@@ -6226,7 +6223,7 @@ async function createFinalStage() {
           if (result.createdMatchIds && result.createdMatchIds.length > 0) {
             console.log(`🎨 Generazione post per ${result.createdMatchIds.length} partite...`);
             
-            // Genera i post in parallelo (non bloccante)
+            // Genera i post in sequenza con delay per evitare rate limit
             result.createdMatchIds.forEach((matchId, idx) => {
               setTimeout(() => {
                 console.log(`🎨 Generazione post ${idx + 1}/${result.createdMatchIds.length}...`);
@@ -6236,7 +6233,7 @@ async function createFinalStage() {
                     invalidateCacheAndRefresh('matches');
                   })
                   .catch(err => console.warn(`⚠️ Errore generazione post ${idx + 1}:`, err));
-              }, idx * 2000); // Delay di 2 secondi tra ogni generazione per evitare rate limit
+              }, idx * 2000); // Delay di 2 secondi tra ogni generazione
             });
           }
           
@@ -6256,7 +6253,6 @@ async function createFinalStage() {
         alert('❌ Errore: ' + (error.message || 'Controlla la console'));
       }
     };
-    
   } catch (error) {
     console.error('❌ Errore preparazione fase finale:', error);
     alert('❌ Errore: ' + (error.message || 'Controlla la console'));
