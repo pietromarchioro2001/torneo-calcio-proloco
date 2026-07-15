@@ -5,7 +5,7 @@ const CONFIG = {
     // 🔥 SOSTITUISCI CON IL TUO URL APPS SCRIPT WEB APP
     BACKEND_URL: 'https://script.google.com/macros/s/AKfycbwvLUEgEUXXczdSno__Yk2ZQLR-3a1T4E8rbZYoFOzPndauWpVVpnmmWbCP3khEy08Y/exec',
     API_TIMEOUT: 30000,
-    CACHE_VERSION: 'v7.7',
+    CACHE_VERSION: 'v7.8',
     CACHE_MAX_AGE: 5 * 60 * 1000
 };
 
@@ -2879,88 +2879,162 @@ function showPlayersSkeleton() {
 // ============================================================================
 // 📤 CONDIVISIONE PARTITA - VERSIONE CORRETTA
 // ============================================================================
+// 🔒 Lock per evitare doppi click sulla condivisione
+let _isSharingMatch = false;
+
 async function shareMatch() {
+  // 🔒 BLOCCO: se già in condivisione, esci subito
+  if (_isSharingMatch) {
+    console.log('⏸️ Condivisione già in corso, ignoro click');
+    return;
+  }
+  
   const match = window.APP_STATE.lastMatch;
   if (!match) {
     alert('Partita non caricata');
     return;
   }
   
-  // 1. Determina quale URL usare
-  const stato = String(match.STATO_PARTITA || "").trim().toUpperCase();
-  let shareUrl = '';
-  if (stato === 'FINITA') {
-    shareUrl = match.POST_TER || match.post_ter || '';
-  } else {
-    shareUrl = match.POST_PRO || match.post_pro || '';
+  // 🔒 ATTIVA LOCK
+  _isSharingMatch = true;
+  
+  // 🎨 FEEDBACK VISIVO IMMEDIATO: cambia il pulsante
+  const shareBtn = document.querySelector('.share-match-btn-top, .share-match-btn');
+  const originalHtml = shareBtn?.innerHTML;
+  if (shareBtn) {
+    shareBtn.innerHTML = `
+      <svg viewBox="0 0 24 24" width="18" height="18" style="animation: spinLoader 0.8s linear infinite;">
+        <circle cx="12" cy="12" r="10" fill="none" stroke="currentColor" stroke-width="3" stroke-dasharray="30 70" stroke-linecap="round"/>
+      </svg>
+    `;
+    shareBtn.style.opacity = '0.6';
+    shareBtn.style.pointerEvents = 'none';
   }
   
-  if (!shareUrl) {
-    alert('Immagine non ancora generata. Riprova tra qualche secondo.');
-    return;
-  }
-  
-  // 2. ✅ FIX: usa nomeTrasf (non nomeTrasferta che non esiste!)
-  const nomeCasa = match.SQUADRA_CASA || 'CASA';
-  const nomeTrasf = match.SQUADRA_TRASFERTA || 'TRASFERTA';
-  const shareText = `${nomeCasa} vs ${nomeTrasf} - Torneo dei Paesi Sarnonico 2026`;
-  
-  // 3. Estrai fileId dall'URL Drive
-  const fileId = extractFileIdFromUrl(shareUrl);
-  if (!fileId) {
-    // Se non riusciamo a estrarre il fileId, condividi il link
-    shareLinkOnly(shareUrl, shareText);
-    return;
-  }
-  
-  // 4. URL diretto per download immagine (alta qualità, CORS-friendly)
-  const imageUrl = `https://lh3.googleusercontent.com/d/${fileId}=w1080`;
-  
-  // 5. Prova a scaricare e condividere la FOTO
-  if (navigator.share && navigator.canShare) {
-    try {
-      const response = await fetch(imageUrl, { mode: 'cors' });
-      if (response.ok) {
-        const blob = await response.blob();
-        if (blob.size > 1000) { // Almeno 1KB = immagine valida
-          const file = new File(
-            [blob], 
-            `${nomeCasa}_vs_${nomeTrasf}.png`, 
-            { type: blob.type || 'image/png' }
-          );
-          const shareData = { files: [file], text: shareText };
-          if (navigator.canShare(shareData)) {
-            await navigator.share(shareData);
-            console.log('✅ Foto condivisa con successo');
-            return; // ✅ Exit dopo successo
+  try {
+    // 1. Determina quale URL usare
+    const stato = String(match.STATO_PARTITA || "").trim().toUpperCase();
+    let shareUrl = stato === 'FINITA' 
+      ? (match.POST_TER || match.post_ter || '') 
+      : (match.POST_PRO || match.post_pro || '');
+    
+    // 🔥 SE L'URL È VUOTO, FAI UN REFRESH DEI DATI MATCH
+    if (!shareUrl) {
+      console.log('🔄 URL post vuoto, refresh dati match...');
+      try {
+        const freshData = await ApiClient.getMatchFull(match.MATCH_ID);
+        if (freshData?.match) {
+          // Aggiorna la cache locale
+          if (stato === 'FINITA') {
+            match.POST_TER = freshData.match.POST_TER || freshData.match.post_ter || '';
+            shareUrl = match.POST_TER;
+          } else {
+            match.POST_PRO = freshData.match.POST_PRO || freshData.match.post_pro || '';
+            shareUrl = match.POST_PRO;
+          }
+          // Aggiorna anche la cache globale
+          if (window.APP_CACHE.matches) {
+            const idx = window.APP_CACHE.matches.findIndex(m => 
+              String(m.MATCH_ID) === String(match.MATCH_ID)
+            );
+            if (idx >= 0) {
+              if (stato === 'FINITA') {
+                window.APP_CACHE.matches[idx].POST_TER = shareUrl;
+              } else {
+                window.APP_CACHE.matches[idx].POST_PRO = shareUrl;
+              }
+              CacheManager.save(window.APP_CACHE);
+            }
+          }
+          console.log('✅ Dati match aggiornati, URL:', shareUrl ? 'OK' : 'ANCORA VUOTO');
+        }
+      } catch (refreshErr) {
+        console.error('❌ Errore refresh dati match:', refreshErr);
+      }
+    }
+    
+    // 2. Se ancora vuoto, mostra alert
+    if (!shareUrl) {
+      alert('⚠️ Immagine non ancora generata.\n\nProva a:\n• Attendere qualche secondo\n• Tornare alla lista partite e rientrare\n• Verificare che il post sia stato generato');
+      return;
+    }
+    
+    const nomeCasa = match.SQUADRA_CASA || 'CASA';
+    const nomeTrasf = match.SQUADRA_TRASFERTA || 'TRASFERTA';
+    const shareText = `${nomeCasa} vs ${nomeTrasf} - Torneo dei Paesi Sarnonico 2026`;
+    
+    // 3. Estrai fileId dall'URL Drive
+    const fileId = extractFileIdFromUrl(shareUrl);
+    if (!fileId) {
+      shareLinkOnly(shareUrl, shareText);
+      return;
+    }
+    
+    // 4. URL diretto per download immagine
+    const imageUrl = `https://lh3.googleusercontent.com/d/${fileId}=w1080`;
+    
+    // 5. Prova a scaricare e condividere la FOTO
+    if (navigator.share && navigator.canShare) {
+      try {
+        const response = await fetch(imageUrl, { mode: 'cors' });
+        if (response.ok) {
+          const blob = await response.blob();
+          if (blob.size > 1000) {
+            const file = new File(
+              [blob],
+              `${nomeCasa}_vs_${nomeTrasf}.png`,
+              { type: blob.type || 'image/png' }
+            );
+            const shareData = { files: [file], text: shareText };
+            if (navigator.canShare(shareData)) {
+              await navigator.share(shareData);
+              console.log('✅ Foto condivisa con successo');
+              return;
+            }
           }
         }
-      }
-    } catch (err) {
-      console.warn('⚠️ Download foto fallito:', err.message);
-    }
-  }
-  
-  // 6. Fallback: condividi il link diretto all'immagine (non la pagina di preview)
-  const directImageUrl = `https://drive.google.com/uc?export=download&id=${fileId}`;
-  if (navigator.share) {
-    try {
-      await navigator.share({ 
-        title: 'Torneo dei Paesi', 
-        text: shareText, 
-        url: directImageUrl 
-      });
-      return;
-    } catch (err) {
-      if (err.name !== 'AbortError') {
-        console.error('Errore share fallback:', err);
+      } catch (err) {
+        console.warn('️ Download foto fallito:', err.message);
       }
     }
-  }
-  
-  // 7. Ultimo fallback (solo desktop senza share API): copia il link
-  if (!navigator.share) {
-    fallbackCopyToClipboard(shareUrl);
+    
+    // 6. Fallback: condividi il link diretto
+    const directImageUrl = `https://drive.google.com/uc?export=download&id=${fileId}`;
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: 'Torneo dei Paesi',
+          text: shareText,
+          url: directImageUrl
+        });
+        return;
+      } catch (err) {
+        if (err.name !== 'AbortError') {
+          console.error('Errore share fallback:', err);
+        }
+      }
+    }
+    
+    // 7. Ultimo fallback: copia il link
+    if (!navigator.share) {
+      fallbackCopyToClipboard(shareUrl);
+    }
+    
+  } catch (error) {
+    console.error('❌ Errore condivisione:', error);
+    alert('Errore durante la condivisione: ' + error.message);
+  } finally {
+    // 🔓 RILASCIA LOCK e ripristina pulsante
+    _isSharingMatch = false;
+    if (shareBtn) {
+      shareBtn.innerHTML = originalHtml || `
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
+          <path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81 1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9c-1.66 0-3 1.34-3 3s1.34 3 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.16c-.05.21-.08.43-.08.65 0 1.61 1.31 2.92 2.92 2.92 1.61 0 2.92-1.31 2.92-2.92s-1.31-2.92-2.92-2.92z"/>
+        </svg>
+      `;
+      shareBtn.style.opacity = '1';
+      shareBtn.style.pointerEvents = 'auto';
+    }
   }
 }
 
