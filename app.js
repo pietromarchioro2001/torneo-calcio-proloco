@@ -5,7 +5,7 @@ const CONFIG = {
     // 🔥 SOSTITUISCI CON IL TUO URL APPS SCRIPT WEB APP
     BACKEND_URL: 'https://script.google.com/macros/s/AKfycbxuC1Q3i4_Iyg5bzqoroh7lPJq1wgOYBSkur8-R-sQ_GTUwx04WXZUjOUfIjHP55xuH/exec',
     API_TIMEOUT: 30000,
-    CACHE_VERSION: 'v6.7',
+    CACHE_VERSION: 'v6.8',
     CACHE_MAX_AGE: 5 * 60 * 1000
 };
 
@@ -3969,97 +3969,100 @@ function updateScoreFromEvents(matchId) {
 }
 
 function renderPenaltyIndicators(events, match) {
-    // ✅ ESCI SILENZIOSAMENTE SE NON TROVIAMO L'ELEMENTO
-    // (non è un errore critico, può succedere se chiamiamo la funzione sulla pagina sbagliata)
-    const timeline = document.getElementById('eventsTimeline');
-    if (!timeline) {
-        // console.log('⏭️ renderPenaltyIndicators skip - eventsTimeline non trovato');
-        return;
+  // Esci se non siamo nella pagina match o se non è fase finale
+  const timeline = document.getElementById('eventsTimeline');
+  if (!timeline || !document.querySelector('.match-page')) return;
+  
+  const fase = String(match.FASE || "").trim().toUpperCase();
+  if (fase !== "FINALI") return;
+  
+  // Controlla se ci sono rigori validi
+  const rc = match.RIGORE_CASA ?? match.RIGORI_CASA;
+  const rt = match.RIGORE_TRASFERTA ?? match.RIGORI_TRASFERTA;
+  const hasValidRigori = (
+    rc !== null && rc !== undefined && rc !== "" && Number(rc) > 0 &&
+    rt !== null && rt !== undefined && rt !== "" && Number(rt) > 0
+  );
+  if (!hasValidRigori) return;
+  
+  // Rimuovi indicatori precedenti
+  const existing = document.getElementById('penalty-indicators');
+  if (existing) existing.remove();
+  
+  // 🔥 FILTRA SOLO EVENTI RIGORE DEL MATCH CORRENTE
+  const penaltyEvents = (events || []).filter(e => {
+    // Controlla che l'evento sia di questa partita
+    if (String(e.MATCH_ID) !== String(match.MATCH_ID)) return false;
+    
+    // Controlla che sia un evento di rigore
+    const rigoreResult = String(e.RIGORE_RESULT || e.TIPO || "").toUpperCase();
+    return rigoreResult === 'RIGORE_SEGNO' || rigoreResult === 'RIGORE_SBAGLIO';
+  })
+  //  ORDINA PER MINUTO (timestamp)
+  .sort((a, b) => (Number(a.MINUTO) || 0) - (Number(b.MINUTO) || 0));
+  
+  const casaId = String(match.CASA_ID || "").trim();
+  const casaTiri = [];
+  const trasfTiri = [];
+  
+  // Estrai i tiri in ordine cronologico
+  penaltyEvents.forEach(e => {
+    const isGoal = (e.RIGORE_RESULT === 'RIGORE_SEGNO');
+    const isCasa = String(e.TEAM_ID) === casaId;
+    if (isCasa) casaTiri.push(isGoal);
+    else trasfTiri.push(isGoal);
+  });
+  
+  // 🔥 LIMITA AI TIRI EFFETTIVI (max 5 per squadra di solito)
+  // Se ci sono troppi tiri, probabilmente ci sono duplicati nel DB
+  const maxTiri = Math.max(casaTiri.length, trasfTiri.length);
+  if (maxTiri > 10) {
+    console.warn('⚠️ Troppi tiri rilevati:', maxTiri, '- Probabili duplicati nel DB');
+    // Prendi solo gli ultimi N tiri coerenti con il punteggio
+    const expectedTiriCasa = Number(rc) + (casaTiri.filter(t => !t).length);
+    const expectedTiriTrasf = Number(rt) + (trasfTiri.filter(t => !t).length);
+    
+    // Se ci sono troppi duplicati, ricostruisci dai punteggi finali
+    if (casaTiri.filter(t => t).length > Number(rc) || 
+        trasfTiri.filter(t => t).length > Number(rt)) {
+      console.log('🔧 Ricostruzione sequenza dai punteggi finali');
+      // Ricostruisci sequenza corretta
+      casaTiri.length = 0;
+      trasfTiri.length = 0;
+      
+      // Aggiungi gol segnati
+      for (let i = 0; i < Number(rc); i++) casaTiri.push(true);
+      for (let i = 0; i < Number(rt); i++) trasfTiri.push(true);
     }
-    
-    // ✅ VERIFICA CHE SIAMO NELLA PAGINA MATCH
-    if (!document.querySelector('.match-page')) {
-        // console.log('⏭️ renderPenaltyIndicators skip - non siamo in match-page');
-        return;
-    }
-    
-    // ✅ ESCI SUBITO SE NON SIAMO IN FASE FINALE
-    const fase = String(match.FASE || "").trim().toUpperCase();
-    if (fase !== "FINALI") {
-        return;
-    }
-    
-    // ... resto del codice rimane uguale ...
-    const rc = match.RIGORE_CASA ?? match.RIGORI_CASA;
-    const rt = match.RIGORE_TRASFERTA ?? match.RIGORI_TRASFERTA;
-    
-    const hasValidRigori = (
-        rc !== null && rc !== undefined && rc !== "" && Number(rc) > 0 &&
-        rt !== null && rt !== undefined && rt !== "" && Number(rt) > 0
-    );
-    
-    if (!hasValidRigori) {
-        return;
-    }
-    
-    // Rimuovi eventuali indicatori precedenti
-    const existing = document.getElementById('penalty-indicators');
-    if (existing) existing.remove();
-    
-    // Filtra eventi rigore
-    const penaltyEvents = events.filter(e => {
-        const rigoreResult = String(e.RIGORE_RESULT || "").toUpperCase();
-        return rigoreResult === 'RIGORE_SEGNO' || rigoreResult === 'RIGORE_SBAGLIO';
-    });
-    
-    const casaId = String(match.CASA_ID || "").trim();
-    const casaTiri = [];
-    const trasfTiri = [];
-    
-    penaltyEvents.forEach(e => {
-        const isGoal = (e.RIGORE_RESULT === 'RIGORE_SEGNO');
-        const isCasa = String(e.TEAM_ID) === casaId;
-        if (isCasa) casaTiri.push(isGoal);
-        else trasfTiri.push(isGoal);
-    });
-    
-    const createDots = (tiri) => tiri.map(isGoal =>
-        `<span class="penalty-dot ${isGoal ? 'goal' : 'miss'}"></span>`
-    ).join('');
-    
-    let scoreCasa = match.RIGORE_CASA !== undefined ? match.RIGORE_CASA : match.RIGORI_CASA;
-    let scoreTrasf = match.RIGORE_TRASFERTA !== undefined ? match.RIGORE_TRASFERTA : match.RIGORI_TRASFERTA;
-    
-    if (scoreCasa === null || scoreCasa === undefined || scoreCasa === "") {
-        scoreCasa = casaTiri.filter(t => t === true).length;
-    }
-    if (scoreTrasf === null || scoreTrasf === undefined || scoreTrasf === "") {
-        scoreTrasf = trasfTiri.filter(t => t === true).length;
-    }
-    
-    const scoreText = `${scoreCasa} - ${scoreTrasf}`;
-    
-    const indicatorsDiv = document.createElement('div');
-    indicatorsDiv.id = 'penalty-indicators';
-    indicatorsDiv.className = 'penalty-indicators-container';
-    indicatorsDiv.innerHTML = `
-        <div class="penalty-header-label">SEQUENZA TIRI</div>
-        <div class="penalty-dots-row">
-            <div class="penalty-team-block">
-                <div class="penalty-team-name">${match.SQUADRA_CASA}</div>
-                <div class="penalty-dots">${createDots(casaTiri)}</div>
-            </div>
-            <div class="penalty-vs-score">${scoreText}</div>
-            <div class="penalty-team-block">
-                <div class="penalty-team-name">${match.SQUADRA_TRASFERTA}</div>
-                <div class="penalty-dots">${createDots(trasfTiri)}</div>
-            </div>
-        </div>
-    `;
-    
-    if (timeline.parentNode) {
-        timeline.parentNode.insertBefore(indicatorsDiv, timeline.nextSibling);
-    }
+  }
+  
+  const createDots = (tiri) => tiri.map(isGoal =>
+    `<span class="penalty-dot ${isGoal ? 'goal' : 'miss'}"></span>`
+  ).join('');
+  
+  const scoreText = `${rc} - ${rt}`;
+  
+  const indicatorsDiv = document.createElement('div');
+  indicatorsDiv.id = 'penalty-indicators';
+  indicatorsDiv.className = 'penalty-indicators-container';
+  indicatorsDiv.innerHTML = `
+    <div class="penalty-header-label">SEQUENZA TIRI</div>
+    <div class="penalty-dots-row">
+      <div class="penalty-team-block">
+        <div class="penalty-team-name">${match.SQUADRA_CASA}</div>
+        <div class="penalty-dots">${createDots(casaTiri)}</div>
+      </div>
+      <div class="penalty-vs-score">${scoreText}</div>
+      <div class="penalty-team-block">
+        <div class="penalty-team-name">${match.SQUADRA_TRASFERTA}</div>
+        <div class="penalty-dots">${createDots(trasfTiri)}</div>
+      </div>
+    </div>
+  `;
+  
+  if (timeline.parentNode) {
+    timeline.parentNode.insertBefore(indicatorsDiv, timeline.nextSibling);
+  }
 }
 
 // ============================================================================
