@@ -5,7 +5,7 @@ const CONFIG = {
     // 🔥 SOSTITUISCI CON IL TUO URL APPS SCRIPT WEB APP
     BACKEND_URL: 'https://script.google.com/macros/s/AKfycbxuC1Q3i4_Iyg5bzqoroh7lPJq1wgOYBSkur8-R-sQ_GTUwx04WXZUjOUfIjHP55xuH/exec',
     API_TIMEOUT: 30000,
-    CACHE_VERSION: 'v6.9',
+    CACHE_VERSION: 'v7.0',
     CACHE_MAX_AGE: 5 * 60 * 1000
 };
 
@@ -5316,50 +5316,41 @@ function loadFinalStage() {
 }
 
 function renderFinalBracket(matches) {
-    const container = document.getElementById("finalBracketContainer");
-    if (!container) return;
+  const container = document.getElementById("finalBracketContainer");
+  if (!container) return;
+  const matchMap = {};
+  
+  (matches || []).forEach(m => {
+    const key = m.matchKey || m.TURNO || m.turno;
+    if (!key) return;
     
-    const matchMap = {};
-    const quarti = [];
-    
-    (matches || []).forEach(m => {
-        const key = m.matchKey || m.TURNO || m.turno;
-        if (!key) return;
-        
-        // ✅ Raccogli tutti i quarti in un array separato
-        if (key === "Q1" || key === "Q2" || key === "Q3" || key === "Q4" || 
-            key === "QUARTI" || key === "quarti") {
-            quarti.push(m);
-        } else {
-            matchMap[key] = m;
-        }
-    });
-    
-    // ✅ Assegna i quarti in ordine a Q1, Q2, Q3, Q4
-    quarti.forEach((q, idx) => {
-        if (idx < 4) {
-            matchMap[`Q${idx + 1}`] = q;
-        }
-    });
-    
-    // ✅ Supporta anche varianti di chiavi per semi e finali
-    const sf1Match = matchMap["SF1"] || matchMap["SEMIFINALE 1"] || matchMap["SEMIFINALE"];
-    const sf2Match = matchMap["SF2"] || matchMap["SEMIFINALE 2"];
-    const finalMatch = matchMap["F"] || matchMap["FINALE 1-2"] || matchMap["FINALE"];
-    const thirdPlaceMatch = matchMap["TP"] || matchMap["FINALE 3-4"];
-    
-    container.innerHTML = `
-        <div class="tournament-wrapper">
-            ${renderBracketMatch(matchMap["Q1"], "qf1")}
-            ${renderBracketMatch(matchMap["Q2"], "qf2")}
-            ${renderBracketMatch(matchMap["Q3"], "qf3")}
-            ${renderBracketMatch(matchMap["Q4"], "qf4")}
-            ${sf1Match ? renderBracketMatch(sf1Match, "sf1") : renderPlaceholderCard("SEMIFINALE 1", "sf1")}
-            ${sf2Match ? renderBracketMatch(sf2Match, "sf2") : renderPlaceholderCard("SEMIFINALE 2", "sf2")}
-            ${finalMatch ? renderBracketMatch(finalMatch, "final-match") : renderPlaceholderCard("FINALE 1°-2°", "final-match")}
-            ${thirdPlaceMatch ? renderBracketMatch(thirdPlaceMatch, "third-place") : renderPlaceholderCard("FINALE 3°-4°", "third-place")}
-        </div>
-    `;
+    // ✅ USA IL MATCHKEY ORIGINALE (non riassegnare in base all'ordine)
+    if (key === "Q1" || key === "Q2" || key === "Q3" || key === "Q4" ||
+        key === "SF1" || key === "SF2" || key === "F" || key === "TP" ||
+        key === "SEMIFINALE 1" || key === "SEMIFINALE 2" ||
+        key === "FINALE 1-2" || key === "FINALE 3-4") {
+      matchMap[key] = m;
+    }
+  });
+  
+  // ✅ Supporta anche varianti di chiavi
+  const sf1Match = matchMap["SF1"] || matchMap["SEMIFINALE 1"] || matchMap["SEMIFINALE"];
+  const sf2Match = matchMap["SF2"] || matchMap["SEMIFINALE 2"];
+  const finalMatch = matchMap["F"] || matchMap["FINALE 1-2"] || matchMap["FINALE"];
+  const thirdPlaceMatch = matchMap["TP"] || matchMap["FINALE 3-4"];
+  
+  container.innerHTML = `
+    <div class="tournament-wrapper">
+      ${renderBracketMatch(matchMap["Q1"], "qf1")}
+      ${renderBracketMatch(matchMap["Q2"], "qf2")}
+      ${renderBracketMatch(matchMap["Q3"], "qf3")}
+      ${renderBracketMatch(matchMap["Q4"], "qf4")}
+      ${sf1Match ? renderBracketMatch(sf1Match, "sf1") : renderPlaceholderCard("SEMIFINALE 1", "sf1")}
+      ${sf2Match ? renderBracketMatch(sf2Match, "sf2") : renderPlaceholderCard("SEMIFINALE 2", "sf2")}
+      ${finalMatch ? renderBracketMatch(finalMatch, "final-match") : renderPlaceholderCard("FINALE 1°-2°", "final-match")}
+      ${thirdPlaceMatch ? renderBracketMatch(thirdPlaceMatch, "third-place") : renderPlaceholderCard("FINALE 3°-4°", "third-place")}
+    </div>
+  `;
 }
 
 function renderNextPhaseButton() {
