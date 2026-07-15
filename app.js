@@ -3,9 +3,9 @@
 // ============================================================================
 const CONFIG = {
     // 🔥 SOSTITUISCI CON IL TUO URL APPS SCRIPT WEB APP
-    BACKEND_URL: 'https://script.google.com/macros/s/AKfycbxV7Xfd-Vz-V47Jd0kw3OoEmMx0xN_wtr-to71xGPcb1h0VKAzXCUs6hLgkRrUE31iy/exec',
+    BACKEND_URL: 'https://script.google.com/macros/s/AKfycbxuC1Q3i4_Iyg5bzqoroh7lPJq1wgOYBSkur8-R-sQ_GTUwx04WXZUjOUfIjHP55xuH/exec',
     API_TIMEOUT: 30000,
-    CACHE_VERSION: 'v6.6',
+    CACHE_VERSION: 'v6.7',
     CACHE_MAX_AGE: 5 * 60 * 1000
 };
 
@@ -5360,80 +5360,84 @@ function renderFinalBracket(matches) {
 }
 
 function renderNextPhaseButton() {
-    if (!document.querySelector('.final-stage-page') &&
-        !(document.querySelector('.standings-page') && window.APP_STATE._activeStandingsTab === "fasefinale")) {
-        return;
-    }
-    const oldBtn = document.getElementById("next-phase-action-btn");
-    if (oldBtn) oldBtn.remove();
-    const container = document.getElementById("finalBracketContainer");
-    if (!container) return;
-    const finalStageData = window.APP_CACHE.finalStage || [];
-    
-    const quarti = finalStageData.filter(m => m.turno === "QUARTI");
-    const quartiFiniti = quarti.filter(m => m.stato === "FINITA").length;
-    const semi = finalStageData.filter(m => m.turno === "SEMIFINALE");
-    const semiFiniti = semi.filter(m => m.stato === "FINITA").length;
-    const finali = finalStageData.filter(m => 
-        m.turno === "FINALE 1-2" || m.turno === "FINALE 3-4" ||
-        m.matchKey === "F" || m.matchKey === "TP"
-    );
-    const finaliFiniti = finali.filter(m => m.stato === "FINITA").length;
-    const finaliCreate = finali.length >= 2;
-    const sf1Exists = finalStageData.some(m => m.matchKey === "SF1");
-    const sf2Exists = finalStageData.some(m => m.matchKey === "SF2");
-    const semiCreate = sf1Exists && sf2Exists;
-    const final1Exists = finalStageData.some(m => m.matchKey === "F");
-    const final3Exists = finalStageData.some(m => m.matchKey === "TP");
-    const finaliCreate2 = final1Exists && final3Exists;
-    
-    // ✅ Controlla se il podio è già stato attivato
-    const podioActivated = localStorage.getItem('podioActivated') === 'true';
-    
-    let action = null;
-    
-    if (quartiFiniti === 4 && !semiCreate) {
-        action = "SEMIFINALI";
-    }
-    else if (quartiFiniti === 4 && semiFiniti === 2 && !finaliCreate2) {
-        action = "FINALI";
-    }
-    else if (finaliCreate2 && finaliFiniti === 2) {
-        // ✅ Mostra "VEDI PODIO" solo se NON è ancora stato attivato
-        if (!podioActivated) {
-            action = "PODIO";
-        }
-    }
-    
-    // ✅ Se non c'è azione pronta, esci
-    if (!action) return;
-    
-    const btnWrapper = document.createElement("div");
-    btnWrapper.className = "next-phase-button";
+  if (!document.querySelector('.final-stage-page') &&
+      !(document.querySelector('.standings-page') && window.APP_STATE._activeStandingsTab === "fasefinale")) {
+    return;
+  }
+  
+  const oldBtn = document.getElementById("next-phase-action-btn");
+  if (oldBtn) oldBtn.remove();
+  
+  const container = document.getElementById("finalBracketContainer");
+  if (!container) return;
+  
+  const finalStageData = window.APP_CACHE.finalStage || [];
+  
+  // 🔥 FILTRA SOLO PARTITE CON turnO = "QUARTI" (non "SEMIFINALE" o "FINALE")
+  const quarti = finalStageData.filter(m => m.turno === "QUARTI");
+  const quartiFiniti = quarti.filter(m => m.stato === "FINITA").length;
+  
+  const semi = finalStageData.filter(m => m.turno === "SEMIFINALE");
+  const semiFiniti = semi.filter(m => m.stato === "FINITA").length;
+  
+  const finali = finalStageData.filter(m =>
+    m.turno === "FINALE" || m.turno === "FINALE_3_4" ||
+    m.matchKey === "F" || m.matchKey === "TP"
+  );
+  const finaliFiniti = finali.filter(m => m.stato === "FINITA").length;
+  
+  // 🔥 CONTROLLA se le semifinali esistono già nel tabellone
+  const sf1Exists = finalStageData.some(m => m.matchKey === "SF1" && m.casa?.nome !== "TBD");
+  const sf2Exists = finalStageData.some(m => m.matchKey === "SF2" && m.casa?.nome !== "TBD");
+  const semiCreate = sf1Exists && sf2Exists;
+  
+  // 🔥 CONTROLLA se le finali esistono già
+  const final1Exists = finalStageData.some(m => m.matchKey === "F" && m.casa?.nome !== "TBD");
+  const final3Exists = finalStageData.some(m => m.matchKey === "TP" && m.casa?.nome !== "TBD");
+  const finaliCreate = final1Exists && final3Exists;
+  
+  const podioActivated = localStorage.getItem('podioActivated') === 'true';
+  
+  let action = null;
+  
+  // 🔥 LOGICA CORRETTA:
+  if (quartiFiniti === 4 && !semiCreate) {
+    action = "SEMIFINALI";
+  }
+  else if (quartiFiniti === 4 && semiFiniti === 2 && !finaliCreate) {
+    action = "FINALI";
+  }
+  else if (finaliCreate && finaliFiniti === 2 && !podioActivated) {
+    action = "PODIO";
+  }
+  
+  if (!action) return;
+  
+  const btnWrapper = document.createElement("div");
+  btnWrapper.className = "next-phase-button";
+  if (action === "PODIO") btnWrapper.classList.add("podio-ready");
+  btnWrapper.id = "next-phase-action-btn";
+  
+  const btn = document.createElement("button");
+  btn.className = "next-phase-btn";
+  btn.textContent = action === "PODIO" ? " VEDI PODIO" : "PROSSIMA FASE";
+  
+  btn.onclick = () => {
     if (action === "PODIO") {
-        btnWrapper.classList.add("podio-ready");
+      localStorage.setItem('podioActivated', 'true');
+      showTournamentPodium(finalStageData, false);
+      btnWrapper.remove();
+    } else {
+      openNextPhasePopup(action);
     }
-    btnWrapper.id = "next-phase-action-btn";
-    
-    const btn = document.createElement("button");
-    btn.className = "next-phase-btn";
-    btn.textContent = action === "PODIO" ? "🏆 VEDI PODIO" : "PROSSIMA FASE";
-    
-    btn.onclick = () => {
-        if (action === "PODIO") {
-            localStorage.setItem('podioActivated', 'true');
-            showTournamentPodium(finalStageData, false);
-            btnWrapper.remove();
-        } else {
-            openNextPhasePopup(action);
-        }
-    };
-    
-    btnWrapper.appendChild(btn);
-    const pageContainer = document.querySelector('.final-stage-page');
-    if (pageContainer) {
-        pageContainer.appendChild(btnWrapper);
-    }
+  };
+  
+  btnWrapper.appendChild(btn);
+  
+  const pageContainer = document.querySelector('.final-stage-page');
+  if (pageContainer) {
+    pageContainer.appendChild(btnWrapper);
+  }
 }
 
 function renderTopScorers() {
