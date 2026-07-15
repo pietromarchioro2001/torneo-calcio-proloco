@@ -3,9 +3,9 @@
 // ============================================================================
 const CONFIG = {
     // 🔥 SOSTITUISCI CON IL TUO URL APPS SCRIPT WEB APP
-    BACKEND_URL: 'https://script.google.com/macros/s/AKfycbx-Ba00IoB6Bn16XIo_Ulrmg7_8Eyd3FAApqps31CXog8H0285lrD5Avb5_-Hm_ICdq/exec',
+    BACKEND_URL: 'https://script.google.com/macros/s/AKfycbxV7Xfd-Vz-V47Jd0kw3OoEmMx0xN_wtr-to71xGPcb1h0VKAzXCUs6hLgkRrUE31iy/exec',
     API_TIMEOUT: 30000,
-    CACHE_VERSION: 'v6.5',
+    CACHE_VERSION: 'v6.6',
     CACHE_MAX_AGE: 5 * 60 * 1000
 };
 
@@ -5681,53 +5681,53 @@ function showTournamentPodium(finalStageData) {
   // 🔥 Determina vincitori CON RIGORI
   let primo, secondo, terzo;
   
-  // ✅ FINALE 1°-2°: controlla prima i rigori
-  const rigoriCasaFinale = finale1.rigoriCasa ?? finale1.RIGORE_CASA ?? finale1.RIGORI_CASA ?? null;
-  const rigoriTrasfFinale = finale1.rigoriTrasferta ?? finale1.RIGORE_TRASFERTA ?? finale1.RIGORI_TRASFERTA ?? null;
-  const hasValidRigoriFinale = (
-    rigoriCasaFinale !== null && rigoriCasaFinale !== undefined && rigoriCasaFinale !== "" &&
-    rigoriTrasfFinale !== null && rigoriTrasfFinale !== undefined && rigoriTrasfFinale !== ""
-  );
-  
-  if (hasValidRigoriFinale) {
-    if (Number(rigoriCasaFinale) > Number(rigoriTrasfFinale)) {
-      primo = finale1.casa;
-      secondo = finale1.trasferta;
+      // ✅ FINALE 1°-2°: controlla prima i rigori
+    const rigoriCasaFinale = finale1.rigoriCasa ?? finale1.RIGORE_CASA ?? finale1.RIGORI_CASA ?? null;
+    const rigoriTrasfFinale = finale1.rigoriTrasferta ?? finale1.RIGORE_TRASFERTA ?? finale1.RIGORI_TRASFERTA ?? null;
+    const hasValidRigoriFinale = (
+      rigoriCasaFinale !== null && rigoriCasaFinale !== undefined && rigoriCasaFinale !== "" &&
+      rigoriTrasfFinale !== null && rigoriTrasfFinale !== undefined && rigoriTrasfFinale !== "" &&
+      (Number(rigoriCasaFinale) > 0 || Number(rigoriTrasfFinale) > 0)
+    );
+    if (hasValidRigoriFinale) {
+      if (Number(rigoriCasaFinale) > Number(rigoriTrasfFinale)) {
+        primo = finale1.casa; secondo = finale1.trasferta;
+      } else {
+        primo = finale1.trasferta; secondo = finale1.casa;
+      }
     } else {
-      primo = finale1.trasferta;
-      secondo = finale1.casa;
+      if (Number(finale1.golCasa) > Number(finale1.golTrasferta)) {
+        primo = finale1.casa; secondo = finale1.trasferta;
+      } else if (Number(finale1.golTrasferta) > Number(finale1.golCasa)) {
+        primo = finale1.trasferta; secondo = finale1.casa;
+      } else {
+        primo = finale1.casa; secondo = finale1.trasferta; // Fallback
+      }
     }
-  } else {
-    if (finale1.golCasa > finale1.golTrasferta) {
-      primo = finale1.casa;
-      secondo = finale1.trasferta;
+
+    // ✅ FINALE 3°-4°: stessa logica
+    const rigoriCasa3 = finale3.rigoriCasa ?? finale3.RIGORE_CASA ?? finale3.RIGORI_CASA ?? null;
+    const rigoriTrasf3 = finale3.rigoriTrasferta ?? finale3.RIGORE_TRASFERTA ?? finale3.RIGORI_TRASFERTA ?? null;
+    const hasValidRigori3 = (
+      rigoriCasa3 !== null && rigoriCasa3 !== undefined && rigoriCasa3 !== "" &&
+      rigoriTrasf3 !== null && rigoriTrasf3 !== undefined && rigoriTrasf3 !== "" &&
+      (Number(rigoriCasa3) > 0 || Number(rigoriTrasf3) > 0)
+    );
+    if (hasValidRigori3) {
+      if (Number(rigoriCasa3) > Number(rigoriTrasf3)) {
+        terzo = finale3.casa;
+      } else {
+        terzo = finale3.trasferta;
+      }
     } else {
-      primo = finale1.trasferta;
-      secondo = finale1.casa;
+      if (Number(finale3.golCasa) > Number(finale3.golTrasferta)) {
+        terzo = finale3.casa;
+      } else if (Number(finale3.golTrasferta) > Number(finale3.golCasa)) {
+        terzo = finale3.trasferta;
+      } else {
+        terzo = finale3.casa; // Fallback
+      }
     }
-  }
-  
-  // ✅ FINALE 3°-4°: stessa logica
-  const rigoriCasa3 = finale3.rigoriCasa ?? finale3.RIGORE_CASA ?? finale3.RIGORI_CASA ?? null;
-  const rigoriTrasf3 = finale3.rigoriTrasferta ?? finale3.RIGORE_TRASFERTA ?? finale3.RIGORI_TRASFERTA ?? null;
-  const hasValidRigori3 = (
-    rigoriCasa3 !== null && rigoriCasa3 !== undefined && rigoriCasa3 !== "" &&
-    rigoriTrasf3 !== null && rigoriTrasf3 !== undefined && rigoriTrasf3 !== ""
-  );
-  
-  if (hasValidRigori3) {
-    if (Number(rigoriCasa3) > Number(rigoriTrasf3)) {
-      terzo = finale3.casa;
-    } else {
-      terzo = finale3.trasferta;
-    }
-  } else {
-    if (finale3.golCasa > finale3.golTrasferta) {
-      terzo = finale3.casa;
-    } else {
-      terzo = finale3.trasferta;
-    }
-  }
   
   const popup = document.createElement("div");
   popup.className = "podium-popup-overlay";
@@ -5964,80 +5964,77 @@ async function invalidateCacheAndRefresh(type) {
 function renderPlaceholderCard(label, cls="") { return `<div class="bracket-match bracket-placeholder ${cls}"><div style="text-align:center; width:100%; display:flex; align-items:center; justify-content:center; height:100%;"><div style="font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:1px; color:#666;">${Sanitizer.html(label)}</div></div></div>`; }
 
 function renderBracketMatch(match, cls="") {
-if (!match) {
-        return `<div class="bracket-placeholder ${cls}"><div class="bracket-placeholder-title"></div></div>`;
+  if (!match) {
+    return `<div class="bracket-placeholder ${cls}"><div class="bracket-placeholder-title"></div></div>`;
+  }
+  const logoCasa = match.casa?.logo ? `<img src="${getCachedImage(match.casa.logo, 24)}" alt="${match.casa.nome}" onerror="this.style.display='none'">` : `<div style="width:24px;height:24px;border-radius:50%;background:#f0f0f0"></div>`;
+  const logoTrasf = match.trasferta?.logo ? `<img src="${getCachedImage(match.trasferta.logo, 24)}" alt="${match.trasferta.nome}" onerror="this.style.display='none'">` : `<div style="width:24px;height:24px;border-radius:50%;background:#f0f0f0"></div>`;
+  const isLive = ["LIVE", "SUPP", "RIGORI"].includes(match.stato);
+  const isSupp = match.stato === "SUPP";
+  const isFinished = match.stato === "FINITA";
+  let scoreCasa = "0";
+  let scoreTrasf = "0";
+  if (isLive || isFinished) {
+    scoreCasa = match.golCasa || 0;
+    scoreTrasf = match.golTrasferta || 0;
+  }
+  const scoreClass = isLive ? "bracket-score live" : "bracket-score scheduled";
+  
+  // 🔥 FIX: Determina il vincitore considerando PRIMA i rigori
+  let casaClass = "", trasfClass = "";
+  if (isFinished) {
+    const rigoriCasa = match.rigoriCasa ?? match.RIGORE_CASA ?? match.RIGORI_CASA ?? null;
+    const rigoriTrasf = match.rigoriTrasferta ?? match.RIGORE_TRASFERTA ?? match.RIGORI_TRASFERTA ?? null;
+    
+    // ✅ FIX CRITICO: Almeno uno dei due deve essere > 0 per considerare i rigori validi
+    const hasValidRigori = (
+      rigoriCasa !== null && rigoriCasa !== undefined && rigoriCasa !== "" &&
+      rigoriTrasf !== null && rigoriTrasf !== undefined && rigoriTrasf !== "" &&
+      (Number(rigoriCasa) > 0 || Number(rigoriTrasf) > 0) 
+    );
+    
+    if (hasValidRigori) {
+      if (Number(rigoriCasa) > Number(rigoriTrasf)) {
+        casaClass = "winner";
+        trasfClass = "loser";
+      } else {
+        casaClass = "loser";
+        trasfClass = "winner";
+      }
+    } else {
+      // Partita decisa nei tempi regolamentari/supplementari
+      if (Number(scoreCasa) > Number(scoreTrasf)) {
+        casaClass = "winner";
+        trasfClass = "loser";
+      } else if (Number(scoreTrasf) > Number(scoreCasa)) {
+        casaClass = "loser";
+        trasfClass = "winner";
+      } else {
+        // Pareggio senza rigori: non evidenziare nessuno (caso anomalo)
+        casaClass = "";
+        trasfClass = "";
+      }
     }
-
-const logoCasa = match.casa?.logo ? `<img src="${getCachedImage(match.casa.logo, 24)}" alt="${match.casa.nome}" onerror="this.style.display='none'">` : `<div style="width:24px;height:24px;border-radius:50%;background:#f0f0f0"></div>`;
-const logoTrasf = match.trasferta?.logo ? `<img src="${getCachedImage(match.trasferta.logo, 24)}" alt="${match.trasferta.nome}" onerror="this.style.display='none'">` : `<div style="width:24px;height:24px;border-radius:50%;background:#f0f0f0"></div>`;
-
-const isLive = ["LIVE", "SUPP", "RIGORI"].includes(match.stato);
-const isSupp = match.stato === "SUPP";
-const isFinished = match.stato === "FINITA";
-
-let scoreCasa = "0"; 
-let scoreTrasf = "0";
-if (isLive || isFinished) { 
-scoreCasa = match.golCasa || 0; 
-scoreTrasf = match.golTrasferta || 0; 
-}
-
-const scoreClass = isLive ? "bracket-score live" : "bracket-score scheduled";
-
-// 🔥 FIX: Determina il vincitore considerando PRIMA i rigori
-let casaClass = "", trasfClass = "";
-
-if (isFinished) {
-// ✅ Controlla se ci sono i rigori (supporta tutte le varianti)
-const rigoriCasa = match.rigoriCasa ?? match.RIGORE_CASA ?? match.RIGORI_CASA ?? null;
-const rigoriTrasf = match.rigoriTrasferta ?? match.RIGORE_TRASFERTA ?? match.RIGORI_TRASFERTA ?? null;
-
-// ✅ Verifica che entrambi i valori siano validi
-const hasValidRigori = (
-rigoriCasa !== null && rigoriCasa !== undefined && rigoriCasa !== "" &&
-rigoriTrasf !== null && rigoriTrasf !== undefined && rigoriTrasf !== ""
-);
-
-if (hasValidRigori) {
-// ✅ La partita è decisa ai rigori - usa SEMPRE i rigori
-if (Number(rigoriCasa) > Number(rigoriTrasf)) {
-casaClass = "winner";
-trasfClass = "loser";
-} else {
-casaClass = "loser";
-trasfClass = "winner";
-}
-} else {
-// Partita decisa nei tempi regolamentari/supplementari
-if (scoreCasa > scoreTrasf) {
-casaClass = "winner";
-trasfClass = "loser";
-} else {
-casaClass = "loser";
-trasfClass = "winner";
-}
-}
-}
-
-// 🔥 Indicatore compatto: S = Supplementari, R = Rigori
-let statusIndicator = '';
-if (isSupp) {
-  statusIndicator = '<span class="bracket-status-indicator supp">S</span>';
-} else if (isLive && match.stato === "RIGORI") {
-  statusIndicator = '<span class="bracket-status-indicator rigori">R</span>';
-}
-
-let liveClass = "";
-if (isLive) {
-if (cls === 'final-match') liveClass = "live-gold";
-else if (cls === 'third-place') liveClass = "live-bronze";
-else liveClass = "live-match";
-}
-
-return `<div class="bracket-match ${cls} ${isFinished ? 'concluded' : ''} ${liveClass}" onclick="openMatch('${match.matchId}')">
-<div class="bracket-team ${casaClass}">${logoCasa}<span>${(match.casa?.nome || "TBD").toUpperCase()}</span><span class="${scoreClass}">${scoreCasa}${statusIndicator}</span></div>
-<div class="bracket-team ${trasfClass}">${logoTrasf}<span>${(match.trasferta?.nome || "TBD").toUpperCase()}</span><span class="${scoreClass}">${scoreTrasf}${statusIndicator}</span></div>
-</div>`;
+  }
+  
+  let statusIndicator = '';
+  if (isSupp) {
+    statusIndicator = '<span class="bracket-status-indicator supp">S</span>';
+  } else if (isLive && match.stato === "RIGORI") {
+    statusIndicator = '<span class="bracket-status-indicator rigori">R</span>';
+  }
+  
+  let liveClass = "";
+  if (isLive) {
+    if (cls === 'final-match') liveClass = "live-gold";
+    else if (cls === 'third-place') liveClass = "live-bronze";
+    else liveClass = "live-match";
+  }
+  
+  return `<div class="bracket-match ${cls} ${isFinished ? 'concluded' : ''} ${liveClass}" onclick="openMatch('${match.matchId}')">
+    <div class="bracket-team ${casaClass}">${logoCasa}<span>${(match.casa?.nome || "TBD").toUpperCase()}</span><span class="${scoreClass}">${scoreCasa}${statusIndicator}</span></div>
+    <div class="bracket-team ${trasfClass}">${logoTrasf}<span>${(match.trasferta?.nome || "TBD").toUpperCase()}</span><span class="${scoreClass}">${scoreTrasf}${statusIndicator}</span></div>
+  </div>`;
 }
 
 function recoverMatchFromCache(matchId) {
