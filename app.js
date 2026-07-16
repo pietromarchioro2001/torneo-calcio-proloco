@@ -5,7 +5,7 @@ const CONFIG = {
     // 🔥 SOSTITUISCI CON IL TUO URL APPS SCRIPT WEB APP
     BACKEND_URL: 'https://script.google.com/macros/s/AKfycbzu8K0QzhEbcW78ngtKitwJ9vvpkdtmDE-egwVfg0NiAQXAMxZ-OjyA7rYp80DHpBjW/exec',
     API_TIMEOUT: 30000,
-    CACHE_VERSION: 'v7.9',
+    CACHE_VERSION: 'v8.0',
     CACHE_MAX_AGE: 5 * 60 * 1000
 };
 
@@ -7097,48 +7097,6 @@ function getDeviceFingerprint() {
 }
 
 async function voteMVP(playerId, playerName, event) {
-    const match = window.APP_STATE.lastMatch;
-    if (!match) return;
-
-    // ✅ FIX: Permetti voto durante la partita E dopo la fine (se MVP non ancora chiuso)
-    const isLive = ["LIVE", "SUPP", "RIGORI"].includes(match.STATO_PARTITA);
-    const isFinishedWithoutMVP = match.STATO_PARTITA === "FINITA" &&
-                                  (!match.MVP || String(match.MVP).trim() === "");
-    const canVote = isLive || isFinishedWithoutMVP;
-
-    if (!canVote) {
-        console.log('⛔ Voto bloccato: partita finita e MVP già assegnato');
-        return;
-    }
-
-    const fingerprint = getDeviceFingerprint();
-    let voterId = localStorage.getItem('mvp_voter_id');
-    const savedFingerprint = localStorage.getItem('mvp_fingerprint');
-
-    if (voterId && savedFingerprint !== fingerprint) {
-        alert('⚠️ Hai già votato da un altro dispositivo');
-        return;
-    }
-
-    if (!voterId) {
-        voterId = fingerprint + '_' + Date.now();
-        localStorage.setItem('mvp_voter_id', voterId);
-        localStorage.setItem('mvp_fingerprint', fingerprint);
-    }
-
-    const voteData = {
-        matchId: match.MATCH_ID,
-        playerId: playerId,
-        playerName: playerName,
-        voterId: voterId,
-        timestamp: Date.now(),
-        sent: false
-    };
-
-    localStorage.setItem(`mvp_vote_${match.MATCH_ID}`, JSON.stringify(voteData));
-    updateMVPVoteUI(playerId);
-    await sendVoteWithRetry(voteData, 3);
-}
 
 async function sendVoteWithRetry(voteData, maxRetries = 5) {
     // ✅ Mantieni una coda locale di voti non inviati (persistente)
