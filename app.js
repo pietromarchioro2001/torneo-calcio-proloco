@@ -5,7 +5,7 @@ const CONFIG = {
     // 🔥 SOSTITUISCI CON IL TUO URL APPS SCRIPT WEB APP
     BACKEND_URL: 'https://script.google.com/macros/s/AKfycbzu8K0QzhEbcW78ngtKitwJ9vvpkdtmDE-egwVfg0NiAQXAMxZ-OjyA7rYp80DHpBjW/exec',
     API_TIMEOUT: 30000,
-    CACHE_VERSION: 'v8.1',
+    CACHE_VERSION: 'v8.2',
     CACHE_MAX_AGE: 5 * 60 * 1000
 };
 
@@ -755,8 +755,32 @@ function getNextMatchCard() {
   const eventsByMatch = window.APP_CACHE.eventsByMatch || {};
   const now = new Date();
   const nowStr = formatLocalDate(now);
-  const finale1 = matches.find(m => m.TURNO === "FINALE 1-2" || m.matchKey === "F");
-  const finale3 = matches.find(m => m.TURNO === "FINALE 3-4" || m.matchKey === "TP");
+  const finale1 = matches.find(m => {
+  const turno = String(m.TURNO || "")
+    .toUpperCase()
+    .replace(/\s+/g, "")
+    .replace(/°/g, "");
+
+  return (
+    turno.includes("FINALE1-2") ||
+    turno.includes("FINALE1-2") ||
+    m.MATCH_KEY === "F" ||
+    m.matchKey === "F"
+  );
+});
+
+const finale3 = matches.find(m => {
+  const turno = String(m.TURNO || "")
+    .toUpperCase()
+    .replace(/\s+/g, "")
+    .replace(/°/g, "");
+
+  return (
+    turno.includes("FINALE3-4") ||
+    m.MATCH_KEY === "TP" ||
+    m.matchKey === "TP"
+  );
+});
   
   if (finale1 && finale3 &&
       finale1.STATO_PARTITA === "FINITA" &&
